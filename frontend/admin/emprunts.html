@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Emprunts - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-arrow-left-right"></i> Gestion des Emprunts</h2>
+        </div>
+
+        <!-- Quick Loan Section -->
+        <div class="card mb-3">
+          <div class="card-header">
+            <h5 class="card-title mb-0"><i class="bi bi-lightning-charge"></i> Emprunt rapide</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <!-- Adherent Selection -->
+              <div class="col-md-4">
+                <label class="form-label"><strong>1. Adhérent</strong></label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="quickAdherentCode"
+                    class="form-control"
+                    placeholder="Scanner ou saisir code..."
+                  >
+                  <button class="btn btn-outline-secondary" onclick="scanAdherent()">
+                    <i class="bi bi-camera"></i>
+                  </button>
+                </div>
+                <div id="quickAdherentInfo" class="mt-2 p-2 bg-light rounded" style="min-height: 60px;">
+                  <small class="text-muted">En attente...</small>
+                </div>
+              </div>
+
+              <!-- Jeu Selection -->
+              <div class="col-md-4">
+                <label class="form-label"><strong>2. Jeu</strong></label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="quickJeuCode"
+                    class="form-control"
+                    placeholder="Scanner ou saisir code..."
+                  >
+                  <button class="btn btn-outline-secondary" onclick="scanJeu()">
+                    <i class="bi bi-camera"></i>
+                  </button>
+                </div>
+                <div id="quickJeuInfo" class="mt-2 p-2 bg-light rounded" style="min-height: 60px;">
+                  <small class="text-muted">En attente...</small>
+                </div>
+              </div>
+
+              <!-- Action -->
+              <div class="col-md-4">
+                <label class="form-label"><strong>3. Action</strong></label>
+                <button
+                  class="btn btn-primary w-100"
+                  onclick="createQuickLoan()"
+                  style="height: 44px; font-size: 16px;"
+                  id="quickLoanBtn"
+                  disabled
+                >
+                  <i class="bi bi-check-circle"></i> Créer l'emprunt
+                </button>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-calendar"></i> Durée: 14 jours
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="btn-group">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouvel emprunt
+                </button>
+                <button class="btn btn-secondary" onclick="loadEmprunts()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+                <button class="btn btn-danger" onclick="loadOverdue()">
+                  <i class="bi bi-exclamation-triangle"></i> En retard
+                </button>
+              </div>
+              <div>
+                <select id="statutFilter" class="form-select" onchange="loadEmprunts()" style="width: 200px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="en_cours" selected>En cours</option>
+                  <option value="retourne">Retourné</option>
+                  <option value="en_retard">En retard</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emprunts List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="empruntsList">
+              <div class="text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des emprunts...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="empruntModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouvel emprunt</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="empruntForm">
+            <input type="hidden" id="empruntId">
+
+            <div class="mb-3">
+              <label for="adherent_id" class="form-label">Adhérent *</label>
+              <select id="adherent_id" class="form-select" required>
+                <option value="">Sélectionner un adhérent...</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="jeu_id" class="form-label">Jeu *</label>
+              <select id="jeu_id" class="form-select" required>
+                <option value="">Sélectionner un jeu...</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="date_retour_prevue" class="form-label">Date de retour prévue</label>
+              <input type="date" id="date_retour_prevue" class="form-control">
+              <small class="text-muted">Par défaut: 14 jours</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="commentaire" class="form-label">Commentaire</label>
+              <textarea id="commentaire" class="form-control" rows="3"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitEmpruntForm()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let emprunts = [];
+    let quickAdherent = null;
+    let quickJeu = null;
+    let empruntModalInstance = null;
+
+    // Quick loan functions
+    document.getElementById('quickAdherentCode').addEventListener('change', async (e) => {
+      const code = e.target.value.trim();
+      if (!code) return;
+
+      try {
+        const data = await barcodesAPI.scan(code);
+        if (data.type === 'adherent') {
+          quickAdherent = data.adherent;
+          document.getElementById('quickAdherentInfo').innerHTML = `
+            <strong>${quickAdherent.prenom} ${quickAdherent.nom}</strong><br>
+            <small>${quickAdherent.email}</small><br>
+            <span class="badge bg-${quickAdherent.statut === 'actif' ? 'success' : 'danger'}">${quickAdherent.statut}</span>
+          `;
+          checkQuickLoan();
+        } else {
+          alert('Ce code ne correspond pas à un adhérent');
+        }
+      } catch (error) {
+        alert('Code-barre invalide: ' + error.message);
+        quickAdherent = null;
+        document.getElementById('quickAdherentInfo').innerHTML = '<small class="text-danger">Invalide</small>';
+        checkQuickLoan();
+      }
+    });
+
+    document.getElementById('quickJeuCode').addEventListener('change', async (e) => {
+      const code = e.target.value.trim();
+      if (!code) return;
+
+      try {
+        const data = await barcodesAPI.scan(code);
+        if (data.type === 'jeu') {
+          quickJeu = data.jeu;
+          document.getElementById('quickJeuInfo').innerHTML = `
+            <strong>${quickJeu.titre}</strong><br>
+            <small>${quickJeu.editeur || 'N/A'}</small><br>
+            <span class="badge bg-${quickJeu.statut === 'disponible' ? 'success' : 'warning'}">${quickJeu.statut}</span>
+          `;
+          checkQuickLoan();
+        } else {
+          alert('Ce code ne correspond pas à un jeu');
+        }
+      } catch (error) {
+        alert('Code-barre invalide: ' + error.message);
+        quickJeu = null;
+        document.getElementById('quickJeuInfo').innerHTML = '<small class="text-danger">Invalide</small>';
+        checkQuickLoan();
+      }
+    });
+
+    function checkQuickLoan() {
+      const btn = document.getElementById('quickLoanBtn');
+      btn.disabled = !(quickAdherent && quickJeu);
+    }
+
+    function scanAdherent() {
+      const code = prompt('Scanner ou saisir le code-barre de l\'adhérent:');
+      if (code) {
+        document.getElementById('quickAdherentCode').value = code;
+        document.getElementById('quickAdherentCode').dispatchEvent(new Event('change'));
+      }
+    }
+
+    function scanJeu() {
+      const code = prompt('Scanner ou saisir le code-barre du jeu:');
+      if (code) {
+        document.getElementById('quickJeuCode').value = code;
+        document.getElementById('quickJeuCode').dispatchEvent(new Event('change'));
+      }
+    }
+
+    async function createQuickLoan() {
+      if (!quickAdherent || !quickJeu) {
+        alert('Veuillez scanner un adhérent et un jeu');
+        return;
+      }
+
+      if (quickAdherent.statut !== 'actif') {
+        alert('Cet adhérent n\'est pas actif');
+        return;
+      }
+
+      if (quickJeu.statut !== 'disponible') {
+        alert('Ce jeu n\'est pas disponible');
+        return;
+      }
+
+      try {
+        await empruntsAPI.create({
+          adherent_id: quickAdherent.id,
+          jeu_id: quickJeu.id
+        });
+
+        alert('✅ Emprunt créé avec succès !');
+
+        // Reset
+        document.getElementById('quickAdherentCode').value = '';
+        document.getElementById('quickJeuCode').value = '';
+        quickAdherent = null;
+        quickJeu = null;
+        document.getElementById('quickAdherentInfo').innerHTML = '<small class="text-muted">En attente...</small>';
+        document.getElementById('quickJeuInfo').innerHTML = '<small class="text-muted">En attente...</small>';
+        checkQuickLoan();
+
+        loadEmprunts();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    // Load emprunts
+    async function loadEmprunts() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const params = {};
+        if (statut) params.statut = statut;
+
+        const data = await empruntsAPI.getAll(params);
+        emprunts = data.emprunts;
+        renderEmprunts(emprunts);
+      } catch (error) {
+        console.error('Error loading emprunts:', error);
+        document.getElementById('empruntsList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des emprunts: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    async function loadOverdue() {
+      try {
+        const data = await empruntsAPI.getOverdue();
+        renderEmprunts(data.emprunts);
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function renderEmprunts(list) {
+      const container = document.getElementById('empruntsList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-muted py-5">
+            Aucun emprunt trouvé
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Adhérent</th>
+                <th>Jeu</th>
+                <th>Date emprunt</th>
+                <th>Retour prévu</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(emprunt => {
+                const isLate = new Date(emprunt.date_retour_prevue) < new Date() && emprunt.statut !== 'retourne';
+                const daysLate = isLate
+                  ? Math.floor((new Date() - new Date(emprunt.date_retour_prevue)) / (1000 * 60 * 60 * 24))
+                  : 0;
+
+                return `
+                <tr>
+                  <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
+                  <td><strong>${emprunt.jeu.titre}</strong></td>
+                  <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
+                  <td>
+                    ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
+                    ${isLate ? `<br><span class="badge bg-danger">${daysLate} jours de retard</span>` : ''}
+                  </td>
+                  <td>
+                    ${emprunt.statut === 'retourne'
+                      ? '<span class="badge bg-success">Retourné</span>'
+                      : isLate
+                      ? '<span class="badge bg-danger">En retard</span>'
+                      : '<span class="badge bg-info">En cours</span>'}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      ${emprunt.statut !== 'retourne'
+                        ? `<button class="btn btn-outline-success" onclick="returnEmprunt(${emprunt.id})" title="Retour">
+                            <i class="bi bi-arrow-return-left"></i>
+                          </button>`
+                        : ''}
+                      <button class="btn btn-outline-danger" onclick="deleteEmprunt(${emprunt.id})" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    async function returnEmprunt(id) {
+      if (!confirm('Confirmer le retour de ce jeu ?')) {
+        return;
+      }
+
+      try {
+        await empruntsAPI.return(id);
+        alert('✅ Jeu retourné avec succès !');
+        loadEmprunts();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function deleteEmprunt(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cet emprunt ?')) {
+        return;
+      }
+
+      try {
+        await empruntsAPI.delete(id);
+        alert('Emprunt supprimé avec succès');
+        loadEmprunts();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    // Modal functions
+    async function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouvel emprunt';
+      document.getElementById('empruntForm').reset();
+      document.getElementById('empruntId').value = '';
+
+      // Load adherents and jeux
+      try {
+        const [adherentsData, jeuxData] = await Promise.all([
+          adherentsAPI.getAll({ statut: 'actif' }),
+          jeuxAPI.getAll({ statut: 'disponible' })
+        ]);
+
+        const adherentSelect = document.getElementById('adherent_id');
+        adherentSelect.innerHTML = '<option value="">Sélectionner un adhérent...</option>';
+        adherentsData.adherents.forEach(a => {
+          const option = document.createElement('option');
+          option.value = a.id;
+          option.textContent = `${a.prenom} ${a.nom} (${a.email})`;
+          adherentSelect.appendChild(option);
+        });
+
+        const jeuSelect = document.getElementById('jeu_id');
+        jeuSelect.innerHTML = '<option value="">Sélectionner un jeu...</option>';
+        jeuxData.jeux.forEach(j => {
+          const option = document.createElement('option');
+          option.value = j.id;
+          option.textContent = `${j.titre} - ${j.editeur || 'N/A'}`;
+          jeuSelect.appendChild(option);
+        });
+
+        empruntModalInstance = new bootstrap.Modal(document.getElementById('empruntModal'));
+        empruntModalInstance.show();
+      } catch (error) {
+        alert('Erreur lors du chargement des données: ' + error.message);
+      }
+    }
+
+    // Form submission
+    async function submitEmpruntForm() {
+      const form = document.getElementById('empruntForm');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const formData = {
+          adherent_id: parseInt(document.getElementById('adherent_id').value),
+          jeu_id: parseInt(document.getElementById('jeu_id').value),
+          date_retour_prevue: document.getElementById('date_retour_prevue').value || null,
+          commentaire: document.getElementById('commentaire').value || null
+        };
+
+        await empruntsAPI.create(formData);
+        alert('Emprunt créé avec succès !');
+
+        empruntModalInstance.hide();
+        loadEmprunts();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    }
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      initTemplate('emprunts');
+      loadEmprunts();
+    });
+  </script>
+</body>
+</html>

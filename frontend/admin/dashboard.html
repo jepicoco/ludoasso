@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de bord - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1>Tableau de bord</h1>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="row g-3 mb-4" id="statsGrid">
+          <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="mt-2">Chargement des statistiques...</p>
+          </div>
+        </div>
+
+        <!-- Cotisations Row -->
+        <div class="row g-3 mb-4">
+          <!-- Calculateur de cotisation -->
+          <div class="col-md-6">
+            <div class="card h-100 border-info">
+              <div class="card-header bg-info text-white">
+                <h3 class="card-title mb-0"><i class="bi bi-calculator"></i> Calculateur de Cotisation</h3>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Tarif</label>
+                    <select id="calc_tarif" class="form-select" onchange="calculateCotisation()">
+                      <option value="">Sélectionner un tarif...</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Date de début (optionnel)</label>
+                    <input type="date" id="calc_date" class="form-control" onchange="calculateCotisation()">
+                  </div>
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="calc_adhesion" onchange="calculateCotisation()">
+                      <label class="form-check-label" for="calc_adhesion">
+                        Adhérent à l'association (réduction applicable)
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div id="calc_result"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats cotisations -->
+          <div class="col-md-6">
+            <div class="card h-100 border-success">
+              <div class="card-header bg-success text-white">
+                <h3 class="card-title mb-0"><i class="bi bi-wallet2"></i> Cotisations</h3>
+              </div>
+              <div class="card-body">
+                <div id="cotisationsStats">
+                  <div class="text-center p-4">
+                    <div class="spinner-border text-success" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">Emprunts en retard</h3>
+            <a href="emprunts.html?filter=overdue" class="btn btn-sm btn-primary">Voir tout</a>
+          </div>
+          <div class="card-body">
+            <div id="overdueEmprunts">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popular Games -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Jeux les plus empruntés</h3>
+          </div>
+          <div class="card-body">
+            <div id="popularGames">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    // Load dashboard data
+    async function loadDashboard() {
+      try {
+        // Load stats
+        const stats = await statsAPI.getDashboard();
+        renderStats(stats);
+
+        // Load tarifs for calculator
+        await loadTarifsForCalculator();
+
+        // Load cotisations stats
+        await loadCotisationsStats();
+
+        // Load overdue emprunts
+        const overdue = await empruntsAPI.getOverdue();
+        renderOverdueEmprunts(overdue.emprunts);
+
+        // Load popular games
+        const popular = await statsAPI.getPopularGames(5);
+        renderPopularGames(popular.games);
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+      }
+    }
+
+    // Load tarifs for calculator
+    async function loadTarifsForCalculator() {
+      try {
+        const tarifs = await apiRequest('/tarifs-cotisation?actif=true&valide=true');
+        const select = document.getElementById('calc_tarif');
+        select.innerHTML = '<option value="">Sélectionner un tarif...</option>';
+        tarifs.forEach(tarif => {
+          const option = document.createElement('option');
+          option.value = tarif.id;
+          option.textContent = `${tarif.libelle} - ${tarif.montant_base}€`;
+          select.appendChild(option);
+        });
+
+        // Sélectionner le premier tarif automatiquement
+        if (tarifs.length > 0) {
+          select.value = tarifs[0].id;
+          await calculateCotisation();
+        }
+      } catch (error) {
+        console.error('Error loading tarifs:', error);
+      }
+    }
+
+    // Load cotisations statistics
+    async function loadCotisationsStats() {
+      try {
+        const stats = await apiRequest('/cotisations/statistiques');
+        const cotisations = await apiRequest('/cotisations?statut=en_cours');
+
+        // Calculer montants réglés et en attente
+        let montantRegle = 0;
+        let montantEnAttente = 0;
+        let nbRegles = 0;
+        let nbEnAttente = 0;
+
+        cotisations.forEach(cot => {
+          const montant = parseFloat(cot.montant_paye);
+          if (cot.date_paiement) {
+            montantRegle += montant;
+            nbRegles++;
+          } else {
+            montantEnAttente += montant;
+            nbEnAttente++;
+          }
+        });
+
+        renderCotisationsStats({
+          total: stats.total,
+          en_cours: stats.par_statut.en_cours,
+          montant_total: stats.montant_total,
+          montant_regle: montantRegle,
+          montant_en_attente: montantEnAttente,
+          nb_regles: nbRegles,
+          nb_en_attente: nbEnAttente
+        });
+      } catch (error) {
+        console.error('Error loading cotisations stats:', error);
+        document.getElementById('cotisationsStats').innerHTML =
+          '<p class="text-center text-danger">Erreur de chargement</p>';
+      }
+    }
+
+    // Calculate cotisation
+    async function calculateCotisation() {
+      const tarifId = document.getElementById('calc_tarif').value;
+      const dateDebut = document.getElementById('calc_date').value;
+      const adhesion = document.getElementById('calc_adhesion').checked;
+      const resultDiv = document.getElementById('calc_result');
+
+      if (!tarifId) {
+        resultDiv.innerHTML = '';
+        return;
+      }
+
+      try {
+        const result = await apiRequest(`/tarifs-cotisation/${tarifId}/calculer`, {
+          method: 'POST',
+          body: JSON.stringify({
+            date_debut: dateDebut || undefined,
+            adhesion_association: adhesion
+          })
+        });
+
+        resultDiv.innerHTML = `
+          <div class="alert alert-success mb-0">
+            <table class="table table-sm mb-0">
+              <tr>
+                <td><strong>Période:</strong></td>
+                <td>${result.periode.debut} → ${result.periode.fin}</td>
+              </tr>
+              <tr>
+                <td>Montant de base:</td>
+                <td>${result.calcul.montant_base.toFixed(2)} €</td>
+              </tr>
+              ${result.calcul.prorata ? `
+              <tr class="table-info">
+                <td>Prorata (${result.calcul.prorata.mois_effectifs}/${result.calcul.prorata.mois_total} mois):</td>
+                <td>${result.calcul.montant_apres_prorata.toFixed(2)} €</td>
+              </tr>
+              ` : ''}
+              ${result.calcul.reduction_appliquee > 0 ? `
+              <tr class="table-warning">
+                <td>Réduction:</td>
+                <td>-${result.calcul.reduction_appliquee.toFixed(2)} €</td>
+              </tr>
+              ` : ''}
+              <tr class="table-success">
+                <td><strong>Montant final:</strong></td>
+                <td><strong>${result.calcul.montant_final.toFixed(2)} €</strong></td>
+              </tr>
+            </table>
+          </div>
+        `;
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <div class="alert alert-danger mb-0">
+            Erreur: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderStats(stats) {
+      const statsGrid = document.getElementById('statsGrid');
+      statsGrid.innerHTML = `
+        <div class="col-md-3">
+          <div class="card text-bg-primary">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-people fs-1 me-3"></i>
+                <div>
+                  <div class="text-white-50">Adhérents actifs</div>
+                  <h3 class="mb-0">${stats.adherents.actifs}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-bg-success">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-dice-6 fs-1 me-3"></i>
+                <div>
+                  <div class="text-white-50">Jeux disponibles</div>
+                  <h3 class="mb-0">${stats.jeux.disponibles}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-bg-warning">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-arrow-left-right fs-1 me-3"></i>
+                <div>
+                  <div class="text-white-50">Emprunts en cours</div>
+                  <h3 class="mb-0">${stats.emprunts.enCours}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card text-bg-danger">
+            <div class="card-body">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle fs-1 me-3"></i>
+                <div>
+                  <div class="text-white-50">En retard</div>
+                  <h3 class="mb-0">${stats.emprunts.enRetard}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderOverdueEmprunts(emprunts) {
+      const container = document.getElementById('overdueEmprunts');
+
+      if (!emprunts || emprunts.length === 0) {
+        container.innerHTML = '<p class="text-center text-secondary p-4">Aucun emprunt en retard</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Adhérent</th>
+              <th>Jeu</th>
+              <th>Retour prévu</th>
+              <th>Retard</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${emprunts.map(emprunt => {
+              const daysLate = Math.floor((new Date() - new Date(emprunt.date_retour_prevue)) / (1000 * 60 * 60 * 24));
+              return `
+                <tr>
+                  <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
+                  <td>${emprunt.jeu.titre}</td>
+                  <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
+                  <td><span class="badge bg-danger">${daysLate} jours</span></td>
+                  <td>
+                    <a href="emprunts.html?id=${emprunt.id}" class="btn btn-sm btn-primary">Détails</a>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderPopularGames(games) {
+      const container = document.getElementById('popularGames');
+
+      if (!games || games.length === 0) {
+        container.innerHTML = '<p class="text-center text-secondary p-4">Aucune donnée disponible</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Jeu</th>
+              <th>Catégorie</th>
+              <th>Nombre d'emprunts</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${games.map(item => `
+              <tr>
+                <td><strong>${item.jeu.titre}</strong></td>
+                <td>${item.jeu.categorie || 'N/A'}</td>
+                <td>${item.emprunts}</td>
+                <td>
+                  ${item.jeu.statut === 'disponible'
+                    ? '<span class="badge bg-success">Disponible</span>'
+                    : '<span class="badge bg-warning">Emprunté</span>'}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderCotisationsStats(stats) {
+      const container = document.getElementById('cotisationsStats');
+
+      container.innerHTML = `
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <h2 class="mb-0 text-success">${stats.en_cours}</h2>
+              <small class="text-muted">Cotisations actives</small>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center p-3 bg-light rounded">
+              <h2 class="mb-0 text-info">${stats.total}</h2>
+              <small class="text-muted">Total (année)</small>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span><i class="bi bi-check-circle text-success"></i> Réglées</span>
+              <span><strong>${stats.nb_regles}</strong></span>
+            </div>
+            <div class="progress mb-2" style="height: 8px;">
+              <div class="progress-bar bg-success" role="progressbar"
+                   style="width: ${stats.en_cours ? (stats.nb_regles / stats.en_cours * 100) : 0}%">
+              </div>
+            </div>
+            <div class="text-end text-success">
+              <strong>${stats.montant_regle.toFixed(2)} €</strong>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span><i class="bi bi-hourglass-split text-warning"></i> En attente</span>
+              <span><strong>${stats.nb_en_attente}</strong></span>
+            </div>
+            <div class="progress mb-2" style="height: 8px;">
+              <div class="progress-bar bg-warning" role="progressbar"
+                   style="width: ${stats.en_cours ? (stats.nb_en_attente / stats.en_cours * 100) : 0}%">
+              </div>
+            </div>
+            <div class="text-end text-warning">
+              <strong>${stats.montant_en_attente.toFixed(2)} €</strong>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-3">
+
+        <div class="text-center">
+          <div class="h4 mb-0 text-primary">${stats.montant_total.toFixed(2)} €</div>
+          <small class="text-muted">Montant total encaissé (année)</small>
+        </div>
+      `;
+    }
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialiser le template (navbar + sidebar)
+      initTemplate('dashboard');
+      setTimeout(loadDashboard, 500);
+    });
+  </script>
+</body>
+</html>

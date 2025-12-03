@@ -1,0 +1,323 @@
+const nodemailer = require('nodemailer');
+const { ConfigurationEmail, TemplateMessage, EmailLog } = require('../models');
+
+/**
+ * Service d'envoi d'emails
+ */
+class EmailService {
+  constructor() {
+    this.transporter = null;
+    this.defaultConfig = null;
+  }
+
+  /**
+   * Initialise le transporteur avec la configuration active
+   */
+  async initialize() {
+    try {
+      // Récupérer la configuration active
+      this.defaultConfig = await ConfigurationEmail.findOne({
+        where: { actif: true },
+        order: [['id', 'DESC']]
+      });
+
+      if (!this.defaultConfig) {
+        console.warn('⚠ Aucune configuration email active trouvée - Les emails ne seront pas envoyés');
+        return false;
+      }
+
+      // Créer le transporteur
+      this.transporter = nodemailer.createTransport({
+        host: this.defaultConfig.smtp_host,
+        port: this.defaultConfig.smtp_port,
+        secure: this.defaultConfig.smtp_secure,
+        auth: {
+          user: this.defaultConfig.smtp_user,
+          pass: this.defaultConfig.smtp_password
+        },
+        tls: {
+          rejectUnauthorized: false // Pour les serveurs de test
+        }
+      });
+
+      // Vérifier la connexion (mais ne pas bloquer si ça échoue)
+      try {
+        await this.transporter.verify();
+        console.log('✓ Service email initialisé avec succès');
+        console.log(`  Serveur: ${this.defaultConfig.smtp_host}:${this.defaultConfig.smtp_port}`);
+        console.log(`  Expéditeur: ${this.defaultConfig.email_expediteur}`);
+        return true;
+      } catch (verifyError) {
+        console.error('⚠ Erreur de vérification SMTP:', verifyError.message);
+        console.warn('  Le service email est configuré mais la connexion a échoué');
+        console.warn('  Les emails ne pourront pas être envoyés');
+        // Ne pas réinitialiser le transporteur, il pourra peut-être fonctionner quand même
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Erreur initialisation service email:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Récupère un template d'email par code
+   */
+  async getTemplate(code) {
+    const template = await TemplateMessage.findOne({
+      where: {
+        code,
+        canal: 'email',
+        actif: true
+      }
+    });
+
+    if (!template) {
+      throw new Error(`Template email '${code}' non trouvé`);
+    }
+
+    return template;
+  }
+
+  /**
+   * Remplace les variables dans un template
+   */
+  replaceVariables(template, variables) {
+    let content = template;
+
+    Object.keys(variables).forEach(key => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      content = content.replace(regex, variables[key] || '');
+    });
+
+    return content;
+  }
+
+  /**
+   * Envoie un email
+   */
+  async sendEmail({ to, subject, html, from = null, templateCode = null, metadata = null, adherentId = null, empruntId = null, cotisationId = null }) {
+    if (!this.transporter) {
+      await this.initialize();
+    }
+
+    if (!this.transporter) {
+      throw new Error('Service email non initialisé');
+    }
+
+    const mailOptions = {
+      from: from || this.defaultConfig.email_expediteur,
+      to,
+      subject,
+      html
+    };
+
+    // Créer le log avant l'envoi
+    const emailLog = await EmailLog.create({
+      template_code: templateCode,
+      destinataire: to,
+      destinataire_nom: metadata?.destinataire_nom || null,
+      objet: subject,
+      corps: html,
+      statut: 'en_attente',
+      date_envoi: new Date(),
+      adherent_id: adherentId,
+      emprunt_id: empruntId,
+      cotisation_id: cotisationId,
+      metadata: metadata
+    });
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('Email envoyé:', info.messageId);
+
+      // Mettre à jour le log avec succès
+      await emailLog.update({
+        statut: 'envoye',
+        message_id: info.messageId
+      });
+
+      return { success: true, messageId: info.messageId, logId: emailLog.id };
+    } catch (error) {
+      console.error('Erreur envoi email:', error);
+
+      // Mettre à jour le log avec l'erreur
+      await emailLog.update({
+        statut: 'erreur',
+        erreur_message: error.message
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Envoie un email depuis un template
+   */
+  async sendTemplateEmail(templateCode, to, variables = {}, options = {}) {
+    try {
+      const template = await this.getTemplate(templateCode);
+
+      const subject = this.replaceVariables(template.objet, variables);
+      const html = this.replaceVariables(template.contenu, variables);
+
+      return await this.sendEmail({
+        to,
+        subject,
+        html,
+        templateCode,
+        metadata: {
+          destinataire_nom: variables.prenom && variables.nom ? `${variables.prenom} ${variables.nom}` : null,
+          variables
+        },
+        ...options
+      });
+    } catch (error) {
+      console.error(`Erreur envoi email template '${templateCode}':`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Email de bienvenue pour un nouvel adhérent
+   */
+  async sendWelcomeEmail(adherent) {
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      email: adherent.email,
+      code_barre: adherent.code_barre,
+      date_adhesion: new Date(adherent.date_adhesion).toLocaleDateString('fr-FR')
+    };
+
+    return await this.sendTemplateEmail('ADHERENT_CREATION', adherent.email, variables, {
+      adherentId: adherent.id
+    });
+  }
+
+  /**
+   * Email de confirmation d'emprunt
+   */
+  async sendEmpruntConfirmation(emprunt, adherent, jeu) {
+    const dateEmprunt = new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR');
+    const dateRetourPrevue = new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR');
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      titre_jeu: jeu.titre,
+      date_emprunt: dateEmprunt,
+      date_retour_prevue: dateRetourPrevue,
+      duree_jours: Math.ceil((new Date(emprunt.date_retour_prevue) - new Date(emprunt.date_emprunt)) / (1000 * 60 * 60 * 24))
+    };
+
+    return await this.sendTemplateEmail('EMPRUNT_CONFIRMATION', adherent.email, variables, {
+      adherentId: adherent.id,
+      empruntId: emprunt.id
+    });
+  }
+
+  /**
+   * Email de rappel avant échéance (J-3)
+   */
+  async sendRappelAvantEcheance(emprunt, adherent, jeu) {
+    const dateRetourPrevue = new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR');
+    const joursRestants = Math.ceil((new Date(emprunt.date_retour_prevue) - new Date()) / (1000 * 60 * 60 * 24));
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      titre_jeu: jeu.titre,
+      date_retour_prevue: dateRetourPrevue,
+      jours_restants: joursRestants
+    };
+
+    return await this.sendTemplateEmail('EMPRUNT_RAPPEL_AVANT', adherent.email, variables, {
+      adherentId: adherent.id,
+      empruntId: emprunt.id
+    });
+  }
+
+  /**
+   * Email de rappel à l'échéance (jour J)
+   */
+  async sendRappelEcheance(emprunt, adherent, jeu) {
+    const dateRetourPrevue = new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR');
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      titre_jeu: jeu.titre,
+      date_retour_prevue: dateRetourPrevue
+    };
+
+    return await this.sendTemplateEmail('EMPRUNT_RAPPEL_ECHEANCE', adherent.email, variables, {
+      adherentId: adherent.id,
+      empruntId: emprunt.id
+    });
+  }
+
+  /**
+   * Email de relance pour retard
+   */
+  async sendRelanceRetard(emprunt, adherent, jeu) {
+    const dateRetourPrevue = new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR');
+    const joursRetard = Math.ceil((new Date() - new Date(emprunt.date_retour_prevue)) / (1000 * 60 * 60 * 24));
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      titre_jeu: jeu.titre,
+      date_retour_prevue: dateRetourPrevue,
+      jours_retard: joursRetard
+    };
+
+    return await this.sendTemplateEmail('EMPRUNT_RELANCE_RETARD', adherent.email, variables, {
+      adherentId: adherent.id,
+      empruntId: emprunt.id
+    });
+  }
+
+  /**
+   * Email de confirmation de cotisation
+   */
+  async sendCotisationConfirmation(cotisation, adherent) {
+    const datePaiement = new Date(cotisation.date_paiement).toLocaleDateString('fr-FR');
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      montant: cotisation.montant.toFixed(2),
+      date_paiement: datePaiement,
+      mode_paiement: cotisation.mode_paiement,
+      annee: new Date(cotisation.date_paiement).getFullYear()
+    };
+
+    return await this.sendTemplateEmail('COTISATION_CONFIRMATION', adherent.email, variables, {
+      adherentId: adherent.id,
+      cotisationId: cotisation.id
+    });
+  }
+
+  /**
+   * Email de rappel de renouvellement de cotisation
+   */
+  async sendCotisationRappel(adherent, dateExpiration) {
+    const dateExp = new Date(dateExpiration).toLocaleDateString('fr-FR');
+    const joursRestants = Math.ceil((new Date(dateExpiration) - new Date()) / (1000 * 60 * 60 * 24));
+
+    const variables = {
+      prenom: adherent.prenom,
+      nom: adherent.nom,
+      date_expiration: dateExp,
+      jours_restants: joursRestants
+    };
+
+    return await this.sendTemplateEmail('COTISATION_RAPPEL', adherent.email, variables, {
+      adherentId: adherent.id
+    });
+  }
+}
+
+// Export singleton
+module.exports = new EmailService();

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Jeux - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1>Gestion des Jeux</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouveau jeu
+                </button>
+                <button class="btn btn-secondary" onclick="loadJeux()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+              </div>
+              <div class="d-flex gap-2">
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Rechercher..."
+                  style="width: 250px;"
+                  onkeyup="handleSearch()"
+                >
+                <select id="categorieFilter" class="form-select" onchange="loadJeux()" style="width: 150px;">
+                  <option value="">Toutes catégories</option>
+                </select>
+                <select id="statutFilter" class="form-select" onchange="loadJeux()" style="width: 150px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunté</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jeux List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="jeuxList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des jeux...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="jeuModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouveau jeu</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="jeuForm">
+            <input type="hidden" id="jeuId">
+
+            <div class="mb-3">
+              <label for="titre" class="form-label">Titre *</label>
+              <input type="text" id="titre" class="form-control" required>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="editeur" class="form-label">Éditeur</label>
+                <input type="text" id="editeur" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="auteur" class="form-label">Auteur</label>
+                <input type="text" id="auteur" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="annee_sortie" class="form-label">Année</label>
+                <input type="number" id="annee_sortie" class="form-control" min="1900" max="2100">
+              </div>
+              <div class="col-md-6">
+                <label for="age_min" class="form-label">Âge min</label>
+                <input type="number" id="age_min" class="form-control" min="0">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="nb_joueurs_min" class="form-label">Joueurs min</label>
+                <input type="number" id="nb_joueurs_min" class="form-control" min="1">
+              </div>
+              <div class="col-md-4">
+                <label for="nb_joueurs_max" class="form-label">Joueurs max</label>
+                <input type="number" id="nb_joueurs_max" class="form-control" min="1">
+              </div>
+              <div class="col-md-4">
+                <label for="duree_partie" class="form-label">Durée (min)</label>
+                <input type="number" id="duree_partie" class="form-control" min="0">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="categorie" class="form-label">Catégorie</label>
+              <input type="text" id="categorie" class="form-control" list="categoriesList">
+              <datalist id="categoriesList"></datalist>
+            </div>
+
+            <div class="mb-3">
+              <label for="description" class="form-label">Description</label>
+              <textarea id="description" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="emplacement" class="form-label">Emplacement</label>
+                <input type="text" id="emplacement" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="statut" class="form-label">Statut *</label>
+                <select id="statut" class="form-select" required>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunté</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea id="notes" class="form-control" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="jeuForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let jeux = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+
+    // Load jeux
+    async function loadJeux() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const categorie = document.getElementById('categorieFilter').value;
+        const search = document.getElementById('searchInput').value;
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (categorie) params.categorie = categorie;
+        if (search) params.search = search;
+
+        const data = await jeuxAPI.getAll(params);
+        jeux = data.jeux;
+        renderJeux(jeux);
+      } catch (error) {
+        console.error('Error loading jeux:', error);
+        document.getElementById('jeuxList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des jeux: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const data = await jeuxAPI.getCategories();
+        const select = document.getElementById('categorieFilter');
+        const datalist = document.getElementById('categoriesList');
+
+        data.categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat;
+          option.textContent = cat;
+          select.appendChild(option.cloneNode(true));
+          datalist.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    }
+
+    function renderJeux(list) {
+      const container = document.getElementById('jeuxList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-secondary p-4">
+            Aucun jeu trouvé
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Code-barre</th>
+              <th>Titre</th>
+              <th>Catégorie</th>
+              <th>Joueurs</th>
+              <th>Âge</th>
+              <th>Durée</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(jeu => `
+              <tr>
+                <td><strong>${jeu.code_barre || 'N/A'}</strong></td>
+                <td>
+                  <strong>${jeu.titre}</strong><br>
+                  <small class="text-secondary">${jeu.editeur || 'N/A'}</small>
+                </td>
+                <td>${jeu.categorie || 'N/A'}</td>
+                <td>${jeu.nb_joueurs_min || '?'}-${jeu.nb_joueurs_max || '?'}</td>
+                <td>${jeu.age_min || '?'}+</td>
+                <td>${jeu.duree_partie || '?'} min</td>
+                <td>
+                  ${jeu.statut === 'disponible'
+                    ? '<span class="badge bg-success">Disponible</span>'
+                    : jeu.statut === 'emprunte'
+                    ? '<span class="badge bg-warning">Emprunté</span>'
+                    : jeu.statut === 'maintenance'
+                    ? '<span class="badge bg-info">Maintenance</span>'
+                    : '<span class="badge bg-danger">Perdu</span>'}
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewJeu(${jeu.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editJeu(${jeu.id})" title="Modifier">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-info" onclick="printLabel(${jeu.id})" title="Imprimer">
+                      <i class="bi bi-printer"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteJeu(${jeu.id})" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadJeux();
+      }, 500);
+    }
+
+    // Modal functions
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouveau jeu';
+      document.getElementById('jeuForm').reset();
+      document.getElementById('jeuId').value = '';
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
+      }
+      modalInstance.show();
+    }
+
+    function closeModal() {
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    async function editJeu(id) {
+      try {
+        const data = await jeuxAPI.getById(id);
+        const jeu = data.jeu;
+
+        document.getElementById('modalTitle').textContent = 'Modifier le jeu';
+        document.getElementById('jeuId').value = jeu.id;
+        document.getElementById('titre').value = jeu.titre || '';
+        document.getElementById('editeur').value = jeu.editeur || '';
+        document.getElementById('auteur').value = jeu.auteur || '';
+        document.getElementById('annee_sortie').value = jeu.annee_sortie || '';
+        document.getElementById('age_min').value = jeu.age_min || '';
+        document.getElementById('nb_joueurs_min').value = jeu.nb_joueurs_min || '';
+        document.getElementById('nb_joueurs_max').value = jeu.nb_joueurs_max || '';
+        document.getElementById('duree_partie').value = jeu.duree_partie || '';
+        document.getElementById('categorie').value = jeu.categorie || '';
+        document.getElementById('description').value = jeu.description || '';
+        document.getElementById('emplacement').value = jeu.emplacement || '';
+        document.getElementById('statut').value = jeu.statut || 'disponible';
+        document.getElementById('notes').value = jeu.notes || '';
+
+        if (!modalInstance) {
+          modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
+        }
+        modalInstance.show();
+      } catch (error) {
+        alert('Erreur lors du chargement du jeu: ' + error.message);
+      }
+    }
+
+    async function viewJeu(id) {
+      try {
+        const data = await jeuxAPI.getById(id);
+        const jeu = data.jeu;
+
+        alert(`
+Jeu: ${jeu.titre}
+Code-barre: ${jeu.code_barre}
+Éditeur: ${jeu.editeur || 'N/A'}
+Auteur: ${jeu.auteur || 'N/A'}
+Année: ${jeu.annee_sortie || 'N/A'}
+Catégorie: ${jeu.categorie || 'N/A'}
+Joueurs: ${jeu.nb_joueurs_min || '?'} - ${jeu.nb_joueurs_max || '?'}
+Âge minimum: ${jeu.age_min || 'N/A'}+
+Durée: ${jeu.duree_partie || 'N/A'} minutes
+Statut: ${jeu.statut}
+Emplacement: ${jeu.emplacement || 'N/A'}
+        `);
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function printLabel(id) {
+      barcodesAPI.printJeuLabel(id);
+    }
+
+    async function deleteJeu(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce jeu ?')) {
+        return;
+      }
+
+      try {
+        await jeuxAPI.delete(id);
+        alert('Jeu supprimé avec succès');
+        loadJeux();
+      } catch (error) {
+        alert('Erreur lors de la suppression: ' + error.message);
+      }
+    }
+
+    // Form submission
+    document.getElementById('jeuForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const id = document.getElementById('jeuId').value;
+        const formData = {
+          titre: document.getElementById('titre').value,
+          editeur: document.getElementById('editeur').value || null,
+          auteur: document.getElementById('auteur').value || null,
+          annee_sortie: document.getElementById('annee_sortie').value || null,
+          age_min: document.getElementById('age_min').value || null,
+          nb_joueurs_min: document.getElementById('nb_joueurs_min').value || null,
+          nb_joueurs_max: document.getElementById('nb_joueurs_max').value || null,
+          duree_partie: document.getElementById('duree_partie').value || null,
+          categorie: document.getElementById('categorie').value || null,
+          description: document.getElementById('description').value || null,
+          emplacement: document.getElementById('emplacement').value || null,
+          statut: document.getElementById('statut').value,
+          notes: document.getElementById('notes').value || null
+        };
+
+        if (!id) {
+          // Create
+          await jeuxAPI.create(formData);
+          alert('Jeu créé avec succès !');
+        } else {
+          // Update
+          await jeuxAPI.update(id, formData);
+          alert('Jeu modifié avec succès !');
+        }
+
+        closeModal();
+        loadJeux();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialiser le template (navbar + sidebar)
+      initTemplate('jeux');
+      setTimeout(() => {
+        loadJeux();
+        loadCategories();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

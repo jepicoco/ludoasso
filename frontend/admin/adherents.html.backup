@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Adhérents - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1>Gestion des Adhérents</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouvel adhérent
+                </button>
+                <button class="btn btn-secondary" onclick="loadAdherents()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+              </div>
+              <div class="d-flex gap-2">
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Rechercher..."
+                  style="width: 250px;"
+                  onkeyup="handleSearch()"
+                >
+                <select id="statutFilter" class="form-select" onchange="loadAdherents()" style="width: 150px;">
+                  <option value="">Tous les statuts</option>
+                  <option value="actif">Actif</option>
+                  <option value="inactif">Inactif</option>
+                  <option value="suspendu">Suspendu</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adherents List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="adherentsList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des adhérents...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="adherentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouvel adhérent</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="adherentForm">
+            <input type="hidden" id="adherentId">
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="nom" class="form-label">Nom *</label>
+                <input type="text" id="nom" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label for="prenom" class="form-label">Prénom *</label>
+                <input type="text" id="prenom" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email *</label>
+              <input type="email" id="email" class="form-control" required>
+            </div>
+
+            <div class="mb-3" id="passwordGroup">
+              <label for="password" class="form-label">Mot de passe *</label>
+              <input type="password" id="password" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="telephone" class="form-label">Téléphone</label>
+              <input type="tel" id="telephone" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="adresse" class="form-label">Adresse</label>
+              <textarea id="adresse" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="ville" class="form-label">Ville</label>
+                <input type="text" id="ville" class="form-control">
+              </div>
+              <div class="col-md-6">
+                <label for="code_postal" class="form-label">Code postal</label>
+                <input type="text" id="code_postal" class="form-control">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="date_naissance" class="form-label">Date de naissance</label>
+              <input type="date" id="date_naissance" class="form-control">
+            </div>
+
+            <div class="mb-3">
+              <label for="statut" class="form-label">Statut *</label>
+              <select id="statut" class="form-select" required>
+                <option value="actif">Actif</option>
+                <option value="inactif">Inactif</option>
+                <option value="suspendu">Suspendu</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="notes" class="form-label">Notes</label>
+              <textarea id="notes" class="form-control" rows="3"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="adherentForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let adherents = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+
+    // Load adherents
+    async function loadAdherents() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const search = document.getElementById('searchInput').value;
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (search) params.search = search;
+
+        const data = await adherentsAPI.getAll(params);
+        adherents = data.adherents;
+        renderAdherents(adherents);
+      } catch (error) {
+        console.error('Error loading adherents:', error);
+        document.getElementById('adherentsList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des adhérents: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderAdherents(list) {
+      const container = document.getElementById('adherentsList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-secondary p-4">
+            Aucun adhérent trouvé
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Code-barre</th>
+              <th>Nom</th>
+              <th>Email</th>
+              <th>Téléphone</th>
+              <th>Statut</th>
+              <th>Date adhésion</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(adherent => `
+              <tr>
+                <td><strong>${adherent.code_barre || 'N/A'}</strong></td>
+                <td>${adherent.prenom} ${adherent.nom}</td>
+                <td>${adherent.email}</td>
+                <td>${adherent.telephone || 'N/A'}</td>
+                <td>
+                  ${adherent.statut === 'actif'
+                    ? '<span class="badge bg-success">Actif</span>'
+                    : adherent.statut === 'suspendu'
+                    ? '<span class="badge bg-danger">Suspendu</span>'
+                    : '<span class="badge bg-warning">Inactif</span>'}
+                </td>
+                <td>${new Date(adherent.date_adhesion).toLocaleDateString('fr-FR')}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewAdherent(${adherent.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editAdherent(${adherent.id})" title="Modifier">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-info" onclick="printCard(${adherent.id})" title="Imprimer">
+                      <i class="bi bi-printer"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteAdherent(${adherent.id})" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadAdherents();
+      }, 500);
+    }
+
+    // Modal functions
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouvel adhérent';
+      document.getElementById('adherentForm').reset();
+      document.getElementById('adherentId').value = '';
+      document.getElementById('passwordGroup').style.display = 'block';
+      document.getElementById('password').required = true;
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('adherentModal'));
+      }
+      modalInstance.show();
+    }
+
+    function closeModal() {
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    async function editAdherent(id) {
+      try {
+        const data = await adherentsAPI.getById(id);
+        const adherent = data.adherent;
+
+        document.getElementById('modalTitle').textContent = 'Modifier l\'adhérent';
+        document.getElementById('adherentId').value = adherent.id;
+        document.getElementById('nom').value = adherent.nom || '';
+        document.getElementById('prenom').value = adherent.prenom || '';
+        document.getElementById('email').value = adherent.email || '';
+        document.getElementById('telephone').value = adherent.telephone || '';
+        document.getElementById('adresse').value = adherent.adresse || '';
+        document.getElementById('ville').value = adherent.ville || '';
+        document.getElementById('code_postal').value = adherent.code_postal || '';
+        document.getElementById('date_naissance').value = adherent.date_naissance || '';
+        document.getElementById('statut').value = adherent.statut || 'actif';
+        document.getElementById('notes').value = adherent.notes || '';
+
+        document.getElementById('passwordGroup').style.display = 'none';
+        document.getElementById('password').required = false;
+
+        if (!modalInstance) {
+          modalInstance = new bootstrap.Modal(document.getElementById('adherentModal'));
+        }
+        modalInstance.show();
+      } catch (error) {
+        alert('Erreur lors du chargement de l\'adhérent: ' + error.message);
+      }
+    }
+
+    async function viewAdherent(id) {
+      try {
+        const data = await adherentsAPI.getById(id);
+        const stats = await adherentsAPI.getStats(id);
+        const adherent = data.adherent;
+
+        const empruntsInfo = stats.emprunts
+          ? `Total: ${stats.emprunts.total}, En cours: ${stats.emprunts.en_cours}, En retard: ${stats.emprunts.en_retard}`
+          : 'Aucun emprunt';
+
+        alert(`
+Adhérent: ${adherent.prenom} ${adherent.nom}
+Code-barre: ${adherent.code_barre}
+Email: ${adherent.email}
+Téléphone: ${adherent.telephone || 'N/A'}
+Statut: ${adherent.statut}
+Date adhésion: ${new Date(adherent.date_adhesion).toLocaleDateString('fr-FR')}
+
+Statistiques:
+${empruntsInfo}
+        `);
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function printCard(id) {
+      barcodesAPI.printAdherentCard(id);
+    }
+
+    async function deleteAdherent(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cet adhérent ?')) {
+        return;
+      }
+
+      try {
+        await adherentsAPI.delete(id);
+        alert('Adhérent supprimé avec succès');
+        loadAdherents();
+      } catch (error) {
+        alert('Erreur lors de la suppression: ' + error.message);
+      }
+    }
+
+    // Form submission
+    document.getElementById('adherentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const id = document.getElementById('adherentId').value;
+        const formData = {
+          nom: document.getElementById('nom').value,
+          prenom: document.getElementById('prenom').value,
+          email: document.getElementById('email').value,
+          telephone: document.getElementById('telephone').value || null,
+          adresse: document.getElementById('adresse').value || null,
+          ville: document.getElementById('ville').value || null,
+          code_postal: document.getElementById('code_postal').value || null,
+          date_naissance: document.getElementById('date_naissance').value || null,
+          statut: document.getElementById('statut').value,
+          notes: document.getElementById('notes').value || null
+        };
+
+        if (!id) {
+          // Create
+          formData.password = document.getElementById('password').value;
+          await adherentsAPI.create(formData);
+          alert('Adhérent créé avec succès !');
+        } else {
+          // Update
+          await adherentsAPI.update(id, formData);
+          alert('Adhérent modifié avec succès !');
+        }
+
+        closeModal();
+        loadAdherents();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialiser le template (navbar + sidebar)
+      initTemplate('adherents');
+      setTimeout(loadAdherents, 500);
+    });
+  </script>
+</body>
+</html>

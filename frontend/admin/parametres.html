@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1><i class="bi bi-gear-fill"></i> Paramètres</h1>
+          <p class="text-muted">Configuration globale du système (accès administrateur uniquement)</p>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-4" id="parametresTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="structure-tab" data-bs-toggle="tab" data-bs-target="#structure"
+                    type="button" role="tab">
+              <i class="bi bi-building"></i> Structure
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tarifs-tab" data-bs-toggle="tab" data-bs-target="#tarifs"
+                    type="button" role="tab">
+              <i class="bi bi-tags"></i> Tarifs
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="listes-tab" data-bs-toggle="tab" data-bs-target="#listes"
+                    type="button" role="tab">
+              <i class="bi bi-list-ul"></i> Listes
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="communications-tab" data-bs-toggle="tab" data-bs-target="#communications"
+                    type="button" role="tab">
+              <i class="bi bi-envelope-at"></i> Communications
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="utilisateurs-tab" data-bs-toggle="tab" data-bs-target="#utilisateurs"
+                    type="button" role="tab">
+              <i class="bi bi-people"></i> Utilisateurs
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="parametresTabContent">
+
+          <!-- ======================== -->
+          <!-- Structure Tab            -->
+          <!-- ======================== -->
+          <div class="tab-pane fade show active" id="structure" role="tabpanel">
+            <div class="card">
+              <div class="card-header">
+                <h4 class="card-title mb-0">Informations de la structure</h4>
+              </div>
+              <div class="card-body">
+                <form id="form-structure">
+                  <div class="row g-3">
+                    <!-- Identité -->
+                    <div class="col-12">
+                      <h5 class="border-bottom pb-2"><i class="bi bi-info-circle"></i> Identité</h5>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="nom_structure" class="form-label">Nom de la structure *</label>
+                      <input type="text" class="form-control" id="nom_structure" name="nom_structure" required>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="logo" class="form-label">Logo (URL)</label>
+                      <input type="text" class="form-control" id="logo" name="logo">
+                      <small class="text-muted">Chemin ou URL vers le fichier logo</small>
+                    </div>
+
+                    <div class="col-12">
+                      <label for="description" class="form-label">Description</label>
+                      <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+
+                    <!-- Coordonnées -->
+                    <div class="col-12 mt-4">
+                      <h5 class="border-bottom pb-2"><i class="bi bi-geo-alt"></i> Coordonnées</h5>
+                    </div>
+
+                    <div class="col-md-12">
+                      <label for="adresse" class="form-label">Adresse</label>
+                      <textarea class="form-control" id="adresse" name="adresse" rows="2"></textarea>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="code_postal" class="form-label">Code postal</label>
+                      <input type="text" class="form-control" id="code_postal" name="code_postal">
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="ville" class="form-label">Ville</label>
+                      <input type="text" class="form-control" id="ville" name="ville">
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="pays" class="form-label">Pays</label>
+                      <input type="text" class="form-control" id="pays" name="pays" value="France">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="telephone" class="form-label">Téléphone</label>
+                      <input type="tel" class="form-control" id="telephone" name="telephone">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="email" class="form-label">Email</label>
+                      <input type="email" class="form-control" id="email" name="email">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="site_web" class="form-label">Site web</label>
+                      <input type="url" class="form-control" id="site_web" name="site_web">
+                    </div>
+
+                    <!-- Informations légales -->
+                    <div class="col-12 mt-4">
+                      <h5 class="border-bottom pb-2"><i class="bi bi-file-text"></i> Informations légales</h5>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="siret" class="form-label">SIRET</label>
+                      <input type="text" class="form-control" id="siret" name="siret" maxlength="14">
+                      <small class="text-muted">14 chiffres</small>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="numero_rna" class="form-label">Numéro RNA</label>
+                      <input type="text" class="form-control" id="numero_rna" name="numero_rna" maxlength="12">
+                      <small class="text-muted">Pour associations (W + 9 chiffres)</small>
+                    </div>
+
+                    <div class="col-md-4">
+                      <label for="numero_tva" class="form-label">Numéro TVA</label>
+                      <input type="text" class="form-control" id="numero_tva" name="numero_tva">
+                    </div>
+
+                    <!-- Informations bancaires -->
+                    <div class="col-12 mt-4">
+                      <h5 class="border-bottom pb-2"><i class="bi bi-bank"></i> Informations bancaires</h5>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="iban" class="form-label">IBAN</label>
+                      <input type="text" class="form-control" id="iban" name="iban" maxlength="34">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="bic" class="form-label">BIC/SWIFT</label>
+                      <input type="text" class="form-control" id="bic" name="bic" maxlength="11">
+                    </div>
+
+                    <!-- Horaires -->
+                    <div class="col-12 mt-4">
+                      <h5 class="border-bottom pb-2"><i class="bi bi-clock"></i> Horaires d'ouverture</h5>
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_lundi" class="form-label">Lundi</label>
+                      <input type="text" class="form-control" id="horaires_lundi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_mardi" class="form-label">Mardi</label>
+                      <input type="text" class="form-control" id="horaires_mardi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_mercredi" class="form-label">Mercredi</label>
+                      <input type="text" class="form-control" id="horaires_mercredi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_jeudi" class="form-label">Jeudi</label>
+                      <input type="text" class="form-control" id="horaires_jeudi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_vendredi" class="form-label">Vendredi</label>
+                      <input type="text" class="form-control" id="horaires_vendredi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_samedi" class="form-label">Samedi</label>
+                      <input type="text" class="form-control" id="horaires_samedi" placeholder="9h-17h ou Fermé">
+                    </div>
+
+                    <div class="col-md-6">
+                      <label for="horaires_dimanche" class="form-label">Dimanche</label>
+                      <input type="text" class="form-control" id="horaires_dimanche" placeholder="Fermé">
+                    </div>
+
+                    <!-- Mentions légales -->
+                    <div class="col-12 mt-4">
+                      <label for="mentions_legales" class="form-label">Mentions légales</label>
+                      <textarea class="form-control" id="mentions_legales" name="mentions_legales" rows="4"></textarea>
+                    </div>
+
+                    <!-- Boutons -->
+                    <div class="col-12 mt-4">
+                      <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> Enregistrer les modifications
+                      </button>
+                      <button type="button" class="btn btn-secondary" onclick="loadStructure()">
+                        <i class="bi bi-arrow-clockwise"></i> Annuler
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Tarifs Tab               -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="tarifs" role="tabpanel">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">Tarifs des cotisations</h4>
+                <button class="btn btn-success" onclick="showModalTarif()">
+                  <i class="bi bi-plus-lg"></i> Nouveau tarif
+                </button>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">
+                  <i class="bi bi-info-circle"></i>
+                  Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                </p>
+                <div id="liste-tarifs">
+                  <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Listes Tab               -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="listes" role="tabpanel">
+            <ul class="nav nav-pills mb-3" id="listes-pills">
+              <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="showListeSection('modes-paiement'); return false;">
+                  <i class="bi bi-wallet2"></i> Modes de paiement
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showListeSection('codes-reduction'); return false;">
+                  <i class="bi bi-percent"></i> Codes de réduction
+                </a>
+              </li>
+            </ul>
+
+            <!-- Section Modes de paiement -->
+            <div id="section-modes-paiement">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Modes de paiement</h4>
+                  <button class="btn btn-success" onclick="showModalModePaiement()">
+                    <i class="bi bi-plus-lg"></i> Nouveau mode
+                  </button>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                  </p>
+                  <div id="liste-modes-paiement">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Codes de réduction -->
+            <div id="section-codes-reduction" style="display: none;">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Codes de réduction</h4>
+                  <button class="btn btn-success" onclick="showModalCodeReduction()">
+                    <i class="bi bi-plus-lg"></i> Nouveau code
+                  </button>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                  </p>
+                  <div id="liste-codes-reduction">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Communications Tab       -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="communications" role="tabpanel">
+            <ul class="nav nav-pills mb-3" id="communications-pills">
+              <li class="nav-item">
+                <a class="nav-link active" href="#" onclick="showCommunicationSection('configurations-email'); return false;">
+                  <i class="bi bi-envelope"></i> Configurations Email
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showCommunicationSection('configurations-sms'); return false;">
+                  <i class="bi bi-phone"></i> Configurations SMS
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showCommunicationSection('templates-messages'); return false;">
+                  <i class="bi bi-file-text"></i> Templates Messages
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="showCommunicationSection('historique-emails'); return false;">
+                  <i class="bi bi-clock-history"></i> Historique Emails
+                </a>
+              </li>
+            </ul>
+
+            <!-- Section Configurations Email -->
+            <div id="section-configurations-email">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Configurations Email (SMTP)</h4>
+                  <button class="btn btn-success" onclick="showModalConfigEmail()">
+                    <i class="bi bi-plus-lg"></i> Nouvelle configuration
+                  </button>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                  </p>
+                  <div id="liste-configurations-email">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Configurations SMS -->
+            <div id="section-configurations-sms" style="display: none;">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Configurations SMS (SMSFactor)</h4>
+                  <button class="btn btn-success" onclick="showModalConfigSMS()">
+                    <i class="bi bi-plus-lg"></i> Nouvelle configuration
+                  </button>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                  </p>
+                  <div id="liste-configurations-sms">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Templates Messages -->
+            <div id="section-templates-messages" style="display: none;">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Templates de Messages</h4>
+                  <button class="btn btn-success" onclick="showModalTemplate()">
+                    <i class="bi bi-plus-lg"></i> Nouveau template
+                  </button>
+                </div>
+                <div class="card-body">
+                  <!-- Filtres -->
+                  <div class="row mb-3">
+                    <div class="col-md-3">
+                      <select class="form-select" id="filter-type-message" onchange="loadTemplatesMessages()">
+                        <option value="">Tous les types</option>
+                        <option value="email">Email uniquement</option>
+                        <option value="sms">SMS uniquement</option>
+                        <option value="both">Email + SMS</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <select class="form-select" id="filter-categorie" onchange="loadTemplatesMessages()">
+                        <option value="">Toutes catégories</option>
+                        <option value="Adhérent">Adhérent</option>
+                        <option value="Cotisation">Cotisation</option>
+                        <option value="Emprunt">Emprunt</option>
+                        <option value="Système">Système</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <select class="form-select" id="filter-actif-template" onchange="loadTemplatesMessages()">
+                        <option value="">Tous les statuts</option>
+                        <option value="true">Actifs uniquement</option>
+                        <option value="false">Inactifs uniquement</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Glissez-déposez les lignes pour réorganiser l'ordre d'affichage
+                  </p>
+                  <div id="liste-templates-messages">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Historique Emails -->
+            <div id="section-historique-emails" style="display: none;">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h4 class="card-title mb-0"><i class="bi bi-graph-up"></i> Statistiques des emails</h4>
+                </div>
+                <div class="card-body">
+                  <div id="email-statistics">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <h4 class="card-title mb-0"><i class="bi bi-clock-history"></i> Historique des emails envoyés</h4>
+                </div>
+                <div class="card-body">
+                  <!-- Filtres -->
+                  <div class="row mb-3">
+                    <div class="col-md-3">
+                      <label class="form-label">Statut</label>
+                      <select class="form-select" id="filter-statut-email" onchange="loadEmailLogs()">
+                        <option value="">Tous les statuts</option>
+                        <option value="envoye">Envoyé</option>
+                        <option value="erreur">Erreur</option>
+                        <option value="en_attente">En attente</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Template</label>
+                      <select class="form-select" id="filter-template-email" onchange="loadEmailLogs()">
+                        <option value="">Tous les templates</option>
+                      </select>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Date début</label>
+                      <input type="date" class="form-control" id="filter-date-debut" onchange="loadEmailLogs()">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Date fin</label>
+                      <input type="date" class="form-control" id="filter-date-fin" onchange="loadEmailLogs()">
+                    </div>
+                  </div>
+
+                  <div class="row mb-3">
+                    <div class="col-md-6">
+                      <button class="btn btn-secondary btn-sm" onclick="resetFiltersEmailLogs()">
+                        <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                      </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                      <button class="btn btn-danger btn-sm" onclick="showPurgeModal()">
+                        <i class="bi bi-trash"></i> Purger anciens logs
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="liste-email-logs">
+                    <div class="text-center p-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Pagination -->
+                  <div id="email-logs-pagination" class="mt-3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Utilisateurs Tab         -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="utilisateurs" role="tabpanel">
+            <div class="card">
+              <div class="card-header">
+                <h4 class="card-title mb-0">Gestion des utilisateurs et rôles</h4>
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label for="filter-role" class="form-label">Filtrer par rôle</label>
+                    <select class="form-select" id="filter-role" onchange="loadUtilisateurs()">
+                      <option value="">Tous les rôles</option>
+                      <option value="administrateur">Administrateur</option>
+                      <option value="comptable">Comptable</option>
+                      <option value="gestionnaire">Gestionnaire</option>
+                      <option value="benevole">Bénévole</option>
+                      <option value="usager">Usager</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="filter-statut" class="form-label">Filtrer par statut</label>
+                    <select class="form-select" id="filter-statut" onchange="loadUtilisateurs()">
+                      <option value="">Tous les statuts</option>
+                      <option value="actif">Actif</option>
+                      <option value="inactif">Inactif</option>
+                      <option value="suspendu">Suspendu</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Légende des rôles -->
+                <div class="alert alert-info">
+                  <h6><i class="bi bi-info-circle"></i> Hiérarchie des rôles :</h6>
+                  <ul class="mb-0">
+                    <li><strong>Administrateur</strong> : Accès total, gestion des paramètres</li>
+                    <li><strong>Comptable</strong> : Accès comptabilité, cotisations et exports</li>
+                    <li><strong>Gestionnaire</strong> : Gestion complète (adhérents, jeux, emprunts, cotisations)</li>
+                    <li><strong>Bénévole</strong> : Gestion des emprunts/retours uniquement</li>
+                    <li><strong>Usager</strong> : Consultation profil personnel (par défaut)</li>
+                  </ul>
+                </div>
+
+                <div id="liste-utilisateurs">
+                  <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Mode de Paiement -->
+  <div class="modal fade" id="modalModePaiement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalModePaiementTitle">Nouveau mode de paiement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-mode-paiement">
+          <div class="modal-body">
+            <input type="hidden" id="mode_id">
+
+            <div class="mb-3">
+              <label for="mode_libelle" class="form-label">Libellé *</label>
+              <input type="text" class="form-control" id="mode_libelle" required>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="mode_icone" class="form-label">Icône</label>
+                <select class="form-select" id="mode_icone">
+                  <option value="bi-wallet2">Portefeuille</option>
+                  <option value="bi-cash">Espèces</option>
+                  <option value="bi-credit-card">Carte bancaire</option>
+                  <option value="bi-journal-check">Chèque</option>
+                  <option value="bi-bank">Banque</option>
+                  <option value="bi-arrow-repeat">Prélèvement</option>
+                  <option value="bi-ticket-perforated">Avoir</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="mode_couleur" class="form-label">Couleur</label>
+                <select class="form-select" id="mode_couleur">
+                  <option value="primary">Bleu</option>
+                  <option value="success">Vert</option>
+                  <option value="info">Cyan</option>
+                  <option value="warning">Orange</option>
+                  <option value="danger">Rouge</option>
+                  <option value="secondary">Gris</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="mode_journal" class="form-label">Journal comptable</label>
+              <input type="text" class="form-control" id="mode_journal" placeholder="BQ, CA, VT, OD...">
+              <small class="text-muted">Code du journal pour l'export comptable</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="mode_type_operation" class="form-label">Type d'opération</label>
+              <select class="form-select" id="mode_type_operation">
+                <option value="debit">Débit</option>
+                <option value="credit">Crédit</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="mode_code_comptable" class="form-label">Code comptable</label>
+              <input type="text" class="form-control" id="mode_code_comptable" placeholder="530, 512...">
+              <small class="text-muted">Numéro de compte général</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="mode_libelle_export" class="form-label">Libellé export comptable</label>
+              <input type="text" class="form-control" id="mode_libelle_export">
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="mode_actif" checked>
+              <label class="form-check-label" for="mode_actif">
+                Mode de paiement actif
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Code de Réduction -->
+  <div class="modal fade" id="modalCodeReduction" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCodeReductionTitle">Nouveau code de réduction</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-code-reduction">
+          <div class="modal-body">
+            <input type="hidden" id="code_id">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="code_code" class="form-label">Code *</label>
+                <input type="text" class="form-control text-uppercase" id="code_code" required placeholder="NOEL2024">
+                <small class="text-muted">Sera automatiquement en majuscules</small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="code_libelle" class="form-label">Libellé *</label>
+                <input type="text" class="form-control" id="code_libelle" required placeholder="Promotion de Noël">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="code_description" class="form-label">Description</label>
+              <textarea class="form-control" id="code_description" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="code_type_reduction" class="form-label">Type de réduction *</label>
+                <select class="form-select" id="code_type_reduction" required>
+                  <option value="pourcentage">Pourcentage</option>
+                  <option value="fixe">Fixe (minimum 0€)</option>
+                  <option value="fixe_avec_avoir">Fixe avec avoir (crédit si < 0€)</option>
+                </select>
+                <small class="text-muted" id="code_type_help">Réduction en pourcentage du montant</small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="code_valeur" class="form-label">Valeur *</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="code_valeur" required min="0" step="0.01">
+                  <span class="input-group-text" id="code_valeur_unit">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="code_date_debut" class="form-label">Date début validité</label>
+                <input type="date" class="form-control" id="code_date_debut">
+                <small class="text-muted">Laisser vide = immédiatement</small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="code_date_fin" class="form-label">Date fin validité</label>
+                <input type="date" class="form-control" id="code_date_fin">
+                <small class="text-muted">Laisser vide = illimité</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="code_usage_limite" class="form-label">Limite d'utilisation</label>
+              <input type="number" class="form-control" id="code_usage_limite" min="1" placeholder="Illimité">
+              <small class="text-muted">Nombre maximum d'utilisations (laisser vide = illimité)</small>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="code_icone" class="form-label">Icône</label>
+                <select class="form-select" id="code_icone">
+                  <option value="bi-percent">Pourcent (%)</option>
+                  <option value="bi-tag">Étiquette</option>
+                  <option value="bi-gift">Cadeau</option>
+                  <option value="bi-star">Étoile</option>
+                  <option value="bi-trophy">Trophée</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="code_couleur" class="form-label">Couleur</label>
+                <select class="form-select" id="code_couleur">
+                  <option value="success">Vert</option>
+                  <option value="primary">Bleu</option>
+                  <option value="info">Cyan</option>
+                  <option value="warning">Orange</option>
+                  <option value="danger">Rouge</option>
+                  <option value="secondary">Gris</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="code_actif" checked>
+              <label class="form-check-label" for="code_actif">
+                Code de réduction actif
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tarif Cotisation -->
+  <div class="modal fade" id="modalTarif" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTarifTitle">Nouveau tarif de cotisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-tarif">
+          <div class="modal-body">
+            <input type="hidden" id="tarif_id">
+
+            <div class="mb-3">
+              <label for="tarif_libelle" class="form-label">Libellé *</label>
+              <input type="text" class="form-control" id="tarif_libelle" required placeholder="Adhésion individuelle">
+            </div>
+
+            <div class="mb-3">
+              <label for="tarif_description" class="form-label">Description</label>
+              <textarea class="form-control" id="tarif_description" rows="2" placeholder="Détails du tarif..."></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="tarif_montant_base" class="form-label">Montant de base *</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="tarif_montant_base" required min="0" step="0.01">
+                  <span class="input-group-text">€</span>
+                </div>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="tarif_type_periode" class="form-label">Type de période *</label>
+                <select class="form-select" id="tarif_type_periode" required>
+                  <option value="annee_civile">Année civile (jan-déc)</option>
+                  <option value="annee_scolaire">Année scolaire (sep-août)</option>
+                  <option value="date_a_date">Date à date (12 mois)</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="tarif_type_montant" class="form-label">Type de montant *</label>
+                <select class="form-select" id="tarif_type_montant" required>
+                  <option value="fixe">Fixe</option>
+                  <option value="prorata">Prorata (au mois)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-percent"></i> Réduction pour adhérents à l'association</h6>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="tarif_reduction_type" class="form-label">Type de réduction</label>
+                <select class="form-select" id="tarif_reduction_type">
+                  <option value="pourcentage">Pourcentage (%)</option>
+                  <option value="montant">Montant fixe (€)</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="tarif_reduction_valeur" class="form-label">Valeur de la réduction</label>
+                <div class="input-group">
+                  <input type="number" class="form-control" id="tarif_reduction_valeur" min="0" step="0.01" value="0">
+                  <span class="input-group-text" id="tarif_reduction_unit">%</span>
+                </div>
+                <small class="text-muted">Laisser à 0 pour aucune réduction</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="tarif_actif" checked>
+                <label class="form-check-label" for="tarif_actif">
+                  Tarif actif
+                </label>
+              </div>
+              <div class="form-check mt-2">
+                <input type="checkbox" class="form-check-input" id="tarif_par_defaut">
+                <label class="form-check-label" for="tarif_par_defaut">
+                  <i class="bi bi-star"></i> Tarif par défaut
+                </label>
+                <small class="text-muted d-block">Sera préchargé dans le formulaire de création de cotisation</small>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calculatrice de Cotisation -->
+  <div class="modal fade" id="calculatorModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Calculateur de Cotisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Adhérent à l'association ?</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_oui" value="true">
+              <label class="form-check-label" for="calc_adhesion_oui">Oui</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_non" value="false" checked>
+              <label class="form-check-label" for="calc_adhesion_non">Non</label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="calc_date_debut" class="form-label">Date de début (optionnel)</label>
+            <input type="date" class="form-control" id="calc_date_debut">
+          </div>
+          <button class="btn btn-primary w-100" onclick="calculerMontantTarif()">Calculer</button>
+          <div id="calcResult" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configuration Email -->
+  <div class="modal fade" id="modalConfigEmail" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalConfigEmailTitle">Nouvelle configuration email</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-config-email">
+          <div class="modal-body">
+            <input type="hidden" id="config_email_id">
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="config_email_libelle" class="form-label">Libellé *</label>
+                <input type="text" class="form-control" id="config_email_libelle" required placeholder="Gmail Principal">
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="config_email_expediteur" class="form-label">Email expéditeur *</label>
+                <input type="email" class="form-control" id="config_email_expediteur" required placeholder="contact@ludotheque.fr">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="config_email_nom_expediteur" class="form-label">Nom expéditeur</label>
+              <input type="text" class="form-control" id="config_email_nom_expediteur" placeholder="Ludothèque">
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-server"></i> Configuration SMTP</h6>
+            </div>
+
+            <div class="row">
+              <div class="col-md-8 mb-3">
+                <label for="config_email_smtp_host" class="form-label">Hôte SMTP *</label>
+                <input type="text" class="form-control" id="config_email_smtp_host" required placeholder="smtp.gmail.com">
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="config_email_smtp_port" class="form-label">Port *</label>
+                <input type="number" class="form-control" id="config_email_smtp_port" required value="587">
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="config_email_smtp_user" class="form-label">Nom d'utilisateur *</label>
+                <input type="text" class="form-control" id="config_email_smtp_user" required placeholder="utilisateur@gmail.com">
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <label for="config_email_smtp_password" class="form-label">Mot de passe *</label>
+                <input type="password" class="form-control" id="config_email_smtp_password" placeholder="Laisser vide pour ne pas modifier">
+                <small class="text-muted">Sera chiffré avant stockage</small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="config_email_smtp_timeout" class="form-label">Timeout (ms)</label>
+                <input type="number" class="form-control" id="config_email_smtp_timeout" value="10000">
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <div class="form-check mt-4">
+                  <input type="checkbox" class="form-check-input" id="config_email_smtp_secure">
+                  <label class="form-check-label" for="config_email_smtp_secure">
+                    Utiliser SSL/TLS
+                  </label>
+                </div>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <div class="form-check mt-4">
+                  <input type="checkbox" class="form-check-input" id="config_email_smtp_require_tls" checked>
+                  <label class="form-check-label" for="config_email_smtp_require_tls">
+                    Forcer TLS
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-shield-lock"></i> Permissions et Options</h6>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="config_email_role_minimum" class="form-label">Rôle minimum requis</label>
+                <select class="form-select" id="config_email_role_minimum">
+                  <option value="gestionnaire">Gestionnaire</option>
+                  <option value="comptable">Comptable</option>
+                  <option value="administrateur">Administrateur</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="config_email_icone" class="form-label">Icône</label>
+                <select class="form-select" id="config_email_icone">
+                  <option value="bi-envelope">Enveloppe</option>
+                  <option value="bi-envelope-at">Enveloppe @</option>
+                  <option value="bi-mailbox">Boîte mail</option>
+                  <option value="bi-envelope-paper">Lettre</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="config_email_couleur" class="form-label">Couleur</label>
+                <select class="form-select" id="config_email_couleur">
+                  <option value="primary">Bleu</option>
+                  <option value="success">Vert</option>
+                  <option value="info">Cyan</option>
+                  <option value="warning">Orange</option>
+                  <option value="danger">Rouge</option>
+                  <option value="secondary">Gris</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="config_email_notes" class="form-label">Notes internes</label>
+              <textarea class="form-control" id="config_email_notes" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="config_email_actif" checked>
+                  <label class="form-check-label" for="config_email_actif">
+                    Configuration active
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="config_email_par_defaut">
+                  <label class="form-check-label" for="config_email_par_defaut">
+                    <i class="bi bi-star"></i> Configuration par défaut
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-info" onclick="testConnectionInModal()">
+              <i class="bi bi-send-check"></i> Tester la connexion
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configuration SMS -->
+  <div class="modal fade" id="modalConfigSMS" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalConfigSMSTitle">Nouvelle configuration SMS</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-config-sms">
+          <div class="modal-body">
+            <input type="hidden" id="config_sms_id">
+
+            <div class="mb-3">
+              <label for="config_sms_libelle" class="form-label">Libellé *</label>
+              <input type="text" class="form-control" id="config_sms_libelle" required placeholder="SMSFactor Principal">
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-key"></i> Configuration API SMSFactor</h6>
+            </div>
+
+            <div class="mb-3">
+              <label for="config_sms_api_token" class="form-label">Token API SMSFactor *</label>
+              <input type="password" class="form-control" id="config_sms_api_token" placeholder="Laisser vide pour ne pas modifier">
+              <small class="text-muted">Sera chiffré avant stockage. Obtenir sur <a href="https://www.smsfactor.com" target="_blank">smsfactor.com</a></small>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="config_sms_sender_name" class="form-label">Nom expéditeur (max 11 caractères)</label>
+                <input type="text" class="form-control" id="config_sms_sender_name" maxlength="11" placeholder="LUDOTHEQUE">
+                <small class="text-muted">Affiché comme expéditeur du SMS</small>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                  <input type="checkbox" class="form-check-input" id="config_sms_gsm7">
+                  <label class="form-check-label" for="config_sms_gsm7">
+                    Encodage GSM7
+                  </label>
+                  <small class="d-block text-muted">Réduit le coût, limite les caractères spéciaux</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="config_sms_sandbox">
+              <label class="form-check-label" for="config_sms_sandbox">
+                Mode sandbox (test)
+              </label>
+              <small class="d-block text-muted">Les SMS ne seront pas réellement envoyés</small>
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-shield-lock"></i> Permissions et Options</h6>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="config_sms_role_minimum" class="form-label">Rôle minimum requis</label>
+                <select class="form-select" id="config_sms_role_minimum">
+                  <option value="gestionnaire">Gestionnaire</option>
+                  <option value="comptable">Comptable</option>
+                  <option value="administrateur">Administrateur</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="config_sms_icone" class="form-label">Icône</label>
+                <select class="form-select" id="config_sms_icone">
+                  <option value="bi-phone">Téléphone</option>
+                  <option value="bi-chat-dots">Message</option>
+                  <option value="bi-chat-text">Chat</option>
+                  <option value="bi-envelope-plus">Enveloppe+</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="config_sms_couleur" class="form-label">Couleur</label>
+                <select class="form-select" id="config_sms_couleur">
+                  <option value="success">Vert</option>
+                  <option value="primary">Bleu</option>
+                  <option value="info">Cyan</option>
+                  <option value="warning">Orange</option>
+                  <option value="danger">Rouge</option>
+                  <option value="secondary">Gris</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="config_sms_notes" class="form-label">Notes internes</label>
+              <textarea class="form-control" id="config_sms_notes" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="config_sms_actif" checked>
+                  <label class="form-check-label" for="config_sms_actif">
+                    Configuration active
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="config_sms_par_defaut">
+                  <label class="form-check-label" for="config_sms_par_defaut">
+                    <i class="bi bi-star"></i> Configuration par défaut
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Template Message -->
+  <div class="modal fade" id="modalTemplate" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTemplateTitle">Nouveau template de message</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-template">
+          <div class="modal-body">
+            <input type="hidden" id="template_id">
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="template_code" class="form-label">Code *</label>
+                <input type="text" class="form-control text-uppercase" id="template_code" required placeholder="BIENVENUE">
+                <small class="text-muted">Identifiant unique (majuscules, sans espaces)</small>
+              </div>
+
+              <div class="col-md-8 mb-3">
+                <label for="template_libelle" class="form-label">Libellé *</label>
+                <input type="text" class="form-control" id="template_libelle" required placeholder="Email de bienvenue">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="template_description" class="form-label">Description</label>
+              <textarea class="form-control" id="template_description" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <label for="template_type_message" class="form-label">Type de message *</label>
+                <select class="form-select" id="template_type_message" required onchange="updateTemplateFields()">
+                  <option value="both">Email + SMS</option>
+                  <option value="email">Email uniquement</option>
+                  <option value="sms">SMS uniquement</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="template_categorie" class="form-label">Catégorie</label>
+                <select class="form-select" id="template_categorie">
+                  <option value="Adhérent">Adhérent</option>
+                  <option value="Cotisation">Cotisation</option>
+                  <option value="Emprunt">Emprunt</option>
+                  <option value="Système">Système</option>
+                </select>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="template_icone" class="form-label">Icône</label>
+                <select class="form-select" id="template_icone">
+                  <option value="bi-file-text">Document</option>
+                  <option value="bi-envelope-heart">Enveloppe coeur</option>
+                  <option value="bi-bell">Cloche</option>
+                  <option value="bi-check-circle">Check</option>
+                  <option value="bi-arrow-return-left">Retour</option>
+                  <option value="bi-exclamation-triangle">Attention</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Section Email -->
+            <div id="email-section">
+              <div class="mb-3">
+                <h6 class="border-bottom pb-2"><i class="bi bi-envelope"></i> Contenu Email</h6>
+              </div>
+
+              <div class="mb-3">
+                <label for="template_email_objet" class="form-label">Objet de l'email</label>
+                <input type="text" class="form-control" id="template_email_objet" placeholder="Bienvenue {{prenom}} !">
+              </div>
+
+              <div class="mb-3">
+                <label for="template_email_corps" class="form-label">Corps de l'email (HTML)</label>
+                <textarea class="form-control" id="template_email_corps" rows="6" placeholder="<h1>Bonjour {{prenom}} {{nom}}</h1>..."></textarea>
+              </div>
+            </div>
+
+            <!-- Section SMS -->
+            <div id="sms-section">
+              <div class="mb-3">
+                <h6 class="border-bottom pb-2"><i class="bi bi-phone"></i> Contenu SMS</h6>
+              </div>
+
+              <div class="mb-3">
+                <label for="template_sms_corps" class="form-label">Corps du SMS (max 480 caractères)</label>
+                <textarea class="form-control" id="template_sms_corps" rows="3" maxlength="480" placeholder="Bonjour {{prenom}}, bienvenue à {{structure_nom}} !"></textarea>
+                <small class="text-muted"><span id="sms-count">0</span> / 480 caractères</small>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <h6 class="border-bottom pb-2"><i class="bi bi-code-square"></i> Variables disponibles</h6>
+            </div>
+
+            <div class="mb-3">
+              <label for="template_variables" class="form-label">Variables (séparées par des virgules)</label>
+              <input type="text" class="form-control" id="template_variables" placeholder="nom, prenom, code_barre, structure_nom, email">
+              <small class="text-muted">Utilisez la syntaxe {{'{{'}}variable{{'}}'}} dans les contenus</small>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="template_couleur" class="form-label">Couleur</label>
+                <select class="form-select" id="template_couleur">
+                  <option value="info">Bleu (Info)</option>
+                  <option value="success">Vert (Succès)</option>
+                  <option value="warning">Orange (Attention)</option>
+                  <option value="danger">Rouge (Danger)</option>
+                  <option value="primary">Bleu primaire</option>
+                  <option value="secondary">Gris</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <div class="form-check mt-4">
+                  <input type="checkbox" class="form-check-input" id="template_actif" checked>
+                  <label class="form-check-label" for="template_actif">
+                    Template actif
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Preview Template -->
+  <div class="modal fade" id="modalPreviewTemplate" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Aperçu du template</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="preview-content">
+            <div class="text-center p-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détails Email Log -->
+  <div class="modal fade" id="modalEmailLogDetails" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Détails de l'email</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="email-log-details-content">
+            <div class="text-center p-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Purge Logs -->
+  <div class="modal fade" id="modalPurgeLogs" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-trash"></i> Purger les anciens logs</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-purge-logs">
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i>
+              <strong>Attention :</strong> Cette action supprimera définitivement les logs d'emails plus anciens que le nombre de jours spécifié.
+            </div>
+            <div class="mb-3">
+              <label for="purge_jours" class="form-label">Supprimer les logs de plus de * jours</label>
+              <input type="number" class="form-control" id="purge_jours" value="90" min="1" required>
+              <small class="text-muted">Par défaut: 90 jours (3 mois)</small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash"></i> Purger
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Changer l'unité de la réduction selon le type
+    document.addEventListener('DOMContentLoaded', () => {
+      const typeReduction = document.getElementById('tarif_reduction_type');
+      const unitSpan = document.getElementById('tarif_reduction_unit');
+
+      if (typeReduction && unitSpan) {
+        typeReduction.addEventListener('change', () => {
+          unitSpan.textContent = typeReduction.value === 'pourcentage' ? '%' : '€';
+        });
+      }
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres.js"></script>
+  <script src="js/codes-reduction.js"></script>
+  <script src="js/tarifs.js"></script>
+  <script src="js/configurations-email.js"></script>
+  <script src="js/configurations-sms.js"></script>
+  <script src="js/templates-messages.js"></script>
+  <script src="js/historique-emails.js"></script>
+</body>
+</html>

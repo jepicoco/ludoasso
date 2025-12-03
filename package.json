@@ -1,0 +1,59 @@
+{
+  "name": "ludotheque-app",
+  "version": "1.0.0",
+  "description": "Application de gestion de ludothèque",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test": "jest",
+    "migrate": "sequelize-cli db:migrate",
+    "seed": "sequelize-cli db:seed:all",
+    "init-parametrage": "node database/init-parametrage.js",
+    "seed-modes-paiement": "node database/seeds/seedModesPaiement.js",
+    "migrate-codes-reduction": "node database/migrations/addCodesReduction.js",
+    "seed-codes-reduction": "node database/seeds/seedCodesReduction.js",
+    "migrate-tarifs": "node database/migrations/addTarifsCotisation.js",
+    "migrate-tarifs-par-defaut": "node database/migrations/addParDefautToTarifs.js",
+    "migrate-email": "node database/migrations/addConfigurationsEmail.js",
+    "migrate-sms": "node database/migrations/addConfigurationsSMS.js",
+    "migrate-templates": "node database/migrations/addTemplatesMessages.js",
+    "migrate-communications": "npm run migrate-email && npm run migrate-sms && npm run migrate-templates",
+    "seed-templates": "node database/seeds/seedTemplatesMessages.js",
+    "setup-communications": "npm run migrate-communications && npm run seed-templates",
+    "seed-email-templates": "node database/seeds/seedEmailTemplates.js",
+    "migrate-event-triggers": "node database/migrations/addEventTriggers.js",
+    "seed-event-triggers": "node database/seeds/seedEventTriggers.js",
+    "seed-templates-event-triggers": "node database/seeds/seedTemplatesForEventTriggers.js",
+    "setup-event-triggers": "npm run migrate-event-triggers && npm run seed-event-triggers",
+    "setup-complete-communications": "npm run migrate-templates && npm run migrate-event-triggers && npm run seed-templates-event-triggers && npm run seed-event-triggers",
+    "check-triggers": "node database/check-triggers-status.js",
+    "setup-email-config": "node database/seeds/seedEmailConfig.js",
+    "job-email-reminders": "node backend/jobs/emailReminders.js"
+  },
+  "keywords": [
+    "ludotheque",
+    "jeux",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcrypt": "^5.1.1",
+    "bwip-js": "^4.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5",
+    "nodemailer": "^6.10.1",
+    "sequelize": "^6.35.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "sequelize-cli": "^6.6.2"
+  }
+}

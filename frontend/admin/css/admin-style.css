@@ -1,0 +1,147 @@
+/* ============================================================
+ * Styles CSS pour l'interface admin de la Ludothèque
+ * ============================================================ */
+
+/* Main layout */
+.main-content {
+    padding-top: 60px;
+    min-height: 100vh;
+}
+
+/* Cards */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+}
+
+/* Tables */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Buttons */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Loading spinner */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Toast container */
+.toast-container {
+    z-index: 9999;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar-sticky {
+    position: relative;
+    top: 0;
+    height: calc(100vh - 48px);
+    padding-top: .5rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+/* Forms */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, .25);
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+/* Modals */
+.modal-header {
+    background-color: #f8f9fa;
+}
+
+.modal-footer {
+    background-color: #f8f9fa;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.25rem;
+}
+
+/* Custom utilities */
+.text-muted {
+    color: #6c757d !important;
+}
+
+.fw-bold {
+    font-weight: 700 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: relative;
+        top: 0;
+    }
+
+    .main-content {
+        padding-top: 1rem;
+    }
+}
+
+/* Event triggers specific styles */
+.event-trigger-icon {
+    font-size: 1.5rem;
+}
+
+.event-trigger-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.event-trigger-row:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Stats cards */
+.stats-card {
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Button groups */
+.btn-group .btn {
+    transition: all 0.2s;
+}
+
+.btn-group .btn.active {
+    transform: scale(1.05);
+}

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques - Ludothèque Admin</title>
+    <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <!-- Navigation (généré par JS) -->
+    <nav id="admin-navbar"></nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar (généré par JS) -->
+            <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-graph-up"></i> Statistiques</h2>
+                    <button class="btn btn-secondary" onclick="refreshStats()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualiser
+                    </button>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alertContainer"></div>
+
+                <!-- Statistiques globales -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Total Adhérents</h6>
+                                        <h2 class="mb-0" id="statTotalAdherents">-</h2>
+                                    </div>
+                                    <div class="fs-1 text-primary">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Adhérents Actifs</h6>
+                                        <h2 class="mb-0" id="statAdherentsActifs">-</h2>
+                                    </div>
+                                    <div class="fs-1 text-success">
+                                        <i class="bi bi-person-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Total Jeux</h6>
+                                        <h2 class="mb-0" id="statTotalJeux">-</h2>
+                                    </div>
+                                    <div class="fs-1 text-info">
+                                        <i class="bi bi-dice-6"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Jeux Disponibles</h6>
+                                        <h2 class="mb-0" id="statJeuxDisponibles">-</h2>
+                                    </div>
+                                    <div class="fs-1 text-warning">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistiques emprunts -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="mb-2">Emprunts en Cours</h6>
+                                <h2 class="mb-0" id="statEmpruntsEnCours">-</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <h6 class="mb-2">Emprunts en Retard</h6>
+                                <h2 class="mb-0" id="statEmpruntsEnRetard">-</h2>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="mb-2">Total Emprunts (ce mois)</h6>
+                                <h2 class="mb-0" id="statEmpruntsMois">-</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphiques et détails -->
+                <div class="row g-3 mb-4">
+                    <!-- Top jeux empruntés -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-trophy"></i> Top 10 Jeux les Plus Empruntés</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="topJeuxList">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top adhérents actifs -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-star"></i> Top 10 Adhérents les Plus Actifs</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="topAdherentsList">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Répartition par catégorie -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-pie-chart"></i> Répartition des Jeux par Catégorie</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="categoriesChart">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emprunts récents -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0"><i class="bi bi-clock-history"></i> Derniers Emprunts</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recentEmpruntsList">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api-admin.js"></script>
+    <script src="js/auth-admin.js"></script>
+    <script src="js/admin-navigation.js"></script>
+    <script src="js/admin-template.js"></script>
+    <script>
+        // Load statistics on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTemplate('statistiques');
+            loadStatistics();
+        });
+
+        async function loadStatistics() {
+            try {
+                await Promise.all([
+                    loadGlobalStats(),
+                    loadTopJeux(),
+                    loadTopAdherents(),
+                    loadCategoriesStats(),
+                    loadRecentEmprunts()
+                ]);
+            } catch (error) {
+                showAlert('Erreur lors du chargement des statistiques: ' + error.message, 'danger');
+            }
+        }
+
+        async function loadGlobalStats() {
+            try {
+                const stats = await apiRequest('/stats/dashboard');
+
+                // Adhérents
+                document.getElementById('statTotalAdherents').textContent = stats.adherents?.total || 0;
+                document.getElementById('statAdherentsActifs').textContent = stats.adherents?.actifs || 0;
+
+                // Jeux
+                document.getElementById('statTotalJeux').textContent = stats.jeux?.total || 0;
+                document.getElementById('statJeuxDisponibles').textContent = stats.jeux?.disponibles || 0;
+
+                // Emprunts
+                document.getElementById('statEmpruntsEnCours').textContent = stats.emprunts?.enCours || 0;
+                document.getElementById('statEmpruntsEnRetard').textContent = stats.emprunts?.enRetard || 0;
+                document.getElementById('statEmpruntsMois').textContent = stats.activity?.empruntsRecents || 0;
+            } catch (error) {
+                console.error('Error loading global stats:', error);
+            }
+        }
+
+        async function loadTopJeux() {
+            try {
+                const data = await apiRequest('/stats/popular-games?limit=10');
+                const jeux = data.games?.map(g => ({
+                    ...g.jeu,
+                    emprunts_count: g.emprunts
+                })) || [];
+
+                const container = document.getElementById('topJeuxList');
+
+                if (jeux.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="list-group list-group-flush">
+                        ${jeux.map((jeu, index) => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
+                                    <strong>${jeu.titre}</strong>
+                                    <br>
+                                    <small class="text-muted">${jeu.editeur || 'N/A'}</small>
+                                </div>
+                                <span class="badge bg-info rounded-pill">${jeu.emprunts_count || 0} emprunts</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading top jeux:', error);
+                document.getElementById('topJeuxList').innerHTML =
+                    '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadTopAdherents() {
+            try {
+                const data = await apiRequest('/stats/active-members?limit=10');
+                const adherents = data.members?.map(m => ({
+                    ...m.adherent,
+                    emprunts_count: m.emprunts
+                })) || [];
+
+                const container = document.getElementById('topAdherentsList');
+
+                if (adherents.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="list-group list-group-flush">
+                        ${adherents.map((adherent, index) => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
+                                    <strong>${adherent.prenom} ${adherent.nom}</strong>
+                                    <br>
+                                    <small class="text-muted">${adherent.email}</small>
+                                </div>
+                                <span class="badge bg-success rounded-pill">${adherent.emprunts_count || 0} emprunts</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading top adherents:', error);
+                document.getElementById('topAdherentsList').innerHTML =
+                    '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadCategoriesStats() {
+            try {
+                const data = await apiRequest('/jeux');
+                const jeux = data.jeux || [];
+
+                // Count by category
+                const categories = {};
+                jeux.forEach(jeu => {
+                    const cat = jeu.categorie || 'Non catégorisé';
+                    categories[cat] = (categories[cat] || 0) + 1;
+                });
+
+                const container = document.getElementById('categoriesChart');
+
+                if (Object.keys(categories).length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                    return;
+                }
+
+                // Sort by count
+                const sortedCategories = Object.entries(categories)
+                    .sort((a, b) => b[1] - a[1]);
+
+                const total = jeux.length;
+
+                container.innerHTML = `
+                    <div class="row">
+                        ${sortedCategories.map(([cat, count]) => {
+                            const percentage = ((count / total) * 100).toFixed(1);
+                            return `
+                                <div class="col-md-4 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span><strong>${cat}</strong></span>
+                                        <span class="text-muted">${count} jeux (${percentage}%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 25px;">
+                                        <div class="progress-bar" role="progressbar"
+                                             style="width: ${percentage}%"
+                                             aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
+                                            ${percentage}%
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading categories stats:', error);
+                document.getElementById('categoriesChart').innerHTML =
+                    '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadRecentEmprunts() {
+            try {
+                const data = await apiRequest('/emprunts?limit=10&sort=date_emprunt');
+                const emprunts = data.emprunts || [];
+
+                const container = document.getElementById('recentEmpruntsList');
+
+                if (emprunts.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucun emprunt récent</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Adhérent</th>
+                                    <th>Jeu</th>
+                                    <th>Retour prévu</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${emprunts.map(emprunt => {
+                                    const isLate = new Date(emprunt.date_retour_prevue) < new Date() && emprunt.statut !== 'retourne';
+                                    return `
+                                        <tr>
+                                            <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
+                                            <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
+                                            <td><strong>${emprunt.jeu.titre}</strong></td>
+                                            <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
+                                            <td>
+                                                ${emprunt.statut === 'retourne'
+                                                    ? '<span class="badge bg-success">Retourné</span>'
+                                                    : isLate
+                                                    ? '<span class="badge bg-danger">En retard</span>'
+                                                    : '<span class="badge bg-info">En cours</span>'}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading recent emprunts:', error);
+                document.getElementById('recentEmpruntsList').innerHTML =
+                    '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        function refreshStats() {
+            loadStatistics();
+            showAlert('Statistiques actualisées', 'success');
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Cotisations - Ludothèque</title>
+    <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* Style pour la recherche d'adhérent */
+        #adherentsList .list-group-item {
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        #adherentsList .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+        #adherent_search:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .alert-sm {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation (généré par JS) -->
+    <nav id="admin-navbar"></nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar (généré par JS) -->
+            <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-receipt"></i> Gestion des Cotisations</h2>
+                    <button class="btn btn-primary" onclick="showCotisationModal()">
+                        <i class="bi bi-plus-circle"></i> Nouvelle Cotisation
+                    </button>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alertContainer"></div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4" id="statsCards">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Cotisations</h6>
+                                <h3 id="statTotal">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <h6 class="card-title">En Cours</h6>
+                                <h3 id="statEnCours">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body">
+                                <h6 class="card-title">Expirées</h6>
+                                <h3 id="statExpirees">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body">
+                                <h6 class="card-title">Montant Total</h6>
+                                <h3 id="statMontant">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Statut</label>
+                                <select class="form-select" id="filterStatut" onchange="loadCotisations()">
+                                    <option value="">Tous</option>
+                                    <option value="en_cours">En cours</option>
+                                    <option value="expiree">Expirées</option>
+                                    <option value="annulee">Annulées</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Année</label>
+                                <select class="form-select" id="filterAnnee" onchange="loadCotisations()">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Rechercher adhérent</label>
+                                <input type="text" class="form-control" id="searchAdherent" placeholder="Nom, prénom ou email...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-secondary w-100" onclick="loadCotisations()">
+                                    <i class="bi bi-arrow-clockwise"></i> Actualiser
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cotisations List -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Adhérent</th>
+                                        <th>Tarif</th>
+                                        <th>Période</th>
+                                        <th>Montant</th>
+                                        <th>Paiement</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cotisationsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nouvelle Cotisation -->
+    <div class="modal fade" id="cotisationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nouvelle Cotisation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="cotisationForm">
+                        <!-- Sélection adhérent -->
+                        <div class="mb-3">
+                            <label for="adherent_search" class="form-label">Adhérent *</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="adherent_search"
+                                       placeholder="🔍 Rechercher par nom, prénom, email ou code barre..."
+                                       autocomplete="off"
+                                       oninput="filterAdherents()"
+                                       onfocus="showAdherentsList()"
+                                       onblur="hideAdherentsListDelayed()"
+                                       onkeydown="handleAdherentSearchKeyboard(event)">
+                                <input type="hidden" id="adherent_id" required>
+
+                                <!-- Liste déroulante des résultats -->
+                                <div id="adherentsList" class="position-absolute w-100 bg-white border rounded shadow-lg"
+                                     style="display: none; max-height: 300px; overflow-y: auto; z-index: 1050; top: 100%; margin-top: 2px;">
+                                    <div class="list-group list-group-flush">
+                                        <!-- Résultats injectés ici -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="adherentInfo" class="mt-2"></div>
+                        </div>
+
+                        <!-- Sélection tarif -->
+                        <div class="mb-3">
+                            <label for="tarif_cotisation_id" class="form-label">Tarif *</label>
+                            <select class="form-select" id="tarif_cotisation_id" required onchange="updateTarifInfo()">
+                                <option value="">Sélectionnez un tarif</option>
+                            </select>
+                            <div id="tarifInfo" class="mt-2"></div>
+                        </div>
+
+                        <!-- Dates (optionnel pour date_a_date) -->
+                        <div class="mb-3" id="datesSection" style="display:none;">
+                            <label class="form-label">Dates personnalisées (optionnel)</label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="date_debut" class="form-label">Date début</label>
+                                    <input type="date" class="form-control" id="date_debut">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="date_fin" class="form-label">Date fin</label>
+                                    <input type="date" class="form-control" id="date_fin">
+                                </div>
+                            </div>
+                            <small class="text-muted">Laisser vide pour calculer automatiquement selon le tarif</small>
+                        </div>
+
+                        <!-- Code de réduction -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Code de Réduction (optionnel)</h6>
+                        <div class="mb-3">
+                            <label for="code_reduction" class="form-label">Code de Réduction</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control text-uppercase" id="code_reduction" placeholder="Saisissez un code de réduction">
+                                <button class="btn btn-outline-secondary" type="button" onclick="verifierCodeReduction()">
+                                    <i class="bi bi-check-circle"></i> Vérifier
+                                </button>
+                                <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Voir les codes disponibles">
+                                    <i class="bi bi-list-ul"></i> Codes
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" id="codesDisponiblesMenu" style="max-height: 400px; overflow-y: auto; min-width: 350px;">
+                                    <li><h6 class="dropdown-header">Codes de réduction disponibles</h6></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li class="px-3 py-2 text-muted"><small>Chargement...</small></li>
+                                </ul>
+                                <button class="btn btn-outline-danger" type="button" onclick="retirerCodeReduction()" id="btnRetirerCode" style="display:none;">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                            <div id="codeReductionInfo" class="mt-2"></div>
+                            <input type="hidden" id="code_reduction_id" value="">
+                        </div>
+
+                        <!-- Paiement -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Informations de Paiement</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date_paiement" class="form-label">Date de Paiement *</label>
+                                <input type="date" class="form-control" id="date_paiement" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mode_paiement" class="form-label">Mode de Paiement *</label>
+                                <select class="form-select" id="mode_paiement" required onchange="updateReferencePlaceholder()">
+                                    <option value="">Chargement...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reference_paiement" class="form-label">Référence Paiement</label>
+                            <input type="text" class="form-control" id="reference_paiement" placeholder="Référence de paiement">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="2"></textarea>
+                        </div>
+
+                        <!-- Aperçu montant -->
+                        <div id="montantPreview" class="alert alert-info" style="display:none;">
+                            <h6>Aperçu du montant:</h6>
+                            <div id="montantDetails"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCotisation()">Enregistrer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Détails Cotisation -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails de la Cotisation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsContent">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api-admin.js"></script>
+    <script src="js/auth-admin.js"></script>
+    <script src="js/admin-navigation.js"></script>
+    <script src="js/admin-template.js"></script>
+    <script>
+        let cotisationsCache = [];
+        let adherentsCache = [];
+        let tarifsCache = [];
+        let modesPaiementCache = [];
+        let codesReductionCache = [];
+        let currentCodeReduction = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialiser le template (navbar + sidebar)
+            initTemplate('cotisations');
+            initializeYearFilter();
+            loadStatistics();
+            loadCotisations();
+            loadAdherents();
+            loadTarifs();
+            loadModesPaiement();
+            loadCodesReductionDisponibles();
+
+            // Set today's date for date_paiement
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date_paiement').value = today;
+        });
+
+        // Initialize year filter
+        function initializeYearFilter() {
+            const select = document.getElementById('filterAnnee');
+            const currentYear = new Date().getFullYear();
+
+            for (let year = currentYear; year >= currentYear - 5; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) option.selected = true;
+                select.appendChild(option);
+            }
+        }
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const annee = document.getElementById('filterAnnee').value;
+                const stats = await apiRequest(`/cotisations/statistiques?annee=${annee}`);
+
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statEnCours').textContent = stats.par_statut.en_cours;
+                document.getElementById('statExpirees').textContent = stats.par_statut.expirees;
+                document.getElementById('statMontant').textContent = stats.montant_total + ' €';
+            } catch (error) {
+                console.error('Erreur chargement statistiques:', error);
+            }
+        }
+
+        // Load cotisations
+        async function loadCotisations() {
+            try {
+                let url = '/cotisations?';
+                const statut = document.getElementById('filterStatut').value;
+                const annee = document.getElementById('filterAnnee').value;
+
+                if (statut) url += `statut=${statut}&`;
+                if (annee) url += `annee=${annee}&`;
+
+                cotisationsCache = await apiRequest(url);
+                displayCotisations(cotisationsCache);
+                loadStatistics();
+            } catch (error) {
+                showAlert('Erreur lors du chargement: ' + error.message, 'danger');
+            }
+        }
+
+        // Display cotisations
+        function displayCotisations(cotisations) {
+            const tbody = document.getElementById('cotisationsTableBody');
+            const search = document.getElementById('searchAdherent').value.toLowerCase();
+
+            let filtered = cotisations;
+            if (search) {
+                filtered = cotisations.filter(c =>
+                    c.adherent.nom.toLowerCase().includes(search) ||
+                    c.adherent.prenom.toLowerCase().includes(search) ||
+                    c.adherent.email.toLowerCase().includes(search)
+                );
+            }
+
+            if (!filtered || filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune cotisation trouvée</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(cot => `
+                <tr>
+                    <td>
+                        <strong>${cot.adherent.nom} ${cot.adherent.prenom}</strong><br>
+                        <small class="text-muted">${cot.adherent.email}</small>
+                    </td>
+                    <td>${cot.tarif.libelle}</td>
+                    <td>
+                        <small>${formatDate(cot.periode_debut)}<br>→ ${formatDate(cot.periode_fin)}</small>
+                    </td>
+                    <td>
+                        <strong>${cot.montant_paye} €</strong>
+                        ${cot.reduction_appliquee > 0 ? `<br><small class="text-success">-${cot.reduction_appliquee} €</small>` : ''}
+                        ${cot.code_reduction_applique ? `<br><small class="badge bg-info">${cot.code_reduction_applique}</small>` : ''}
+                        ${cot.avoir_genere > 0 ? `<br><small class="text-info">Avoir: +${cot.avoir_genere} €</small>` : ''}
+                    </td>
+                    <td>
+                        <small>${formatDate(cot.date_paiement)}<br>${formatModePaiement(cot.mode_paiement)}</small>
+                    </td>
+                    <td>${formatStatutBadge(cot.statut)}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info" onclick="showDetails(${cot.id})" title="Détails">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            ${cot.statut === 'en_cours' ? `
+                                <button class="btn btn-outline-danger" onclick="annulerCotisation(${cot.id})" title="Annuler">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Load adherents for select
+        async function loadAdherents() {
+            try {
+                const data = await apiRequest('/adherents');
+                adherentsCache = data.adherents || data;
+
+                // Trier par nom puis prénom
+                adherentsCache.sort((a, b) => {
+                    const nomCompare = a.nom.localeCompare(b.nom, 'fr');
+                    if (nomCompare !== 0) return nomCompare;
+                    return a.prenom.localeCompare(b.prenom, 'fr');
+                });
+
+                // Rendre la liste au démarrage
+                renderAdherentsList(adherentsCache);
+            } catch (error) {
+                console.error('Erreur chargement adhérents:', error);
+            }
+        }
+
+        // Afficher la liste des adhérents filtrés
+        function renderAdherentsList(adherents) {
+            const listContainer = document.querySelector('#adherentsList .list-group');
+
+            if (!adherents || adherents.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="list-group-item text-center text-muted">
+                        <i class="bi bi-search"></i> Aucun adhérent trouvé
+                    </div>
+                `;
+                return;
+            }
+
+            // Limiter à 50 résultats pour les performances
+            const limited = adherents.slice(0, 50);
+
+            listContainer.innerHTML = limited.map(adh => {
+                const isAssociation = adh.adhesion_association || false;
+                const isActif = adh.statut === 'actif';
+
+                // Badge statut
+                const badgeStatut = isActif
+                    ? '<span class="badge bg-success" style="font-size: 0.7em;">Actif</span>'
+                    : '<span class="badge bg-secondary" style="font-size: 0.7em;">Inactif</span>';
+
+                // Badge adhésion
+                const badgeAdhesion = isAssociation
+                    ? '<span class="badge bg-primary" style="font-size: 0.7em;"><i class="bi bi-star-fill"></i> Membre</span>'
+                    : '';
+
+                // Dernière cotisation (si disponible)
+                let derniereCotisation = '';
+                if (adh.date_fin_adhesion) {
+                    const dateFin = new Date(adh.date_fin_adhesion);
+                    const now = new Date();
+                    const isExpire = dateFin < now;
+                    derniereCotisation = `
+                        <small class="text-muted">
+                            Cotisation: ${formatDate(adh.date_fin_adhesion)}
+                            ${isExpire ? '<span class="text-danger">⚠️ Expirée</span>' : ''}
+                        </small>
+                    `;
+                }
+
+                return `
+                    <a href="#" class="list-group-item list-group-item-action"
+                       onclick="event.preventDefault(); selectAdherent(${adh.id}, '${adh.nom}', '${adh.prenom}', ${isAssociation});"
+                       onmousedown="event.preventDefault();">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">
+                                    ${adh.nom} ${adh.prenom}
+                                    ${badgeStatut}
+                                    ${badgeAdhesion}
+                                </div>
+                                <small class="text-muted">${adh.email}</small>
+                                ${adh.code_barre ? `<small class="text-muted"> | ${adh.code_barre}</small>` : ''}
+                                ${derniereCotisation ? `<br>${derniereCotisation}` : ''}
+                            </div>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+
+            // Ajouter message si limité
+            if (adherents.length > 50) {
+                listContainer.innerHTML += `
+                    <div class="list-group-item text-center text-muted bg-light">
+                        <small>... et ${adherents.length - 50} autres résultats. Affinez votre recherche.</small>
+                    </div>
+                `;
+            }
+        }
+
+        // Filtrer les adhérents selon la recherche
+        function filterAdherents() {
+            const search = document.getElementById('adherent_search').value.toLowerCase().trim();
+
+            // Réinitialiser l'index de sélection
+            selectedAdherentIndex = -1;
+
+            if (!search) {
+                // Si vide, afficher tous les adhérents
+                renderAdherentsList(adherentsCache);
+                showAdherentsList();
+                return;
+            }
+
+            // Filtrer par nom, prénom, email ou code barre
+            const filtered = adherentsCache.filter(adh => {
+                const nom = (adh.nom || '').toLowerCase();
+                const prenom = (adh.prenom || '').toLowerCase();
+                const email = (adh.email || '').toLowerCase();
+                const codeBarre = (adh.code_barre || '').toLowerCase();
+                const fullName = `${nom} ${prenom}`;
+
+                return nom.includes(search) ||
+                       prenom.includes(search) ||
+                       fullName.includes(search) ||
+                       email.includes(search) ||
+                       codeBarre.includes(search);
+            });
+
+            renderAdherentsList(filtered);
+            showAdherentsList();
+        }
+
+        // Afficher la liste déroulante
+        function showAdherentsList() {
+            document.getElementById('adherentsList').style.display = 'block';
+        }
+
+        // Masquer la liste avec délai (pour permettre le clic)
+        let hideTimeout;
+        function hideAdherentsListDelayed() {
+            hideTimeout = setTimeout(() => {
+                document.getElementById('adherentsList').style.display = 'none';
+            }, 200);
+        }
+
+        // Sélectionner un adhérent
+        function selectAdherent(id, nom, prenom, isAssociation) {
+            // Annuler le timeout de masquage si en cours
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+            }
+
+            // Remplir les champs
+            document.getElementById('adherent_id').value = id;
+            document.getElementById('adherent_search').value = `${nom} ${prenom}`;
+
+            // Masquer la liste
+            document.getElementById('adherentsList').style.display = 'none';
+
+            // Mettre à jour les infos adhérent
+            updateAdherentInfoFromSelection(isAssociation);
+
+            // Recalculer le montant
+            calculerMontantTotal();
+        }
+
+        // Mettre à jour les infos adhérent après sélection
+        function updateAdherentInfoFromSelection(isAssociation) {
+            const div = document.getElementById('adherentInfo');
+
+            div.innerHTML = `
+                <div class="alert alert-${isAssociation ? 'success' : 'info'} alert-sm">
+                    <i class="bi bi-info-circle"></i>
+                    ${isAssociation ? '✅ Adhérent à l\'association - Réduction applicable' : 'ℹ️ Non adhérent à l\'association'}
+                </div>
+            `;
+        }
+
+        // Gérer la navigation clavier dans la recherche d'adhérent
+        let selectedAdherentIndex = -1;
+        function handleAdherentSearchKeyboard(event) {
+            const list = document.getElementById('adherentsList');
+            const items = list.querySelectorAll('.list-group-item-action');
+
+            if (items.length === 0) return;
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectedAdherentIndex = Math.min(selectedAdherentIndex + 1, items.length - 1);
+                    highlightAdherentItem(items);
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectedAdherentIndex = Math.max(selectedAdherentIndex - 1, 0);
+                    highlightAdherentItem(items);
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedAdherentIndex >= 0 && selectedAdherentIndex < items.length) {
+                        items[selectedAdherentIndex].click();
+                    }
+                    break;
+
+                case 'Escape':
+                    event.preventDefault();
+                    document.getElementById('adherentsList').style.display = 'none';
+                    selectedAdherentIndex = -1;
+                    break;
+            }
+        }
+
+        // Mettre en surbrillance l'élément sélectionné au clavier
+        function highlightAdherentItem(items) {
+            items.forEach((item, index) => {
+                if (index === selectedAdherentIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        // Load tarifs for select
+        async function loadTarifs() {
+            try {
+                tarifsCache = await apiRequest('/tarifs-cotisation?actif=true&valide=true');
+
+                const select = document.getElementById('tarif_cotisation_id');
+                select.innerHTML = '<option value="">Sélectionnez un tarif</option>';
+
+                let tarifDefaut = null;
+
+                tarifsCache.forEach(tarif => {
+                    const option = document.createElement('option');
+                    option.value = tarif.id;
+                    option.textContent = `${tarif.libelle} - ${tarif.montant_base}€`;
+                    option.dataset.tarif = JSON.stringify(tarif);
+
+                    // Ajouter un indicateur visuel pour le tarif par défaut
+                    if (tarif.par_defaut) {
+                        option.textContent += ' ⭐';
+                        tarifDefaut = tarif;
+                    }
+
+                    select.appendChild(option);
+                });
+
+                // Précharger le tarif par défaut lors de l'ouverture du modal
+                if (tarifDefaut) {
+                    window.tarifParDefautId = tarifDefaut.id;
+                }
+            } catch (error) {
+                console.error('Erreur chargement tarifs:', error);
+            }
+        }
+
+        // Load modes de paiement for select
+        async function loadModesPaiement() {
+            try {
+                modesPaiementCache = await apiRequest('/parametres/modes-paiement?actif=true');
+
+                const select = document.getElementById('mode_paiement');
+                select.innerHTML = '<option value="">Sélectionnez un mode de paiement</option>';
+
+                modesPaiementCache.forEach(mode => {
+                    const option = document.createElement('option');
+                    option.value = mode.id;
+                    option.textContent = mode.libelle;
+                    option.dataset.mode = JSON.stringify(mode);
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur chargement modes paiement:', error);
+                // Fallback aux modes par défaut si erreur
+                const select = document.getElementById('mode_paiement');
+                select.innerHTML = `
+                    <option value="">Sélectionnez un mode de paiement</option>
+                    <option value="especes">Espèces</option>
+                    <option value="cheque">Chèque</option>
+                    <option value="carte_bancaire">Carte Bancaire</option>
+                    <option value="virement">Virement</option>
+                `;
+            }
+        }
+
+        // Charger les codes de réduction disponibles pour le dropdown
+        async function loadCodesReductionDisponibles() {
+            try {
+                codesReductionCache = await apiRequest('/parametres/codes-reduction?actif=true');
+                renderCodesDisponiblesMenu();
+            } catch (error) {
+                console.error('Erreur chargement codes réduction:', error);
+                const menu = document.getElementById('codesDisponiblesMenu');
+                menu.innerHTML = `
+                    <li><h6 class="dropdown-header">Codes de réduction disponibles</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-2 text-danger"><small><i class="bi bi-exclamation-triangle"></i> Erreur de chargement</small></li>
+                `;
+            }
+        }
+
+        // Afficher les codes disponibles dans le menu dropdown
+        function renderCodesDisponiblesMenu() {
+            const menu = document.getElementById('codesDisponiblesMenu');
+
+            if (!codesReductionCache || codesReductionCache.length === 0) {
+                menu.innerHTML = `
+                    <li><h6 class="dropdown-header">Codes de réduction disponibles</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-2 text-muted"><small>Aucun code disponible</small></li>
+                `;
+                return;
+            }
+
+            const typeLabels = {
+                'pourcentage': 'Pourcentage',
+                'fixe': 'Fixe',
+                'fixe_avec_avoir': 'Fixe + Avoir'
+            };
+
+            const typeIcons = {
+                'pourcentage': 'bi-percent',
+                'fixe': 'bi-cash-coin',
+                'fixe_avec_avoir': 'bi-piggy-bank'
+            };
+
+            // Filtrer les codes valides
+            const codesValides = codesReductionCache.filter(code => {
+                // Vérifier les dates si définies
+                const now = new Date();
+                if (code.date_debut_validite) {
+                    const debut = new Date(code.date_debut_validite);
+                    if (now < debut) return false;
+                }
+                if (code.date_fin_validite) {
+                    const fin = new Date(code.date_fin_validite);
+                    if (now > fin) return false;
+                }
+                // Vérifier la limite d'usage
+                if (code.usage_limite !== null && code.usage_count >= code.usage_limite) {
+                    return false;
+                }
+                return true;
+            });
+
+            if (codesValides.length === 0) {
+                menu.innerHTML = `
+                    <li><h6 class="dropdown-header">Codes de réduction disponibles</h6></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li class="px-3 py-2 text-muted"><small>Aucun code valide actuellement</small></li>
+                `;
+                return;
+            }
+
+            let html = `
+                <li><h6 class="dropdown-header">Codes de réduction disponibles</h6></li>
+                <li><hr class="dropdown-divider"></li>
+            `;
+
+            codesValides.forEach(code => {
+                const valeur = code.type_reduction === 'pourcentage'
+                    ? `${code.valeur}%`
+                    : `${code.valeur}€`;
+
+                const icon = typeIcons[code.type_reduction] || 'bi-tag';
+                const couleur = code.couleur || 'primary';
+
+                // Badges additionnels
+                let badges = '';
+                if (code.usage_limite !== null) {
+                    const restant = code.usage_limite - code.usage_count;
+                    if (restant <= 5) {
+                        badges += `<span class="badge bg-warning text-dark ms-1" style="font-size: 0.7em;">Limité (${restant})</span>`;
+                    }
+                }
+                if (code.date_fin_validite) {
+                    const fin = new Date(code.date_fin_validite);
+                    const diff = (fin - new Date()) / (1000 * 60 * 60 * 24);
+                    if (diff <= 7 && diff > 0) {
+                        badges += `<span class="badge bg-danger ms-1" style="font-size: 0.7em;">Expire bientôt</span>`;
+                    }
+                }
+
+                html += `
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="event.preventDefault(); selectionnerCode('${code.code}');" style="white-space: normal;">
+                            <div class="d-flex align-items-start">
+                                <i class="bi ${icon} text-${couleur} me-2 mt-1" style="font-size: 1.2em;"></i>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold">${code.code} - ${valeur}</div>
+                                    <small class="text-muted">${code.libelle}</small>
+                                    ${badges}
+                                    ${code.description ? `<div><small class="text-muted fst-italic">${code.description}</small></div>` : ''}
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                `;
+            });
+
+            menu.innerHTML = html;
+        }
+
+        // Sélectionner un code depuis le dropdown
+        function selectionnerCode(code) {
+            document.getElementById('code_reduction').value = code;
+            verifierCodeReduction();
+        }
+
+        // Mettre à jour le placeholder de la référence selon le mode de paiement
+        function updateReferencePlaceholder() {
+            const select = document.getElementById('mode_paiement');
+            const input = document.getElementById('reference_paiement');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (!selectedOption || !selectedOption.value) {
+                input.placeholder = 'Référence de paiement';
+                return;
+            }
+
+            // Si c'est un mode chargé depuis l'API
+            if (selectedOption.dataset.mode) {
+                try {
+                    const mode = JSON.parse(selectedOption.dataset.mode);
+                    const libelle = mode.libelle.toLowerCase();
+
+                    // Mapping des placeholders selon le libellé
+                    const placeholders = {
+                        'chèque': 'N° de chèque (ex: 1234567)',
+                        'cheque': 'N° de chèque (ex: 1234567)',
+                        'virement': 'Référence bancaire',
+                        'carte': 'N° de transaction (optionnel)',
+                        'carte bancaire': 'N° de transaction (optionnel)',
+                        'cb': 'N° de transaction (optionnel)',
+                        'espèces': 'N° de reçu (optionnel)',
+                        'espece': 'N° de reçu (optionnel)',
+                        'prélèvement': 'N° de mandat SEPA',
+                        'prelevement': 'N° de mandat SEPA',
+                        'paypal': 'ID de transaction PayPal',
+                        'autre': 'Référence de paiement'
+                    };
+
+                    // Chercher une correspondance partielle
+                    let placeholder = 'Référence de paiement';
+                    for (const [key, value] of Object.entries(placeholders)) {
+                        if (libelle.includes(key)) {
+                            placeholder = value;
+                            break;
+                        }
+                    }
+
+                    input.placeholder = placeholder;
+                } catch (e) {
+                    console.error('Erreur parsing mode:', e);
+                    input.placeholder = 'Référence de paiement';
+                }
+            } else {
+                // Fallback pour les modes statiques
+                const value = selectedOption.value.toLowerCase();
+                const placeholders = {
+                    'especes': 'N° de reçu (optionnel)',
+                    'cheque': 'N° de chèque (ex: 1234567)',
+                    'carte_bancaire': 'N° de transaction (optionnel)',
+                    'virement': 'Référence bancaire',
+                    'prelevement': 'N° de mandat SEPA'
+                };
+
+                input.placeholder = placeholders[value] || 'Référence de paiement';
+            }
+        }
+
+        // Vérifier un code de réduction
+        async function verifierCodeReduction() {
+            const codeInput = document.getElementById('code_reduction');
+            const code = codeInput.value.trim().toUpperCase();
+            const infoDiv = document.getElementById('codeReductionInfo');
+            const btnRetirer = document.getElementById('btnRetirerCode');
+
+            if (!code) {
+                infoDiv.innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> Veuillez saisir un code</div>';
+                return;
+            }
+
+            try {
+                const response = await apiRequest(`/parametres/codes-reduction/verifier/${code}`);
+
+                if (response.valide) {
+                    currentCodeReduction = response.code;
+                    document.getElementById('code_reduction_id').value = response.code.id;
+
+                    const typeLabels = {
+                        'pourcentage': 'Pourcentage',
+                        'fixe': 'Fixe',
+                        'fixe_avec_avoir': 'Fixe avec avoir'
+                    };
+
+                    const valeur = response.code.type_reduction === 'pourcentage'
+                        ? `${response.code.valeur}%`
+                        : `${response.code.valeur}€`;
+
+                    infoDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>${response.code.libelle}</strong><br>
+                            Type: ${typeLabels[response.code.type_reduction]} - Valeur: ${valeur}
+                            ${response.code.description ? `<br><small>${response.code.description}</small>` : ''}
+                        </div>
+                    `;
+
+                    codeInput.disabled = true;
+                    btnRetirer.style.display = 'inline-block';
+
+                    // Mettre à jour l'aperçu du montant
+                    calculerMontantTotal();
+                } else {
+                    infoDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle"></i> ${response.error}</div>`;
+                    currentCodeReduction = null;
+                    document.getElementById('code_reduction_id').value = '';
+                }
+            } catch (error) {
+                infoDiv.innerHTML = `<div class="alert alert-danger"><i class="bi bi-x-circle"></i> ${error.message}</div>`;
+                currentCodeReduction = null;
+                document.getElementById('code_reduction_id').value = '';
+            }
+        }
+
+        // Retirer le code de réduction
+        function retirerCodeReduction() {
+            currentCodeReduction = null;
+            document.getElementById('code_reduction').value = '';
+            document.getElementById('code_reduction').disabled = false;
+            document.getElementById('code_reduction_id').value = '';
+            document.getElementById('codeReductionInfo').innerHTML = '';
+            document.getElementById('btnRetirerCode').style.display = 'none';
+
+            // Mettre à jour l'aperçu du montant
+            calculerMontantTotal();
+        }
+
+        // Calculer le montant total avec réduction
+        async function calculerMontantTotal() {
+            const tarifSelect = document.getElementById('tarif_cotisation_id');
+            const adherentSelect = document.getElementById('adherent_id');
+            const previewDiv = document.getElementById('montantPreview');
+            const detailsDiv = document.getElementById('montantDetails');
+
+            if (!tarifSelect.value || !adherentSelect.value) {
+                previewDiv.style.display = 'none';
+                return;
+            }
+
+            const selectedOption = tarifSelect.options[tarifSelect.selectedIndex];
+            const tarif = JSON.parse(selectedOption.dataset.tarif);
+            const adherentOption = adherentSelect.options[adherentSelect.selectedIndex];
+            const isAssociation = adherentOption.dataset.adhesionAssociation === 'true';
+
+            let montantBase = parseFloat(tarif.montant_base);
+            let reductionTarif = 0;
+            let reductionCode = 0;
+            let avoir = 0;
+
+            // Réduction association du tarif
+            if (isAssociation && tarif.reduction_association_valeur > 0) {
+                if (tarif.reduction_association_type === 'pourcentage') {
+                    reductionTarif = montantBase * (tarif.reduction_association_valeur / 100);
+                } else {
+                    reductionTarif = tarif.reduction_association_valeur;
+                }
+            }
+
+            let montantApresReductionTarif = montantBase - reductionTarif;
+
+            // Réduction code
+            if (currentCodeReduction) {
+                try {
+                    const calcul = await apiRequest(`/parametres/codes-reduction/${currentCodeReduction.id}/calculer`, {
+                        method: 'POST',
+                        body: JSON.stringify({ montant: montantApresReductionTarif })
+                    });
+
+                    reductionCode = calcul.calcul.reduction;
+                    avoir = calcul.calcul.avoir || 0;
+                    montantApresReductionTarif = calcul.calcul.montant_final;
+                } catch (error) {
+                    console.error('Erreur calcul réduction:', error);
+                }
+            }
+
+            const montantFinal = montantApresReductionTarif;
+
+            detailsDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-6 text-end">Montant de base:</div>
+                    <div class="col-6"><strong>${montantBase.toFixed(2)} €</strong></div>
+                    ${reductionTarif > 0 ? `
+                        <div class="col-6 text-end text-success">Réduction association:</div>
+                        <div class="col-6 text-success">-${reductionTarif.toFixed(2)} €</div>
+                    ` : ''}
+                    ${reductionCode > 0 ? `
+                        <div class="col-6 text-end text-success">Réduction code "${currentCodeReduction.code}":</div>
+                        <div class="col-6 text-success">-${reductionCode.toFixed(2)} €</div>
+                    ` : ''}
+                    <div class="col-12"><hr></div>
+                    <div class="col-6 text-end"><strong>Montant à payer:</strong></div>
+                    <div class="col-6"><strong class="fs-4 text-primary">${montantFinal.toFixed(2)} €</strong></div>
+                    ${avoir > 0 ? `
+                        <div class="col-6 text-end text-info">Avoir généré:</div>
+                        <div class="col-6 text-info"><strong>+${avoir.toFixed(2)} €</strong></div>
+                    ` : ''}
+                </div>
+            `;
+
+            previewDiv.style.display = 'block';
+        }
+
+
+        // Update tarif info
+        function updateTarifInfo() {
+            const select = document.getElementById('tarif_cotisation_id');
+            const selectedOption = select.options[select.selectedIndex];
+            const div = document.getElementById('tarifInfo');
+
+            if (!select.value) {
+                div.innerHTML = '';
+                return;
+            }
+
+            const tarif = JSON.parse(selectedOption.dataset.tarif);
+            div.innerHTML = `
+                <div class="alert alert-secondary">
+                    <strong>Type période:</strong> ${formatTypePeriode(tarif.type_periode)}<br>
+                    <strong>Type montant:</strong> ${tarif.type_montant === 'fixe' ? 'Fixe' : 'Prorata'}<br>
+                    <strong>Montant de base:</strong> ${tarif.montant_base} €
+                    ${tarif.reduction_association_valeur > 0 ? `<br><strong>Réduction association:</strong> ${tarif.reduction_association_valeur}${tarif.reduction_association_type === 'pourcentage' ? '%' : '€'}` : ''}
+                </div>
+            `;
+
+            // Recalculer le montant
+            calculerMontantTotal();
+        }
+
+        // Show modal for new cotisation
+        function showCotisationModal() {
+            document.getElementById('cotisationForm').reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date_paiement').value = today;
+
+            // Réinitialiser les infos
+            document.getElementById('adherent_search').value = '';
+            document.getElementById('adherent_id').value = '';
+            document.getElementById('adherentInfo').innerHTML = '';
+            document.getElementById('tarifInfo').innerHTML = '';
+            document.getElementById('montantPreview').style.display = 'none';
+            document.getElementById('adherentsList').style.display = 'none';
+
+            // Réinitialiser le code de réduction
+            retirerCodeReduction();
+
+            // Précharger le tarif par défaut si disponible
+            if (window.tarifParDefautId) {
+                const select = document.getElementById('tarif_cotisation_id');
+                select.value = window.tarifParDefautId;
+                updateTarifInfo();
+            }
+
+            new bootstrap.Modal(document.getElementById('cotisationModal')).show();
+        }
+
+        // Save cotisation
+        async function saveCotisation() {
+            const form = document.getElementById('cotisationForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const codeReductionId = document.getElementById('code_reduction_id').value;
+
+            const data = {
+                adherent_id: parseInt(document.getElementById('adherent_id').value),
+                tarif_cotisation_id: parseInt(document.getElementById('tarif_cotisation_id').value),
+                date_debut: document.getElementById('date_debut').value || undefined,
+                date_fin: document.getElementById('date_fin').value || undefined,
+                date_paiement: document.getElementById('date_paiement').value,
+                mode_paiement_id: parseInt(document.getElementById('mode_paiement').value),
+                reference_paiement: document.getElementById('reference_paiement').value || undefined,
+                notes: document.getElementById('notes').value || undefined
+            };
+
+            // Ajouter le code de réduction si présent
+            if (codeReductionId) {
+                data.code_reduction_id = parseInt(codeReductionId);
+            }
+
+            try {
+                await apiRequest('/cotisations', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                showAlert('Cotisation créée avec succès', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('cotisationModal')).hide();
+                loadCotisations();
+            } catch (error) {
+                showAlert('Erreur: ' + error.message, 'danger');
+            }
+        }
+
+        // Annuler cotisation
+        async function annulerCotisation(id) {
+            const motif = prompt('Motif de l\'annulation (optionnel):');
+            if (motif === null) return; // User cancelled
+
+            try {
+                await apiRequest(`/cotisations/${id}/annuler`, {
+                    method: 'POST',
+                    body: JSON.stringify({ motif })
+                });
+
+                showAlert('Cotisation annulée avec succès', 'success');
+                loadCotisations();
+            } catch (error) {
+                showAlert('Erreur: ' + error.message, 'danger');
+            }
+        }
+
+        // Show details
+        async function showDetails(id) {
+            try {
+                const cot = await apiRequest(`/cotisations/${id}`);
+
+                document.getElementById('detailsContent').innerHTML = `
+                    <table class="table">
+                        <tr>
+                            <th width="30%">Adhérent:</th>
+                            <td>${cot.adherent.nom} ${cot.adherent.prenom}<br>
+                                <small class="text-muted">${cot.adherent.email}</small></td>
+                        </tr>
+                        <tr>
+                            <th>Tarif:</th>
+                            <td>${cot.tarif.libelle}</td>
+                        </tr>
+                        <tr>
+                            <th>Période:</th>
+                            <td>${formatDate(cot.periode_debut)} → ${formatDate(cot.periode_fin)}</td>
+                        </tr>
+                        <tr>
+                            <th>Montant de base:</th>
+                            <td>${cot.montant_base} €</td>
+                        </tr>
+                        <tr>
+                            <th>Réduction appliquée:</th>
+                            <td class="text-success">${cot.reduction_appliquee} €</td>
+                        </tr>
+                        ${cot.code_reduction_applique ? `
+                        <tr>
+                            <th>Code de réduction:</th>
+                            <td><span class="badge bg-info">${cot.code_reduction_applique}</span></td>
+                        </tr>
+                        ` : ''}
+                        ${cot.avoir_genere > 0 ? `
+                        <tr>
+                            <th>Avoir généré:</th>
+                            <td class="text-info"><strong>+${cot.avoir_genere} €</strong></td>
+                        </tr>
+                        ` : ''}
+                        <tr>
+                            <th>Montant payé:</th>
+                            <td><strong class="fs-5">${cot.montant_paye} €</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Date paiement:</th>
+                            <td>${formatDate(cot.date_paiement)}</td>
+                        </tr>
+                        <tr>
+                            <th>Mode paiement:</th>
+                            <td>${formatModePaiement(cot.mode_paiement)}</td>
+                        </tr>
+                        ${cot.reference_paiement ? `
+                        <tr>
+                            <th>Référence:</th>
+                            <td>${cot.reference_paiement}</td>
+                        </tr>
+                        ` : ''}
+                        <tr>
+                            <th>Statut:</th>
+                            <td>${formatStatutBadge(cot.statut)}</td>
+                        </tr>
+                        ${cot.notes ? `
+                        <tr>
+                            <th>Notes:</th>
+                            <td>${cot.notes}</td>
+                        </tr>
+                        ` : ''}
+                    </table>
+                `;
+
+                new bootstrap.Modal(document.getElementById('detailsModal')).show();
+            } catch (error) {
+                showAlert('Erreur: ' + error.message, 'danger');
+            }
+        }
+
+        // Format helpers
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR');
+        }
+
+        function formatTypePeriode(type) {
+            const types = {
+                'annee_civile': 'Année Civile',
+                'annee_scolaire': 'Année Scolaire',
+                'date_a_date': 'Date à Date'
+            };
+            return types[type] || type;
+        }
+
+        function formatModePaiement(mode) {
+            const modes = {
+                'especes': 'Espèces',
+                'cheque': 'Chèque',
+                'carte_bancaire': 'CB',
+                'virement': 'Virement',
+                'prelevement': 'Prélèvement',
+                'autre': 'Autre'
+            };
+            return modes[mode] || mode;
+        }
+
+        function formatStatutBadge(statut) {
+            const statuts = {
+                'en_cours': { label: 'En Cours', class: 'success' },
+                'expiree': { label: 'Expirée', class: 'warning' },
+                'annulee': { label: 'Annulée', class: 'danger' }
+            };
+            const s = statuts[statut] || { label: statut, class: 'secondary' };
+            return `<span class="badge bg-${s.class}">${s.label}</span>`;
+        }
+
+        // Show alert
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Search on input
+        document.getElementById('searchAdherent').addEventListener('input', () => {
+            displayCotisations(cotisationsCache);
+        });
+    </script>
+</body>
+</html>
