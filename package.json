@@ -29,6 +29,7 @@
     "setup-complete-communications": "npm run migrate-templates && npm run migrate-event-triggers && npm run seed-templates-event-triggers && npm run seed-event-triggers",
     "check-triggers": "node database/check-triggers-status.js",
     "setup-email-config": "node database/seeds/seedEmailConfig.js",
+    "test-email-system": "node database/diagnostics/test-email-system.js",
     "job-email-reminders": "node backend/jobs/emailReminders.js"
   },
   "keywords": [

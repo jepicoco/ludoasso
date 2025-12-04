@@ -142,7 +142,7 @@ const createAdherent = async (req, res) => {
     // Déclencher l'événement de création d'adhérent
     try {
       await eventTriggerService.triggerAdherentCreated(adherent);
-// console.('Event ADHERENT_CREATED déclenché pour:', adherent.email);
+      // console.log('Event ADHERENT_CREATED déclenché pour:', adherent.email);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue

@@ -182,7 +182,7 @@ module.exports = (sequelize) => {
    */
   ConfigurationEmail.prototype.envoyerEmailTest = async function(destinataire) {
     const emailService = require('../services/emailService');
-    return await emailService.sendEmail(this.id, {
+    return await emailService.sendEmail({
       to: destinataire,
       subject: 'Test de configuration email',
       html: `
@@ -196,7 +196,10 @@ module.exports = (sequelize) => {
         </ul>
         <p><em>Ceci est un email de test automatique.</em></p>
       `,
-      text: `Test réussi ! Cet email a été envoyé depuis la configuration ${this.libelle}.`
+      metadata: {
+        test_config_id: this.id,
+        test_config_libelle: this.libelle
+      }
     });
   };
 

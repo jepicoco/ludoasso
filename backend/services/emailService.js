@@ -365,6 +365,57 @@ class EmailService {
       adherentId: adherent.id
     });
   }
+
+  /**
+   * Teste une configuration SMTP
+   * @param {Object} config - Configuration email (instance ConfigurationEmail ou objet)
+   * @returns {Promise<Object>} - {success: boolean, message: string}
+   */
+  async testConfiguration(config) {
+    try {
+      const nodemailer = require('nodemailer');
+
+      // Déchiffrer le mot de passe si nécessaire
+      let smtpPassword = config.smtp_password;
+      if (smtpPassword && smtpPassword.includes(':')) {
+        try {
+          smtpPassword = this.decryptPassword(smtpPassword);
+        } catch (decryptError) {
+          // Si le déchiffrement échoue, le mot de passe est peut-être en clair
+        }
+      }
+
+      // Créer un transporteur temporaire
+      const testTransporter = nodemailer.createTransport({
+        host: config.smtp_host,
+        port: config.smtp_port,
+        secure: config.smtp_secure || false,
+        requireTLS: config.smtp_require_tls !== false,
+        auth: {
+          user: config.smtp_user,
+          pass: smtpPassword
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        connectionTimeout: config.smtp_timeout || 10000
+      });
+
+      // Tester la connexion
+      await testTransporter.verify();
+
+      return {
+        success: true,
+        message: 'Connexion SMTP réussie'
+      };
+    } catch (error) {
+      console.error('Erreur test SMTP:', error.message);
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  }
 }
 
 // Export singleton
