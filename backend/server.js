@@ -75,7 +75,11 @@ app.use('/api/tarifs-cotisation', require('./routes/tarifsCotisation'));
 app.use('/api/cotisations', require('./routes/cotisations'));
 app.use('/api/parametres', require('./routes/parametres'));
 app.use('/api/email-logs', require('./routes/emailLogs'));
+app.use('/api/sms-logs', require('./routes/smsLogs'));
 app.use('/api/event-triggers', require('./routes/eventTriggers'));
+app.use('/api/configurations-sms', require('./routes/configurationsSMS'));
+app.use('/api/archives', require('./routes/archives'));
+app.use('/api/import', require('./routes/import'));
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

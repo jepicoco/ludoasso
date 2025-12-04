@@ -450,7 +450,7 @@ function showCommunicationSection(section) {
   document.getElementById('section-configurations-email').style.display = 'none';
   document.getElementById('section-configurations-sms').style.display = 'none';
   document.getElementById('section-templates-messages').style.display = 'none';
-  document.getElementById('section-historique-emails').style.display = 'none';
+  document.getElementById('section-declencheurs').style.display = 'none';
 
   // Afficher la section demandée
   document.getElementById(`section-${section}`).style.display = 'block';
@@ -468,10 +468,8 @@ function showCommunicationSection(section) {
     loadConfigurationsSMS();
   } else if (section === 'templates-messages') {
     loadTemplatesMessages();
-  } else if (section === 'historique-emails') {
-    loadEmailStatistics();
-    loadEmailLogs(1);
-    loadTemplatesFilter();
+  } else if (section === 'declencheurs') {
+    loadDeclencheurs();
   }
 }
 

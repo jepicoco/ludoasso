@@ -10,6 +10,7 @@ exports.getAllEmailLogs = async (req, res) => {
       statut,
       template_code,
       adherent_id,
+      destinataire,
       date_debut,
       date_fin,
       page = 1,
@@ -29,6 +30,14 @@ exports.getAllEmailLogs = async (req, res) => {
 
     if (adherent_id) {
       where.adherent_id = adherent_id;
+    }
+
+    // Filtre par destinataire (email ou nom)
+    if (destinataire) {
+      where[Op.or] = [
+        { destinataire: { [Op.like]: `%${destinataire}%` } },
+        { destinataire_nom: { [Op.like]: `%${destinataire}%` } }
+      ];
     }
 
     if (date_debut && date_fin) {

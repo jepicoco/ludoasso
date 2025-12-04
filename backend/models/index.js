@@ -13,7 +13,10 @@ const ConfigurationEmailModel = require('./ConfigurationEmail');
 const ConfigurationSMSModel = require('./ConfigurationSMS');
 const TemplateMessageModel = require('./TemplateMessage');
 const EmailLogModel = require('./EmailLog');
+const SmsLogModel = require('./SmsLog');
 const EventTriggerModel = require('./EventTrigger');
+const AdherentArchiveModel = require('./AdherentArchive');
+const ArchiveAccessLogModel = require('./ArchiveAccessLog');
 
 // Initialize models
 const Adherent = AdherentModel(sequelize);
@@ -28,7 +31,10 @@ const ConfigurationEmail = ConfigurationEmailModel(sequelize);
 const ConfigurationSMS = ConfigurationSMSModel(sequelize);
 const TemplateMessage = TemplateMessageModel(sequelize);
 const EmailLog = EmailLogModel(sequelize);
+const SmsLog = SmsLogModel(sequelize);
 const EventTrigger = EventTriggerModel(sequelize);
+const AdherentArchive = AdherentArchiveModel(sequelize);
+const ArchiveAccessLog = ArchiveAccessLogModel(sequelize);
 
 // Define associations
 // Adherent <-> Emprunt (One-to-Many)
@@ -97,6 +103,17 @@ EmailLog.belongsTo(Adherent, {
   as: 'adherent'
 });
 
+// Adherent <-> SmsLog (One-to-Many)
+Adherent.hasMany(SmsLog, {
+  foreignKey: 'adherent_id',
+  as: 'smsLogs'
+});
+
+SmsLog.belongsTo(Adherent, {
+  foreignKey: 'adherent_id',
+  as: 'adherent'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -112,5 +129,8 @@ module.exports = {
   ConfigurationSMS,
   TemplateMessage,
   EmailLog,
-  EventTrigger
+  SmsLog,
+  EventTrigger,
+  AdherentArchive,
+  ArchiveAccessLog
 };

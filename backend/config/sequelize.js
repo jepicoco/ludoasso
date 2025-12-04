@@ -11,6 +11,7 @@ const sequelize = new Sequelize(
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     dialectOptions: {
       connectTimeout: 10000, // 10 seconds timeout for initial connection
+      charset: 'utf8mb4',
       // Support for mysql_native_password authentication plugin
       authPlugins: {
         mysql_native_password: () => () => {
@@ -44,7 +45,9 @@ const sequelize = new Sequelize(
     },
     define: {
       timestamps: false,
-      underscored: false
+      underscored: false,
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci'
     }
   }
 );

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --scanner-bg: #1a1a2e;
+      --scanner-card: #16213e;
+      --scanner-accent: #0f3460;
+      --scanner-success: #00d26a;
+      --scanner-error: #ff6b6b;
+      --scanner-warning: #ffc107;
+      --scanner-text: #e8e8e8;
+    }
+
+    body {
+      background-color: var(--scanner-bg);
+      color: var(--scanner-text);
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .scanner-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .scanner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--scanner-accent);
+    }
+
+    .scanner-header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .scanner-header h1 i {
+      color: var(--scanner-success);
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-scanner {
+      background-color: var(--scanner-accent);
+      border: none;
+      color: var(--scanner-text);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-scanner:hover {
+      background-color: #1a4a7a;
+      color: white;
+    }
+
+    .btn-scanner.btn-fullscreen {
+      background-color: transparent;
+      border: 1px solid var(--scanner-accent);
+    }
+
+    /* Zone Scanner */
+    .scanner-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #reader video {
+      border-radius: 12px;
+    }
+
+    .scanner-status {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 1.1rem;
+    }
+
+    .scanner-status.scanning {
+      color: var(--scanner-warning);
+    }
+
+    .scanner-status.success {
+      color: var(--scanner-success);
+    }
+
+    .scanner-status.error {
+      color: var(--scanner-error);
+    }
+
+    /* Zone Adherent */
+    .adherent-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .adherent-zone h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 15px;
+    }
+
+    .adherent-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .adherent-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .adherent-details h4 {
+      margin: 0 0 5px 0;
+      font-size: 1.2rem;
+    }
+
+    .adherent-details p {
+      margin: 0;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .adherent-placeholder {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .adherent-placeholder i {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .btn-clear-adherent {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--scanner-error);
+      color: var(--scanner-error);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-clear-adherent:hover {
+      background: var(--scanner-error);
+      color: white;
+    }
+
+    /* Historique */
+    .history-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .history-zone h3 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      background-color: var(--scanner-accent);
+    }
+
+    .history-item.success {
+      border-left: 4px solid var(--scanner-success);
+    }
+
+    .history-item.error {
+      border-left: 4px solid var(--scanner-error);
+    }
+
+    .history-item.info {
+      border-left: 4px solid var(--scanner-warning);
+    }
+
+    .history-icon {
+      font-size: 1.5rem;
+    }
+
+    .history-icon.success { color: var(--scanner-success); }
+    .history-icon.error { color: var(--scanner-error); }
+    .history-icon.info { color: var(--scanner-warning); }
+
+    .history-content {
+      flex: 1;
+    }
+
+    .history-content .action {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .history-content .details {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .history-time {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .history-empty {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+    }
+
+    /* Modal Saisie Manuelle */
+    .modal-content {
+      background-color: var(--scanner-card);
+      color: var(--scanner-text);
+      border: none;
+      border-radius: 16px;
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--scanner-accent);
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--scanner-accent);
+    }
+
+    .form-control, .form-select {
+      background-color: var(--scanner-accent);
+      border: 1px solid #333;
+      color: var(--scanner-text);
+    }
+
+    .form-control:focus, .form-select:focus {
+      background-color: var(--scanner-accent);
+      border-color: #667eea;
+      color: var(--scanner-text);
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    /* Badge statut */
+    .badge-statut {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .badge-actif { background-color: var(--scanner-success); color: #000; }
+    .badge-inactif { background-color: #6c757d; }
+    .badge-suspendu { background-color: var(--scanner-error); }
+    .badge-disponible { background-color: var(--scanner-success); color: #000; }
+    .badge-emprunte { background-color: var(--scanner-warning); color: #000; }
+
+    /* Animations */
+    @keyframes pulse-success {
+      0% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0.7); }
+      70% { box-shadow: 0 0 0 20px rgba(0, 210, 106, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 210, 106, 0); }
+    }
+
+    @keyframes pulse-error {
+      0% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7); }
+      70% { box-shadow: 0 0 0 20px rgba(255, 107, 107, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 107, 107, 0); }
+    }
+
+    .scanner-zone.flash-success {
+      animation: pulse-success 0.5s ease-out;
+    }
+
+    .scanner-zone.flash-error {
+      animation: pulse-error 0.5s ease-out;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .scanner-container {
+        padding: 10px;
+      }
+
+      .scanner-header h1 {
+        font-size: 1.2rem;
+      }
+
+      .adherent-info {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .btn-clear-adherent {
+        margin: 10px auto 0;
+      }
+    }
+
+    /* Fullscreen mode */
+    body.fullscreen-mode {
+      padding: 0;
+    }
+
+    body.fullscreen-mode .scanner-container {
+      max-width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.fullscreen-mode .scanner-zone {
+      flex: 1;
+    }
+
+    body.fullscreen-mode #reader {
+      max-width: none;
+      height: calc(100vh - 400px);
+    }
+
+    /* Resultats de recherche */
+    .search-results {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      background-color: var(--scanner-accent);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .search-result-item:hover {
+      background-color: #1a4a7a;
+    }
+
+    .search-result-item .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .search-result-item .jeu-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .search-result-item .info {
+      flex: 1;
+    }
+
+    .search-result-item .info .name {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .search-result-item .info .details {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .search-result-item .badge {
+      font-size: 0.7rem;
+    }
+
+    .search-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn-search {
+      flex: 1;
+      background-color: var(--scanner-accent);
+      border: 1px dashed #555;
+      color: #aaa;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-search:hover {
+      background-color: #1a4a7a;
+      border-color: #667eea;
+      color: white;
+    }
+
+    .btn-search i {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container">
+    <!-- Header -->
+    <div class="scanner-header">
+      <h1>
+        <i class="bi bi-upc-scan"></i>
+        Scanner Ludotheque
+      </h1>
+      <div class="header-buttons">
+        <button class="btn-scanner" onclick="openManualInput()">
+          <i class="bi bi-keyboard"></i> Saisie manuelle
+        </button>
+        <button class="btn-scanner" onclick="switchCamera()">
+          <i class="bi bi-camera-fill"></i> Changer camera
+        </button>
+        <button class="btn-scanner btn-fullscreen" onclick="toggleFullscreen()">
+          <i class="bi bi-fullscreen"></i>
+        </button>
+        <a href="emprunts.html" class="btn-scanner">
+          <i class="bi bi-arrow-left"></i> Retour
+        </a>
+      </div>
+    </div>
+
+    <!-- Zone Scanner -->
+    <div class="scanner-zone" id="scanner-zone">
+      <div id="reader"></div>
+      <div class="scanner-status scanning" id="scanner-status">
+        <i class="bi bi-camera-video"></i> En attente de scan...
+      </div>
+    </div>
+
+    <!-- Zone Adherent -->
+    <div class="adherent-zone">
+      <h3><i class="bi bi-person-badge"></i> Adherent selectionne</h3>
+      <div id="adherent-display">
+        <div class="adherent-placeholder">
+          <i class="bi bi-person-plus"></i>
+          <p>Scannez la carte d'un adherent pour commencer</p>
+        </div>
+      </div>
+      <div class="search-buttons">
+        <button class="btn-search" onclick="openSearchAdherent()">
+          <i class="bi bi-person-search"></i>
+          Rechercher adherent
+        </button>
+        <button class="btn-search" onclick="openSearchJeu()">
+          <i class="bi bi-dice-5"></i>
+          Rechercher jeu
+        </button>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="history-zone">
+      <h3>
+        <span><i class="bi bi-clock-history"></i> Dernieres actions</span>
+        <button class="btn-scanner" onclick="clearHistory()" style="padding: 4px 10px; font-size: 0.8rem;">
+          <i class="bi bi-trash"></i> Vider
+        </button>
+      </h3>
+      <div class="history-list" id="history-list">
+        <div class="history-empty">
+          <i class="bi bi-inbox"></i>
+          <p>Aucune action pour le moment</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Saisie Manuelle -->
+  <div class="modal fade" id="manualInputModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-keyboard"></i> Saisie manuelle
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Code-barre</label>
+            <input type="text" class="form-control" id="manual-code" placeholder="ADH00000001 ou JEU00000001" autofocus>
+            <div class="form-text">Saisissez le code-barre de l'adherent ou du jeu</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="submitManualCode()">
+            <i class="bi bi-check-lg"></i> Valider
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Recherche Adherent -->
+  <div class="modal fade" id="searchAdherentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-person-search"></i> Rechercher un adherent
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nom, prenom ou numero</label>
+            <input type="text" class="form-control" id="search-adherent-input" placeholder="Rechercher..." autofocus>
+          </div>
+          <div id="search-adherent-results" class="search-results">
+            <p class="text-muted text-center">Tapez pour rechercher un adherent</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Recherche Jeu -->
+  <div class="modal fade" id="searchJeuModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-dice-5"></i> Rechercher un jeu
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Titre du jeu</label>
+            <input type="text" class="form-control" id="search-jeu-input" placeholder="Rechercher..." autofocus>
+          </div>
+          <div id="search-jeu-results" class="search-results">
+            <p class="text-muted text-center">Tapez pour rechercher un jeu</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Aide -->
+  <div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-question-circle"></i> Comment utiliser le scanner
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <h6><i class="bi bi-1-circle text-primary"></i> Pour un emprunt</h6>
+          <ol>
+            <li>Scannez la carte de l'adherent (code ADHxxxxxxxx)</li>
+            <li>Scannez le jeu a emprunter (code JEUxxxxxxxx)</li>
+            <li>L'emprunt est cree automatiquement</li>
+          </ol>
+
+          <h6 class="mt-4"><i class="bi bi-2-circle text-success"></i> Pour un retour</h6>
+          <ol>
+            <li>Scannez simplement le jeu emprunte</li>
+            <li>Le retour est enregistre automatiquement</li>
+            <li>Pas besoin de scanner l'adherent</li>
+          </ol>
+
+          <h6 class="mt-4"><i class="bi bi-lightbulb text-warning"></i> Astuces</h6>
+          <ul>
+            <li>Les codes-barres internes commencent par ADH ou JEU</li>
+            <li>Vous pouvez enchainer plusieurs emprunts pour le meme adherent</li>
+            <li>Un son confirme chaque action reussie</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Compris !</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio feedback -->
+  <audio id="sound-success" preload="auto">
+    <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onp+Xi3VmaHqHl52ck4t2ZGJxgZGdnpmOgHFiYnWDkpyeko2DdWliZnmGlJqXkop+b2Vlb36LmJiUjYN2aGZpfYqXmZWPhXhsaGp8iZaYlI+HeW1qa32Jl5iUj4Z4bGpsf4qYmJSOhXdram2Ai5mYk42Ed2pqboKMmpiSi4JzaGpvgo2amJGJf3JnaW+DjpuYkIh9cGZob4OPm5iPh3tvZWhvg4+bmI+GeW5lZ2+Dj5uYj4Z4bWRnb4OPm5iPhndtZGdvg5CbmI+Fd21kZ2+DkJuYj4V3bWRnb4SRm5iPhXZsY2Zvg5GbmI+FdW1jZm+DkZuYj4V1bGNmb4ORm5iPhXVsY2Zvg5GbmI+FdWxjZm+EkZuYj4V0a2JlboSRm5mPhHVrYmVuhJGbmY+Ec2tiZW6EkZuZj4RzamFlboSRm5mPhHNpYWRthJKbmY+Ec2hhZG2Ek5uZj4NyaGBjbIOTm5mOg3FnX2Nsg5Oamp6Ee2xoZ3J/jpmbk4x/cm1rcX6NmZmTi4BzbW5yf46ZmZKJfnFsbnKAj5mZkoh9cGtucoCQmZmSiHxvam5zgo+Zmn0=" type="audio/wav">
+  </audio>
+  <audio id="sound-error" preload="auto">
+    <source src="data:audio/wav;base64,UklGRl4DAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YToDAABzAHMAdAB2AHgAeQB4AHYAdABxAG8AbQBrAGkAaABoAGkAagBsAG4AcQBzAHQAdQB0AHIAbwBsAGkAZgBkAGQAZABmAGkAbQBxAHQAdgB3AHcAdQByAG8AbABpAGcAZQBlAGYAaABrAG8AcwB2AHgAeAB3AHUAcQBuAGsAaABmAGUAZQBnAGoAbQBxAHQAdwB4AHcAdQByAG4AawBoAGYAZABkAGUAaABrAG8AcwB2AHgAeAB3AHQAcQBtAGoAZwBlAGQAZABmAGkAbQBwAHQAdwB4AHcAdQBxAG4AagBnAGUAZABkAGUAaABsAHAAcwB2AHgAeAB2AHMAbwBsAGgAZQBjAGMAZABmAGoAbgByAHUAeAB5AHgAdQByAG4AagBnAGQAYwBjAGQAZwBrAG8AcwB3AHkAeQB3AHQAcABsAGkAZQBjAGIAYwBlAGgAbABwAHQAeAB6AHkAdwBzAG8AawBnAGQAYgBhAGIAZABnAGsAcAB0AHgAegB6AHgAdABwAGwAaABkAGIAYQBhAGMAZgBqAG8AcwB3AHoAewB5AHUAcQBsAGgAZABhAGAAYABiAGUAaQBuAHMAdwB6AHsAeQB1AHEAbQBoAGQAYQBfAF8AYABjAGcAbABxAHUAeQB7AHoAeAB0AG8AawBmAGIAXwBeAF4AYABjAGgAbQByAHYAegB8AHsAeABzAG4AaQBlAGAAXgBdAF0AXwBjAGcAbQByAHcAewB9AHsAeABzAG4AaQBkAGAAXQBcAFwAXgBhAGYAbAByAHgAfAB+" type="audio/wav">
+  </audio>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/scanner.js"></script>
+</body>
+</html>

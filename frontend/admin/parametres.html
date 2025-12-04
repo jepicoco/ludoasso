@@ -9,6 +9,120 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* Styles pour les chips de variables draggables */
+    .variable-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      margin: 2px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: grab;
+      user-select: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .variable-chip:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    .variable-chip:active {
+      cursor: grabbing;
+      transform: scale(0.95);
+    }
+
+    .variable-chip i {
+      margin-right: 4px;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+
+    .variable-chip.dragging {
+      opacity: 0.5;
+      transform: scale(1.05);
+    }
+
+    /* Zones de drop */
+    .drop-zone {
+      transition: all 0.2s ease;
+    }
+
+    .drop-zone.drag-over {
+      border-color: #667eea !important;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25) !important;
+      background-color: rgba(102, 126, 234, 0.05) !important;
+    }
+
+    /* Couleurs differentes par categorie */
+    #vars-adherent .variable-chip {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    #vars-emprunt .variable-chip {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    #vars-emprunts-liste .variable-chip {
+      background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    }
+
+    #vars-cotisation .variable-chip {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    #vars-structure .variable-chip {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    #vars-systeme .variable-chip {
+      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+
+    /* Sidebar des variables */
+    .variables-sidebar {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      position: sticky;
+      top: 20px;
+      max-height: calc(100vh - 250px);
+      overflow-y: auto;
+    }
+
+    .vars-category-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      padding-left: 2px;
+    }
+
+    /* Scrollbar personnalisee pour la sidebar */
+    .variables-sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .variables-sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .variables-sidebar::-webkit-scrollbar-thumb {
+      background: #cbd3da;
+      border-radius: 3px;
+    }
+
+    .variables-sidebar::-webkit-scrollbar-thumb:hover {
+      background: #adb5bd;
+    }
+  </style>
 </head>
 <body>
   <!-- Navigation (généré par JS) -->
@@ -56,6 +170,12 @@
             <button class="nav-link" id="utilisateurs-tab" data-bs-toggle="tab" data-bs-target="#utilisateurs"
                     type="button" role="tab">
               <i class="bi bi-people"></i> Utilisateurs
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="archives-tab" data-bs-toggle="tab" data-bs-target="#archives"
+                    type="button" role="tab">
+              <i class="bi bi-archive"></i> Archives RGPD
             </button>
           </li>
         </ul>
@@ -349,8 +469,8 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showCommunicationSection('historique-emails'); return false;">
-                  <i class="bi bi-clock-history"></i> Historique Emails
+                <a class="nav-link" href="#" onclick="showCommunicationSection('declencheurs'); return false;">
+                  <i class="bi bi-bell"></i> Déclencheurs
                 </a>
               </li>
             </ul>
@@ -457,78 +577,77 @@
               </div>
             </div>
 
-            <!-- Section Historique Emails -->
-            <div id="section-historique-emails" style="display: none;">
-              <div class="card mb-4">
-                <div class="card-header">
-                  <h4 class="card-title mb-0"><i class="bi bi-graph-up"></i> Statistiques des emails</h4>
+            <!-- Section Déclencheurs -->
+            <div id="section-declencheurs" style="display: none;">
+              <!-- Statistiques des déclencheurs -->
+              <div class="row mb-4" id="declencheurs-stats-container">
+                <div class="col-md-3">
+                  <div class="card text-center">
+                    <div class="card-body">
+                      <h6 class="card-title text-muted">Total</h6>
+                      <p class="card-text fs-4" id="declencheur-stat-total">0</p>
+                    </div>
+                  </div>
                 </div>
-                <div class="card-body">
-                  <div id="email-statistics">
-                    <div class="text-center p-4">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
-                      </div>
+                <div class="col-md-3">
+                  <div class="card text-center">
+                    <div class="card-body">
+                      <h6 class="card-title text-muted">Emails actifs</h6>
+                      <p class="card-text fs-4 text-success" id="declencheur-stat-emails">0</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card text-center">
+                    <div class="card-body">
+                      <h6 class="card-title text-muted">SMS actifs</h6>
+                      <p class="card-text fs-4 text-info" id="declencheur-stat-sms">0</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card text-center">
+                    <div class="card-body">
+                      <h6 class="card-title text-muted">Inactifs</h6>
+                      <p class="card-text fs-4 text-secondary" id="declencheur-stat-inactifs">0</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="card">
-                <div class="card-header">
-                  <h4 class="card-title mb-0"><i class="bi bi-clock-history"></i> Historique des emails envoyés</h4>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h4 class="card-title mb-0">Déclencheurs d'événements</h4>
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary active" onclick="filterDeclencheursByCategory('all', this)">
+                      Tous
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="filterDeclencheursByCategory('adherent', this)">
+                      Adhérents
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="filterDeclencheursByCategory('emprunt', this)">
+                      Emprunts
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="filterDeclencheursByCategory('cotisation', this)">
+                      Cotisations
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="filterDeclencheursByCategory('systeme', this)">
+                      Système
+                    </button>
+                  </div>
                 </div>
                 <div class="card-body">
-                  <!-- Filtres -->
-                  <div class="row mb-3">
-                    <div class="col-md-3">
-                      <label class="form-label">Statut</label>
-                      <select class="form-select" id="filter-statut-email" onchange="loadEmailLogs()">
-                        <option value="">Tous les statuts</option>
-                        <option value="envoye">Envoyé</option>
-                        <option value="erreur">Erreur</option>
-                        <option value="en_attente">En attente</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Template</label>
-                      <select class="form-select" id="filter-template-email" onchange="loadEmailLogs()">
-                        <option value="">Tous les templates</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Date début</label>
-                      <input type="date" class="form-control" id="filter-date-debut" onchange="loadEmailLogs()">
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Date fin</label>
-                      <input type="date" class="form-control" id="filter-date-fin" onchange="loadEmailLogs()">
-                    </div>
-                  </div>
-
-                  <div class="row mb-3">
-                    <div class="col-md-6">
-                      <button class="btn btn-secondary btn-sm" onclick="resetFiltersEmailLogs()">
-                        <i class="bi bi-x-circle"></i> Réinitialiser les filtres
-                      </button>
-                    </div>
-                    <div class="col-md-6 text-end">
-                      <button class="btn btn-danger btn-sm" onclick="showPurgeModal()">
-                        <i class="bi bi-trash"></i> Purger anciens logs
-                      </button>
-                    </div>
-                  </div>
-
-                  <div id="liste-email-logs">
+                  <p class="text-muted">
+                    <i class="bi bi-info-circle"></i>
+                    Configurez les envois automatiques d'emails et SMS lors d'événements spécifiques
+                  </p>
+                  <div id="liste-declencheurs">
                     <div class="text-center p-4">
                       <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Chargement...</span>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Pagination -->
-                  <div id="email-logs-pagination" class="mt-3"></div>
                 </div>
               </div>
             </div>
@@ -589,6 +708,194 @@
             </div>
           </div>
 
+          <!-- ======================== -->
+          <!-- Archives RGPD Tab        -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="archives" role="tabpanel">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0"><i class="bi bi-archive"></i> Archives adhérents (RGPD)</h4>
+                <button class="btn btn-outline-secondary btn-sm" onclick="voirHistoriqueAcces()">
+                  <i class="bi bi-clock-history"></i> Historique des accès
+                </button>
+              </div>
+              <div class="card-body">
+                <!-- Alerte RGPD -->
+                <div class="alert alert-info mb-4">
+                  <h6><i class="bi bi-shield-check"></i> Conformité RGPD</h6>
+                  <p class="mb-0">
+                    Les adhérents supprimés sont archivés (non supprimés) pour conserver l'historique des emprunts et cotisations.
+                    L'anonymisation remplace les données personnelles (nom, prénom, email, téléphone, adresse) par <code>*****</code>
+                    tout en conservant les données statistiques.
+                  </p>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="row mb-4">
+                  <div class="col-md-3">
+                    <div class="card text-center bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-muted">Total archives</h6>
+                        <p class="card-text fs-4" id="archives-stat-total">0</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-muted">Non anonymisées</h6>
+                        <p class="card-text fs-4 text-info" id="archives-stat-non-anonymisees">0</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-muted">Anonymisées</h6>
+                        <p class="card-text fs-4 text-secondary" id="archives-stat-anonymisees">0</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="card text-center bg-light">
+                      <div class="card-body">
+                        <h6 class="card-title text-muted">Adhérents actifs</h6>
+                        <p class="card-text fs-4 text-success" id="archives-stat-actifs">0</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Actions en masse -->
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <h5 class="mb-0">Actions en masse</h5>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="d-grid">
+                          <button class="btn btn-outline-primary" onclick="previewArchivageInactifs()">
+                            <i class="bi bi-archive"></i> Archiver les adhérents inactifs (3 ans+)
+                          </button>
+                          <small class="text-muted mt-1">Archive les adhérents sans emprunt ni cotisation depuis plus de 3 ans</small>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="d-grid">
+                          <button class="btn btn-outline-warning" onclick="previewAnonymisation()">
+                            <i class="bi bi-shield-lock"></i> Anonymiser les archives (3 ans+)
+                          </button>
+                          <small class="text-muted mt-1">Anonymise les archives dont la dernière activité date de plus de 3 ans</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Recherche et filtres -->
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="archive-search" placeholder="Rechercher..." onkeyup="if(event.key==='Enter') searchArchives()">
+                      <button class="btn btn-outline-secondary" type="button" onclick="searchArchives()">
+                        <i class="bi bi-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select" id="archive-filter-anonymise" onchange="filterArchivesByAnonymise(this.value)">
+                      <option value="">Tous les statuts</option>
+                      <option value="false">Non anonymisées</option>
+                      <option value="true">Anonymisées</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 text-end">
+                    <button class="btn btn-outline-secondary" onclick="loadArchives(1)">
+                      <i class="bi bi-arrow-clockwise"></i> Actualiser
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Liste des archives -->
+                <div id="liste-archives">
+                  <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pagination -->
+                <div id="archives-pagination" class="mt-3"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détail Archive -->
+  <div class="modal fade" id="modalArchiveDetail" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-archive"></i> Détail de l'archive</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="border-bottom pb-2">Informations personnelles</h6>
+              <table class="table table-sm">
+                <tr><th>ID original</th><td id="archive-detail-id"></td></tr>
+                <tr><th>Code barre</th><td id="archive-detail-code"></td></tr>
+                <tr><th>Nom / Prénom</th><td id="archive-detail-nom"></td></tr>
+                <tr><th>Email</th><td id="archive-detail-email"></td></tr>
+                <tr><th>Téléphone</th><td id="archive-detail-telephone"></td></tr>
+                <tr><th>Adresse</th><td id="archive-detail-adresse"></td></tr>
+                <tr><th>Ville</th><td id="archive-detail-ville"></td></tr>
+                <tr><th>Date naissance</th><td id="archive-detail-naissance"></td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6 class="border-bottom pb-2">Informations d'archivage</h6>
+              <table class="table table-sm">
+                <tr><th>Date adhésion</th><td id="archive-detail-adhesion"></td></tr>
+                <tr><th>Date archivage</th><td id="archive-detail-archivage"></td></tr>
+                <tr><th>Motif</th><td id="archive-detail-motif"></td></tr>
+                <tr><th>Statut</th><td id="archive-detail-statut"></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <ul class="nav nav-tabs mt-4" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" data-bs-toggle="tab" href="#archive-tab-emprunts">Emprunts</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#archive-tab-cotisations">Cotisations</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="tab" href="#archive-tab-communications">Communications</a>
+            </li>
+          </ul>
+          <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="archive-tab-emprunts">
+              <div id="archive-detail-emprunts"></div>
+            </div>
+            <div class="tab-pane fade" id="archive-tab-cotisations">
+              <div id="archive-detail-cotisations"></div>
+            </div>
+            <div class="tab-pane fade" id="archive-tab-communications">
+              <div id="archive-detail-communications"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
         </div>
       </div>
     </div>
@@ -1092,13 +1399,31 @@
             </div>
 
             <div class="mb-3">
-              <h6 class="border-bottom pb-2"><i class="bi bi-key"></i> Configuration API SMSFactor</h6>
+              <h6 class="border-bottom pb-2"><i class="bi bi-key"></i> Configuration API SMS</h6>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="config_sms_provider" class="form-label">Fournisseur SMS *</label>
+                <select class="form-select" id="config_sms_provider" required>
+                  <option value="smsfactor">SMSFactor</option>
+                  <option value="brevo">Brevo (ex-Sendinblue)</option>
+                  <option value="twilio">Twilio</option>
+                  <option value="ovh">OVH</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="config_sms_api_url" class="form-label">URL de l'API</label>
+                <input type="url" class="form-control" id="config_sms_api_url" placeholder="https://api.smsfactor.com">
+                <small class="text-muted">Laisser vide pour utiliser l'URL par défaut du fournisseur</small>
+              </div>
             </div>
 
             <div class="mb-3">
-              <label for="config_sms_api_token" class="form-label">Token API SMSFactor *</label>
+              <label for="config_sms_api_token" class="form-label">Token API *</label>
               <input type="password" class="form-control" id="config_sms_api_token" placeholder="Laisser vide pour ne pas modifier">
-              <small class="text-muted">Sera chiffré avant stockage. Obtenir sur <a href="https://www.smsfactor.com" target="_blank">smsfactor.com</a></small>
+              <small class="text-muted">Sera chiffré avant stockage</small>
             </div>
 
             <div class="row">
@@ -1260,45 +1585,122 @@
               </div>
             </div>
 
-            <!-- Section Email -->
-            <div id="email-section">
-              <div class="mb-3">
-                <h6 class="border-bottom pb-2"><i class="bi bi-envelope"></i> Contenu Email</h6>
+            <!-- Layout 2 colonnes : Champs a gauche, Variables a droite -->
+            <div class="row">
+              <!-- Colonne gauche : Champs de saisie -->
+              <div class="col-md-8">
+                <!-- Section Email -->
+                <div id="email-section">
+                  <div class="mb-3">
+                    <h6 class="border-bottom pb-2"><i class="bi bi-envelope"></i> Contenu Email</h6>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="template_email_objet" class="form-label">Objet de l'email</label>
+                    <input type="text" class="form-control drop-zone" id="template_email_objet" placeholder="Bienvenue {{prenom}} !">
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="template_email_corps" class="form-label">Corps de l'email (HTML)</label>
+                    <textarea class="form-control drop-zone" id="template_email_corps" rows="8" placeholder="<h1>Bonjour {{prenom}} {{nom}}</h1>..."></textarea>
+                  </div>
+                </div>
+
+                <!-- Section SMS -->
+                <div id="sms-section">
+                  <div class="mb-3">
+                    <h6 class="border-bottom pb-2"><i class="bi bi-phone"></i> Contenu SMS</h6>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="template_sms_corps" class="form-label">Corps du SMS (max 480 caracteres)</label>
+                    <textarea class="form-control drop-zone" id="template_sms_corps" rows="4" maxlength="480" placeholder="Bonjour {{prenom}}, bienvenue a {{structure_nom}} !"></textarea>
+                    <small class="text-muted"><span id="sms-count">0</span> / 480 caracteres</small>
+                  </div>
+                </div>
               </div>
 
-              <div class="mb-3">
-                <label for="template_email_objet" class="form-label">Objet de l'email</label>
-                <input type="text" class="form-control" id="template_email_objet" placeholder="Bienvenue {{prenom}} !">
-              </div>
+              <!-- Colonne droite : Variables disponibles -->
+              <div class="col-md-4">
+                <div class="variables-sidebar">
+                  <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-code-square"></i> Variables</h6>
+                  <p class="text-muted small mb-3">Glissez ou cliquez pour inserer</p>
 
-              <div class="mb-3">
-                <label for="template_email_corps" class="form-label">Corps de l'email (HTML)</label>
-                <textarea class="form-control" id="template_email_corps" rows="6" placeholder="<h1>Bonjour {{prenom}} {{nom}}</h1>..."></textarea>
+                  <!-- Variables Adherent -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Adherent</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-adherent">
+                      <span class="variable-chip" draggable="true" data-variable="prenom"><i class="bi bi-grip-vertical"></i> prenom</span>
+                      <span class="variable-chip" draggable="true" data-variable="nom"><i class="bi bi-grip-vertical"></i> nom</span>
+                      <span class="variable-chip" draggable="true" data-variable="email"><i class="bi bi-grip-vertical"></i> email</span>
+                      <span class="variable-chip" draggable="true" data-variable="telephone"><i class="bi bi-grip-vertical"></i> telephone</span>
+                      <span class="variable-chip" draggable="true" data-variable="code_barre"><i class="bi bi-grip-vertical"></i> code_barre</span>
+                      <span class="variable-chip" draggable="true" data-variable="date_adhesion"><i class="bi bi-grip-vertical"></i> date_adhesion</span>
+                      <span class="variable-chip" draggable="true" data-variable="adresse"><i class="bi bi-grip-vertical"></i> adresse</span>
+                      <span class="variable-chip" draggable="true" data-variable="ville"><i class="bi bi-grip-vertical"></i> ville</span>
+                      <span class="variable-chip" draggable="true" data-variable="code_postal"><i class="bi bi-grip-vertical"></i> code_postal</span>
+                    </div>
+                  </div>
+
+                  <!-- Variables Emprunt (jeu unique) -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Emprunt (1 jeu)</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-emprunt">
+                      <span class="variable-chip" draggable="true" data-variable="jeu_titre"><i class="bi bi-grip-vertical"></i> jeu_titre</span>
+                      <span class="variable-chip" draggable="true" data-variable="date_emprunt"><i class="bi bi-grip-vertical"></i> date_emprunt</span>
+                      <span class="variable-chip" draggable="true" data-variable="date_retour_prevue"><i class="bi bi-grip-vertical"></i> date_retour_prevue</span>
+                      <span class="variable-chip" draggable="true" data-variable="jours_retard"><i class="bi bi-grip-vertical"></i> jours_retard</span>
+                    </div>
+                  </div>
+
+                  <!-- Variables Emprunts multiples -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Emprunts (listes)</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-emprunts-liste">
+                      <span class="variable-chip" draggable="true" data-variable="jeux_en_cours" title="Tableau HTML des jeux en cours"><i class="bi bi-grip-vertical"></i> jeux_en_cours</span>
+                      <span class="variable-chip" draggable="true" data-variable="jeux_en_cours_sms" title="Liste SMS des jeux en cours"><i class="bi bi-grip-vertical"></i> jeux_en_cours_sms</span>
+                      <span class="variable-chip" draggable="true" data-variable="jeux_non_rendus" title="Tableau HTML des jeux en retard"><i class="bi bi-grip-vertical"></i> jeux_non_rendus</span>
+                      <span class="variable-chip" draggable="true" data-variable="jeux_non_rendus_sms" title="Liste SMS des jeux en retard"><i class="bi bi-grip-vertical"></i> jeux_non_rendus_sms</span>
+                      <span class="variable-chip" draggable="true" data-variable="nb_jeux_en_cours" title="Nombre de jeux en cours"><i class="bi bi-grip-vertical"></i> nb_jeux_en_cours</span>
+                      <span class="variable-chip" draggable="true" data-variable="nb_jeux_non_rendus" title="Nombre de jeux en retard"><i class="bi bi-grip-vertical"></i> nb_jeux_non_rendus</span>
+                    </div>
+                  </div>
+
+                  <!-- Variables Cotisation -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Cotisation</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-cotisation">
+                      <span class="variable-chip" draggable="true" data-variable="montant"><i class="bi bi-grip-vertical"></i> montant</span>
+                      <span class="variable-chip" draggable="true" data-variable="date_debut"><i class="bi bi-grip-vertical"></i> date_debut</span>
+                      <span class="variable-chip" draggable="true" data-variable="date_fin"><i class="bi bi-grip-vertical"></i> date_fin</span>
+                      <span class="variable-chip" draggable="true" data-variable="tarif_libelle"><i class="bi bi-grip-vertical"></i> tarif_libelle</span>
+                    </div>
+                  </div>
+
+                  <!-- Variables Structure -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Structure</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-structure">
+                      <span class="variable-chip" draggable="true" data-variable="structure_nom"><i class="bi bi-grip-vertical"></i> structure_nom</span>
+                      <span class="variable-chip" draggable="true" data-variable="structure_adresse"><i class="bi bi-grip-vertical"></i> structure_adresse</span>
+                      <span class="variable-chip" draggable="true" data-variable="structure_email"><i class="bi bi-grip-vertical"></i> structure_email</span>
+                      <span class="variable-chip" draggable="true" data-variable="structure_telephone"><i class="bi bi-grip-vertical"></i> structure_telephone</span>
+                    </div>
+                  </div>
+
+                  <!-- Variables Systeme -->
+                  <div class="mb-3">
+                    <div class="vars-category-title">Systeme</div>
+                    <div class="d-flex flex-wrap gap-1" id="vars-systeme">
+                      <span class="variable-chip" draggable="true" data-variable="date_jour"><i class="bi bi-grip-vertical"></i> date_jour</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Section SMS -->
-            <div id="sms-section">
-              <div class="mb-3">
-                <h6 class="border-bottom pb-2"><i class="bi bi-phone"></i> Contenu SMS</h6>
-              </div>
-
-              <div class="mb-3">
-                <label for="template_sms_corps" class="form-label">Corps du SMS (max 480 caractères)</label>
-                <textarea class="form-control" id="template_sms_corps" rows="3" maxlength="480" placeholder="Bonjour {{prenom}}, bienvenue à {{structure_nom}} !"></textarea>
-                <small class="text-muted"><span id="sms-count">0</span> / 480 caractères</small>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <h6 class="border-bottom pb-2"><i class="bi bi-code-square"></i> Variables disponibles</h6>
-            </div>
-
-            <div class="mb-3">
-              <label for="template_variables" class="form-label">Variables (séparées par des virgules)</label>
-              <input type="text" class="form-control" id="template_variables" placeholder="nom, prenom, code_barre, structure_nom, email">
-              <small class="text-muted">Utilisez la syntaxe {{'{{'}}variable{{'}}'}} dans les contenus</small>
-            </div>
+            <!-- Champ cache pour stocker les variables utilisees -->
+            <input type="hidden" id="template_variables">
 
             <div class="row">
               <div class="col-md-6 mb-3">
@@ -1380,30 +1782,77 @@
     </div>
   </div>
 
-  <!-- Modal Purge Logs -->
-  <div class="modal fade" id="modalPurgeLogs" tabindex="-1">
-    <div class="modal-dialog">
+  <!-- Modal Déclencheur -->
+  <div class="modal fade" id="modalDeclencheur" tabindex="-1">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-trash"></i> Purger les anciens logs</h5>
+          <h5 class="modal-title">Modifier le déclencheur</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <form id="form-purge-logs">
+        <form id="form-declencheur">
           <div class="modal-body">
-            <div class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle"></i>
-              <strong>Attention :</strong> Cette action supprimera définitivement les logs d'emails plus anciens que le nombre de jours spécifié.
+            <input type="hidden" id="declencheur_id">
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Code</label>
+                <input type="text" class="form-control" id="declencheur_code" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Catégorie</label>
+                <input type="text" class="form-control" id="declencheur_categorie" readonly>
+              </div>
             </div>
+
             <div class="mb-3">
-              <label for="purge_jours" class="form-label">Supprimer les logs de plus de * jours</label>
-              <input type="number" class="form-control" id="purge_jours" value="90" min="1" required>
-              <small class="text-muted">Par défaut: 90 jours (3 mois)</small>
+              <label class="form-label fw-bold">Libellé</label>
+              <input type="text" class="form-control" id="declencheur_libelle" readonly>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="declencheur_template_email" class="form-label">Template Email</label>
+                <select class="form-select" id="declencheur_template_email">
+                  <option value="">Aucun</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label for="declencheur_template_sms" class="form-label">Template SMS</label>
+                <select class="form-select" id="declencheur_template_sms">
+                  <option value="">Aucun</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="declencheur_email_actif">
+                  <label class="form-check-label" for="declencheur_email_actif">
+                    <i class="bi bi-envelope text-success"></i> Email activé
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="declencheur_sms_actif">
+                  <label class="form-check-label" for="declencheur_sms_actif">
+                    <i class="bi bi-phone text-info"></i> SMS activé
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label for="declencheur_delai" class="form-label">Délai (min)</label>
+                <input type="number" class="form-control" id="declencheur_delai" min="0" value="0">
+                <small class="text-muted">0 = immédiat</small>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-danger">
-              <i class="bi bi-trash"></i> Purger
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save"></i> Enregistrer
             </button>
           </div>
         </form>
@@ -1436,6 +1885,183 @@
   <script src="js/configurations-email.js"></script>
   <script src="js/configurations-sms.js"></script>
   <script src="js/templates-messages.js"></script>
-  <script src="js/historique-emails.js"></script>
+  <script src="js/declencheurs.js"></script>
+  <script src="js/archives.js"></script>
+  <script>
+    // Charger les archives au clic sur l'onglet
+    document.getElementById('archives-tab').addEventListener('shown.bs.tab', function() {
+      initArchives();
+    });
+  </script>
+
+  <script>
+    // ============================================
+    // Drag & Drop des variables de templates
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+      initVariablesDragDrop();
+    });
+
+    function initVariablesDragDrop() {
+      // Recuperer tous les chips de variables
+      const chips = document.querySelectorAll('.variable-chip');
+      const dropZones = document.querySelectorAll('.drop-zone');
+
+      // Configurer le drag sur les chips
+      chips.forEach(chip => {
+        chip.addEventListener('dragstart', handleDragStart);
+        chip.addEventListener('dragend', handleDragEnd);
+      });
+
+      // Configurer le drop sur les zones
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', handleDragOver);
+        zone.addEventListener('dragleave', handleDragLeave);
+        zone.addEventListener('drop', handleDrop);
+      });
+
+      // Permettre aussi le clic pour inserer
+      chips.forEach(chip => {
+        chip.addEventListener('click', handleChipClick);
+      });
+    }
+
+    let lastFocusedField = null;
+    let lastCursorPosition = 0;
+
+    // Garder trace du dernier champ focus et position du curseur
+    document.addEventListener('focusin', function(e) {
+      if (e.target.classList.contains('drop-zone')) {
+        lastFocusedField = e.target;
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('drop-zone')) {
+        lastFocusedField = e.target;
+        lastCursorPosition = e.target.selectionStart || e.target.value.length;
+      }
+    });
+
+    document.addEventListener('keyup', function(e) {
+      if (e.target.classList.contains('drop-zone')) {
+        lastCursorPosition = e.target.selectionStart || e.target.value.length;
+      }
+    });
+
+    function handleDragStart(e) {
+      this.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', this.dataset.variable);
+      e.dataTransfer.effectAllowed = 'copy';
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      this.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+
+      const variable = e.dataTransfer.getData('text/plain');
+      if (!variable) return;
+
+      const variableCode = '{{' + variable + '}}';
+
+      // Inserer a la position du curseur
+      insertAtCursor(this, variableCode);
+
+      // Mettre a jour le compteur SMS si c'est le champ SMS
+      if (this.id === 'template_sms_corps') {
+        updateSmsCount();
+      }
+
+      // Mettre a jour les variables utilisees
+      updateUsedVariables();
+    }
+
+    function handleChipClick(e) {
+      const variable = this.dataset.variable;
+      const variableCode = '{{' + variable + '}}';
+
+      // Si un champ etait focus, inserer dedans
+      if (lastFocusedField) {
+        insertAtCursor(lastFocusedField, variableCode);
+
+        if (lastFocusedField.id === 'template_sms_corps') {
+          updateSmsCount();
+        }
+
+        updateUsedVariables();
+      } else {
+        // Sinon, montrer un message
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'Cliquez d\'abord dans un champ',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
+    }
+
+    function insertAtCursor(field, text) {
+      const startPos = field.selectionStart || 0;
+      const endPos = field.selectionEnd || 0;
+      const before = field.value.substring(0, startPos);
+      const after = field.value.substring(endPos);
+
+      field.value = before + text + after;
+
+      // Placer le curseur apres le texte insere
+      const newPos = startPos + text.length;
+      field.setSelectionRange(newPos, newPos);
+      field.focus();
+    }
+
+    function updateSmsCount() {
+      const smsField = document.getElementById('template_sms_corps');
+      const countDisplay = document.getElementById('sms-count');
+      if (smsField && countDisplay) {
+        countDisplay.textContent = smsField.value.length;
+      }
+    }
+
+    function updateUsedVariables() {
+      const usedVars = new Set();
+
+      // Scanner tous les champs de template
+      const fields = ['template_email_objet', 'template_email_corps', 'template_sms_corps'];
+      fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field && field.value) {
+          const matches = field.value.match(/\{\{(\w+)\}\}/g);
+          if (matches) {
+            matches.forEach(match => {
+              const varName = match.replace(/\{\{|\}\}/g, '');
+              usedVars.add(varName);
+            });
+          }
+        }
+      });
+
+      // Mettre a jour le champ cache
+      document.getElementById('template_variables').value = Array.from(usedVars).join(', ');
+    }
+
+    // Initialiser le compteur SMS au chargement
+    document.getElementById('template_sms_corps')?.addEventListener('input', updateSmsCount);
+  </script>
 </body>
 </html>

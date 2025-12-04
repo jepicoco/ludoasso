@@ -1,4 +1,4 @@
-const { Adherent, Emprunt, Jeu } = require('../models');
+const { Adherent, Emprunt, Jeu, Cotisation, AdherentArchive, ArchiveAccessLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -266,16 +266,20 @@ const updateAdherent = async (req, res) => {
 };
 
 /**
- * Delete adherent
+ * Delete adherent (archives instead of deleting - RGPD compliant)
  * DELETE /api/adherents/:id
  */
 const deleteAdherent = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
   try {
     const { id } = req.params;
+    const { motif } = req.body;
 
-    const adherent = await Adherent.findByPk(id);
+    const adherent = await Adherent.findByPk(id, { transaction });
 
     if (!adherent) {
+      await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
         message: 'Adherent not found'
@@ -287,23 +291,99 @@ const deleteAdherent = async (req, res) => {
       where: {
         adherent_id: id,
         statut: { [Op.in]: ['en_cours', 'en_retard'] }
-      }
+      },
+      transaction
     });
 
     if (activeEmprunts > 0) {
+      await transaction.rollback();
       return res.status(400).json({
-        error: 'Cannot delete',
-        message: `Adherent has ${activeEmprunts} active loan(s). Please return all items first.`
+        error: 'Cannot archive',
+        message: `Impossible d'archiver : ${activeEmprunts} emprunt(s) en cours. Veuillez d'abord clôturer tous les emprunts.`
       });
     }
 
-    await adherent.destroy();
+    // Trouver la dernière activité (emprunt ou cotisation)
+    const [dernierEmprunt, derniereCotisation] = await Promise.all([
+      Emprunt.findOne({
+        where: { adherent_id: id },
+        order: [['date_emprunt', 'DESC']],
+        transaction
+      }),
+      Cotisation.findOne({
+        where: { adherent_id: id },
+        order: [['date_cotisation', 'DESC']],
+        transaction
+      })
+    ]);
+
+    const dateDernierEmprunt = dernierEmprunt?.date_emprunt ? new Date(dernierEmprunt.date_emprunt) : null;
+    const dateDerniereCotisation = derniereCotisation?.date_cotisation ? new Date(derniereCotisation.date_cotisation) : null;
+
+    let derniereActivite = null;
+    if (dateDernierEmprunt && dateDerniereCotisation) {
+      derniereActivite = dateDernierEmprunt > dateDerniereCotisation ? dateDernierEmprunt : dateDerniereCotisation;
+    } else {
+      derniereActivite = dateDernierEmprunt || dateDerniereCotisation;
+    }
+
+    // Créer l'archive au lieu de supprimer
+    const archive = await AdherentArchive.create({
+      adherent_id: adherent.id,
+      code_barre: adherent.code_barre,
+      civilite: adherent.civilite || null,
+      nom: adherent.nom,
+      prenom: adherent.prenom,
+      email: adherent.email,
+      telephone: adherent.telephone,
+      adresse: adherent.adresse,
+      ville: adherent.ville,
+      code_postal: adherent.code_postal,
+      date_naissance: adherent.date_naissance,
+      date_adhesion: adherent.date_adhesion,
+      date_fin_adhesion: adherent.date_fin_adhesion,
+      statut_avant_archivage: adherent.statut,
+      photo: adherent.photo,
+      notes: adherent.notes,
+      adhesion_association: adherent.adhesion_association,
+      role: adherent.role,
+      archive_par: req.user?.id || null,
+      motif_archivage: motif || 'Archivage manuel',
+      derniere_activite: derniereActivite
+    }, { transaction });
+
+    // Supprimer l'adhérent de la table principale
+    await adherent.destroy({ transaction });
+
+    await transaction.commit();
+
+    // Logger l'accès aux archives
+    if (req.user) {
+      try {
+        await ArchiveAccessLog.create({
+          user_id: req.user.id,
+          user_nom: req.user.nom,
+          user_prenom: req.user.prenom,
+          user_role: req.user.role,
+          action: 'archivage',
+          adherent_archive_id: archive.id,
+          details: `Adhérent ${adherent.prenom} ${adherent.nom} archivé`,
+          ip_address: req.ip || req.connection?.remoteAddress,
+          user_agent: req.get('User-Agent')?.substring(0, 500)
+        });
+      } catch (logError) {
+        console.error('Erreur log archive:', logError);
+      }
+    }
 
     res.json({
-      message: 'Adherent deleted successfully'
+      message: 'Adhérent archivé avec succès',
+      archived: true,
+      archiveId: archive.id
     });
   } catch (error) {
-    console.error('Delete adherent error:', error);
+    await transaction.rollback();
+    console.error('Delete/Archive adherent error:', error);
     res.status(500).json({
       error: 'Server error',
       message: error.message
@@ -412,15 +492,8 @@ const sendEmail = async (req, res) => {
         });
       }
 
-      // Préparer les variables
-      const templateVariables = {
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        email: adherent.email,
-        code_barre: adherent.code_barre,
-        date_adhesion: adherent.date_adhesion,
-        ...variables
-      };
+      // Préparer les variables completes
+      const templateVariables = await prepareAllVariables(adherent, variables);
 
       // Compiler le template
       const compiled = template.compileEmail(templateVariables);
@@ -437,14 +510,8 @@ const sendEmail = async (req, res) => {
         });
       }
 
-      // Remplacer les variables dans le texte manuel
-      const templateVariables = {
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        email: adherent.email,
-        code_barre: adherent.code_barre,
-        ...variables
-      };
+      // Préparer les variables completes
+      const templateVariables = await prepareAllVariables(adherent, variables);
 
       emailData.subject = replaceVariables(subject, templateVariables);
       emailData.html = replaceVariables(body, templateVariables);
@@ -521,13 +588,8 @@ const sendSms = async (req, res) => {
         });
       }
 
-      // Préparer les variables
-      const templateVariables = {
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        telephone: adherent.telephone,
-        ...variables
-      };
+      // Préparer les variables completes
+      const templateVariables = await prepareAllVariables(adherent, variables);
 
       // Compiler le template
       smsText = template.compileSMS(templateVariables);
@@ -540,35 +602,71 @@ const sendSms = async (req, res) => {
         });
       }
 
-      // Remplacer les variables dans le texte manuel
-      const templateVariables = {
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        telephone: adherent.telephone,
-        ...variables
-      };
+      // Préparer les variables completes
+      const templateVariables = await prepareAllVariables(adherent, variables);
 
       smsText = replaceVariables(body, templateVariables);
     }
 
-    // Vérifier la longueur
-    if (smsText.length > 160) {
+    // Vérifier la longueur (autorise plusieurs segments)
+    if (smsText.length > 480) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'SMS text exceeds 160 characters'
+        message: 'SMS text exceeds 480 characters (max 3 segments)'
       });
     }
 
-    // TODO: Implémenter l'envoi de SMS via un service SMS
-    // Pour l'instant, on simule un succès
-// console.(`[SMS] Envoi à ${adherent.telephone}: ${smsText}`);
+    // Récupérer la configuration SMS active
+    const { ConfigurationSMS } = require('../models');
+    const smsService = require('../utils/smsService');
+
+    const smsConfig = await ConfigurationSMS.findOne({
+      where: { actif: true },
+      order: [['id', 'ASC']]
+    });
+
+    if (!smsConfig) {
+      return res.status(400).json({
+        error: 'Configuration error',
+        message: 'Aucune configuration SMS active. Configurez un fournisseur SMS dans Paramètres > Communications.'
+      });
+    }
+
+    // Normaliser le numero de telephone au format international
+    const phoneNumber = normalizePhoneNumber(adherent.telephone);
+
+    if (!phoneNumber) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Numero de telephone invalide'
+      });
+    }
+
+    // Envoyer le SMS via le service
+    const result = await smsService.sendSMS(smsConfig.id, {
+      to: phoneNumber,
+      text: smsText,
+      adherent_id: adherent.id,
+      destinataire_nom: `${adherent.prenom} ${adherent.nom}`,
+      template_code: mode === 'template' ? templateCode : null
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: 'SMS error',
+        message: result.error || 'Erreur lors de l\'envoi du SMS'
+      });
+    }
 
     res.json({
       success: true,
-      message: 'SMS envoyé avec succès (simulation)',
+      message: 'SMS envoyé avec succès',
       to: adherent.telephone,
       text: smsText,
-      mode: mode
+      mode: mode,
+      ticket: result.ticket,
+      smsLogId: result.smsLogId
     });
   } catch (error) {
     console.error('Send SMS error:', error);
@@ -592,6 +690,85 @@ function replaceVariables(text, variables) {
   });
 
   return result;
+}
+
+/**
+ * Helper function to normalize phone number to international format
+ * Converts French numbers (06/07) to +33 format
+ */
+function normalizePhoneNumber(phone) {
+  if (!phone) return null;
+
+  // Nettoyer le numero (enlever espaces, tirets, points)
+  let cleaned = phone.replace(/[\s\-\.]/g, '');
+
+  // Si deja au format international, retourner tel quel
+  if (cleaned.startsWith('+')) {
+    return cleaned;
+  }
+
+  // Numeros francais commencant par 0
+  if (cleaned.startsWith('0') && cleaned.length === 10) {
+    return '+33' + cleaned.substring(1);
+  }
+
+  // Numeros francais sans le 0 initial (33...)
+  if (cleaned.startsWith('33') && cleaned.length === 11) {
+    return '+' + cleaned;
+  }
+
+  // Si pas reconnu, ajouter + devant
+  return '+' + cleaned;
+}
+
+/**
+ * Helper function to prepare all template variables for an adherent
+ * Includes: adherent data, structure info, system variables, emprunts lists
+ */
+async function prepareAllVariables(adherent, additionalVariables = {}) {
+  const variables = {};
+
+  // Variables de structure
+  variables.structure_nom = process.env.STRUCTURE_NOM || 'Ludotheque';
+  variables.structure_adresse = process.env.STRUCTURE_ADRESSE || '';
+  variables.structure_email = process.env.STRUCTURE_EMAIL || '';
+  variables.structure_telephone = process.env.STRUCTURE_TELEPHONE || '';
+
+  // Variable systeme
+  variables.date_jour = new Date().toLocaleDateString('fr-FR');
+
+  // Variables adherent
+  if (adherent) {
+    variables.prenom = adherent.prenom || '';
+    variables.nom = adherent.nom || '';
+    variables.email = adherent.email || '';
+    variables.telephone = adherent.telephone || '';
+    variables.code_barre = adherent.code_barre || '';
+    variables.date_adhesion = adherent.date_adhesion ? new Date(adherent.date_adhesion).toLocaleDateString('fr-FR') : '';
+    variables.adresse = adherent.adresse || '';
+    variables.ville = adherent.ville || '';
+    variables.code_postal = adherent.code_postal || '';
+
+    // Variables d'emprunts (listes)
+    try {
+      const empruntsVars = await eventTriggerService.prepareEmpruntsVariables(adherent.id);
+      Object.assign(variables, empruntsVars);
+    } catch (error) {
+      console.error('Erreur preparation variables emprunts:', error);
+      // Valeurs par defaut en cas d'erreur
+      variables.jeux_en_cours = '';
+      variables.jeux_en_cours_sms = '';
+      variables.jeux_non_rendus = '';
+      variables.jeux_non_rendus_sms = '';
+      variables.nb_jeux_en_cours = 0;
+      variables.nb_jeux_non_rendus = 0;
+    }
+  }
+
+  // Variables additionnelles passees en parametre
+  Object.assign(variables, additionalVariables);
+
+  return variables;
 }
 
 module.exports = {

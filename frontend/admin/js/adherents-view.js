@@ -24,6 +24,9 @@ async function viewAdherent(id) {
     // Remplir la modal
     fillViewModal(adherent, stats);
 
+    // Configurer le chargement des communications au clic sur l'onglet
+    setupCommunicationsTab(id);
+
     // Afficher la modal
     if (!viewModalInstance) {
       viewModalInstance = new bootstrap.Modal(document.getElementById('viewAdherentModal'));
@@ -33,6 +36,33 @@ async function viewAdherent(id) {
     console.error('Erreur affichage adhérent:', error);
     showToast('Erreur lors du chargement des détails: ' + error.message, 'error');
   }
+}
+
+/**
+ * Configure le chargement paresseux de l'onglet Communications
+ */
+function setupCommunicationsTab(adherentId) {
+  let communicationsLoaded = false;
+
+  // Trouver le bouton de l'onglet Communications
+  const commTab = document.querySelector('[data-bs-target="#view-tab-communications"]');
+  if (commTab) {
+    // Supprimer les anciens listeners
+    const newTab = commTab.cloneNode(true);
+    commTab.parentNode.replaceChild(newTab, commTab);
+
+    // Ajouter un listener pour charger les communications au clic
+    newTab.addEventListener('shown.bs.tab', () => {
+      if (!communicationsLoaded) {
+        loadAdherentCommunications(adherentId);
+        communicationsLoaded = true;
+      }
+    });
+  }
+
+  // Reinitialiser l'affichage
+  document.getElementById('view_communications_loading').style.display = 'block';
+  document.getElementById('view_communications_content').style.display = 'none';
 }
 
 /**
@@ -281,4 +311,162 @@ function createEmpruntForAdherent(adherent) {
   // TODO: Rediriger vers page emprunts avec pré-remplissage adherent_id
   console.log('Créer emprunt pour:', adherent.id);
   window.location.href = `/admin/emprunts.html?adherent_id=${adherent.id}`;
+}
+
+// ============================================
+// HISTORIQUE COMMUNICATIONS
+// ============================================
+
+/**
+ * Charge l'historique des communications pour un adhérent
+ */
+async function loadAdherentCommunications(adherentId) {
+  try {
+    // Afficher le loader
+    document.getElementById('view_communications_loading').style.display = 'block';
+    document.getElementById('view_communications_content').style.display = 'none';
+
+    // Charger les emails et SMS en parallèle
+    const [emailsData, smsData] = await Promise.all([
+      apiRequest(`/email-logs?adherent_id=${adherentId}&limit=20`),
+      apiRequest(`/sms-logs?adherent_id=${adherentId}&limit=20`)
+    ]);
+
+    // Afficher les emails
+    displayAdherentEmails(emailsData.emailLogs || []);
+
+    // Afficher les SMS
+    displayAdherentSms(smsData.smsLogs || []);
+
+    // Masquer le loader et afficher le contenu
+    document.getElementById('view_communications_loading').style.display = 'none';
+    document.getElementById('view_communications_content').style.display = 'block';
+
+  } catch (error) {
+    console.error('Erreur chargement communications:', error);
+    document.getElementById('view_communications_loading').innerHTML = `
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> Erreur lors du chargement
+      </div>
+    `;
+  }
+}
+
+/**
+ * Affiche la liste des emails
+ */
+function displayAdherentEmails(emails) {
+  const container = document.getElementById('view_emails_list');
+  const countBadge = document.getElementById('view_emails_count');
+
+  countBadge.textContent = emails.length;
+
+  if (!emails || emails.length === 0) {
+    container.innerHTML = '<p class="text-muted small mb-0">Aucun email envoye</p>';
+    return;
+  }
+
+  let html = '<div class="list-group list-group-flush">';
+
+  emails.forEach(email => {
+    const dateEnvoi = new Date(email.date_envoi).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const statutBadge = getCommunicationStatutBadge(email.statut);
+
+    html += `
+      <div class="list-group-item px-0 py-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="small text-muted">${dateEnvoi}</div>
+            <div class="fw-medium text-truncate" style="max-width: 300px;" title="${email.objet || ''}">${email.objet || '-'}</div>
+            ${email.template_code ? `<span class="badge bg-info badge-sm">${email.template_code}</span>` : ''}
+          </div>
+          <div>${statutBadge}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/**
+ * Affiche la liste des SMS
+ */
+function displayAdherentSms(smsList) {
+  const container = document.getElementById('view_sms_list');
+  const countBadge = document.getElementById('view_sms_count');
+
+  countBadge.textContent = smsList.length;
+
+  if (!smsList || smsList.length === 0) {
+    container.innerHTML = '<p class="text-muted small mb-0">Aucun SMS envoye</p>';
+    return;
+  }
+
+  let html = '<div class="list-group list-group-flush">';
+
+  smsList.forEach(sms => {
+    const dateEnvoi = new Date(sms.date_envoi).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const statutBadge = getSmsStatutBadgeCompact(sms.statut);
+    const messagePreview = sms.message ?
+      (sms.message.length > 50 ? sms.message.substring(0, 50) + '...' : sms.message) :
+      '-';
+
+    html += `
+      <div class="list-group-item px-0 py-2">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1">
+            <div class="small text-muted">${dateEnvoi}</div>
+            <div class="small text-truncate" style="max-width: 300px;" title="${sms.message || ''}">${messagePreview}</div>
+            ${sms.template_code ? `<span class="badge bg-info badge-sm">${sms.template_code}</span>` : ''}
+          </div>
+          <div>${statutBadge}</div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/**
+ * Retourne un badge compact pour le statut email
+ */
+function getCommunicationStatutBadge(statut) {
+  const badges = {
+    'envoye': '<span class="badge bg-success badge-sm">Envoye</span>',
+    'erreur': '<span class="badge bg-danger badge-sm">Erreur</span>',
+    'en_attente': '<span class="badge bg-warning badge-sm">Attente</span>'
+  };
+  return badges[statut] || `<span class="badge bg-secondary badge-sm">${statut || '-'}</span>`;
+}
+
+/**
+ * Retourne un badge compact pour le statut SMS
+ */
+function getSmsStatutBadgeCompact(statut) {
+  const badges = {
+    'envoye': '<span class="badge bg-success badge-sm">Envoye</span>',
+    'delivre': '<span class="badge bg-primary badge-sm">Delivre</span>',
+    'erreur': '<span class="badge bg-danger badge-sm">Erreur</span>',
+    'echec_livraison': '<span class="badge bg-warning badge-sm">Echec</span>',
+    'en_attente': '<span class="badge bg-secondary badge-sm">Attente</span>'
+  };
+  return badges[statut] || `<span class="badge bg-secondary badge-sm">${statut || '-'}</span>`;
 }

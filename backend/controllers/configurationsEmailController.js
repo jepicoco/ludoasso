@@ -381,7 +381,7 @@ exports.setAsDefault = async (req, res) => {
  */
 exports.testerConnexionSansSauvegarder = async (req, res) => {
   try {
-    const emailService = require('../utils/emailService');
+    const emailService = require('../services/emailService');
     const configData = req.body;
 
     // Validation des champs obligatoires

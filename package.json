@@ -17,6 +17,7 @@
     "migrate-tarifs-par-defaut": "node database/migrations/addParDefautToTarifs.js",
     "migrate-email": "node database/migrations/addConfigurationsEmail.js",
     "migrate-sms": "node database/migrations/addConfigurationsSMS.js",
+    "update-sms": "node database/migrations/updateConfigurationsSMS.js",
     "migrate-templates": "node database/migrations/addTemplatesMessages.js",
     "migrate-communications": "npm run migrate-email && npm run migrate-sms && npm run migrate-templates",
     "seed-templates": "node database/seeds/seedTemplatesMessages.js",
@@ -30,7 +31,8 @@
     "check-triggers": "node database/check-triggers-status.js",
     "setup-email-config": "node database/seeds/seedEmailConfig.js",
     "test-email-system": "node database/diagnostics/test-email-system.js",
-    "job-email-reminders": "node backend/jobs/emailReminders.js"
+    "job-email-reminders": "node backend/jobs/emailReminders.js",
+    "migrate-utf8mb4": "node database/migrations/convertUtf8mb4.js"
   },
   "keywords": [
     "ludotheque",
@@ -44,13 +46,16 @@
     "bcrypt": "^5.1.1",
     "bwip-js": "^4.0.0",
     "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
     "mysql2": "^3.6.5",
-    "nodemailer": "^6.10.1",
-    "sequelize": "^6.35.2"
+    "nodemailer": "^7.0.11",
+    "sequelize": "^6.35.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "jest": "^29.7.0",

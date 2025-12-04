@@ -31,6 +31,9 @@
                 <button class="btn btn-primary" onclick="openCreateModal()">
                   <i class="bi bi-plus-circle"></i> Nouveau jeu
                 </button>
+                <button class="btn btn-success" onclick="openLookupModal()">
+                  <i class="bi bi-upc-scan"></i> Scanner EAN
+                </button>
                 <button class="btn btn-secondary" onclick="loadJeux()">
                   <i class="bi bi-arrow-clockwise"></i> Actualiser
                 </button>
@@ -171,6 +174,116 @@
     </div>
   </div>
 
+  <!-- EAN Lookup Modal -->
+  <div class="modal fade" id="lookupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Recherche par code-barre EAN</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Input section -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <label class="form-label">Code EAN ou Titre du jeu</label>
+              <div class="input-group">
+                <input type="text" id="lookupInput" class="form-control form-control-lg"
+                       placeholder="Ex: 3558380077992 ou Catan"
+                       onkeyup="handleLookupKeyup(event)">
+                <button class="btn btn-success" type="button" onclick="doLookup()">
+                  <i class="bi bi-search"></i> Rechercher
+                </button>
+              </div>
+              <small class="text-muted">Scannez un code-barre commercial ou saisissez le titre du jeu</small>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button class="btn btn-outline-primary w-100" onclick="startCameraScan()">
+                <i class="bi bi-camera"></i> Scanner avec camera
+              </button>
+            </div>
+          </div>
+
+          <!-- Camera section (hidden by default) -->
+          <div id="cameraSection" class="d-none mb-4">
+            <div class="card bg-dark">
+              <div class="card-body text-center">
+                <div id="lookupCameraReader" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
+                <button class="btn btn-light mt-2" onclick="stopCameraScan()">
+                  <i class="bi bi-x"></i> Fermer camera
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div id="lookupLoading" class="d-none text-center py-4">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Recherche en cours sur UPCitemdb + BoardGameGeek...</p>
+            <small class="text-muted">Cette recherche peut prendre quelques secondes (rate limiting BGG)</small>
+          </div>
+
+          <!-- Results -->
+          <div id="lookupResults" class="d-none">
+            <div class="alert alert-success mb-3">
+              <i class="bi bi-check-circle"></i> Jeu trouve ! Source: <span id="lookupSource"></span>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3 text-center">
+                    <img id="lookupImage" src="" alt="Image du jeu" class="img-fluid rounded" style="max-height: 150px;">
+                  </div>
+                  <div class="col-md-9">
+                    <h4 id="lookupTitre" class="mb-2"></h4>
+                    <p class="text-muted mb-2">
+                      <i class="bi bi-building"></i> <span id="lookupEditeur">-</span> |
+                      <i class="bi bi-person"></i> <span id="lookupAuteur">-</span> |
+                      <i class="bi bi-calendar"></i> <span id="lookupAnnee">-</span>
+                    </p>
+                    <p class="mb-2">
+                      <span class="badge bg-info"><i class="bi bi-people"></i> <span id="lookupJoueurs">-</span> joueurs</span>
+                      <span class="badge bg-warning text-dark"><i class="bi bi-hourglass"></i> <span id="lookupDuree">-</span> min</span>
+                      <span class="badge bg-secondary"><i class="bi bi-person-check"></i> <span id="lookupAge">-</span>+</span>
+                    </p>
+                    <p id="lookupCategorie" class="small text-muted"></p>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <strong>Description:</strong>
+                  <p id="lookupDescription" class="small" style="max-height: 100px; overflow-y: auto;"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Not found -->
+          <div id="lookupNotFound" class="d-none">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i> Aucun resultat trouve pour ce code EAN.
+              <br><small>Essayez de rechercher par titre ou ajoutez le jeu manuellement.</small>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="lookupError" class="d-none">
+            <div class="alert alert-danger">
+              <i class="bi bi-x-circle"></i> <span id="lookupErrorMsg"></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary d-none" id="btnUseResults" onclick="useResults()">
+            <i class="bi bi-plus-circle"></i> Utiliser ces infos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
@@ -444,6 +557,195 @@ Emplacement: ${jeu.emplacement || 'N/A'}
         loadJeux();
         loadCategories();
       }, 500);
+    });
+
+    // =========== EAN LOOKUP ===========
+
+    let lookupModalInstance = null;
+    let lookupCameraScanner = null;
+    let currentLookupResult = null;
+
+    function openLookupModal() {
+      resetLookupUI();
+      if (!lookupModalInstance) {
+        lookupModalInstance = new bootstrap.Modal(document.getElementById('lookupModal'));
+      }
+      lookupModalInstance.show();
+      document.getElementById('lookupInput').focus();
+    }
+
+    function resetLookupUI() {
+      document.getElementById('lookupInput').value = '';
+      document.getElementById('lookupLoading').classList.add('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+      document.getElementById('cameraSection').classList.add('d-none');
+      currentLookupResult = null;
+    }
+
+    function handleLookupKeyup(event) {
+      if (event.key === 'Enter') {
+        doLookup();
+      }
+    }
+
+    async function doLookup() {
+      const input = document.getElementById('lookupInput').value.trim();
+      if (!input) {
+        alert('Veuillez saisir un code EAN ou un titre de jeu');
+        return;
+      }
+
+      // Reset UI
+      document.getElementById('lookupLoading').classList.remove('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+
+      try {
+        let result;
+        // Determiner si c'est un EAN (uniquement chiffres) ou un titre
+        if (/^\d+$/.test(input)) {
+          result = await lookupAPI.byEAN(input);
+        } else {
+          result = await lookupAPI.byTitle(input);
+        }
+
+        document.getElementById('lookupLoading').classList.add('d-none');
+
+        if (result.found && result.jeu) {
+          currentLookupResult = result.jeu;
+          displayLookupResults(result);
+        } else {
+          document.getElementById('lookupNotFound').classList.remove('d-none');
+        }
+      } catch (error) {
+        document.getElementById('lookupLoading').classList.add('d-none');
+        document.getElementById('lookupError').classList.remove('d-none');
+        document.getElementById('lookupErrorMsg').textContent = error.message;
+      }
+    }
+
+    function displayLookupResults(result) {
+      const jeu = result.jeu;
+
+      document.getElementById('lookupSource').textContent = result.source || 'inconnu';
+      document.getElementById('lookupTitre').textContent = jeu.titre || 'Sans titre';
+      document.getElementById('lookupEditeur').textContent = jeu.editeur || '-';
+      document.getElementById('lookupAuteur').textContent = jeu.auteur || '-';
+      document.getElementById('lookupAnnee').textContent = jeu.annee_sortie || '-';
+      document.getElementById('lookupJoueurs').textContent =
+        jeu.nb_joueurs_min && jeu.nb_joueurs_max
+          ? `${jeu.nb_joueurs_min}-${jeu.nb_joueurs_max}`
+          : jeu.nb_joueurs_min || '-';
+      document.getElementById('lookupDuree').textContent = jeu.duree_partie || '-';
+      document.getElementById('lookupAge').textContent = jeu.age_min || '-';
+      document.getElementById('lookupCategorie').textContent = jeu.categorie
+        ? `Categorie: ${jeu.categorie}`
+        : '';
+      document.getElementById('lookupDescription').textContent = jeu.description || 'Pas de description';
+
+      // Image
+      const img = document.getElementById('lookupImage');
+      if (jeu.image_url) {
+        img.src = jeu.image_url;
+        img.classList.remove('d-none');
+      } else {
+        img.src = '';
+        img.classList.add('d-none');
+      }
+
+      document.getElementById('lookupResults').classList.remove('d-none');
+      document.getElementById('btnUseResults').classList.remove('d-none');
+    }
+
+    function useResults() {
+      if (!currentLookupResult) return;
+
+      // Fermer la modal lookup
+      lookupModalInstance.hide();
+
+      // Ouvrir la modal de creation avec les donnees pre-remplies
+      document.getElementById('modalTitle').textContent = 'Nouveau jeu (depuis EAN)';
+      document.getElementById('jeuForm').reset();
+      document.getElementById('jeuId').value = '';
+
+      // Pre-remplir les champs
+      document.getElementById('titre').value = currentLookupResult.titre || '';
+      document.getElementById('editeur').value = currentLookupResult.editeur || '';
+      document.getElementById('auteur').value = currentLookupResult.auteur || '';
+      document.getElementById('annee_sortie').value = currentLookupResult.annee_sortie || '';
+      document.getElementById('age_min').value = currentLookupResult.age_min || '';
+      document.getElementById('nb_joueurs_min').value = currentLookupResult.nb_joueurs_min || '';
+      document.getElementById('nb_joueurs_max').value = currentLookupResult.nb_joueurs_max || '';
+      document.getElementById('duree_partie').value = currentLookupResult.duree_partie || '';
+      document.getElementById('categorie').value = currentLookupResult.categorie || '';
+      document.getElementById('description').value = currentLookupResult.description || '';
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
+      }
+      modalInstance.show();
+
+      currentLookupResult = null;
+    }
+
+    // Camera scanning for EAN lookup
+    async function startCameraScan() {
+      document.getElementById('cameraSection').classList.remove('d-none');
+
+      try {
+        lookupCameraScanner = new Html5Qrcode('lookupCameraReader');
+        await lookupCameraScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 100 },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E
+            ]
+          },
+          onCameraScanSuccess,
+          () => {}
+        );
+      } catch (err) {
+        console.error('Camera error:', err);
+        alert('Impossible d\'acceder a la camera: ' + err);
+        document.getElementById('cameraSection').classList.add('d-none');
+      }
+    }
+
+    async function onCameraScanSuccess(decodedText) {
+      // Arreter le scanner
+      await stopCameraScan();
+
+      // Mettre le code dans l'input et lancer la recherche
+      document.getElementById('lookupInput').value = decodedText;
+      doLookup();
+    }
+
+    async function stopCameraScan() {
+      if (lookupCameraScanner) {
+        try {
+          await lookupCameraScanner.stop();
+          lookupCameraScanner.clear();
+        } catch (e) {
+          console.warn('Stop camera error:', e);
+        }
+        lookupCameraScanner = null;
+      }
+      document.getElementById('cameraSection').classList.add('d-none');
+    }
+
+    // Cleanup camera on modal close
+    document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
+      stopCameraScan();
     });
   </script>
 </body>

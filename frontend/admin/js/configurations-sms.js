@@ -11,10 +11,39 @@ async function loadConfigurationsSMS() {
   try {
     const configs = await apiRequest('/parametres/configurations-sms');
     renderConfigurationsSMS(configs);
+
+    // Actualiser les crédits de chaque configuration active en arrière-plan
+    for (const config of configs) {
+      if (config.actif) {
+        refreshCreditsBackground(config.id);
+      }
+    }
   } catch (error) {
     console.error('Erreur chargement configurations SMS:', error);
     document.getElementById('liste-configurations-sms').innerHTML =
       '<p class="text-center text-danger">Erreur de chargement</p>';
+  }
+}
+
+// Actualiser les crédits en arrière-plan (sans notification)
+async function refreshCreditsBackground(id) {
+  try {
+    const response = await apiRequest(`/parametres/configurations-sms/${id}/credits`, 'GET');
+    // Mettre à jour l'affichage dans le tableau
+    const row = document.querySelector(`#sortable-config-sms tr[data-id="${id}"]`);
+    if (row) {
+      const creditsCell = row.querySelectorAll('td')[4]; // 5ème colonne (Crédits)
+      if (creditsCell) {
+        const credits = parseInt(response.credits) || 0;
+        const limitInfo = response.unlimited ? 'illimité' : 'limité';
+        const creditsText = `${credits.toLocaleString()} SMS <span class="badge bg-${response.unlimited ? 'success' : 'warning'} ms-1">${limitInfo}</span>`;
+        const smsEnvoyes = creditsCell.querySelector('small');
+        const smsEnvoyesText = smsEnvoyes ? smsEnvoyes.outerHTML : '';
+        creditsCell.innerHTML = `${creditsText}<br>${smsEnvoyesText}`;
+      }
+    }
+  } catch (error) {
+    console.error('Erreur actualisation crédits background:', error);
   }
 }
 
@@ -45,8 +74,9 @@ function renderConfigurationsSMS(configs) {
         </thead>
         <tbody id="sortable-config-sms">
           ${configs.map(config => {
+            const credits = parseFloat(config.credits_restants) || 0;
             const creditsText = config.credits_restants !== null
-              ? `${config.credits_restants.toFixed(2)} €`
+              ? `${credits.toFixed(0)} SMS`
               : '<span class="text-muted">N/A</span>';
 
             const options = [];
@@ -181,6 +211,8 @@ async function loadConfigSMSData(id) {
 
     document.getElementById('config_sms_id').value = config.id;
     document.getElementById('config_sms_libelle').value = config.libelle;
+    document.getElementById('config_sms_provider').value = config.provider || 'smsfactor';
+    document.getElementById('config_sms_api_url').value = config.api_url || '';
     document.getElementById('config_sms_api_token').value = ''; // Ne pas afficher le token
     document.getElementById('config_sms_sender_name').value = config.sender_name || '';
     document.getElementById('config_sms_gsm7').checked = config.gsm7;
@@ -204,6 +236,8 @@ async function saveConfigSMS(event) {
   const id = document.getElementById('config_sms_id').value;
   const data = {
     libelle: document.getElementById('config_sms_libelle').value,
+    provider: document.getElementById('config_sms_provider').value,
+    api_url: document.getElementById('config_sms_api_url').value || null,
     sender_name: document.getElementById('config_sms_sender_name').value,
     gsm7: document.getElementById('config_sms_gsm7').checked,
     sandbox: document.getElementById('config_sms_sandbox').checked,
@@ -232,7 +266,7 @@ async function saveConfigSMS(event) {
     } else {
       // Création - token obligatoire
       if (!apiToken) {
-        showErrorToast('Le token API SMSFactor est obligatoire');
+        showErrorToast('Le token API est obligatoire');
         return;
       }
       data.api_token = apiToken;
@@ -288,7 +322,10 @@ async function setDefaultConfigSMS(id) {
 async function refreshCredits(id) {
   try {
     const response = await apiRequest(`/parametres/configurations-sms/${id}/credits`, 'GET');
-    showSuccessToast(`Crédits actualisés: ${response.credits.toFixed(2)} €`);
+    const credits = parseInt(response.credits) || 0;
+    const limitInfo = response.unlimited ? 'illimité' : 'limité';
+    const message = `Crédits: ${credits.toLocaleString()} SMS (${limitInfo})`;
+    showSuccessToast(message);
     loadConfigurationsSMS();
   } catch (error) {
     console.error('Erreur actualisation crédits:', error);

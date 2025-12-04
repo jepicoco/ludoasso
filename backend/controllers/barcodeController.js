@@ -1,4 +1,4 @@
-const { Adherent, Jeu } = require('../models');
+const { Adherent, Jeu, Cotisation, ParametresStructure } = require('../models');
 const {
   generateAdherentCode,
   generateJeuCode,
@@ -143,94 +143,137 @@ const getAdherentCard = async (req, res) => {
       });
     }
 
+    // Recuperer les parametres de la structure
+    const parametres = await ParametresStructure.findOne();
+    const nomStructure = parametres?.nom_structure || 'LUDOTHEQUE';
+    const logoUrl = parametres?.logo || null;
+
+    // Recuperer la cotisation active
+    const now = new Date();
+    const cotisation = await Cotisation.findOne({
+      where: {
+        adherent_id: id,
+        statut: 'validee'
+      },
+      order: [['periode_fin', 'DESC']]
+    });
+
     const code = adherent.code_barre || generateAdherentCode(id);
     const barcodeBase64 = await generateBarcodeBase64(code);
+
+    // Formater les dates de cotisation
+    let validiteDebut = 'N/A';
+    let validiteFin = 'N/A';
+    let cotisationActive = false;
+
+    if (cotisation) {
+      const debut = new Date(cotisation.periode_debut);
+      const fin = new Date(cotisation.periode_fin);
+      validiteDebut = debut.toLocaleDateString('fr-FR');
+      validiteFin = fin.toLocaleDateString('fr-FR');
+      cotisationActive = now >= debut && now <= fin;
+    }
+
+    // Texte de validite
+    const validiteText = cotisation
+      ? `Du ${validiteDebut} au ${validiteFin}`
+      : 'Aucune cotisation';
+
+    // Message de validite personnalise (peut etre passe via query param)
+    const customMessage = req.query.message || null;
+
+    // Determiner le texte de validite
+    let validityDisplayText;
+    if (customMessage) {
+      validityDisplayText = customMessage;
+    } else if (cotisation && cotisationActive) {
+      validityDisplayText = 'Valide : ' + validiteDebut + ' - ' + validiteFin;
+    } else if (cotisation) {
+      validityDisplayText = 'Expiree le ' + validiteFin;
+    } else {
+      validityDisplayText = 'Aucune cotisation';
+    }
+
+    // Generer le HTML du logo si disponible
+    const logoHtml = logoUrl
+      ? `<img src="${logoUrl}" alt="Logo" class="header-logo">`
+      : '';
 
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Carte Adhérent - ${adherent.nom} ${adherent.prenom}</title>
+  <title>Carte - ${adherent.nom} ${adherent.prenom}</title>
   <style>
+    @page { size: auto; margin: 5mm; }
     @media print {
-      @page { margin: 0; size: 85.6mm 53.98mm; }
-      body { margin: 0; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .no-print { display: none !important; }
     }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+    body { font-family: Arial, sans-serif; margin: 10px; }
     .card {
-      width: 85.6mm;
-      height: 53.98mm;
-      border: 2px solid #333;
-      border-radius: 8px;
-      padding: 8mm;
-      box-sizing: border-box;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      position: relative;
+      width: 320px;
+      border: 2px solid #1e3c72;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
     }
     .card-header {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      padding: 8px 12px;
+      font-weight: bold;
       font-size: 14px;
-      font-weight: bold;
-      margin-bottom: 4mm;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .card-body {
-      background: white;
-      color: #333;
-      padding: 3mm;
+    .header-title { flex: 1; }
+    .header-logo { height: 32px; width: auto; margin-left: 10px; border-radius: 4px; }
+    .card-body { padding: 10px 12px; }
+    .name { font-size: 18px; font-weight: bold; color: #1e3c72; margin-bottom: 6px; }
+    .validity {
+      display: inline-block;
+      padding: 4px 10px;
       border-radius: 4px;
-    }
-    .name {
-      font-size: 16px;
+      font-size: 11px;
       font-weight: bold;
-      margin-bottom: 2mm;
+      margin: 4px 0;
+      background: ${cotisationActive ? '#d4edda' : '#f8d7da'};
+      color: ${cotisationActive ? '#155724' : '#721c24'};
+      border: 1px solid ${cotisationActive ? '#c3e6cb' : '#f5c6cb'};
     }
-    .info {
-      font-size: 10px;
-      margin-bottom: 1mm;
-    }
-    .barcode {
+    .barcode-section {
+      background: #f8f9fa;
+      padding: 15px 10px;
       text-align: center;
-      margin-top: 2mm;
+      border-top: 1px solid #ddd;
     }
-    .barcode img {
-      max-width: 100%;
-      height: auto;
-    }
-    .footer {
-      position: absolute;
-      bottom: 2mm;
-      left: 8mm;
-      right: 8mm;
-      text-align: center;
-      font-size: 8px;
-    }
+    .barcode-section img { height: 70px; }
+    .btn { display: block; margin: 15px auto; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+    .btn:hover { background: #0056b3; }
+    .instructions { background: #fff3cd; border: 1px solid #ffc107; padding: 10px; margin-bottom: 15px; border-radius: 5px; font-size: 12px; color: #856404; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="card-header">LUDOTHÈQUE - CARTE ADHÉRENT</div>
-    <div class="card-body">
-      <div class="name">${adherent.nom} ${adherent.prenom}</div>
-      <div class="info">N° ${code}</div>
-      <div class="info">Email: ${adherent.email}</div>
-      <div class="info">Statut: ${adherent.statut}</div>
-      <div class="barcode">
-        <img src="${barcodeBase64}" alt="Barcode ${code}">
-      </div>
-    </div>
-    <div class="footer">Valide jusqu'au ${adherent.date_fin_adhesion || 'N/A'}</div>
+  <div class="instructions no-print">
+    <b>Conseil :</b> Dans la boite de dialogue d'impression, desactivez "En-tetes et pieds de page" pour un meilleur rendu.
   </div>
-  <script>
-    window.onload = function() {
-      window.print();
-    };
-  </script>
+  <div class="card">
+    <div class="card-header">
+      <span class="header-title">${nomStructure.toUpperCase()}</span>
+      ${logoHtml}
+    </div>
+    <div class="card-body">
+      <div class="name">${adherent.prenom} ${adherent.nom}</div>
+      <div class="validity">${validityDisplayText}</div>
+    </div>
+    <div class="barcode-section">
+      <img src="${barcodeBase64}" alt="Code-barre">
+    </div>
+  </div>
+  <button class="btn no-print" onclick="window.print()">Imprimer</button>
 </body>
 </html>`;
 

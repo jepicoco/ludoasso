@@ -6,6 +6,14 @@
 // Configuration des éléments du menu
 const MENU_ITEMS = [
     {
+        id: 'scanner',
+        label: 'Scanner',
+        icon: 'upc-scan',
+        href: 'scanner.html',
+        highlight: true,  // Met en evidence ce bouton
+        floatingButton: true  // Affiche comme bouton flottant sur mobile
+    },
+    {
         id: 'dashboard',
         label: 'Dashboard',
         icon: 'speedometer2',
@@ -22,6 +30,12 @@ const MENU_ITEMS = [
         label: 'Jeux',
         icon: 'dice-6',
         href: 'jeux.html'
+    },
+    {
+        id: 'import-jeux',
+        label: 'Import Jeux',
+        icon: 'upload',
+        href: 'import-jeux.html'
     },
     {
         id: 'emprunts',
@@ -42,18 +56,16 @@ const MENU_ITEMS = [
         href: 'statistiques.html'
     },
     {
-        id: 'event-triggers',
-        label: 'Déclencheurs',
-        icon: 'bell',
-        href: 'event-triggers.html',
-        adminOnly: true  // Visible uniquement pour les administrateurs
+        id: 'historique-emails',
+        label: 'Historique Emails',
+        icon: 'envelope-paper',
+        href: 'historique-emails.html'
     },
     {
-        id: 'communications',
-        label: 'Communications',
-        icon: 'envelope-at',
-        href: 'communications.html',
-        adminOnly: true  // Visible uniquement pour les administrateurs
+        id: 'historique-sms',
+        label: 'Historique SMS',
+        icon: 'chat-dots',
+        href: 'historique-sms.html'
     },
     {
         id: 'parametres',

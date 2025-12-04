@@ -80,6 +80,17 @@ class EmailService {
         return false;
       }
 
+      // Déchiffrer le mot de passe si nécessaire
+      let smtpPassword = this.defaultConfig.smtp_password;
+      if (smtpPassword && smtpPassword.includes(':')) {
+        try {
+          smtpPassword = this.decryptPassword(smtpPassword);
+        } catch (decryptError) {
+          console.warn('⚠️  Impossible de déchiffrer le mot de passe SMTP, utilisation en clair');
+          // Si le déchiffrement échoue, le mot de passe est peut-être en clair
+        }
+      }
+
       // Créer le transporteur
       this.transporter = nodemailer.createTransport({
         host: this.defaultConfig.smtp_host,
@@ -87,7 +98,7 @@ class EmailService {
         secure: this.defaultConfig.smtp_secure,
         auth: {
           user: this.defaultConfig.smtp_user,
-          pass: this.defaultConfig.smtp_password
+          pass: smtpPassword
         },
         tls: {
           rejectUnauthorized: false // Pour les serveurs de test

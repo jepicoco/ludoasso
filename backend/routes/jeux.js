@@ -11,6 +11,14 @@ const { verifyToken, optionalAuth } = require('../middleware/auth');
 router.get('/categories', jeuController.getCategories);
 
 /**
+ * @route   POST /api/jeux/lookup-ean
+ * @desc    Lookup game info from EAN barcode or title via UPCitemdb + BGG
+ * @access  Private
+ * @body    { ean: "3558380077992" } or { title: "Catan" }
+ */
+router.post('/lookup-ean', verifyToken, jeuController.lookupEAN);
+
+/**
  * @route   GET /api/jeux
  * @desc    Get all jeux with filters
  * @access  Public (with optional auth)

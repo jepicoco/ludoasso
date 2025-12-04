@@ -70,6 +70,8 @@ exports.createConfiguration = async (req, res) => {
   try {
     const {
       libelle,
+      provider,
+      api_url,
       api_token,
       sender_name,
       gsm7,
@@ -85,7 +87,7 @@ exports.createConfiguration = async (req, res) => {
     // Validation
     if (!libelle || !api_token) {
       return res.status(400).json({
-        error: 'Champs requis manquants'
+        error: 'Champs requis manquants (libelle et api_token sont obligatoires)'
       });
     }
 
@@ -108,6 +110,8 @@ exports.createConfiguration = async (req, res) => {
 
     const configuration = await ConfigurationSMS.create({
       libelle,
+      provider: provider || 'smsfactor',
+      api_url: api_url || null,
       api_token: tokenChiffre,
       sender_name: sender_name || null,
       gsm7: gsm7 || false,
@@ -143,6 +147,8 @@ exports.updateConfiguration = async (req, res) => {
     const { id } = req.params;
     const {
       libelle,
+      provider,
+      api_url,
       api_token,
       sender_name,
       gsm7,
@@ -166,6 +172,8 @@ exports.updateConfiguration = async (req, res) => {
     // Préparer les données de mise à jour
     const updateData = {};
     if (libelle !== undefined) updateData.libelle = libelle;
+    if (provider !== undefined) updateData.provider = provider;
+    if (api_url !== undefined) updateData.api_url = api_url || null;
     if (sender_name !== undefined) updateData.sender_name = sender_name;
     if (gsm7 !== undefined) updateData.gsm7 = gsm7;
     if (sandbox !== undefined) updateData.sandbox = sandbox;
@@ -430,10 +438,14 @@ exports.getCredits = async (req, res) => {
       });
     }
 
-    await configuration.actualiserCredits();
+    const result = await configuration.actualiserCredits();
 
     res.json({
-      credits: configuration.credits_restants
+      credits: result.credits,
+      postpaid: result.postpaid,
+      postpaid_limit: result.postpaid_limit,
+      unlimited: result.unlimited,
+      provider: configuration.provider
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des crédits:', error);

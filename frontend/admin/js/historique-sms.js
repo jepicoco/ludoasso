@@ -1,57 +1,59 @@
 /**
- * Historique Emails - Gestion de l'historique des emails envoyés
+ * Historique SMS - Gestion de l'historique des SMS envoyes
  */
 
-let currentEmailLogsPage = 1;
-const emailLogsPerPage = 50;
+let currentSmsLogsPage = 1;
+const smsLogsPerPage = 50;
 
 /**
- * Charge l'historique des emails
+ * Charge l'historique des SMS
  */
-async function loadEmailLogs(page = 1) {
+async function loadSmsLogs(page = 1) {
   try {
-    currentEmailLogsPage = page;
+    currentSmsLogsPage = page;
 
-    // Récupérer les filtres
-    const destinataire = document.getElementById('filter-destinataire-email')?.value || '';
-    const statut = document.getElementById('filter-statut-email')?.value || '';
-    const templateCode = document.getElementById('filter-template-email')?.value || '';
+    // Recuperer les filtres
+    const destinataire = document.getElementById('filter-destinataire-sms')?.value || '';
+    const statut = document.getElementById('filter-statut-sms')?.value || '';
+    const templateCode = document.getElementById('filter-template-sms')?.value || '';
+    const provider = document.getElementById('filter-provider-sms')?.value || '';
     const dateDebut = document.getElementById('filter-date-debut')?.value || '';
     const dateFin = document.getElementById('filter-date-fin')?.value || '';
 
-    // Construire les paramètres de requête
+    // Construire les parametres de requete
     const params = new URLSearchParams({
-      page: currentEmailLogsPage,
-      limit: emailLogsPerPage
+      page: currentSmsLogsPage,
+      limit: smsLogsPerPage
     });
 
     if (destinataire) params.append('destinataire', destinataire);
     if (statut) params.append('statut', statut);
     if (templateCode) params.append('template_code', templateCode);
+    if (provider) params.append('provider', provider);
     if (dateDebut) params.append('date_debut', dateDebut);
     if (dateFin) params.append('date_fin', dateFin);
 
-    const data = await apiRequest(`/email-logs?${params.toString()}`);
+    const data = await apiRequest(`/sms-logs?${params.toString()}`);
 
-    displayEmailLogs(data.emailLogs);
-    displayEmailLogsPagination(data.pagination);
+    displaySmsLogs(data.smsLogs);
+    displaySmsLogsPagination(data.pagination);
 
   } catch (error) {
-    console.error('Erreur chargement logs emails:', error);
-    showError('Impossible de charger l\'historique des emails');
+    console.error('Erreur chargement logs SMS:', error);
+    showError('Impossible de charger l\'historique des SMS');
   }
 }
 
 /**
- * Affiche la liste des logs d'emails
+ * Affiche la liste des logs de SMS
  */
-function displayEmailLogs(logs) {
-  const container = document.getElementById('liste-email-logs');
+function displaySmsLogs(logs) {
+  const container = document.getElementById('liste-sms-logs');
 
   if (!logs || logs.length === 0) {
     container.innerHTML = `
       <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> Aucun email trouvé avec les filtres sélectionnés.
+        <i class="bi bi-info-circle"></i> Aucun SMS trouve avec les filtres selectionnes.
       </div>
     `;
     return;
@@ -65,7 +67,8 @@ function displayEmailLogs(logs) {
             <th>Date</th>
             <th>Destinataire</th>
             <th>Template</th>
-            <th>Objet</th>
+            <th>Message</th>
+            <th>Segments</th>
             <th>Statut</th>
             <th>Actions</th>
           </tr>
@@ -75,10 +78,15 @@ function displayEmailLogs(logs) {
 
   logs.forEach(log => {
     const dateEnvoi = new Date(log.date_envoi).toLocaleString('fr-FR');
-    const statutBadge = getStatutBadge(log.statut);
+    const statutBadge = getSmsStatutBadge(log.statut);
     const adherentInfo = log.adherent ?
       `${log.adherent.prenom} ${log.adherent.nom}` :
       log.destinataire_nom || '';
+
+    // Tronquer le message pour l'affichage
+    const messagePreview = log.message ?
+      (log.message.length > 50 ? log.message.substring(0, 50) + '...' : log.message) :
+      '-';
 
     html += `
       <tr>
@@ -93,14 +101,17 @@ function displayEmailLogs(logs) {
             '<span class="text-muted">-</span>'}
         </td>
         <td>
-          <div class="text-truncate" style="max-width: 300px;">
-            ${log.objet}
+          <div class="text-truncate" style="max-width: 200px;" title="${log.message || ''}">
+            ${messagePreview}
           </div>
+        </td>
+        <td>
+          <span class="badge bg-secondary">${log.nb_segments || 1}</span>
         </td>
         <td>${statutBadge}</td>
         <td>
-          <button class="btn btn-sm btn-outline-primary" onclick="viewEmailLogDetails(${log.id})">
-            <i class="bi bi-eye"></i> Détails
+          <button class="btn btn-sm btn-outline-primary" onclick="viewSmsLogDetails(${log.id})">
+            <i class="bi bi-eye"></i> Details
           </button>
         </td>
       </tr>
@@ -119,8 +130,8 @@ function displayEmailLogs(logs) {
 /**
  * Affiche la pagination des logs
  */
-function displayEmailLogsPagination(pagination) {
-  const container = document.getElementById('email-logs-pagination');
+function displaySmsLogsPagination(pagination) {
+  const container = document.getElementById('sms-logs-pagination');
 
   if (!pagination || pagination.totalPages <= 1) {
     container.innerHTML = '';
@@ -131,13 +142,13 @@ function displayEmailLogsPagination(pagination) {
     <nav>
       <ul class="pagination justify-content-center">
         <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
-          <a class="page-link" href="#" onclick="loadEmailLogs(${pagination.page - 1}); return false;">
-            Précédent
+          <a class="page-link" href="#" onclick="loadSmsLogs(${pagination.page - 1}); return false;">
+            Precedent
           </a>
         </li>
   `;
 
-  // Afficher les numéros de page
+  // Afficher les numeros de page
   const maxPages = 5;
   let startPage = Math.max(1, pagination.page - Math.floor(maxPages / 2));
   let endPage = Math.min(pagination.totalPages, startPage + maxPages - 1);
@@ -149,14 +160,14 @@ function displayEmailLogsPagination(pagination) {
   for (let i = startPage; i <= endPage; i++) {
     html += `
       <li class="page-item ${i === pagination.page ? 'active' : ''}">
-        <a class="page-link" href="#" onclick="loadEmailLogs(${i}); return false;">${i}</a>
+        <a class="page-link" href="#" onclick="loadSmsLogs(${i}); return false;">${i}</a>
       </li>
     `;
   }
 
   html += `
         <li class="page-item ${pagination.page === pagination.totalPages ? 'disabled' : ''}">
-          <a class="page-link" href="#" onclick="loadEmailLogs(${pagination.page + 1}); return false;">
+          <a class="page-link" href="#" onclick="loadSmsLogs(${pagination.page + 1}); return false;">
             Suivant
           </a>
         </li>
@@ -164,8 +175,8 @@ function displayEmailLogsPagination(pagination) {
     </nav>
     <div class="text-center text-muted">
       <small>
-        Affichage de ${((pagination.page - 1) * pagination.limit) + 1} à
-        ${Math.min(pagination.page * pagination.limit, pagination.total)} sur ${pagination.total} emails
+        Affichage de ${((pagination.page - 1) * pagination.limit) + 1} a
+        ${Math.min(pagination.page * pagination.limit, pagination.total)} sur ${pagination.total} SMS
       </small>
     </div>
   `;
@@ -174,28 +185,31 @@ function displayEmailLogsPagination(pagination) {
 }
 
 /**
- * Retourne le badge HTML pour un statut
+ * Retourne le badge HTML pour un statut SMS
  */
-function getStatutBadge(statut) {
+function getSmsStatutBadge(statut) {
   const badges = {
-    'envoye': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Envoyé</span>',
+    'envoye': '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Envoye</span>',
+    'delivre': '<span class="badge bg-primary"><i class="bi bi-check2-circle"></i> Delivre</span>',
     'erreur': '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Erreur</span>',
-    'en_attente': '<span class="badge bg-warning"><i class="bi bi-clock"></i> En attente</span>'
+    'echec_livraison': '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Echec livraison</span>',
+    'en_attente': '<span class="badge bg-secondary"><i class="bi bi-clock"></i> En attente</span>'
   };
 
   return badges[statut] || `<span class="badge bg-secondary">${statut}</span>`;
 }
 
 /**
- * Affiche les détails d'un log d'email
+ * Affiche les details d'un log de SMS
  */
-async function viewEmailLogDetails(logId) {
+async function viewSmsLogDetails(logId) {
   try {
-    const log = await apiRequest(`/email-logs/${logId}`);
+    const log = await apiRequest(`/sms-logs/${logId}`);
 
-    const content = document.getElementById('email-log-details-content');
+    const content = document.getElementById('sms-log-details-content');
     const dateEnvoi = new Date(log.date_envoi).toLocaleString('fr-FR');
-    const statutBadge = getStatutBadge(log.statut);
+    const dateLivraison = log.date_livraison ? new Date(log.date_livraison).toLocaleString('fr-FR') : null;
+    const statutBadge = getSmsStatutBadge(log.statut);
 
     let html = `
       <div class="row">
@@ -211,7 +225,7 @@ async function viewEmailLogDetails(logId) {
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <h6><i class="bi bi-person"></i> Destinataire</h6>
+          <h6><i class="bi bi-phone"></i> Destinataire</h6>
           <p>${log.destinataire}</p>
           ${log.destinataire_nom ? `<small class="text-muted">${log.destinataire_nom}</small>` : ''}
         </div>
@@ -221,18 +235,34 @@ async function viewEmailLogDetails(logId) {
         </div>
       </div>
 
-      <div class="mb-3">
-        <h6><i class="bi bi-envelope"></i> Objet</h6>
-        <p>${log.objet}</p>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <h6><i class="bi bi-layers"></i> Segments</h6>
+          <p><span class="badge bg-secondary">${log.nb_segments || 1} segment(s)</span></p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <h6><i class="bi bi-building"></i> Provider</h6>
+          <p>${log.provider ? `<span class="badge bg-primary">${log.provider}</span>` : '<span class="text-muted">Non specifie</span>'}</p>
+        </div>
       </div>
 
       <div class="mb-3">
-        <h6><i class="bi bi-file-code"></i> Corps de l'email</h6>
-        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-          ${log.corps}
+        <h6><i class="bi bi-chat-text"></i> Message</h6>
+        <div class="border rounded p-3 bg-light">
+          ${log.message || '<span class="text-muted">Aucun message</span>'}
         </div>
+        <small class="text-muted">${(log.message || '').length} caracteres</small>
       </div>
     `;
+
+    if (dateLivraison) {
+      html += `
+        <div class="mb-3">
+          <h6><i class="bi bi-check2-all text-success"></i> Date de livraison</h6>
+          <p>${dateLivraison}</p>
+        </div>
+      `;
+    }
 
     if (log.message_id) {
       html += `
@@ -243,12 +273,22 @@ async function viewEmailLogDetails(logId) {
       `;
     }
 
-    if (log.erreur_message) {
+    if (log.cout) {
       html += `
         <div class="mb-3">
-          <h6><i class="bi bi-exclamation-triangle text-danger"></i> Message d'erreur</h6>
+          <h6><i class="bi bi-currency-euro"></i> Cout</h6>
+          <p>${parseFloat(log.cout).toFixed(4)} EUR</p>
+        </div>
+      `;
+    }
+
+    if (log.erreur_code || log.erreur_message) {
+      html += `
+        <div class="mb-3">
+          <h6><i class="bi bi-exclamation-triangle text-danger"></i> Erreur</h6>
           <div class="alert alert-danger">
-            ${log.erreur_message}
+            ${log.erreur_code ? `<strong>Code:</strong> ${log.erreur_code}<br>` : ''}
+            ${log.erreur_message || 'Erreur inconnue'}
           </div>
         </div>
       `;
@@ -257,11 +297,11 @@ async function viewEmailLogDetails(logId) {
     if (log.adherent) {
       html += `
         <div class="mb-3">
-          <h6><i class="bi bi-person-badge"></i> Adhérent lié</h6>
+          <h6><i class="bi bi-person-badge"></i> Adherent lie</h6>
           <p>
             ${log.adherent.prenom} ${log.adherent.nom}
             <br>
-            <small class="text-muted">ID: ${log.adherent.id} - ${log.adherent.email}</small>
+            <small class="text-muted">ID: ${log.adherent.id} - ${log.adherent.telephone || 'Pas de telephone'}</small>
           </p>
         </div>
       `;
@@ -270,7 +310,7 @@ async function viewEmailLogDetails(logId) {
     if (log.metadata) {
       html += `
         <div class="mb-3">
-          <h6><i class="bi bi-code-square"></i> Métadonnées</h6>
+          <h6><i class="bi bi-code-square"></i> Metadonnees</h6>
           <pre class="bg-light p-3 rounded"><code>${JSON.stringify(log.metadata, null, 2)}</code></pre>
         </div>
       `;
@@ -278,27 +318,27 @@ async function viewEmailLogDetails(logId) {
 
     content.innerHTML = html;
 
-    const modal = new bootstrap.Modal(document.getElementById('modalEmailLogDetails'));
+    const modal = new bootstrap.Modal(document.getElementById('modalSmsLogDetails'));
     modal.show();
 
   } catch (error) {
-    console.error('Erreur chargement détails log:', error);
-    showError('Impossible de charger les détails de l\'email');
+    console.error('Erreur chargement details log:', error);
+    showError('Impossible de charger les details du SMS');
   }
 }
 
 /**
- * Charge les statistiques des emails
+ * Charge les statistiques des SMS
  */
-async function loadEmailStatistics() {
+async function loadSmsStatistics() {
   try {
-    const data = await apiRequest('/email-logs/statistics');
+    const data = await apiRequest('/sms-logs/statistics');
 
-    displayEmailStatistics(data);
+    displaySmsStatistics(data);
 
   } catch (error) {
     console.error('Erreur chargement statistiques:', error);
-    document.getElementById('email-statistics').innerHTML = `
+    document.getElementById('sms-statistics').innerHTML = `
       <div class="alert alert-danger">
         <i class="bi bi-exclamation-triangle"></i> Erreur lors du chargement des statistiques
       </div>
@@ -307,30 +347,38 @@ async function loadEmailStatistics() {
 }
 
 /**
- * Affiche les statistiques des emails
+ * Affiche les statistiques des SMS
  */
-function displayEmailStatistics(data) {
-  const container = document.getElementById('email-statistics');
+function displaySmsStatistics(data) {
+  const container = document.getElementById('sms-statistics');
 
   let html = `
     <div class="row">
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card text-center">
           <div class="card-body">
             <h3 class="text-primary">${data.statistiquesGenerales.total}</h3>
-            <p class="text-muted mb-0">Total emails</p>
+            <p class="text-muted mb-0">Total SMS</p>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card text-center">
           <div class="card-body">
             <h3 class="text-success">${data.statistiquesGenerales.envoyes}</h3>
-            <p class="text-muted mb-0">Envoyés</p>
+            <p class="text-muted mb-0">Envoyes</p>
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
+        <div class="card text-center">
+          <div class="card-body">
+            <h3 class="text-primary">${data.statistiquesGenerales.delivres}</h3>
+            <p class="text-muted mb-0">Delivres</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
         <div class="card text-center">
           <div class="card-body">
             <h3 class="text-danger">${data.statistiquesGenerales.erreurs}</h3>
@@ -338,18 +386,26 @@ function displayEmailStatistics(data) {
           </div>
         </div>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="card text-center">
           <div class="card-body">
             <h3 class="text-info">${data.statistiquesGenerales.tauxReussite}%</h3>
-            <p class="text-muted mb-0">Taux de réussite</p>
+            <p class="text-muted mb-0">Taux reussite</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card text-center">
+          <div class="card-body">
+            <h3 class="text-warning">${data.statistiquesGenerales.coutTotal} EUR</h3>
+            <p class="text-muted mb-0">Cout total</p>
           </div>
         </div>
       </div>
     </div>
 
     <div class="row mt-4">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <h6><i class="bi bi-file-text"></i> Top templates</h6>
         <div class="table-responsive">
           <table class="table table-sm">
@@ -357,7 +413,7 @@ function displayEmailStatistics(data) {
               <tr>
                 <th>Template</th>
                 <th>Total</th>
-                <th>Envoyés</th>
+                <th>OK</th>
                 <th>Erreurs</th>
               </tr>
             </thead>
@@ -376,7 +432,7 @@ function displayEmailStatistics(data) {
       `;
     });
   } else {
-    html += `<tr><td colspan="4" class="text-center text-muted">Aucune donnée</td></tr>`;
+    html += `<tr><td colspan="4" class="text-center text-muted">Aucune donnee</td></tr>`;
   }
 
   html += `
@@ -385,16 +441,50 @@ function displayEmailStatistics(data) {
         </div>
       </div>
 
-      <div class="col-md-6">
-        <h6><i class="bi bi-calendar-week"></i> Activité des 7 derniers jours</h6>
+      <div class="col-md-4">
+        <h6><i class="bi bi-building"></i> Par provider</h6>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Total</th>
+                <th>Cout</th>
+              </tr>
+            </thead>
+            <tbody>
+  `;
+
+  if (data.parProvider && data.parProvider.length > 0) {
+    data.parProvider.forEach(item => {
+      html += `
+        <tr>
+          <td><span class="badge bg-primary">${item.provider || 'Non specifie'}</span></td>
+          <td>${item.total}</td>
+          <td>${item.cout_total ? parseFloat(item.cout_total).toFixed(2) + ' EUR' : '-'}</td>
+        </tr>
+      `;
+    });
+  } else {
+    html += `<tr><td colspan="3" class="text-center text-muted">Aucune donnee</td></tr>`;
+  }
+
+  html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <h6><i class="bi bi-calendar-week"></i> 7 derniers jours</h6>
         <div class="table-responsive">
           <table class="table table-sm">
             <thead>
               <tr>
                 <th>Jour</th>
                 <th>Total</th>
-                <th>Envoyés</th>
-                <th>Erreurs</th>
+                <th>OK</th>
+                <th>Segments</th>
               </tr>
             </thead>
             <tbody>
@@ -408,12 +498,12 @@ function displayEmailStatistics(data) {
           <td>${date}</td>
           <td>${item.total}</td>
           <td><span class="text-success">${item.envoyes}</span></td>
-          <td><span class="text-danger">${item.erreurs}</span></td>
+          <td>${item.segments || 0}</td>
         </tr>
       `;
     });
   } else {
-    html += `<tr><td colspan="4" class="text-center text-muted">Aucune donnée</td></tr>`;
+    html += `<tr><td colspan="4" class="text-center text-muted">Aucune donnee</td></tr>`;
   }
 
   html += `
@@ -432,9 +522,9 @@ function displayEmailStatistics(data) {
  */
 async function loadTemplatesFilter() {
   try {
-    const templates = await apiRequest('/email-logs/templates');
+    const templates = await apiRequest('/sms-logs/templates');
 
-    const select = document.getElementById('filter-template-email');
+    const select = document.getElementById('filter-template-sms');
     if (!select) return;
 
     templates.forEach(template => {
@@ -450,15 +540,38 @@ async function loadTemplatesFilter() {
 }
 
 /**
- * Réinitialise les filtres
+ * Charge la liste des providers pour le filtre
  */
-function resetFiltersEmailLogs() {
-  document.getElementById('filter-destinataire-email').value = '';
-  document.getElementById('filter-statut-email').value = '';
-  document.getElementById('filter-template-email').value = '';
+async function loadProvidersFilter() {
+  try {
+    const providers = await apiRequest('/sms-logs/providers');
+
+    const select = document.getElementById('filter-provider-sms');
+    if (!select) return;
+
+    providers.forEach(provider => {
+      const option = document.createElement('option');
+      option.value = provider.provider;
+      option.textContent = `${provider.provider} (${provider.total})`;
+      select.appendChild(option);
+    });
+
+  } catch (error) {
+    console.error('Erreur chargement providers:', error);
+  }
+}
+
+/**
+ * Reinitialise les filtres
+ */
+function resetFiltersSmsLogs() {
+  document.getElementById('filter-destinataire-sms').value = '';
+  document.getElementById('filter-statut-sms').value = '';
+  document.getElementById('filter-template-sms').value = '';
+  document.getElementById('filter-provider-sms').value = '';
   document.getElementById('filter-date-debut').value = '';
   document.getElementById('filter-date-fin').value = '';
-  loadEmailLogs(1);
+  loadSmsLogs(1);
 }
 
 /**
@@ -470,7 +583,7 @@ function showPurgeModal() {
 }
 
 /**
- * Gère la soumission du formulaire de purge
+ * Gere la soumission du formulaire de purge
  */
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('form-purge-logs');
@@ -481,16 +594,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const jours = parseInt(document.getElementById('purge_jours').value);
 
       if (jours < 1) {
-        showError('Le nombre de jours doit être supérieur à 0');
+        showError('Le nombre de jours doit etre superieur a 0');
         return;
       }
 
-      if (!confirm(`Êtes-vous sûr de vouloir supprimer tous les logs de plus de ${jours} jours ?`)) {
+      if (!confirm(`Etes-vous sur de vouloir supprimer tous les logs de plus de ${jours} jours ?`)) {
         return;
       }
 
       try {
-        const data = await apiRequest('/email-logs/purge', {
+        const data = await apiRequest('/sms-logs/purge', {
           method: 'POST',
           body: JSON.stringify({ jours })
         });
@@ -501,9 +614,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = bootstrap.Modal.getInstance(document.getElementById('modalPurgeLogs'));
         modal.hide();
 
-        // Recharger les données
-        loadEmailLogs(1);
-        loadEmailStatistics();
+        // Recharger les donnees
+        loadSmsLogs(1);
+        loadSmsStatistics();
 
       } catch (error) {
         console.error('Erreur purge logs:', error);
@@ -514,12 +627,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Helper pour afficher un message de succès
+ * Helper pour afficher un message de succes
  */
 function showSuccess(message) {
   Swal.fire({
     icon: 'success',
-    title: 'Succès',
+    title: 'Succes',
     text: message,
     timer: 3000,
     timerProgressBar: true

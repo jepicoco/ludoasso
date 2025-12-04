@@ -72,14 +72,17 @@ document.addEventListener('DOMContentLoaded', function() {
 async function openSendEmailModal(adherent) {
   currentAdherent = adherent;
 
-  // Remplir les infos du destinataire
-  document.getElementById('email-adherent-id').value = adherent.id;
-  document.getElementById('email-destinataire').value = `${adherent.prenom} ${adherent.nom} <${adherent.email}>`;
-
-  // Réinitialiser le formulaire
+  // Réinitialiser le formulaire d'abord
   document.getElementById('emailForm').reset();
   document.getElementById('email-mode-template').checked = true;
   toggleEmailMode('template');
+
+  // Remplir les infos du destinataire APRÈS le reset
+  document.getElementById('email-adherent-id').value = adherent.id;
+  document.getElementById('email-destinataire').value = `${adherent.prenom} ${adherent.nom} <${adherent.email}>`;
+
+  // Masquer la prévisualisation
+  document.getElementById('email-template-preview').style.display = 'none';
 
   // Charger les templates
   await loadEmailTemplates();
@@ -94,21 +97,23 @@ async function openSendEmailModal(adherent) {
 async function openSendSmsModal(adherent) {
   currentAdherent = adherent;
 
-  // Remplir les infos du destinataire
-  document.getElementById('sms-adherent-id').value = adherent.id;
-
   if (!adherent.telephone) {
     showToast('Cet adhérent n\'a pas de numéro de téléphone', 'error');
     return;
   }
 
-  document.getElementById('sms-destinataire').value = `${adherent.prenom} ${adherent.nom} <${adherent.telephone}>`;
-
-  // Réinitialiser le formulaire
+  // Réinitialiser le formulaire d'abord
   document.getElementById('smsForm').reset();
   document.getElementById('sms-mode-template').checked = true;
   toggleSmsMode('template');
   document.getElementById('sms-char-count').textContent = '0';
+
+  // Remplir les infos du destinataire APRÈS le reset
+  document.getElementById('sms-adherent-id').value = adherent.id;
+  document.getElementById('sms-destinataire').value = `${adherent.prenom} ${adherent.nom} <${adherent.telephone}>`;
+
+  // Masquer la prévisualisation
+  document.getElementById('sms-template-preview').style.display = 'none';
 
   // Charger les templates
   await loadSmsTemplates();
@@ -162,9 +167,9 @@ function toggleSmsMode(mode) {
  */
 async function loadEmailTemplates() {
   try {
-    const response = await apiRequest('/event-triggers/templates?type=email', 'GET');
+    const response = await apiRequest('/event-triggers/templates?type=email');
 
-    if (response.success) {
+    if (response.success && response.data) {
       emailTemplates = response.data;
       const select = document.getElementById('email-template-select');
       select.innerHTML = '<option value="">-- Sélectionner un template --</option>';
@@ -176,9 +181,17 @@ async function loadEmailTemplates() {
         option.dataset.template = JSON.stringify(template);
         select.appendChild(option);
       });
+
+      if (emailTemplates.length === 0) {
+        select.innerHTML = '<option value="">Aucun template disponible</option>';
+      }
+    } else {
+      console.warn('Réponse API templates email invalide:', response);
+      document.getElementById('email-template-select').innerHTML = '<option value="">Aucun template disponible</option>';
     }
   } catch (error) {
     console.error('Erreur chargement templates email:', error);
+    document.getElementById('email-template-select').innerHTML = '<option value="">Erreur de chargement</option>';
     showToast('Erreur lors du chargement des templates', 'error');
   }
 }
@@ -188,9 +201,9 @@ async function loadEmailTemplates() {
  */
 async function loadSmsTemplates() {
   try {
-    const response = await apiRequest('/event-triggers/templates?type=sms', 'GET');
+    const response = await apiRequest('/event-triggers/templates?type=sms');
 
-    if (response.success) {
+    if (response.success && response.data) {
       smsTemplates = response.data;
       const select = document.getElementById('sms-template-select');
       select.innerHTML = '<option value="">-- Sélectionner un template --</option>';
@@ -202,9 +215,17 @@ async function loadSmsTemplates() {
         option.dataset.template = JSON.stringify(template);
         select.appendChild(option);
       });
+
+      if (smsTemplates.length === 0) {
+        select.innerHTML = '<option value="">Aucun template disponible</option>';
+      }
+    } else {
+      console.warn('Réponse API templates SMS invalide:', response);
+      document.getElementById('sms-template-select').innerHTML = '<option value="">Aucun template disponible</option>';
     }
   } catch (error) {
     console.error('Erreur chargement templates SMS:', error);
+    document.getElementById('sms-template-select').innerHTML = '<option value="">Erreur de chargement</option>';
     showToast('Erreur lors du chargement des templates', 'error');
   }
 }
@@ -326,7 +347,10 @@ async function sendEmailToAdherent() {
       date_adhesion: currentAdherent.date_adhesion
     };
 
-    const response = await apiRequest(`/adherents/${adherentId}/send-email`, 'POST', data);
+    const response = await apiRequest(`/adherents/${adherentId}/send-email`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
 
     if (response.success) {
       showToast('Email envoyé avec succès', 'success');
@@ -392,7 +416,10 @@ async function sendSmsToAdherent() {
       telephone: currentAdherent.telephone
     };
 
-    const response = await apiRequest(`/adherents/${adherentId}/send-sms`, 'POST', data);
+    const response = await apiRequest(`/adherents/${adherentId}/send-sms`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
 
     if (response.success) {
       showToast('SMS envoyé avec succès', 'success');

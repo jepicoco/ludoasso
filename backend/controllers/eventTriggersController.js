@@ -261,18 +261,19 @@ exports.toggleSMS = async (req, res) => {
 exports.getAvailableTemplates = async (req, res) => {
   try {
     const { type } = req.query; // email ou sms
+    const { Op } = require('sequelize');
 
     const where = { actif: true };
 
     if (type === 'email') {
-      where.type_message = ['email', 'both'];
+      where.type_message = { [Op.in]: ['email', 'both'] };
     } else if (type === 'sms') {
-      where.type_message = ['sms', 'both'];
+      where.type_message = { [Op.in]: ['sms', 'both'] };
     }
 
     const templates = await TemplateMessage.findAll({
       where,
-      attributes: ['id', 'code', 'libelle', 'type_message', 'categorie'],
+      attributes: ['id', 'code', 'libelle', 'type_message', 'categorie', 'email_objet', 'email_corps', 'sms_corps', 'variables_disponibles'],
       order: [['ordre_affichage', 'ASC'], ['libelle', 'ASC']]
     });
 

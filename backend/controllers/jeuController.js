@@ -1,5 +1,6 @@
 const { Jeu, Emprunt, Adherent } = require('../models');
 const { Op } = require('sequelize');
+const eanLookupService = require('../services/eanLookupService');
 
 /**
  * Get all jeux with optional filters and search
@@ -303,11 +304,64 @@ const getCategories = async (req, res) => {
   }
 };
 
+/**
+ * Lookup game info from EAN barcode
+ * POST /api/jeux/lookup-ean
+ * Body: { ean: "3558380077992" } or { title: "Catan" }
+ */
+const lookupEAN = async (req, res) => {
+  try {
+    const { ean, title } = req.body;
+
+    if (!ean && !title) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'EAN ou titre requis'
+      });
+    }
+
+    let result;
+
+    if (ean) {
+      console.log(`[API] Lookup EAN: ${ean}`);
+      result = await eanLookupService.lookupEAN(ean);
+    } else {
+      console.log(`[API] Lookup Title: ${title}`);
+      result = await eanLookupService.lookupByTitle(title);
+    }
+
+    // Si pas de resultat, retourner un objet standard
+    if (!result || !result.found) {
+      return res.json({
+        found: false,
+        source: 'not_found',
+        jeu: null,
+        message: ean
+          ? `Aucun jeu trouve pour le code EAN ${ean}`
+          : `Aucun jeu trouve pour "${title}"`
+      });
+    }
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Lookup EAN error:', error);
+    // Retourner un resultat non-trouve plutot qu'une erreur 500
+    res.json({
+      found: false,
+      source: 'error',
+      jeu: null,
+      message: `Erreur de recherche: ${error.message}`
+    });
+  }
+};
+
 module.exports = {
   getAllJeux,
   getJeuById,
   createJeu,
   updateJeu,
   deleteJeu,
-  getCategories
+  getCategories,
+  lookupEAN
 };

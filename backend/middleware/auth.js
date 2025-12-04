@@ -8,26 +8,29 @@ const { Adherent } = require('../models');
  */
 const verifyToken = async (req, res, next) => {
   try {
-    // Get token from header
+    // Get token from header OR query parameter (for print pages opened in new window)
     const authHeader = req.headers.authorization;
+    const queryToken = req.query.token;
 
-    if (!authHeader) {
+    let token = null;
+
+    if (authHeader) {
+      // Check if token format is "Bearer <token>"
+      const parts = authHeader.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      }
+    } else if (queryToken) {
+      // Token passed via query parameter (for print pages)
+      token = queryToken;
+    }
+
+    if (!token) {
       return res.status(401).json({
         error: 'Access denied',
         message: 'No token provided'
       });
     }
-
-    // Check if token format is "Bearer <token>"
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      return res.status(401).json({
-        error: 'Invalid token format',
-        message: 'Token must be in format: Bearer <token>'
-      });
-    }
-
-    const token = parts[1];
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

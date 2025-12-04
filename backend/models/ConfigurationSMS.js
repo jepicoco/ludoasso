@@ -19,10 +19,20 @@ module.exports = (sequelize) => {
       comment: 'Nom de la configuration SMS'
     },
     provider: {
-      type: DataTypes.ENUM('smsfactor', 'brevo'),
+      type: DataTypes.ENUM('smsfactor', 'brevo', 'twilio', 'ovh', 'autre'),
       allowNull: false,
       defaultValue: 'smsfactor',
       comment: 'Fournisseur SMS'
+    },
+    api_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isUrl: {
+          msg: 'L\'URL de l\'API doit être une URL valide'
+        }
+      },
+      comment: 'URL de base de l\'API SMS (ex: https://api.smsfactor.com)'
     },
     api_token: {
       type: DataTypes.TEXT,
@@ -207,15 +217,20 @@ module.exports = (sequelize) => {
 
   /**
    * Actualise les crédits restants
-   * @returns {Promise<ConfigurationSMS>}
+   * @returns {Promise<Object>}
    */
   ConfigurationSMS.prototype.actualiserCredits = async function() {
     const smsService = require('../utils/smsService');
     try {
-      const credits = await smsService.getCredits(this);
-      this.credits_restants = credits;
+      const result = await smsService.getCredits(this);
+      this.credits_restants = result.credits || 0;
       await this.save();
-      return this;
+      return {
+        credits: result.credits,
+        postpaid: result.postpaid,
+        postpaid_limit: result.postpaid_limit,
+        unlimited: result.unlimited
+      };
     } catch (error) {
       console.error('Erreur lors de l\'actualisation des crédits:', error);
       throw error;
