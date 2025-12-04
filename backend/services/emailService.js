@@ -1,13 +1,69 @@
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const { ConfigurationEmail, TemplateMessage, EmailLog } = require('../models');
+
+// Configuration du chiffrement AES-256-CBC pour les mots de passe SMTP
+const ENCRYPTION_ALGORITHM = 'aes-256-cbc';
+const ENCRYPTION_KEY = Buffer.from(process.env.EMAIL_ENCRYPTION_KEY || '', 'hex');
+
+if (ENCRYPTION_KEY.length !== 32) {
+  console.warn('⚠️  EMAIL_ENCRYPTION_KEY must be 32 bytes (64 hex chars). Email password encryption may not work properly.');
+}
 
 /**
  * Service d'envoi d'emails
+ * Singleton gérant l'envoi d'emails avec templates, logging et chiffrement des mots de passe
  */
 class EmailService {
   constructor() {
     this.transporter = null;
     this.defaultConfig = null;
+  }
+
+  /**
+   * Chiffre un mot de passe avec AES-256-CBC
+   * @param {string} password - Mot de passe en clair
+   * @returns {string} - Format: iv:encryptedData (hex)
+   */
+  encryptPassword(password) {
+    if (!password) return '';
+
+    try {
+      const iv = crypto.randomBytes(16);
+      const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, iv);
+      let encrypted = cipher.update(password, 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+      return iv.toString('hex') + ':' + encrypted;
+    } catch (error) {
+      console.error('Erreur lors du chiffrement:', error);
+      throw new Error('Erreur de chiffrement du mot de passe');
+    }
+  }
+
+  /**
+   * Déchiffre un mot de passe
+   * @param {string} encrypted - Format: iv:encryptedData (hex)
+   * @returns {string} - Mot de passe en clair
+   */
+  decryptPassword(encrypted) {
+    if (!encrypted) return '';
+
+    try {
+      const parts = encrypted.split(':');
+      if (parts.length !== 2) {
+        throw new Error('Format de mot de passe chiffré invalide');
+      }
+
+      const iv = Buffer.from(parts[0], 'hex');
+      const encryptedData = parts[1];
+      const decipher = crypto.createDecipheriv(ENCRYPTION_ALGORITHM, ENCRYPTION_KEY, iv);
+      let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } catch (error) {
+      console.error('Erreur lors du déchiffrement:', error);
+      throw new Error('Erreur de déchiffrement du mot de passe');
+    }
   }
 
   /**

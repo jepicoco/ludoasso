@@ -3,7 +3,7 @@
  */
 
 const { ConfigurationEmail } = require('../models');
-const { encryptPassword } = require('../utils/emailService');
+const emailService = require('../services/emailService');
 
 /**
  * Récupérer toutes les configurations email
@@ -97,7 +97,7 @@ exports.createConfiguration = async (req, res) => {
     }
 
     // Chiffrer le mot de passe
-    const passwordChiffre = encryptPassword(smtp_password);
+    const passwordChiffre = emailService.encryptPassword(smtp_password);
 
     // Récupérer le dernier ordre
     const maxOrdre = await ConfigurationEmail.max('ordre_affichage') || 0;
@@ -201,7 +201,7 @@ exports.updateConfiguration = async (req, res) => {
 
     // Si le mot de passe est fourni, le chiffrer
     if (smtp_password && smtp_password !== '') {
-      updateData.smtp_password = encryptPassword(smtp_password);
+      updateData.smtp_password = emailService.encryptPassword(smtp_password);
     }
 
     // Si on définit comme par défaut, désactiver les autres

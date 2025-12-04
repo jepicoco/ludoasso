@@ -171,7 +171,7 @@ module.exports = (sequelize) => {
    * @returns {Promise<Object>} - {success: boolean, message: string}
    */
   ConfigurationEmail.prototype.testerConnexion = async function() {
-    const emailService = require('../utils/emailService');
+    const emailService = require('../services/emailService');
     return await emailService.testConfiguration(this);
   };
 
@@ -181,7 +181,7 @@ module.exports = (sequelize) => {
    * @returns {Promise<Object>} - {success: boolean, messageId: string, error: string}
    */
   ConfigurationEmail.prototype.envoyerEmailTest = async function(destinataire) {
-    const emailService = require('../utils/emailService');
+    const emailService = require('../services/emailService');
     return await emailService.sendEmail(this.id, {
       to: destinataire,
       subject: 'Test de configuration email',
