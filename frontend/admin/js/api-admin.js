@@ -2,7 +2,10 @@
  * API Client for Ludothèque Admin Interface
  */
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// Detecte automatiquement l'URL de l'API selon l'environnement
+const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : `${window.location.origin}/api`;
 
 /**
  * Get auth token from localStorage
