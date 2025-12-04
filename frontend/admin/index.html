@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0;url=dashboard.html">
+  <title>Ludotheque Admin</title>
+</head>
+<body>
+  <p>Redirection vers le tableau de bord...</p>
+  <script>
+    // Vérifier si connecté, sinon rediriger vers login
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      window.location.href = 'login.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>
