@@ -214,6 +214,91 @@ exports.changerRole = async (req, res) => {
 };
 
 /**
+ * Réinitialiser le mot de passe d'un utilisateur
+ * Envoie un email avec un lien de réinitialisation
+ * Accessible uniquement aux administrateurs
+ */
+exports.resetPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const crypto = require('crypto');
+    const emailService = require('../services/emailService');
+
+    // Récupérer l'utilisateur
+    const utilisateur = await Adherent.findByPk(id);
+
+    if (!utilisateur) {
+      return res.status(404).json({
+        error: 'Utilisateur non trouvé'
+      });
+    }
+
+    // Empêcher la réinitialisation du mot de passe d'un admin par un autre admin
+    if (utilisateur.role === 'administrateur') {
+      return res.status(403).json({
+        error: 'Action interdite',
+        message: 'Impossible de réinitialiser le mot de passe d\'un administrateur'
+      });
+    }
+
+    // Générer un token de réinitialisation
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+    // Sauvegarder le token (dans un champ notes temporairement, ou ajouter un champ dédié)
+    // Pour l'instant, on génère un nouveau mot de passe temporaire et on l'envoie
+    const tempPassword = crypto.randomBytes(8).toString('hex');
+
+    // Mettre à jour le mot de passe (le hook beforeUpdate va le hasher)
+    await utilisateur.update({ password: tempPassword });
+
+    // Envoyer l'email avec le mot de passe temporaire
+    try {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
+      await emailService.sendEmail({
+        to: utilisateur.email,
+        subject: 'Réinitialisation de votre mot de passe - Ludothèque',
+        html: `
+          <h2>Réinitialisation de votre mot de passe</h2>
+          <p>Bonjour ${utilisateur.prenom},</p>
+          <p>Votre mot de passe a été réinitialisé par un administrateur.</p>
+          <p><strong>Votre nouveau mot de passe temporaire :</strong> <code>${tempPassword}</code></p>
+          <p>Veuillez vous connecter avec ce mot de passe et le changer immédiatement.</p>
+          <p><a href="${appUrl}/admin/login.html">Se connecter</a></p>
+          <br>
+          <p><em>Si vous n'avez pas demandé cette réinitialisation, veuillez contacter l'administrateur.</em></p>
+        `,
+        adherentId: utilisateur.id,
+        metadata: {
+          destinataire_nom: `${utilisateur.prenom} ${utilisateur.nom}`,
+          type: 'password_reset'
+        }
+      });
+
+      res.json({
+        message: 'Email de réinitialisation envoyé',
+        email: utilisateur.email
+      });
+    } catch (emailError) {
+      console.error('Erreur envoi email:', emailError);
+      // Le mot de passe a quand même été changé, on informe l'admin
+      res.status(500).json({
+        error: 'Mot de passe réinitialisé mais erreur d\'envoi d\'email',
+        message: emailError.message,
+        tempPassword: tempPassword // On renvoie le mot de passe temporaire à l'admin en cas d'échec email
+      });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la réinitialisation du mot de passe:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la réinitialisation du mot de passe',
+      message: error.message
+    });
+  }
+};
+
+/**
  * Récupérer la liste des rôles disponibles
  */
 exports.getRoles = async (req, res) => {

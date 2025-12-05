@@ -81,6 +81,9 @@ router.get('/utilisateurs', verifyToken, isGestionnaire(), parametresController.
 // Changer le rôle d'un utilisateur (admin seulement)
 router.put('/utilisateurs/:id/role', verifyToken, isAdmin(), parametresController.changerRole);
 
+// Réinitialiser le mot de passe d'un utilisateur (admin seulement)
+router.post('/utilisateurs/:id/reset-password', verifyToken, isAdmin(), parametresController.resetPassword);
+
 // Récupérer la liste des rôles disponibles
 router.get('/roles', verifyToken, parametresController.getRoles);
 

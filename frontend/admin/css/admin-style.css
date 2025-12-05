@@ -145,3 +145,26 @@
 .btn-group .btn.active {
     transform: scale(1.05);
 }
+
+/* Sidebar menu - Premier element (Scanner) mis en avant */
+#admin-sidebar .list-group-flush > .list-group-item:first-child {
+    padding: 15px 5px;
+    text-align: center;
+    font-size: x-large;
+    border: 1px solid #198754;
+    border-radius: 0.375rem;
+    margin: 0.5rem;
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+    color: white;
+}
+
+#admin-sidebar .list-group-flush > .list-group-item:first-child:hover {
+    background: linear-gradient(135deg, #157347 0%, #1aa179 100%);
+    color: white;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+#admin-sidebar .list-group-flush > .list-group-item:first-child.active {
+    background: linear-gradient(135deg, #146c43 0%, #13795b 100%);
+}

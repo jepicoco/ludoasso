@@ -15,18 +15,6 @@
       background-color: #f8f9fa;
       font-weight: 600;
     }
-    .user-row {
-      display: flex;
-      align-items: center;
-      padding: 0.75rem;
-      border-bottom: 1px solid #dee2e6;
-    }
-    .user-row:last-child {
-      border-bottom: none;
-    }
-    .user-row:hover {
-      background-color: #f8f9fa;
-    }
     .user-avatar {
       width: 40px;
       height: 40px;
@@ -37,33 +25,17 @@
       align-items: center;
       justify-content: center;
       font-weight: bold;
-      margin-right: 1rem;
-    }
-    .user-info {
-      flex: 1;
-    }
-    .user-name {
-      font-weight: 600;
-      margin-bottom: 0;
-    }
-    .user-email {
-      color: #6c757d;
-      font-size: 0.875rem;
+      flex-shrink: 0;
     }
     .role-badge {
       font-size: 0.75rem;
       padding: 0.35em 0.65em;
     }
-    .role-admin { background-color: #dc3545; color: white; }
+    .role-administrateur { background-color: #dc3545; color: white; }
+    .role-comptable { background-color: #fd7e14; color: white; }
     .role-gestionnaire { background-color: #0d6efd; color: white; }
     .role-benevole { background-color: #198754; color: white; }
-    .role-adherent { background-color: #6c757d; color: white; }
-    .sub-nav {
-      background: #f8f9fa;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid #e9ecef;
-    }
+    .role-usager { background-color: #6c757d; color: white; }
     .role-card {
       border-left: 4px solid;
       transition: transform 0.2s;
@@ -71,10 +43,11 @@
     .role-card:hover {
       transform: translateY(-2px);
     }
-    .role-card.role-admin { border-left-color: #dc3545; }
+    .role-card.role-administrateur { border-left-color: #dc3545; }
+    .role-card.role-comptable { border-left-color: #fd7e14; }
     .role-card.role-gestionnaire { border-left-color: #0d6efd; }
     .role-card.role-benevole { border-left-color: #198754; }
-    .role-card.role-adherent { border-left-color: #6c757d; }
+    .role-card.role-usager { border-left-color: #6c757d; }
     .permission-list {
       list-style: none;
       padding: 0;
@@ -86,6 +59,24 @@
     }
     .permission-list li i {
       margin-right: 0.5rem;
+    }
+    .table-users td {
+      vertical-align: middle;
+    }
+    .btn-action {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    .search-result-item {
+      cursor: pointer;
+      padding: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .search-result-item:hover {
+      background-color: #f8f9fa;
+    }
+    .search-result-item:last-child {
+      border-bottom: none;
     }
   </style>
 </head>
@@ -103,41 +94,59 @@
         <!-- Sub-navigation -->
         <div id="sub-nav-container"></div>
 
-        <div class="mb-4">
-          <h1><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
-          <p class="text-muted mb-0">Attribution des roles et droits d'acces</p>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
+            <p class="text-muted mb-0">Attribution des roles et droits d'acces</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success" onclick="openPromoteModal()">
+              <i class="bi bi-person-plus"></i> Promouvoir un adherent
+            </button>
+            <a href="adherents.html?action=new" class="btn btn-primary">
+              <i class="bi bi-plus-lg"></i> Creer un compte
+            </a>
+          </div>
         </div>
 
         <!-- Stats -->
         <div class="row mb-4" id="stats-container">
-          <div class="col-md-3">
+          <div class="col">
             <div class="card text-center">
-              <div class="card-body">
-                <h3 class="mb-0" id="stat-total">-</h3>
-                <small class="text-muted">Utilisateurs</small>
+              <div class="card-body py-2">
+                <h4 class="mb-0" id="stat-total">-</h4>
+                <small class="text-muted">Total</small>
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col">
             <div class="card text-center border-danger">
-              <div class="card-body">
-                <h3 class="mb-0 text-danger" id="stat-admins">-</h3>
+              <div class="card-body py-2">
+                <h4 class="mb-0 text-danger" id="stat-administrateur">-</h4>
                 <small class="text-muted">Admins</small>
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col">
+            <div class="card text-center border-warning">
+              <div class="card-body py-2">
+                <h4 class="mb-0 text-warning" id="stat-comptable">-</h4>
+                <small class="text-muted">Comptables</small>
+              </div>
+            </div>
+          </div>
+          <div class="col">
             <div class="card text-center border-primary">
-              <div class="card-body">
-                <h3 class="mb-0 text-primary" id="stat-gestionnaires">-</h3>
+              <div class="card-body py-2">
+                <h4 class="mb-0 text-primary" id="stat-gestionnaire">-</h4>
                 <small class="text-muted">Gestionnaires</small>
               </div>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col">
             <div class="card text-center border-success">
-              <div class="card-body">
-                <h3 class="mb-0 text-success" id="stat-benevoles">-</h3>
+              <div class="card-body py-2">
+                <h4 class="mb-0 text-success" id="stat-benevole">-</h4>
                 <small class="text-muted">Benevoles</small>
               </div>
             </div>
@@ -146,62 +155,81 @@
 
         <!-- Roles description -->
         <div class="card section-card mb-4">
-          <div class="card-header">
-            <i class="bi bi-shield-check"></i> Roles et permissions
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-shield-check"></i> Roles et permissions</span>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#rolesCollapse">
+              <i class="bi bi-chevron-down"></i>
+            </button>
           </div>
-          <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-3">
-                <div class="card role-card role-admin h-100">
-                  <div class="card-body">
-                    <h6><span class="badge role-badge role-admin">Admin</span></h6>
-                    <p class="small text-muted mb-2">Acces complet a l'administration</p>
-                    <ul class="permission-list">
-                      <li><i class="bi bi-check-circle text-success"></i> Tout gerer</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Parametres systeme</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Gerer les roles</li>
-                    </ul>
+          <div class="collapse show" id="rolesCollapse">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col">
+                  <div class="card role-card role-administrateur h-100">
+                    <div class="card-body p-2">
+                      <h6 class="mb-1"><span class="badge role-badge role-administrateur">Administrateur</span></h6>
+                      <p class="small text-muted mb-2">Acces complet</p>
+                      <ul class="permission-list small">
+                        <li><i class="bi bi-check-circle text-success"></i> Tout gerer</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Parametres systeme</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Gerer les roles</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="col-md-3">
-                <div class="card role-card role-gestionnaire h-100">
-                  <div class="card-body">
-                    <h6><span class="badge role-badge role-gestionnaire">Gestionnaire</span></h6>
-                    <p class="small text-muted mb-2">Gestion quotidienne</p>
-                    <ul class="permission-list">
-                      <li><i class="bi bi-check-circle text-success"></i> Adherents</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
-                      <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
-                    </ul>
+                <div class="col">
+                  <div class="card role-card role-comptable h-100">
+                    <div class="card-body p-2">
+                      <h6 class="mb-1"><span class="badge role-badge role-comptable">Comptable</span></h6>
+                      <p class="small text-muted mb-2">Finances</p>
+                      <ul class="permission-list small">
+                        <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Statistiques</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Exports comptables</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Gestion adherents</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="col-md-3">
-                <div class="card role-card role-benevole h-100">
-                  <div class="card-body">
-                    <h6><span class="badge role-badge role-benevole">Benevole</span></h6>
-                    <p class="small text-muted mb-2">Operations de base</p>
-                    <ul class="permission-list">
-                      <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Consultation</li>
-                      <li><i class="bi bi-x-circle text-danger"></i> Modification</li>
-                      <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
-                    </ul>
+                <div class="col">
+                  <div class="card role-card role-gestionnaire h-100">
+                    <div class="card-body p-2">
+                      <h6 class="mb-1"><span class="badge role-badge role-gestionnaire">Gestionnaire</span></h6>
+                      <p class="small text-muted mb-2">Gestion quotidienne</p>
+                      <ul class="permission-list small">
+                        <li><i class="bi bi-check-circle text-success"></i> Adherents</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="col-md-3">
-                <div class="card role-card role-adherent h-100">
-                  <div class="card-body">
-                    <h6><span class="badge role-badge role-adherent">Adherent</span></h6>
-                    <p class="small text-muted mb-2">Espace membre</p>
-                    <ul class="permission-list">
-                      <li><i class="bi bi-check-circle text-success"></i> Son profil</li>
-                      <li><i class="bi bi-check-circle text-success"></i> Ses emprunts</li>
-                      <li><i class="bi bi-x-circle text-danger"></i> Administration</li>
-                    </ul>
+                <div class="col">
+                  <div class="card role-card role-benevole h-100">
+                    <div class="card-body p-2">
+                      <h6 class="mb-1"><span class="badge role-badge role-benevole">Benevole</span></h6>
+                      <p class="small text-muted mb-2">Operations de base</p>
+                      <ul class="permission-list small">
+                        <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Consultation</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Modification</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="card role-card role-usager h-100">
+                    <div class="card-body p-2">
+                      <h6 class="mb-1"><span class="badge role-badge role-usager">Usager</span></h6>
+                      <p class="small text-muted mb-2">Espace membre</p>
+                      <ul class="permission-list small">
+                        <li><i class="bi bi-check-circle text-success"></i> Son profil</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Ses emprunts</li>
+                        <li><i class="bi bi-x-circle text-danger"></i> Administration</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -212,11 +240,12 @@
         <!-- Users list -->
         <div class="card section-card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-people-fill"></i> Liste des utilisateurs avec acces admin</span>
+            <span><i class="bi bi-people-fill"></i> Utilisateurs avec acces administration</span>
             <div class="d-flex gap-2">
               <select class="form-select form-select-sm" id="filter-role" style="width: auto;">
                 <option value="">Tous les roles</option>
-                <option value="admin">Admin</option>
+                <option value="administrateur">Administrateur</option>
+                <option value="comptable">Comptable</option>
                 <option value="gestionnaire">Gestionnaire</option>
                 <option value="benevole">Benevole</option>
               </select>
@@ -224,11 +253,27 @@
             </div>
           </div>
           <div class="card-body p-0">
-            <div id="users-list">
-              <div class="text-center py-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="mt-2 mb-0">Chargement des utilisateurs...</p>
-              </div>
+            <div class="table-responsive">
+              <table class="table table-hover table-users mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 50px;"></th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Statut</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-list">
+                  <tr>
+                    <td colspan="6" class="text-center py-5">
+                      <div class="spinner-border text-primary" role="status"></div>
+                      <p class="mt-2 mb-0">Chargement des utilisateurs...</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -247,15 +292,12 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Utilisateur</label>
-            <p class="form-control-plaintext" id="modal-user-name">-</p>
+            <p class="form-control-plaintext fw-bold" id="modal-user-name">-</p>
           </div>
           <div class="mb-3">
             <label for="modal-new-role" class="form-label">Nouveau role</label>
             <select class="form-select" id="modal-new-role">
-              <option value="admin">Admin - Acces complet</option>
-              <option value="gestionnaire">Gestionnaire - Gestion quotidienne</option>
-              <option value="benevole">Benevole - Operations de base</option>
-              <option value="adherent">Adherent - Espace membre uniquement</option>
+              <!-- Options generees dynamiquement -->
             </select>
           </div>
           <div class="alert alert-warning" id="modal-warning" style="display: none;">
@@ -271,6 +313,68 @@
     </div>
   </div>
 
+  <!-- Modal Promouvoir Adherent -->
+  <div class="modal fade" id="modalPromote" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-plus"></i> Promouvoir un adherent</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="promote-search" class="form-label">Rechercher un adherent</label>
+            <input type="text" class="form-control" id="promote-search" placeholder="Nom, prenom ou email...">
+            <div class="form-text">Seuls les adherents sans role administratif sont affiches</div>
+          </div>
+          <div id="promote-results" class="border rounded" style="max-height: 250px; overflow-y: auto; display: none;">
+            <!-- Resultats de recherche -->
+          </div>
+          <div id="promote-selected" class="alert alert-info mt-3" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center">
+              <span id="promote-selected-name"></span>
+              <button type="button" class="btn-close btn-sm" onclick="clearPromoteSelection()"></button>
+            </div>
+          </div>
+          <div class="mb-3 mt-3" id="promote-role-container" style="display: none;">
+            <label for="promote-role" class="form-label">Role a attribuer</label>
+            <select class="form-select" id="promote-role">
+              <!-- Options generees dynamiquement selon le niveau de l'utilisateur courant -->
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" id="btn-promote" onclick="promoteAdherent()" disabled>
+            <i class="bi bi-person-plus"></i> Promouvoir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmation Reset Password -->
+  <div class="modal fade" id="modalResetPassword" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Reinitialiser le mot de passe</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Un email de reinitialisation sera envoye a :</p>
+          <p class="fw-bold" id="reset-email">-</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-warning" onclick="confirmResetPassword()">
+            <i class="bi bi-envelope"></i> Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
@@ -279,16 +383,42 @@
   <script src="js/parametres-nav.js"></script>
   <script>
     let users = [];
+    let allAdherents = [];
     let currentUserId = null;
-    let modalRole;
+    let currentUserRole = null;
+    let selectedPromoteAdherent = null;
+    let resetPasswordUserId = null;
+    let modalRole, modalPromote, modalResetPassword;
+
+    // Hierarchie des roles (niveau)
+    const ROLE_HIERARCHY = {
+      'usager': 0,
+      'benevole': 1,
+      'gestionnaire': 2,
+      'comptable': 3,
+      'administrateur': 4
+    };
+
+    const ROLE_LABELS = {
+      'usager': 'Usager',
+      'benevole': 'Benevole',
+      'gestionnaire': 'Gestionnaire',
+      'comptable': 'Comptable',
+      'administrateur': 'Administrateur'
+    };
 
     // Initialisation
     initTemplate('parametres');
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       renderSubNav('general', 'utilisateurs');
 
       modalRole = new bootstrap.Modal(document.getElementById('modalRole'));
+      modalPromote = new bootstrap.Modal(document.getElementById('modalPromote'));
+      modalResetPassword = new bootstrap.Modal(document.getElementById('modalResetPassword'));
+
+      // Recuperer le role de l'utilisateur courant
+      await loadCurrentUser();
 
       loadUsers();
 
@@ -298,7 +428,29 @@
 
       // Warning quand on change le role
       document.getElementById('modal-new-role').addEventListener('change', updateModalWarning);
+
+      // Recherche pour promotion
+      let searchTimeout;
+      document.getElementById('promote-search').addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => searchAdherents(e.target.value), 300);
+      });
     });
+
+    async function loadCurrentUser() {
+      try {
+        const response = await fetch('/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (response.ok) {
+          const user = await response.json();
+          currentUserRole = user.role || 'usager';
+        }
+      } catch (error) {
+        console.error('Erreur chargement profil:', error);
+        currentUserRole = 'usager';
+      }
+    }
 
     async function loadUsers() {
       try {
@@ -314,21 +466,22 @@
       } catch (error) {
         console.error('Erreur:', error);
         document.getElementById('users-list').innerHTML = `
-          <div class="alert alert-danger m-3">Erreur lors du chargement des utilisateurs</div>
+          <tr><td colspan="6" class="text-center py-4">
+            <div class="alert alert-danger mb-0">Erreur lors du chargement des utilisateurs</div>
+          </td></tr>
         `;
       }
     }
 
     function updateStats() {
-      const total = users.filter(u => u.role && u.role !== 'adherent').length;
-      const admins = users.filter(u => u.role === 'admin').length;
-      const gestionnaires = users.filter(u => u.role === 'gestionnaire').length;
-      const benevoles = users.filter(u => u.role === 'benevole').length;
+      // Compter uniquement les utilisateurs avec un role administratif (pas usager)
+      const adminUsers = users.filter(u => u.role && u.role !== 'usager');
 
-      document.getElementById('stat-total').textContent = total;
-      document.getElementById('stat-admins').textContent = admins;
-      document.getElementById('stat-gestionnaires').textContent = gestionnaires;
-      document.getElementById('stat-benevoles').textContent = benevoles;
+      document.getElementById('stat-total').textContent = adminUsers.length;
+      document.getElementById('stat-administrateur').textContent = users.filter(u => u.role === 'administrateur').length;
+      document.getElementById('stat-comptable').textContent = users.filter(u => u.role === 'comptable').length;
+      document.getElementById('stat-gestionnaire').textContent = users.filter(u => u.role === 'gestionnaire').length;
+      document.getElementById('stat-benevole').textContent = users.filter(u => u.role === 'benevole').length;
     }
 
     function renderUsers() {
@@ -336,8 +489,8 @@
       const filterRole = document.getElementById('filter-role').value;
       const searchTerm = document.getElementById('search-user').value.toLowerCase();
 
-      // Filtrer les utilisateurs
-      let filteredUsers = users.filter(u => u.role && u.role !== 'adherent');
+      // Filtrer les utilisateurs avec un role administratif (pas usager)
+      let filteredUsers = users.filter(u => u.role && u.role !== 'usager');
 
       if (filterRole) {
         filteredUsers = filteredUsers.filter(u => u.role === filterRole);
@@ -353,10 +506,10 @@
 
       if (filteredUsers.length === 0) {
         container.innerHTML = `
-          <div class="text-center py-5 text-muted">
+          <tr><td colspan="6" class="text-center py-5 text-muted">
             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
             <p class="mt-2 mb-0">Aucun utilisateur trouve</p>
-          </div>
+          </td></tr>
         `;
         return;
       }
@@ -364,21 +517,70 @@
       container.innerHTML = filteredUsers.map(user => {
         const initials = getInitials(user);
         const roleClass = `role-${user.role}`;
+        const statutBadge = user.statut === 'actif'
+          ? '<span class="badge bg-success">Actif</span>'
+          : user.statut === 'suspendu'
+            ? '<span class="badge bg-warning">Suspendu</span>'
+            : '<span class="badge bg-secondary">Inactif</span>';
+
+        // Determiner si on peut modifier/reinitialiser cet utilisateur
+        const canModify = canModifyUser(user);
+        const canResetPwd = canResetPassword(user);
 
         return `
-          <div class="user-row">
-            <div class="user-avatar">${initials}</div>
-            <div class="user-info">
-              <p class="user-name">${user.prenom || ''} ${user.nom || ''}</p>
-              <p class="user-email mb-0">${user.email}</p>
-            </div>
-            <span class="badge role-badge ${roleClass} me-3">${capitalizeFirst(user.role)}</span>
-            <button class="btn btn-sm btn-outline-primary" onclick="openRoleModal(${user.id})">
-              <i class="bi bi-pencil"></i> Modifier
-            </button>
-          </div>
+          <tr>
+            <td>
+              <div class="user-avatar">${initials}</div>
+            </td>
+            <td>
+              <div class="fw-semibold">${user.prenom || ''} ${user.nom || ''}</div>
+              <small class="text-muted">${user.telephone || ''}</small>
+            </td>
+            <td>${user.email}</td>
+            <td><span class="badge role-badge ${roleClass}">${ROLE_LABELS[user.role] || user.role}</span></td>
+            <td>${statutBadge}</td>
+            <td class="text-end">
+              <div class="btn-group">
+                <a href="adherents.html?id=${user.id}" class="btn btn-sm btn-outline-secondary btn-action" title="Voir le profil">
+                  <i class="bi bi-eye"></i>
+                </a>
+                ${canResetPwd ? `
+                  <button class="btn btn-sm btn-outline-warning btn-action" onclick="openResetPasswordModal(${user.id}, '${user.email}')" title="Reinitialiser le mot de passe">
+                    <i class="bi bi-key"></i>
+                  </button>
+                ` : ''}
+                ${canModify ? `
+                  <button class="btn btn-sm btn-outline-primary btn-action" onclick="openRoleModal(${user.id})" title="Modifier le role">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
         `;
       }).join('');
+    }
+
+    function canModifyUser(user) {
+      // Un utilisateur peut modifier le role d'un autre utilisateur si:
+      // - Il est administrateur ET
+      // - L'utilisateur cible n'est pas lui-meme
+      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
+      return currentLevel >= ROLE_HIERARCHY['administrateur'];
+    }
+
+    function canResetPassword(user) {
+      // On peut reinitialiser le mot de passe si:
+      // - On est admin ET l'utilisateur cible n'est pas admin
+      // - OU on est gestionnaire et l'utilisateur est benevole
+      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
+      const targetLevel = ROLE_HIERARCHY[user.role] || 0;
+
+      // Admins peuvent reset tout le monde sauf les autres admins
+      if (currentLevel >= ROLE_HIERARCHY['administrateur']) {
+        return user.role !== 'administrateur';
+      }
+      return false;
     }
 
     function getInitials(user) {
@@ -393,20 +595,42 @@
       return '?';
     }
 
-    function capitalizeFirst(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
     function openRoleModal(userId) {
       const user = users.find(u => u.id === userId);
       if (!user) return;
 
       currentUserId = userId;
       document.getElementById('modal-user-name').textContent = `${user.prenom || ''} ${user.nom || ''} (${user.email})`;
-      document.getElementById('modal-new-role').value = user.role;
-      document.getElementById('modal-warning').style.display = 'none';
 
+      // Generer les options de role selon le niveau de l'utilisateur courant
+      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
+      const roleSelect = document.getElementById('modal-new-role');
+      roleSelect.innerHTML = '';
+
+      Object.entries(ROLE_HIERARCHY).forEach(([role, level]) => {
+        // On ne peut attribuer que des roles inferieurs ou egaux a son propre niveau
+        if (level <= currentLevel) {
+          const option = document.createElement('option');
+          option.value = role;
+          option.textContent = `${ROLE_LABELS[role]} - ${getRoleDescription(role)}`;
+          if (user.role === role) option.selected = true;
+          roleSelect.appendChild(option);
+        }
+      });
+
+      document.getElementById('modal-warning').style.display = 'none';
       modalRole.show();
+    }
+
+    function getRoleDescription(role) {
+      const descriptions = {
+        'usager': 'Espace membre uniquement',
+        'benevole': 'Operations de base',
+        'gestionnaire': 'Gestion quotidienne',
+        'comptable': 'Finances et statistiques',
+        'administrateur': 'Acces complet'
+      };
+      return descriptions[role] || '';
     }
 
     function updateModalWarning() {
@@ -415,18 +639,25 @@
       const warning = document.getElementById('modal-warning');
       const warningText = document.getElementById('modal-warning-text');
 
-      if (user && user.role === 'admin' && newRole !== 'admin') {
-        const adminCount = users.filter(u => u.role === 'admin').length;
+      if (user && user.role === 'administrateur' && newRole !== 'administrateur') {
+        const adminCount = users.filter(u => u.role === 'administrateur').length;
         if (adminCount <= 1) {
           warning.style.display = 'block';
-          warningText.textContent = 'Attention: vous etes le dernier admin! Vous ne pouvez pas vous retirer ce role.';
+          warning.className = 'alert alert-danger';
+          warningText.textContent = 'Impossible: vous etes le dernier administrateur!';
           return;
         }
         warning.style.display = 'block';
+        warning.className = 'alert alert-warning';
         warningText.textContent = 'Cet utilisateur perdra ses droits d\'administration.';
-      } else if (newRole === 'admin') {
+      } else if (newRole === 'administrateur') {
         warning.style.display = 'block';
+        warning.className = 'alert alert-warning';
         warningText.textContent = 'Cet utilisateur aura un acces complet a l\'administration.';
+      } else if (newRole === 'usager' && user.role !== 'usager') {
+        warning.style.display = 'block';
+        warning.className = 'alert alert-warning';
+        warningText.textContent = 'Cet utilisateur perdra tous ses droits d\'acces a l\'administration.';
       } else {
         warning.style.display = 'none';
       }
@@ -437,8 +668,8 @@
       const user = users.find(u => u.id === currentUserId);
 
       // Verification de securite
-      if (user && user.role === 'admin' && newRole !== 'admin') {
-        const adminCount = users.filter(u => u.role === 'admin').length;
+      if (user && user.role === 'administrateur' && newRole !== 'administrateur') {
+        const adminCount = users.filter(u => u.role === 'administrateur').length;
         if (adminCount <= 1) {
           showToast('Impossible: vous etes le dernier administrateur', 'error');
           return;
@@ -463,6 +694,156 @@
         modalRole.hide();
         showToast('Role modifie avec succes', 'success');
         loadUsers();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    // === Promotion d'adherent ===
+
+    function openPromoteModal() {
+      selectedPromoteAdherent = null;
+      document.getElementById('promote-search').value = '';
+      document.getElementById('promote-results').style.display = 'none';
+      document.getElementById('promote-results').innerHTML = '';
+      document.getElementById('promote-selected').style.display = 'none';
+      document.getElementById('promote-role-container').style.display = 'none';
+      document.getElementById('btn-promote').disabled = true;
+
+      // Generer les options de role selon le niveau de l'utilisateur courant
+      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
+      const roleSelect = document.getElementById('promote-role');
+      roleSelect.innerHTML = '';
+
+      // On peut promouvoir jusqu'a son propre niveau - 1 (sauf admin qui peut tout)
+      const maxLevel = currentUserRole === 'administrateur' ? currentLevel : currentLevel - 1;
+
+      Object.entries(ROLE_HIERARCHY).forEach(([role, level]) => {
+        if (level > 0 && level <= maxLevel) { // Exclure 'usager' et respecter la hierarchie
+          const option = document.createElement('option');
+          option.value = role;
+          option.textContent = ROLE_LABELS[role];
+          roleSelect.appendChild(option);
+        }
+      });
+
+      modalPromote.show();
+      setTimeout(() => document.getElementById('promote-search').focus(), 500);
+    }
+
+    async function searchAdherents(term) {
+      const resultsContainer = document.getElementById('promote-results');
+
+      if (term.length < 2) {
+        resultsContainer.style.display = 'none';
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/adherents?search=${encodeURIComponent(term)}&limit=10`, {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur recherche');
+
+        const result = await response.json();
+        const adherents = result.adherents || result;
+
+        // Filtrer les adherents qui ont deja un role administratif
+        const eligibles = adherents.filter(a => !a.role || a.role === 'usager');
+
+        if (eligibles.length === 0) {
+          resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">Aucun adherent eligible trouve</div>';
+        } else {
+          resultsContainer.innerHTML = eligibles.map(a => `
+            <div class="search-result-item" onclick="selectAdherentToPromote(${a.id}, '${a.prenom} ${a.nom}', '${a.email}')">
+              <div class="fw-semibold">${a.prenom} ${a.nom}</div>
+              <small class="text-muted">${a.email}</small>
+            </div>
+          `).join('');
+        }
+        resultsContainer.style.display = 'block';
+      } catch (error) {
+        console.error('Erreur recherche:', error);
+        resultsContainer.innerHTML = '<div class="p-3 text-danger">Erreur lors de la recherche</div>';
+        resultsContainer.style.display = 'block';
+      }
+    }
+
+    function selectAdherentToPromote(id, name, email) {
+      selectedPromoteAdherent = { id, name, email };
+      document.getElementById('promote-results').style.display = 'none';
+      document.getElementById('promote-search').value = '';
+      document.getElementById('promote-selected').style.display = 'block';
+      document.getElementById('promote-selected-name').innerHTML = `<strong>${name}</strong><br><small>${email}</small>`;
+      document.getElementById('promote-role-container').style.display = 'block';
+      document.getElementById('btn-promote').disabled = false;
+    }
+
+    function clearPromoteSelection() {
+      selectedPromoteAdherent = null;
+      document.getElementById('promote-selected').style.display = 'none';
+      document.getElementById('promote-role-container').style.display = 'none';
+      document.getElementById('btn-promote').disabled = true;
+    }
+
+    async function promoteAdherent() {
+      if (!selectedPromoteAdherent) return;
+
+      const newRole = document.getElementById('promote-role').value;
+
+      try {
+        const response = await fetch(`/api/parametres/utilisateurs/${selectedPromoteAdherent.id}/role`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ role: newRole })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || err.message || 'Erreur');
+        }
+
+        modalPromote.hide();
+        showToast(`${selectedPromoteAdherent.name} est maintenant ${ROLE_LABELS[newRole]}`, 'success');
+        loadUsers();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    // === Reset Password ===
+
+    function openResetPasswordModal(userId, email) {
+      resetPasswordUserId = userId;
+      document.getElementById('reset-email').textContent = email;
+      modalResetPassword.show();
+    }
+
+    async function confirmResetPassword() {
+      if (!resetPasswordUserId) return;
+
+      try {
+        const response = await fetch(`/api/parametres/utilisateurs/${resetPasswordUserId}/reset-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || err.message || 'Erreur');
+        }
+
+        modalResetPassword.hide();
+        showToast('Email de reinitialisation envoye', 'success');
       } catch (error) {
         console.error('Erreur:', error);
         showToast(error.message, 'error');

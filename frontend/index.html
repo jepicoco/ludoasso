@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ludotheque - Site en construction</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-color: #6f42c1;
+      --secondary-color: #20c997;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .construction-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .logo-container {
+      margin-bottom: 2rem;
+    }
+
+    .logo-container img {
+      max-width: 120px;
+      height: auto;
+    }
+
+    .logo-placeholder {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 3rem;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .subtitle {
+      color: #6c757d;
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+
+    .construction-icon {
+      font-size: 4rem;
+      color: #ffc107;
+      margin-bottom: 1rem;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .progress-section {
+      margin: 2rem 0;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 5px;
+      background-color: #e9ecef;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      animation: progress-animation 2s ease-in-out infinite;
+    }
+
+    @keyframes progress-animation {
+      0% { width: 30%; }
+      50% { width: 70%; }
+      100% { width: 30%; }
+    }
+
+    .admin-link {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e9ecef;
+    }
+
+    .admin-link a {
+      color: #6c757d;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .admin-link a:hover {
+      color: #764ba2;
+    }
+
+    .features-preview {
+      margin-top: 2rem;
+      text-align: left;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 0;
+      color: #6c757d;
+    }
+
+    .feature-item i {
+      margin-right: 0.75rem;
+      color: #20c997;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-content">
+    <div class="construction-card">
+      <div class="logo-container">
+        <div class="logo-placeholder">
+          <i class="bi bi-dice-5"></i>
+        </div>
+      </div>
+
+      <div class="construction-icon">
+        <i class="bi bi-tools"></i>
+      </div>
+
+      <h1>Ludotheque</h1>
+      <p class="subtitle">Notre site public est en cours de creation</p>
+
+      <div class="progress-section">
+        <div class="progress">
+          <div class="progress-bar" role="progressbar"></div>
+        </div>
+        <small class="text-muted mt-2 d-block">Nous travaillons dur pour vous offrir la meilleure experience</small>
+      </div>
+
+      <div class="features-preview">
+        <h6 class="text-muted mb-3">Bientot disponible :</h6>
+        <div class="feature-item">
+          <i class="bi bi-search"></i>
+          <span>Catalogue des jeux en ligne</span>
+        </div>
+        <div class="feature-item">
+          <i class="bi bi-calendar-check"></i>
+          <span>Reservation de jeux</span>
+        </div>
+        <div class="feature-item">
+          <i class="bi bi-person-circle"></i>
+          <span>Espace adherent personnel</span>
+        </div>
+        <div class="feature-item">
+          <i class="bi bi-clock-history"></i>
+          <span>Historique de vos emprunts</span>
+        </div>
+      </div>
+
+      <div class="admin-link">
+        <a href="/admin/login.html">
+          <i class="bi bi-lock"></i> Acces administration
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2024 Ludotheque - Tous droits reserves
+  </footer>
+</body>
+</html>
