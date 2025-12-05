@@ -554,7 +554,7 @@
     <div class="scanner-header">
       <h1>
         <i class="bi bi-upc-scan"></i>
-        Scanner Ludotheque
+        Scanner
       </h1>
       <div class="header-buttons">
         <button class="btn-scanner" onclick="openManualInput()">
@@ -595,8 +595,8 @@
           Rechercher adherent
         </button>
         <button class="btn-search" onclick="openSearchJeu()">
-          <i class="bi bi-dice-5"></i>
-          Rechercher jeu
+          <i class="bi bi-search"></i>
+          Rechercher article
         </button>
       </div>
     </div>
@@ -631,8 +631,8 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Code-barre</label>
-            <input type="text" class="form-control" id="manual-code" placeholder="ADH00000001 ou JEU00000001" autofocus>
-            <div class="form-text">Saisissez le code-barre de l'adherent ou du jeu</div>
+            <input type="text" class="form-control" id="manual-code" placeholder="ADH, JEU, LIV, FLM, DSQ..." autofocus>
+            <div class="form-text">Saisissez le code-barre d'un adherent ou d'un article</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -668,23 +668,23 @@
     </div>
   </div>
 
-  <!-- Modal Recherche Jeu -->
+  <!-- Modal Recherche Article -->
   <div class="modal fade" id="searchJeuModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">
-            <i class="bi bi-dice-5"></i> Rechercher un jeu
+            <i class="bi bi-search"></i> Rechercher un article
           </h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Titre du jeu</label>
+            <label class="form-label">Titre (jeu, livre, film, disque)</label>
             <input type="text" class="form-control" id="search-jeu-input" placeholder="Rechercher..." autofocus>
           </div>
           <div id="search-jeu-results" class="search-results">
-            <p class="text-muted text-center">Tapez pour rechercher un jeu</p>
+            <p class="text-muted text-center">Tapez pour rechercher un article</p>
           </div>
         </div>
       </div>
@@ -705,20 +705,20 @@
           <h6><i class="bi bi-1-circle text-primary"></i> Pour un emprunt</h6>
           <ol>
             <li>Scannez la carte de l'adherent (code ADHxxxxxxxx)</li>
-            <li>Scannez le jeu a emprunter (code JEUxxxxxxxx)</li>
+            <li>Scannez l'article a emprunter (JEU, LIV, FLM ou DSQ)</li>
             <li>L'emprunt est cree automatiquement</li>
           </ol>
 
           <h6 class="mt-4"><i class="bi bi-2-circle text-success"></i> Pour un retour</h6>
           <ol>
-            <li>Scannez simplement le jeu emprunte</li>
+            <li>Scannez simplement l'article emprunte</li>
             <li>Le retour est enregistre automatiquement</li>
             <li>Pas besoin de scanner l'adherent</li>
           </ol>
 
           <h6 class="mt-4"><i class="bi bi-lightbulb text-warning"></i> Astuces</h6>
           <ul>
-            <li>Les codes-barres internes commencent par ADH ou JEU</li>
+            <li>Codes-barres : ADH (adherent), JEU (jeu), LIV (livre), FLM (film), DSQ (disque)</li>
             <li>Vous pouvez enchainer plusieurs emprunts pour le meme adherent</li>
             <li>Un son confirme chaque action reussie</li>
           </ul>
