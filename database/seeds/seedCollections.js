@@ -282,21 +282,21 @@ async function seedCollections() {
 
     // Genres de films
     const genresFilms = [
-      { nom: 'Science-Fiction', icone: 'rocket' },
-      { nom: 'Fantasy', icone: 'magic' },
-      { nom: 'Action', icone: 'lightning' },
-      { nom: 'Drame', icone: 'heart' },
-      { nom: 'Thriller', icone: 'exclamation-triangle' },
-      { nom: 'Comedie', icone: 'emoji-laughing' },
-      { nom: 'Horreur', icone: 'ghost' },
-      { nom: 'Aventure', icone: 'compass' }
+      'Science-Fiction',
+      'Fantasy',
+      'Action',
+      'Drame',
+      'Thriller',
+      'Comedie',
+      'Horreur',
+      'Aventure'
     ];
 
     for (const genre of genresFilms) {
       await sequelize.query(
-        `INSERT IGNORE INTO genres_films (nom, icone, actif)
-         VALUES (?, ?, 1)`,
-        { replacements: [genre.nom, genre.icone] }
+        `INSERT IGNORE INTO genres_films (nom, actif)
+         VALUES (?, 1)`,
+        { replacements: [genre] }
       );
     }
     console.log(`${genresFilms.length} genres de films ajoutes`);
