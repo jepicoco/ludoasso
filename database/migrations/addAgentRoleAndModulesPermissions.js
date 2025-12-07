@@ -15,19 +15,25 @@
  *
  * Modules disponibles: ludotheque, bibliotheque, filmotheque, discotheque
  *
- * Usage: node database/migrations/addAgentRoleAndModulesPermissions.js [up|down]
+ * Usage:
+ *   npm run migrate                    # Via le runner
+ *   node database/migrations/addAgentRoleAndModulesPermissions.js [up|down]  # Direct
  */
 
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-async function up() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-  });
+async function up(connection) {
+  // Si pas de connexion fournie, en créer une (mode standalone)
+  const standalone = !connection;
+  if (standalone) {
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
+  }
 
   try {
     console.log('=== Migration: Ajout rôle Agent et permissions modules ===\n');
@@ -126,17 +132,21 @@ async function up() {
     console.error('Erreur lors de la migration:', error.message);
     throw error;
   } finally {
-    await connection.end();
+    if (standalone) await connection.end();
   }
 }
 
-async function down() {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
-  });
+async function down(connection) {
+  // Si pas de connexion fournie, en créer une (mode standalone)
+  const standalone = !connection;
+  if (standalone) {
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME
+    });
+  }
 
   try {
     console.log('=== Rollback: Suppression rôle Agent et permissions modules ===\n');
@@ -231,25 +241,30 @@ async function down() {
     console.error('Erreur lors du rollback:', error.message);
     throw error;
   } finally {
-    await connection.end();
+    if (standalone) await connection.end();
   }
 }
 
-// Exécution
-const args = process.argv.slice(2);
-const command = args[0] || 'up';
+// Export pour le migration runner
+module.exports = { up, down };
 
-(async () => {
-  try {
-    if (command === 'up') {
-      await up();
-    } else if (command === 'down') {
-      await down();
-    } else {
-      console.log('Usage: node addAgentRoleAndModulesPermissions.js [up|down]');
+// Exécution en mode standalone
+if (require.main === module) {
+  const args = process.argv.slice(2);
+  const command = args[0] || 'up';
+
+  (async () => {
+    try {
+      if (command === 'up') {
+        await up();
+      } else if (command === 'down') {
+        await down();
+      } else {
+        console.log('Usage: node addAgentRoleAndModulesPermissions.js [up|down]');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      process.exit(1);
     }
-  } catch (error) {
-    console.error('Erreur:', error);
-    process.exit(1);
-  }
-})();
+  })();
+}
