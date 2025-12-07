@@ -209,13 +209,17 @@ exports.triforceUnlock = async (req, res) => {
     // Ajouter l'IP
     await IpAutorisee.ajouterIp(adresse_ip, 'triforce', 'Ajoutée via Easter Egg Triforce');
 
-    // Générer un token de session pour le cookie
-    const sessionToken = crypto.randomBytes(32).toString('hex');
+    // Récupérer la clé de maintenance pour le cookie de bypass
+    const parametres = await ParametresFront.getParametres();
+    const maintenanceKey = parametres.maintenance_key;
+
+    // Définir le cookie de bypass avec la clé de maintenance
+    const { setBypassCookie } = require('../middleware/maintenance');
+    setBypassCookie(res, maintenanceKey);
 
     res.json({
       success: true,
-      message: 'The Triforce has chosen you',
-      token: sessionToken
+      message: 'The Triforce has chosen you'
     });
   } catch (error) {
     console.error('Erreur triforceUnlock:', error);

@@ -1,12 +1,12 @@
 // ============================================
-// Modal de visualisation détaillée d'un adhérent
+// Modal de visualisation detaillee d'un usager
 // ============================================
 
 let viewModalInstance = null;
 let currentViewAdherentId = null;
 
 /**
- * Affiche la modal de visualisation détaillée
+ * Affiche la modal de visualisation detaillee
  */
 async function viewAdherent(id) {
   try {
@@ -33,8 +33,8 @@ async function viewAdherent(id) {
     }
     viewModalInstance.show();
   } catch (error) {
-    console.error('Erreur affichage adhérent:', error);
-    showToast('Erreur lors du chargement des détails: ' + error.message, 'error');
+    console.error('Erreur affichage usager:', error);
+    showToast('Erreur lors du chargement des details: ' + error.message, 'error');
   }
 }
 
@@ -200,7 +200,7 @@ function setupViewModalActions(adherent) {
 // ============================================
 
 /**
- * Envoie un email à un adhérent
+ * Envoie un email a un usager
  */
 async function sendEmailToAdherent(adherent) {
   const result = await Swal.fire({
@@ -243,11 +243,11 @@ async function sendEmailToAdherent(adherent) {
 }
 
 /**
- * Envoie un SMS à un adhérent
+ * Envoie un SMS a un usager
  */
 async function sendSMSToAdherent(adherent) {
   if (!adherent.telephone) {
-    showToast('Cet adhérent n\'a pas de numéro de téléphone', 'warning');
+    showToast('Cet usager n\'a pas de numero de telephone', 'warning');
     return;
   }
 
@@ -294,7 +294,7 @@ async function sendSMSToAdherent(adherent) {
 }
 
 /**
- * Crée une cotisation pour l'adhérent
+ * Cree une cotisation pour l'usager
  */
 function createCotisationForAdherent(adherent) {
   showToast('Redirection vers la création de cotisation...', 'info');
@@ -304,7 +304,7 @@ function createCotisationForAdherent(adherent) {
 }
 
 /**
- * Crée un emprunt pour l'adhérent
+ * Cree un emprunt pour l'usager
  */
 function createEmpruntForAdherent(adherent) {
   showToast('Redirection vers la création d\'emprunt...', 'info');
@@ -318,7 +318,7 @@ function createEmpruntForAdherent(adherent) {
 // ============================================
 
 /**
- * Charge l'historique des communications pour un adhérent
+ * Charge l'historique des communications pour un usager
  */
 async function loadAdherentCommunications(adherentId) {
   try {

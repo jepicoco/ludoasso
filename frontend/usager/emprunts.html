@@ -43,6 +43,20 @@
       border-radius: 8px;
       background: #e9ecef;
     }
+    .item-image-placeholder {
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+    }
+    .item-image-placeholder.jeu { background: linear-gradient(135deg, #6f42c1, #8b5cf6); }
+    .item-image-placeholder.livre { background: linear-gradient(135deg, #20c997, #10b981); }
+    .item-image-placeholder.film { background: linear-gradient(135deg, #fd7e14, #f59e0b); }
+    .item-image-placeholder.disque { background: linear-gradient(135deg, #e83e8c, #ec4899); }
     .badge-type {
       font-size: 0.7rem;
       padding: 0.25em 0.5em;
@@ -252,6 +266,25 @@
       return badges[type] || '';
     }
 
+    // Type icon
+    function getTypeIcon(type) {
+      const icons = {
+        jeu: 'bi-dice-5',
+        livre: 'bi-book',
+        film: 'bi-film',
+        disque: 'bi-vinyl'
+      };
+      return icons[type] || 'bi-box';
+    }
+
+    // Render item image with fallback placeholder
+    function renderItemImage(item, type) {
+      if (item?.image_url) {
+        return `<img src="${item.image_url}" alt="" class="item-image me-3" onerror="this.outerHTML='<div class=\\'item-image-placeholder ${type} me-3\\'><i class=\\'bi ${getTypeIcon(type)}\\'></i></div>'">`;
+      }
+      return `<div class="item-image-placeholder ${type} me-3"><i class="bi ${getTypeIcon(type)}"></i></div>`;
+    }
+
     // Statut badge
     function getStatutBadge(emprunt) {
       if (emprunt.statut === 'retourne') {
@@ -349,6 +382,7 @@
     // Render carte emprunt
     function renderEmpruntCard(emprunt, showProlongation) {
       const item = emprunt.item;
+      const itemType = emprunt.item_type;
       const prolongationBtn = showProlongation && emprunt.prolongation?.possible &&
         (emprunt.prolongation.auto_restantes > 0 || emprunt.prolongation.manuelle_possible)
         ? `<button class="btn btn-sm btn-outline-primary" onclick="openProlongation(${emprunt.id}, '${item?.titre?.replace(/'/g, "\\'")}', ${emprunt.prolongation.jours_accordes}, ${emprunt.prolongation.auto_restantes > 0})">
@@ -360,12 +394,12 @@
         <div class="card emprunt-card shadow-sm">
           <div class="card-body">
             <div class="d-flex">
-              <img src="${item?.image_url || '/img/placeholder.png'}" alt="" class="item-image me-3">
+              ${renderItemImage(item, itemType)}
               <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-start">
                   <div>
                     <h6 class="mb-1">${item?.titre || 'Article'}</h6>
-                    <div class="mb-2">${getTypeBadge(emprunt.item_type)}</div>
+                    <div class="mb-2">${getTypeBadge(itemType)}</div>
                   </div>
                   ${getStatutBadge(emprunt)}
                 </div>
@@ -434,12 +468,17 @@
           headers: getHeaders()
         });
         const emprunt = await response.json();
+        const itemType = emprunt.item_type;
+
+        const imageHtml = emprunt.item?.image_url
+          ? `<img src="${emprunt.item.image_url}" alt="" class="img-fluid rounded mb-3" style="max-height: 200px;" onerror="this.outerHTML='<div class=\\'item-image-placeholder ${itemType} mb-3\\' style=\\'width:150px;height:150px;margin:0 auto;\\'><i class=\\'bi ${getTypeIcon(itemType)}\\' style=\\'font-size:3rem;\\'></i></div>'">`
+          : `<div class="item-image-placeholder ${itemType} mb-3" style="width:150px;height:150px;margin:0 auto;"><i class="bi ${getTypeIcon(itemType)}" style="font-size:3rem;"></i></div>`;
 
         content.innerHTML = `
           <div class="row">
             <div class="col-md-4 text-center">
-              <img src="${emprunt.item?.image_url || '/img/placeholder.png'}" alt="" class="img-fluid rounded mb-3" style="max-height: 200px;">
-              ${getTypeBadge(emprunt.item_type)}
+              ${imageHtml}
+              ${getTypeBadge(itemType)}
             </div>
             <div class="col-md-8">
               <h5>${emprunt.item?.titre || 'Article'}</h5>

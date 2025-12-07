@@ -1,15 +1,83 @@
 // ============================================
-// Logique du formulaire adhérent amélioré
+// Logique du formulaire usager amélioré
 // ============================================
 
+// Rôles qui peuvent avoir des restrictions de modules
+const ROLES_AVEC_MODULES = ['agent', 'benevole', 'gestionnaire', 'comptable'];
+
 /**
- * Recherche et charge un adhérent depuis l'API externe
+ * Affiche ou masque la section des modules selon le rôle sélectionné
+ */
+function toggleModulesSection() {
+  const role = document.getElementById('role').value;
+  const modulesSection = document.getElementById('modulesSection');
+
+  if (ROLES_AVEC_MODULES.includes(role)) {
+    modulesSection.style.display = 'block';
+  } else {
+    modulesSection.style.display = 'none';
+    // Décocher toutes les cases si on cache la section
+    document.querySelectorAll('#modulesSection input[type="checkbox"]').forEach(cb => {
+      cb.checked = false;
+    });
+  }
+}
+
+/**
+ * Récupère les modules autorisés sélectionnés
+ * @returns {Array|null} - Tableau des modules ou null si aucun sélectionné
+ */
+function getSelectedModules() {
+  const role = document.getElementById('role').value;
+
+  // Administrateur n'a pas de restriction de modules
+  if (role === 'administrateur') {
+    return null;
+  }
+
+  // Usager n'a pas besoin de modules
+  if (role === 'usager') {
+    return null;
+  }
+
+  const modules = [];
+  document.querySelectorAll('#modulesSection input[type="checkbox"]:checked').forEach(cb => {
+    modules.push(cb.value);
+  });
+
+  // Si aucun module sélectionné, retourner null (accès à tous)
+  return modules.length > 0 ? modules : null;
+}
+
+/**
+ * Définit les modules autorisés dans le formulaire
+ * @param {Array|null} modules - Tableau des modules ou null
+ */
+function setSelectedModules(modules) {
+  // D'abord décocher tous
+  document.querySelectorAll('#modulesSection input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+  });
+
+  // Si modules est un tableau non vide, cocher les bons
+  if (modules && Array.isArray(modules) && modules.length > 0) {
+    modules.forEach(mod => {
+      const checkbox = document.getElementById(`module_${mod}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+  }
+}
+
+/**
+ * Recherche et charge un usager depuis l'API externe
  */
 async function rechercherEtChargerAdherent() {
   const numero = document.getElementById('numeroAdherentExterne').value.trim();
 
   if (!numero) {
-    showToast('Veuillez entrer un numéro d\'adhérent', 'warning');
+    showToast('Veuillez entrer un numéro d\'usager', 'warning');
     return;
   }
 
@@ -50,12 +118,12 @@ async function rechercherEtChargerAdherent() {
         updateAgeDisplay();
       }
 
-      showToast('Adhérent trouvé et formulaire pré-rempli', 'success');
+      showToast('Usager trouve et formulaire pre-rempli', 'success');
     } else {
-      showToast('Aucun adhérent trouvé avec ce numéro', 'warning');
+      showToast('Aucun usager trouve avec ce numero', 'warning');
     }
   } catch (error) {
-    console.error('Erreur recherche adhérent:', error);
+    console.error('Erreur recherche usager:', error);
     showToast('Erreur lors de la recherche', 'error');
   } finally {
     btn.disabled = false;
@@ -169,7 +237,7 @@ function updatePhotoPreview() {
  * Ouvre le modal de création avec réinitialisation
  */
 function openCreateModal() {
-  document.getElementById('modalTitle').textContent = 'Nouvel adhérent';
+  document.getElementById('modalTitle').textContent = 'Nouvel usager';
   document.getElementById('adherentForm').reset();
   document.getElementById('adherentId').value = '';
 
@@ -198,6 +266,10 @@ function openCreateModal() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('date_adhesion').value = today;
 
+  // Réinitialiser les modules et masquer la section
+  setSelectedModules(null);
+  toggleModulesSection();
+
   // Revenir au premier onglet
   const firstTab = new bootstrap.Tab(document.getElementById('tab-infos-btn'));
   firstTab.show();
@@ -209,14 +281,14 @@ function openCreateModal() {
 }
 
 /**
- * Charge les données d'un adhérent pour édition
+ * Charge les données d'un usager pour édition
  */
 async function editAdherent(id) {
   try {
     const data = await adherentsAPI.getById(id);
     const adherent = data.adherent;
 
-    document.getElementById('modalTitle').textContent = 'Modifier l\'adhérent';
+    document.getElementById('modalTitle').textContent = 'Modifier l\'usager';
     document.getElementById('adherentId').value = adherent.id;
 
     // Masquer recherche externe en mode édition
@@ -240,6 +312,10 @@ async function editAdherent(id) {
     document.getElementById('adhesion_association').checked = adherent.adhesion_association || false;
     document.getElementById('date_adhesion').value = adherent.date_adhesion || '';
     document.getElementById('date_fin_adhesion').value = adherent.date_fin_adhesion || '';
+
+    // Charger les modules autorisés
+    setSelectedModules(adherent.modules_autorises);
+    toggleModulesSection();
 
     // Mot de passe optionnel en édition
     document.getElementById('passwordGroup').style.display = 'block';
@@ -267,8 +343,8 @@ async function editAdherent(id) {
     }
     modalInstance.show();
   } catch (error) {
-    console.error('Erreur chargement adhérent:', error);
-    showToast('Erreur lors du chargement de l\'adhérent: ' + error.message, 'error');
+    console.error('Erreur chargement usager:', error);
+    showToast('Erreur lors du chargement de l\'usager: ' + error.message, 'error');
   }
 }
 
@@ -299,7 +375,8 @@ async function submitAdherentForm(event) {
       photo: document.getElementById('photo_url').value || null,
       adhesion_association: document.getElementById('adhesion_association').checked,
       date_adhesion: document.getElementById('date_adhesion').value || null,
-      date_fin_adhesion: document.getElementById('date_fin_adhesion').value || null
+      date_fin_adhesion: document.getElementById('date_fin_adhesion').value || null,
+      modules_autorises: getSelectedModules()
     };
 
     // Mot de passe uniquement si renseigné
@@ -311,21 +388,21 @@ async function submitAdherentForm(event) {
     if (!id) {
       // Création
       if (!formData.password) {
-        showToast('Le mot de passe est requis pour un nouvel adhérent', 'error');
+        showToast('Le mot de passe est requis pour un nouvel usager', 'error');
         return;
       }
       await adherentsAPI.create(formData);
-      showToast('Adhérent créé avec succès !', 'success');
+      showToast('Usager cree avec succes !', 'success');
     } else {
       // Modification
       await adherentsAPI.update(id, formData);
-      showToast('Adhérent modifié avec succès !', 'success');
+      showToast('Usager modifie avec succes !', 'success');
     }
 
     closeModal();
     loadAdherents();
   } catch (error) {
-    console.error('Erreur sauvegarde adhérent:', error);
+    console.error('Erreur sauvegarde usager:', error);
     showToast('Erreur: ' + error.message, 'error');
   } finally {
     submitBtn.disabled = false;

@@ -74,16 +74,28 @@ module.exports = (sequelize) => {
       defaultValue: 0,
       comment: 'Ordre d\'affichage dans les listes'
     },
-    // Champs pour la gestion comptable (Phase 2)
+    // Champs pour la gestion comptable
     code_comptable: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'Code comptable associé au tarif'
+      comment: 'Code comptable general (ex: 756 Cotisations, 706 Prestations)'
     },
+    taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'taux_tva',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Taux de TVA applicable (null = utilise le taux du module)'
+    },
+    // Ancien champ conserve pour retrocompatibilite, utiliser RepartitionAnalytique
     code_analytique: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'Code analytique associé au tarif'
+      comment: 'DEPRECATED: Utiliser RepartitionAnalytique pour multi-axes'
     },
     par_defaut: {
       type: DataTypes.BOOLEAN,
@@ -196,5 +208,66 @@ module.exports = (sequelize) => {
     return true;
   };
 
-  return TarifCotisation;
+  /**
+   * Recupere le taux de TVA associe a ce tarif
+   * @returns {Promise<TauxTVA|null>}
+   */
+  TarifCotisation.prototype.getTauxTVA = async function() {
+    if (!this.taux_tva_id) return null;
+    return await sequelize.models.TauxTVA.findByPk(this.taux_tva_id);
+  };
+
+  /**
+   * Recupere la repartition analytique de ce tarif
+   * @returns {Promise<Array>}
+   */
+  TarifCotisation.prototype.getRepartitionAnalytique = async function() {
+    return await sequelize.models.RepartitionAnalytique.getRepartition(
+      'tarif_cotisation',
+      this.id
+    );
+  };
+
+  /**
+   * Definit la repartition analytique de ce tarif
+   * @param {Array<{section_analytique_id: number, pourcentage: number}>} repartitions
+   */
+  TarifCotisation.prototype.setRepartitionAnalytique = async function(repartitions) {
+    return await sequelize.models.RepartitionAnalytique.setRepartition(
+      'tarif_cotisation',
+      this.id,
+      repartitions
+    );
+  };
+
+  /**
+   * Calcule les montants HT/TVA/TTC pour ce tarif
+   * @param {number} montantBase - Montant de base (apres reduction eventuelle)
+   * @returns {Promise<{montant_ht: number, montant_tva: number, montant_ttc: number, taux_tva: object|null}>}
+   */
+  TarifCotisation.prototype.calculerMontantsTVA = async function(montantBase) {
+    const tauxTVA = await this.getTauxTVA();
+
+    if (!tauxTVA || tauxTVA.exonere) {
+      return {
+        montant_ht: parseFloat(montantBase),
+        montant_tva: 0,
+        montant_ttc: parseFloat(montantBase),
+        taux_tva: tauxTVA
+      };
+    }
+
+    const ht = parseFloat(montantBase);
+    const tva = tauxTVA.calculerMontantTVA(ht);
+    const ttc = tauxTVA.calculerMontantTTC(ht);
+
+    return {
+      montant_ht: ht,
+      montant_tva: tva,
+      montant_ttc: ttc,
+      taux_tva: tauxTVA
+    };
+  };
+
+  return TarifCotisation
 };

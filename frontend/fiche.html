@@ -298,8 +298,8 @@
           <li class="nav-item">
             <a class="nav-link" href="/infos.html">Infos pratiques</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
+          <li class="nav-item" id="nav-espace" style="display: none;">
+            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/usager/login.html">
               <i class="bi bi-person-circle"></i> Mon espace
             </a>
           </li>
@@ -454,6 +454,11 @@
           document.head.appendChild(customStyle);
         }
 
+        // Show "Mon espace" if inscriptions enabled
+        if (config.modules && config.modules.inscriptions) {
+          document.getElementById('nav-espace').style.display = 'block';
+        }
+
         document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
 
       } catch (error) {
@@ -548,11 +553,11 @@
             : item.nb_joueurs_min;
           metaHtml += createMetaItem('bi-people', 'Joueurs', joueurs);
         }
-        if (item.duree_moyenne) {
-          metaHtml += createMetaItem('bi-clock', 'Duree', `${item.duree_moyenne} min`);
+        if (item.duree_partie) {
+          metaHtml += createMetaItem('bi-clock', 'Duree', `${item.duree_partie} min`);
         }
-        if (item.age_minimum) {
-          metaHtml += createMetaItem('bi-person', 'Age minimum', `${item.age_minimum} ans`);
+        if (item.age_min) {
+          metaHtml += createMetaItem('bi-person', 'Age minimum', `${item.age_min} ans`);
         }
         if (item.annee_sortie) {
           metaHtml += createMetaItem('bi-calendar', 'Annee', item.annee_sortie);

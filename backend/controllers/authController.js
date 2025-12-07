@@ -1,4 +1,5 @@
-const { Adherent } = require('../models');
+const { Utilisateur } = require('../models');
+const auditLogger = require('../utils/auditLogger');
 
 /**
  * Login user
@@ -17,9 +18,18 @@ const login = async (req, res) => {
     }
 
     // Find user by email
-    const user = await Adherent.findOne({ where: { email } });
+    const user = await Utilisateur.findOne({ where: { email } });
 
     if (!user) {
+      // Log failed login attempt
+      auditLogger.login({
+        userId: null,
+        email,
+        ip: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false
+      });
+
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid email or password'
@@ -30,6 +40,15 @@ const login = async (req, res) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
+      // Log failed login attempt
+      auditLogger.login({
+        userId: user.id,
+        email,
+        ip: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false
+      });
+
       return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid email or password'
@@ -54,6 +73,15 @@ const login = async (req, res) => {
     // Generate token
     const token = user.generateAuthToken();
 
+    // Log successful login
+    auditLogger.login({
+      userId: user.id,
+      email,
+      ip: req.ip || req.connection.remoteAddress,
+      userAgent: req.get('user-agent'),
+      success: true
+    });
+
     res.json({
       message: 'Login successful',
       token,
@@ -64,7 +92,8 @@ const login = async (req, res) => {
         email: user.email,
         code_barre: user.code_barre,
         statut: user.statut,
-        role: user.role || 'usager'
+        role: user.role || 'usager',
+        modules_autorises: user.modules_autorises
       }
     });
   } catch (error) {
@@ -110,7 +139,7 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await Adherent.findOne({ where: { email } });
+    const existingUser = await Utilisateur.findOne({ where: { email } });
 
     if (existingUser) {
       return res.status(409).json({
@@ -120,7 +149,7 @@ const register = async (req, res) => {
     }
 
     // Create new user
-    const user = await Adherent.create({
+    const user = await Utilisateur.create({
       nom,
       prenom,
       email,
@@ -198,7 +227,9 @@ const getProfile = async (req, res) => {
         date_fin_adhesion: user.date_fin_adhesion,
         statut: user.statut,
         photo: user.photo,
-        notes: user.notes
+        notes: user.notes,
+        role: user.role || 'usager',
+        modules_autorises: user.modules_autorises
       }
     });
   } catch (error) {

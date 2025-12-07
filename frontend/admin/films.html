@@ -40,6 +40,72 @@
     .classification--12 { background-color: #ffc107; color: black; }
     .classification--16 { background-color: #fd7e14; color: white; }
     .classification--18 { background-color: #dc3545; color: white; }
+
+    /* Vue cartes */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    @media (min-width: 768px) { .cards-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1200px) { .cards-grid { grid-template-columns: repeat(6, 1fr); } }
+
+    .item-card {
+      border-radius: 8px;
+      border-width: 2px;
+      border-style: solid;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      background: white;
+    }
+    .item-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .item-card.status-disponible { border-color: #198754; }
+    .item-card.status-emprunte { border-color: #ffc107; }
+    .item-card.status-maintenance { border-color: #0dcaf0; }
+    .item-card.status-perdu { border-color: #dc3545; }
+    .item-card.status-archive { border-color: #6c757d; }
+
+    .item-card .card-img-wrapper {
+      position: relative;
+    }
+    .item-card .card-img-top {
+      height: 150px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+    .item-card .card-img-placeholder {
+      height: 150px;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2.5rem;
+    }
+    .item-card .card-body { padding: 0.75rem; }
+    .item-card .card-title { font-size: 0.9rem; margin-bottom: 0.5rem; line-height: 1.2; }
+    .item-card .card-text { font-size: 0.75rem; color: #6c757d; }
+    .item-card .card-actions { padding: 0.5rem 0.75rem; border-top: 1px solid #eee; }
+    .item-card .status-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    /* Badges thematiques IA */
+    .type-badge { color: white; font-size: 0.8rem; }
+    .type-badge.type-theme { background-color: #6f42c1; }
+    .type-badge.type-mecanisme { background-color: #0d6efd; }
+    .type-badge.type-ambiance { background-color: #198754; }
+    .type-badge.type-public { background-color: #fd7e14; }
+    .type-badge.type-complexite { background-color: #dc3545; }
+    .type-badge.type-duree { background-color: #20c997; }
+    .type-badge.type-autre { background-color: #6c757d; }
   </style>
 </head>
 <body>
@@ -78,13 +144,13 @@
                   style="width: 200px;"
                   onkeyup="handleSearch()"
                 >
-                <select id="genreFilter" class="form-select" onchange="loadFilms()" style="width: 150px;">
+                <select id="genreFilter" class="form-select" onchange="pagination && pagination.reset(); loadFilms()" style="width: 150px;">
                   <option value="">Tous genres</option>
                 </select>
-                <select id="supportFilter" class="form-select" onchange="loadFilms()" style="width: 140px;">
+                <select id="supportFilter" class="form-select" onchange="pagination && pagination.reset(); loadFilms()" style="width: 140px;">
                   <option value="">Tous supports</option>
                 </select>
-                <select id="statutFilter" class="form-select" onchange="loadFilms()" style="width: 140px;">
+                <select id="statutFilter" class="form-select" onchange="pagination && pagination.reset(); loadFilms()" style="width: 140px;">
                   <option value="">Tous statuts</option>
                   <option value="disponible">Disponible</option>
                   <option value="emprunte">Emprunte</option>
@@ -96,6 +162,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="mb-2"></div>
 
         <!-- Films List -->
         <div class="card">
@@ -386,6 +455,8 @@
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
+  <script src="js/pagination.js"></script>
+  <script src="js/thematiques-article.js"></script>
   <script>
     let films = [];
     let searchTimeout = null;
@@ -393,6 +464,7 @@
     let viewModalInstance = null;
     let deleteModalInstance = null;
     let filmToDelete = null;
+    let pagination = null;
 
     // Tom-Select instances
     let tsGenres, tsThemes, tsLangues, tsSousTitres, tsRealisateurs, tsStudios;
@@ -410,7 +482,7 @@
     };
 
     // Load films
-    async function loadFilms() {
+    async function loadFilms(page = null, limit = null) {
       try {
         const statut = document.getElementById('statutFilter').value;
         const genreId = document.getElementById('genreFilter').value;
@@ -423,8 +495,20 @@
         if (supportId) params.support_id = supportId;
         if (search) params.search = search;
 
+        // Pagination params
+        if (pagination) {
+          params.page = page || pagination.getPage();
+          params.limit = limit || pagination.getLimit();
+        }
+
         const data = await filmsAPI.getAll(params);
         films = data.films || [];
+
+        // Mettre a jour la pagination si disponible
+        if (pagination && data.pagination) {
+          pagination.update(data.pagination);
+        }
+
         renderFilms(films);
       } catch (error) {
         console.error('Error loading films:', error);
@@ -523,6 +607,8 @@
 
     function renderFilms(list) {
       const container = document.getElementById('filmsList');
+      const viewMode = pagination ? pagination.getViewMode() : 'list';
+      const actionsVisible = pagination ? pagination.getActionsVisible() : false;
 
       if (!list || list.length === 0) {
         container.innerHTML = `
@@ -534,67 +620,124 @@
         return;
       }
 
-      container.innerHTML = `
-        <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th style="width:60px;"></th>
-              <th>Titre</th>
-              <th>Annee</th>
-              <th>Duree</th>
-              <th>Support</th>
-              <th>Classification</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      if (viewMode === 'cards') {
+        // Vue cartes
+        container.innerHTML = `
+          <div class="cards-grid">
             ${list.map(film => `
-              <tr class="film-row">
-                <td>
+              <div class="item-card status-${film.statut || 'disponible'}" onclick="viewFilm(${film.id})" style="cursor:pointer;">
+                <div class="card-img-wrapper">
                   ${film.image_url
-                    ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="film-poster" onerror="this.outerHTML='<div class=film-poster-placeholder><i class=bi bi-film></i></div>'">`
-                    : '<div class="film-poster-placeholder"><i class="bi bi-film"></i></div>'
+                    ? `<img src="${film.image_url}" class="card-img-top" alt="${escapeHtml(film.titre)}" onerror="this.outerHTML='<div class=card-img-placeholder><i class=bi bi-film></i></div>'">`
+                    : '<div class="card-img-placeholder"><i class="bi bi-film"></i></div>'
                   }
-                </td>
-                <td>
-                  <strong>${escapeHtml(film.titre)}</strong>
-                  ${film.titre_original && film.titre_original !== film.titre
-                    ? `<br><small class="text-muted">${escapeHtml(film.titre_original)}</small>`
-                    : ''}
-                  ${film.realisateursRef?.length
-                    ? `<br><small class="text-secondary"><i class="bi bi-camera-reels"></i> ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}</small>`
-                    : ''}
-                </td>
-                <td>${film.annee_sortie || '-'}</td>
-                <td>${film.duree ? `${film.duree} min` : '-'}</td>
-                <td>${film.supportRef?.nom || '-'}</td>
-                <td>
-                  <span class="badge classification-badge classification-${film.classification || 'TP'}">
-                    ${getClassificationLabel(film.classification)}
-                  </span>
-                </td>
-                <td>${formatStatut(film.statut)}</td>
-                <td>
-                  <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" onclick="viewFilm(${film.id})" title="Voir">
+                  <span class="status-badge bg-${getStatutColor(film.statut)}">${getStatutLabel(film.statut)}</span>
+                </div>
+                <div class="card-body">
+                  <h6 class="card-title text-truncate" title="${escapeHtml(film.titre)}">${escapeHtml(film.titre)}</h6>
+                  <p class="card-text mb-1">
+                    ${film.annee_sortie || '-'} - ${film.duree ? `${film.duree}min` : '-'}
+                  </p>
+                  <p class="card-text">
+                    <span class="badge classification-badge classification-${film.classification || 'TP'}">${getClassificationLabel(film.classification)}</span>
+                    ${film.supportRef?.nom || ''}
+                  </p>
+                </div>
+                ${actionsVisible ? `
+                <div class="card-actions">
+                  <div class="btn-group btn-group-sm w-100">
+                    <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewFilm(${film.id})" title="Voir">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="editFilm(${film.id})" title="Modifier">
+                    <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editFilm(${film.id})" title="Modifier">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-outline-danger" onclick="deleteFilm(${film.id}, '${escapeHtml(film.titre).replace(/'/g, "\\'")}' )" title="Supprimer">
+                    <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${film.id})" title="Imprimer">
+                      <i class="bi bi-printer"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="event.stopPropagation(); deleteFilm(${film.id}, '${escapeHtml(film.titre).replace(/'/g, "\\'")}')" title="Supprimer">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
-                </td>
-              </tr>
+                </div>
+                ` : ''}
+              </div>
             `).join('')}
-          </tbody>
-        </table>
-        </div>
-      `;
+          </div>
+        `;
+      } else {
+        // Vue liste (tableau)
+        container.innerHTML = `
+          <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th style="width:60px;"></th>
+                <th>Titre</th>
+                <th>Annee</th>
+                <th>Duree</th>
+                <th>Support</th>
+                <th>Classification</th>
+                <th>Statut</th>
+                ${actionsVisible ? '<th>Actions</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(film => `
+                <tr class="film-row" onclick="viewFilm(${film.id})" style="cursor:pointer;">
+                  <td>
+                    ${film.image_url
+                      ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="film-poster" onerror="this.outerHTML='<div class=film-poster-placeholder><i class=bi bi-film></i></div>'">`
+                      : '<div class="film-poster-placeholder"><i class="bi bi-film"></i></div>'
+                    }
+                  </td>
+                  <td>
+                    <strong>${escapeHtml(film.titre)}</strong>
+                    ${film.titre_original && film.titre_original !== film.titre
+                      ? `<br><small class="text-muted">${escapeHtml(film.titre_original)}</small>`
+                      : ''}
+                    ${film.realisateursRef?.length
+                      ? `<br><small class="text-secondary"><i class="bi bi-camera-reels"></i> ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}</small>`
+                      : ''}
+                  </td>
+                  <td>${film.annee_sortie || '-'}</td>
+                  <td>${film.duree ? `${film.duree} min` : '-'}</td>
+                  <td>${film.supportRef?.nom || '-'}</td>
+                  <td>
+                    <span class="badge classification-badge classification-${film.classification || 'TP'}">
+                      ${getClassificationLabel(film.classification)}
+                    </span>
+                  </td>
+                  <td>${formatStatut(film.statut)}</td>
+                  ${actionsVisible ? `
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewFilm(${film.id})" title="Voir">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editFilm(${film.id})" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${film.id})" title="Imprimer">
+                        <i class="bi bi-printer"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="event.stopPropagation(); deleteFilm(${film.id}, '${escapeHtml(film.titre).replace(/'/g, "\\'")}')" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                  ` : ''}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          </div>
+        `;
+      }
+    }
+
+    function printLabel(id) {
+      barcodesAPI.printFilmLabel(id);
     }
 
     function formatStatut(statut) {
@@ -640,6 +783,7 @@
     function handleSearch() {
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(() => {
+        if (pagination) pagination.reset();
         loadFilms();
       }, 500);
     }
@@ -851,12 +995,21 @@
               </div>
             </div>
           </div>
+          <div id="thematiques-container-${id}" class="mt-3">
+            <!-- Thematiques IA chargees dynamiquement -->
+          </div>
         `;
 
         document.getElementById('btnEditFromView').onclick = () => {
           if (viewModalInstance) viewModalInstance.hide();
           editFilm(id);
         };
+
+        // Charger les thematiques IA si le module est actif
+        if (typeof isModuleActive === 'function' && isModuleActive('recherche_ia')) {
+          const themContainer = document.getElementById(`thematiques-container-${id}`);
+          themContainer.innerHTML = await ThematiquesArticle.renderSection('film', id, true);
+        }
 
         if (!viewModalInstance) {
           viewModalInstance = new bootstrap.Modal(document.getElementById('viewFilmModal'));
@@ -1062,6 +1215,17 @@
     // Load on page load
     document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('films');
+
+      // Initialiser la pagination
+      pagination = new Pagination({
+        module: 'films',
+        containerId: 'paginationControls',
+        onPageChange: (page, limit) => loadFilms(page, limit),
+        onViewModeChange: (mode) => renderFilms(films),
+        onActionsToggle: (visible) => renderFilms(films),
+        showViewToggle: true,
+        showActionsToggle: true
+      });
 
       // Charger les referentiels d'abord
       await loadAllReferentiels();

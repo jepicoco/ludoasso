@@ -1,20 +1,20 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-  const AdherentArchive = sequelize.define('AdherentArchive', {
+  const UtilisateurArchive = sequelize.define('UtilisateurArchive', {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true
     },
-    // ID original de l'adhérent (pour les liaisons avec emprunts, cotisations, etc.)
-    adherent_id: {
+    // ID original de l'utilisateur (pour les liaisons avec emprunts, cotisations, etc.)
+    utilisateur_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       unique: true,
-      comment: 'ID original de l\'adhérent dans la table adherents'
+      comment: 'ID original de l\'utilisateur dans la table utilisateurs'
     },
-    // Données de l'adhérent au moment de l'archivage
+    // Donnees de l'utilisateur au moment de l'archivage
     code_barre: {
       type: DataTypes.STRING(20),
       allowNull: true
@@ -22,37 +22,37 @@ module.exports = (sequelize) => {
     civilite: {
       type: DataTypes.STRING(10),
       allowNull: true,
-      comment: 'Conservé lors de l\'anonymisation'
+      comment: 'Conserve lors de l\'anonymisation'
     },
     nom: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: 'Anonymisé en ***** après 3 ans'
+      comment: 'Anonymise en ***** apres 3 ans'
     },
     prenom: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: 'Anonymisé en ***** après 3 ans'
+      comment: 'Anonymise en ***** apres 3 ans'
     },
     email: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      comment: 'Anonymisé en ***** après 3 ans'
+      comment: 'Anonymise en ***** apres 3 ans'
     },
     telephone: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'Anonymisé en ***** après 3 ans'
+      comment: 'Anonymise en ***** apres 3 ans'
     },
     adresse: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: 'Anonymisé en ***** après 3 ans'
+      comment: 'Anonymise en ***** apres 3 ans'
     },
     ville: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: 'Commune - Conservé lors de l\'anonymisation'
+      comment: 'Commune - Conserve lors de l\'anonymisation'
     },
     code_postal: {
       type: DataTypes.STRING(10),
@@ -61,7 +61,7 @@ module.exports = (sequelize) => {
     date_naissance: {
       type: DataTypes.DATEONLY,
       allowNull: true,
-      comment: 'Conservé lors de l\'anonymisation'
+      comment: 'Conserve lors de l\'anonymisation'
     },
     date_adhesion: {
       type: DataTypes.DATEONLY,
@@ -71,10 +71,15 @@ module.exports = (sequelize) => {
       type: DataTypes.DATEONLY,
       allowNull: true
     },
+    adhesion_association: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
     statut_avant_archivage: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'Statut de l\'adhérent avant archivage'
+      comment: 'Statut de l\'utilisateur avant archivage'
     },
     photo: {
       type: DataTypes.STRING(255),
@@ -84,15 +89,16 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
-    adhesion_association: {
-      type: DataTypes.BOOLEAN,
-      allowNull: true
+    date_fin_adhesion_association: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Date de fin d\'adhesion a l\'association'
     },
     role: {
       type: DataTypes.STRING(20),
       allowNull: true
     },
-    // Métadonnées d'archivage
+    // Metadonnees d'archivage
     date_archivage: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -102,19 +108,19 @@ module.exports = (sequelize) => {
     archive_par: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: 'ID de l\'utilisateur ayant effectué l\'archivage'
+      comment: 'ID de l\'utilisateur ayant effectue l\'archivage'
     },
     motif_archivage: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      comment: 'Motif de l\'archivage (manuel, inactivité 3 ans, etc.)'
+      comment: 'Motif de l\'archivage (manuel, inactivite 3 ans, etc.)'
     },
     // Anonymisation
     est_anonymise: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
-      comment: 'Indique si les données personnelles ont été anonymisées'
+      comment: 'Indique si les donnees personnelles ont ete anonymisees'
     },
     date_anonymisation: {
       type: DataTypes.DATE,
@@ -124,21 +130,21 @@ module.exports = (sequelize) => {
     anonymise_par: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: 'ID de l\'utilisateur ayant effectué l\'anonymisation'
+      comment: 'ID de l\'utilisateur ayant effectue l\'anonymisation'
     },
-    // Dernière activité
+    // Derniere activite
     derniere_activite: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: 'Date de la dernière activité (emprunt ou cotisation)'
+      comment: 'Date de la derniere activite (emprunt ou cotisation)'
     }
   }, {
-    tableName: 'adherents_archives',
+    tableName: 'utilisateurs_archives',
     timestamps: false
   });
 
-  // Méthode pour anonymiser les données personnelles
-  AdherentArchive.prototype.anonymiser = async function(userId) {
+  // Methode pour anonymiser les donnees personnelles
+  UtilisateurArchive.prototype.anonymiser = async function(userId) {
     this.nom = '*****';
     this.prenom = '*****';
     this.email = '*****';
@@ -153,5 +159,5 @@ module.exports = (sequelize) => {
     return this;
   };
 
-  return AdherentArchive;
+  return UtilisateurArchive;
 };

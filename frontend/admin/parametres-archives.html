@@ -26,12 +26,12 @@
 
         <div class="mb-4">
           <h1><i class="bi bi-archive"></i> Archives RGPD</h1>
-          <p class="text-muted">Gestion des adherents archives et conformite RGPD</p>
+          <p class="text-muted">Gestion des usagers archives et conformite RGPD</p>
         </div>
 
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
-            <h4 class="card-title mb-0"><i class="bi bi-archive"></i> Archives adherents (RGPD)</h4>
+            <h4 class="card-title mb-0"><i class="bi bi-archive"></i> Archives usagers (RGPD)</h4>
             <button class="btn btn-outline-secondary btn-sm" onclick="voirHistoriqueAcces()">
               <i class="bi bi-clock-history"></i> Historique des acces
             </button>
@@ -41,7 +41,7 @@
             <div class="alert alert-info mb-4">
               <h6><i class="bi bi-shield-check"></i> Conformite RGPD</h6>
               <p class="mb-0">
-                Les adherents supprimes sont archives (non supprimes) pour conserver l'historique des emprunts et cotisations.
+                Les usagers supprimes sont archives (non supprimes) pour conserver l'historique des emprunts et cotisations.
                 L'anonymisation remplace les donnees personnelles (nom, prenom, email, telephone, adresse) par <code>*****</code>
                 tout en conservant les donnees statistiques.
               </p>
@@ -76,7 +76,7 @@
               <div class="col-md-3">
                 <div class="card text-center bg-light">
                   <div class="card-body">
-                    <h6 class="card-title text-muted">Adherents actifs</h6>
+                    <h6 class="card-title text-muted">Usagers actifs</h6>
                     <p class="card-text fs-4 text-success" id="archives-stat-actifs">0</p>
                   </div>
                 </div>
@@ -93,9 +93,9 @@
                   <div class="col-md-6">
                     <div class="d-grid">
                       <button class="btn btn-outline-primary" onclick="previewArchivageInactifs()">
-                        <i class="bi bi-archive"></i> Archiver les adherents inactifs (3 ans+)
+                        <i class="bi bi-archive"></i> Archiver les usagers inactifs (3 ans+)
                       </button>
-                      <small class="text-muted mt-1">Archive les adherents sans emprunt ni cotisation depuis plus de 3 ans</small>
+                      <small class="text-muted mt-1">Archive les usagers sans emprunt ni cotisation depuis plus de 3 ans</small>
                     </div>
                   </div>
                   <div class="col-md-6">

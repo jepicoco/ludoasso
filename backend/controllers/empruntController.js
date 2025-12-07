@@ -1,4 +1,4 @@
-const { Emprunt, Adherent, Jeu } = require('../models');
+const { Emprunt, Utilisateur, Jeu } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -30,8 +30,8 @@ const getAllEmprunts = async (req, res) => {
       where,
       include: [
         {
-          model: Adherent,
-          as: 'adherent'
+          model: Utilisateur,
+          as: 'utilisateur'
         },
         {
           model: Jeu,
@@ -43,8 +43,15 @@ const getAllEmprunts = async (req, res) => {
       order: [['date_emprunt', 'DESC']]
     });
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const empruntsWithAlias = rows.map(e => {
+      const data = e.toJSON();
+      data.adherent = data.utilisateur;
+      return data;
+    });
+
     res.json({
-      emprunts: rows,
+      emprunts: empruntsWithAlias,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -72,8 +79,8 @@ const getEmpruntById = async (req, res) => {
     const emprunt = await Emprunt.findByPk(id, {
       include: [
         {
-          model: Adherent,
-          as: 'adherent'
+          model: Utilisateur,
+          as: 'utilisateur'
         },
         {
           model: Jeu,
@@ -89,7 +96,11 @@ const getEmpruntById = async (req, res) => {
       });
     }
 
-    res.json({ emprunt });
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = emprunt.toJSON();
+    data.adherent = data.utilisateur;
+
+    res.json({ emprunt: data });
   } catch (error) {
     console.error('Get emprunt error:', error);
     res.status(500).json({
@@ -115,19 +126,19 @@ const createEmprunt = async (req, res) => {
       });
     }
 
-    // Check if adherent exists and is active
-    const adherent = await Adherent.findByPk(adherent_id);
-    if (!adherent) {
+    // Check if utilisateur exists and is active
+    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    if (!utilisateur) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Adherent not found'
+        message: 'Utilisateur not found'
       });
     }
 
-    if (adherent.statut !== 'actif') {
+    if (utilisateur.statut !== 'actif') {
       return res.status(403).json({
         error: 'Forbidden',
-        message: `Adherent account is ${adherent.statut}. Only active members can borrow games.`
+        message: `Utilisateur account is ${utilisateur.statut}. Only active members can borrow games.`
       });
     }
 
@@ -168,23 +179,27 @@ const createEmprunt = async (req, res) => {
     // Reload with associations
     await emprunt.reload({
       include: [
-        { model: Adherent, as: 'adherent' },
+        { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
       ]
     });
 
     // Déclencher l'événement de création d'emprunt
     try {
-      await eventTriggerService.triggerEmpruntCreated(emprunt, adherent, jeu);
+      await eventTriggerService.triggerEmpruntCreated(emprunt, utilisateur, jeu);
 // console.('Event EMPRUNT_CREATED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
     }
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = emprunt.toJSON();
+    data.adherent = data.utilisateur;
+
     res.status(201).json({
       message: 'Emprunt created successfully',
-      emprunt
+      emprunt: data
     });
   } catch (error) {
     console.error('Create emprunt error:', error);
@@ -213,7 +228,7 @@ const retourEmprunt = async (req, res) => {
 
     const emprunt = await Emprunt.findByPk(id, {
       include: [
-        { model: Adherent, as: 'adherent' },
+        { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
       ]
     });
@@ -238,23 +253,27 @@ const retourEmprunt = async (req, res) => {
     // Reload to get updated data
     await emprunt.reload({
       include: [
-        { model: Adherent, as: 'adherent' },
+        { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
       ]
     });
 
     // Déclencher l'événement de retour d'emprunt
     try {
-      await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.adherent, emprunt.jeu);
+      await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.utilisateur, emprunt.jeu);
 // console.('Event EMPRUNT_RETURNED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer le retour si l'événement échoue
     }
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = emprunt.toJSON();
+    data.adherent = data.utilisateur;
+
     res.json({
       message: 'Game returned successfully',
-      emprunt
+      emprunt: data
     });
   } catch (error) {
     console.error('Retour emprunt error:', error);
@@ -293,14 +312,18 @@ const updateEmprunt = async (req, res) => {
     // Reload with associations
     await emprunt.reload({
       include: [
-        { model: Adherent, as: 'adherent' },
+        { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
       ]
     });
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = emprunt.toJSON();
+    data.adherent = data.utilisateur;
+
     res.json({
       message: 'Emprunt updated successfully',
-      emprunt
+      emprunt: data
     });
   } catch (error) {
     console.error('Update emprunt error:', error);
@@ -369,7 +392,7 @@ const getOverdueEmprunts = async (req, res) => {
         date_retour_prevue: { [Op.lt]: new Date() }
       },
       include: [
-        { model: Adherent, as: 'adherent' },
+        { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
       ],
       order: [['date_retour_prevue', 'ASC']]
@@ -383,8 +406,15 @@ const getOverdueEmprunts = async (req, res) => {
       }
     }
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const empruntsWithAlias = emprunts.map(e => {
+      const data = e.toJSON();
+      data.adherent = data.utilisateur;
+      return data;
+    });
+
     res.json({
-      emprunts,
+      emprunts: empruntsWithAlias,
       total: emprunts.length
     });
   } catch (error) {

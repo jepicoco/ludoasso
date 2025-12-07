@@ -32,6 +32,27 @@ router.get('/adherent/:id/card', verifyToken, barcodeController.getAdherentCard)
 router.get('/jeu/:id/label', verifyToken, barcodeController.getJeuLabel);
 
 /**
+ * @route   GET /api/barcodes/livre/:id/label
+ * @desc    Get printable livre label HTML
+ * @access  Private
+ */
+router.get('/livre/:id/label', verifyToken, barcodeController.getLivreLabel);
+
+/**
+ * @route   GET /api/barcodes/film/:id/label
+ * @desc    Get printable film label HTML
+ * @access  Private
+ */
+router.get('/film/:id/label', verifyToken, barcodeController.getFilmLabel);
+
+/**
+ * @route   GET /api/barcodes/disque/:id/label
+ * @desc    Get printable disque label HTML
+ * @access  Private
+ */
+router.get('/disque/:id/label', verifyToken, barcodeController.getDisqueLabel);
+
+/**
  * @route   POST /api/barcodes/scan
  * @desc    Scan and validate barcode, return entity
  * @access  Private

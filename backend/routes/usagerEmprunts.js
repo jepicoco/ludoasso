@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const {
-  Emprunt, Prolongation, Adherent,
+  Emprunt, Prolongation, Utilisateur,
   Jeu, Livre, Film, Disque,
   ParametresFront
 } = require('../models');

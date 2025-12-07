@@ -18,5 +18,6 @@ router.delete('/:id', cotisationController.deleteCotisation);
 router.post('/:id/annuler', cotisationController.annulerCotisation);
 router.get('/adherent/:adherent_id/active', cotisationController.verifierCotisationActive);
 router.post('/update-statuts-expires', cotisationController.mettreAJourStatutsExpires);
+router.get('/:id/recu', cotisationController.genererRecuPDF);
 
 module.exports = router;

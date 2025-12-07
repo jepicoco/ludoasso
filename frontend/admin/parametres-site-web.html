@@ -73,6 +73,34 @@
     .char-counter.danger {
       color: #dc3545;
     }
+    /* Save indicator */
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      z-index: 1050;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .save-indicator.saving {
+      display: flex;
+      background: #fff3cd;
+      color: #856404;
+    }
+    .save-indicator.saved {
+      display: flex;
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+    .save-indicator.error {
+      display: flex;
+      background: #f8d7da;
+      color: #842029;
+    }
   </style>
 </head>
 <body>
@@ -92,11 +120,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1><i class="bi bi-globe"></i> Configuration du site web</h1>
-            <p class="text-muted mb-0">Nom, logo, SEO, modules actifs et pages legales</p>
+            <p class="text-muted mb-0">Nom, logo, SEO, modules actifs et pages legales. <span class="text-success"><i class="bi bi-check-circle"></i> Sauvegarde automatique</span></p>
           </div>
-          <button class="btn btn-primary btn-lg" id="btnSaveAll" onclick="saveAllSettings()">
-            <i class="bi bi-check-lg"></i> Enregistrer tout
-          </button>
         </div>
 
         <!-- Loading -->
@@ -400,7 +425,7 @@
                             <strong><i class="bi bi-person-plus"></i> Inscriptions</strong>
                           </label>
                         </div>
-                        <p class="mb-0 mt-2 text-muted small">Inscriptions en ligne des adherents</p>
+                        <p class="mb-0 mt-2 text-muted small">Inscriptions en ligne des usagers</p>
                       </div>
                     </div>
                     <div class="col-md-4">
@@ -423,6 +448,18 @@
                           </label>
                         </div>
                         <p class="mb-0 mt-2 text-muted small">Paiement des cotisations en ligne</p>
+                      </div>
+                    </div>
+                    <!-- Recherche IA - visible uniquement si module recherche_ia actif dans holodeck -->
+                    <div class="col-md-4" id="card-module-recherche-ia-container" style="display: none;">
+                      <div class="card module-card p-3" id="card-module-recherche-ia" style="border-left: 4px solid #7c3aed; background-color: rgba(224,207,252,0.2);">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_recherche_ia" onchange="updateModuleCard('recherche-ia')">
+                          <label class="form-check-label" for="module_recherche_ia">
+                            <strong><i class="bi bi-robot"></i> Recherche intelligente</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Recherche IA dans le catalogue (themes, suggestions)</p>
                       </div>
                     </div>
                   </div>
@@ -657,15 +694,17 @@
             </div>
           </div>
 
-          <!-- Bottom save button -->
-          <div class="d-flex justify-content-end mt-4 mb-5">
-            <button class="btn btn-primary btn-lg" onclick="saveAllSettings()">
-              <i class="bi bi-check-lg"></i> Enregistrer tout
-            </button>
-          </div>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Indicateur de sauvegarde -->
+  <div class="save-indicator" id="saveIndicator">
+    <span class="spinner-border spinner-border-sm" id="saveSpinner"></span>
+    <i class="bi bi-check-circle d-none" id="saveCheck"></i>
+    <i class="bi bi-exclamation-circle d-none" id="saveError"></i>
+    <span id="saveText">Enregistrement...</span>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -679,6 +718,8 @@
     // Editeurs Quill
     let editors = {};
     const editorFields = ['cgv', 'cgu', 'politique_confidentialite', 'mentions_legales'];
+    let saveTimeout = null;
+    let isLoading = true;
 
     // Initialisation
     initTemplate('parametres');
@@ -687,6 +728,11 @@
       renderSubNav('general', 'site-web');
       initEditors();
       loadParametres();
+
+      // Afficher la carte Recherche IA si le module est actif dans le holodeck
+      if (isModuleActive('recherche_ia')) {
+        document.getElementById('card-module-recherche-ia-container').style.display = 'block';
+      }
     });
 
     // Initialiser les editeurs WYSIWYG
@@ -708,7 +754,95 @@
           },
           placeholder: 'Saisissez le contenu ici...'
         });
+
+        // Auto-save on editor change
+        editors[field].on('text-change', () => {
+          if (!isLoading) scheduleAutoSave();
+        });
       });
+    }
+
+    // Setup auto-save listeners on all form fields
+    function setupAutoSaveListeners() {
+      // Text inputs and textareas
+      const inputs = document.querySelectorAll('#content-container input:not([type="color"]), #content-container textarea, #content-container select');
+      inputs.forEach(input => {
+        input.addEventListener('change', () => {
+          if (!isLoading) scheduleAutoSave();
+        });
+        input.addEventListener('input', () => {
+          if (!isLoading) scheduleAutoSave();
+        });
+      });
+
+      // Color pickers
+      document.querySelectorAll('input[type="color"]').forEach(picker => {
+        picker.addEventListener('input', () => {
+          if (!isLoading) scheduleAutoSave();
+        });
+      });
+    }
+
+    // Schedule auto save (debounce 1000ms)
+    function scheduleAutoSave() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(autoSave, 1000);
+    }
+
+    // Auto save function
+    async function autoSave() {
+      showSaveIndicator('saving');
+
+      try {
+        const data = collectFormData();
+
+        const response = await fetch('/api/parametres/front', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de la sauvegarde');
+        }
+
+        showSaveIndicator('saved');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', error.message);
+      }
+    }
+
+    // Show save indicator
+    function showSaveIndicator(state, customMessage = null) {
+      const indicator = document.getElementById('saveIndicator');
+      const spinner = document.getElementById('saveSpinner');
+      const check = document.getElementById('saveCheck');
+      const errorIcon = document.getElementById('saveError');
+      const text = document.getElementById('saveText');
+
+      indicator.className = 'save-indicator ' + state;
+      spinner.classList.toggle('d-none', state !== 'saving');
+      check.classList.toggle('d-none', state !== 'saved');
+      errorIcon.classList.toggle('d-none', state !== 'error');
+
+      if (state === 'saving') {
+        text.textContent = 'Enregistrement...';
+      } else if (state === 'saved') {
+        text.textContent = customMessage || 'Enregistre';
+        setTimeout(() => {
+          indicator.className = 'save-indicator';
+        }, 2000);
+      } else if (state === 'error') {
+        text.textContent = customMessage || 'Erreur';
+        setTimeout(() => {
+          indicator.className = 'save-indicator';
+        }, 4000);
+      }
     }
 
     // Charger les parametres
@@ -729,9 +863,17 @@
 
         document.getElementById('loading-container').style.display = 'none';
         document.getElementById('content-container').style.display = 'block';
+
+        // Setup auto-save after content is loaded
+        setupAutoSaveListeners();
+
+        // Enable auto-save after a short delay to avoid triggering on initial load
+        setTimeout(() => {
+          isLoading = false;
+        }, 500);
       } catch (error) {
         console.error('Erreur:', error);
-        showToast('Erreur lors du chargement des parametres', 'error');
+        showSaveIndicator('error', 'Erreur lors du chargement des parametres');
       }
     }
 
@@ -762,10 +904,13 @@
       // Modules
       document.getElementById('module_ludotheque').checked = data.module_ludotheque !== false;
       document.getElementById('module_bibliotheque').checked = data.module_bibliotheque || false;
+      document.getElementById('module_filmotheque').checked = data.module_filmotheque || false;
+      document.getElementById('module_discotheque').checked = data.module_discotheque || false;
       document.getElementById('module_inscriptions').checked = data.module_inscriptions !== false;
       document.getElementById('module_reservations').checked = data.module_reservations || false;
       document.getElementById('module_paiement_en_ligne').checked = data.module_paiement_en_ligne || false;
-      ['ludotheque', 'bibliotheque', 'inscriptions', 'reservations', 'paiement'].forEach(updateModuleCard);
+      document.getElementById('module_recherche_ia').checked = data.module_recherche_ia || false;
+      ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque', 'inscriptions', 'reservations', 'paiement', 'recherche-ia'].forEach(updateModuleCard);
 
       // Legal (Quill editors)
       if (data.cgv) editors.cgv.root.innerHTML = data.cgv;
@@ -826,9 +971,12 @@
         // Modules
         module_ludotheque: document.getElementById('module_ludotheque').checked,
         module_bibliotheque: document.getElementById('module_bibliotheque').checked,
+        module_filmotheque: document.getElementById('module_filmotheque').checked,
+        module_discotheque: document.getElementById('module_discotheque').checked,
         module_inscriptions: document.getElementById('module_inscriptions').checked,
         module_reservations: document.getElementById('module_reservations').checked,
         module_paiement_en_ligne: document.getElementById('module_paiement_en_ligne').checked,
+        module_recherche_ia: document.getElementById('module_recherche_ia').checked,
 
         // Legal
         cgv: editors.cgv.root.innerHTML,
@@ -858,45 +1006,12 @@
       };
     }
 
-    // Sauvegarder tous les parametres
-    async function saveAllSettings() {
-      const btn = document.getElementById('btnSaveAll');
-      const originalHtml = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
-
-      try {
-        const data = collectFormData();
-
-        const response = await fetch('/api/parametres/front', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Erreur lors de la sauvegarde');
-        }
-
-        showToast('Parametres enregistres avec succes', 'success');
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast(error.message, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-      }
-    }
-
     // Helpers UI
     function updateModeCard() {
       const isCatalogue = document.getElementById('mode_catalogue').checked;
       document.getElementById('card-mode-catalogue').classList.toggle('active', isCatalogue);
       document.getElementById('card-mode-complet').classList.toggle('active', !isCatalogue);
+      if (!isLoading) scheduleAutoSave();
     }
 
     function updateModuleCard(module) {
@@ -904,6 +1019,9 @@
       if (module === 'paiement') {
         checkboxId = 'module_paiement_en_ligne';
         cardId = 'card-module-paiement';
+      } else if (module === 'recherche-ia') {
+        checkboxId = 'module_recherche_ia';
+        cardId = 'card-module-recherche-ia';
       } else {
         checkboxId = `module_${module}`;
         cardId = `card-module-${module}`;
@@ -913,6 +1031,7 @@
       if (checkbox && card) {
         card.classList.toggle('active', checkbox.checked);
       }
+      if (!isLoading) scheduleAutoSave();
     }
 
     function previewLogo() {
@@ -964,32 +1083,6 @@
       }
     }
 
-    // Toast notification
-    function showToast(message, type = 'info') {
-      const toastContainer = document.getElementById('toast-container') || createToastContainer();
-      const toast = document.createElement('div');
-      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
-      toast.setAttribute('role', 'alert');
-      toast.innerHTML = `
-        <div class="d-flex">
-          <div class="toast-body">${message}</div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-      `;
-      toastContainer.appendChild(toast);
-      const bsToast = new bootstrap.Toast(toast);
-      bsToast.show();
-      toast.addEventListener('hidden.bs.toast', () => toast.remove());
-    }
-
-    function createToastContainer() {
-      const container = document.createElement('div');
-      container.id = 'toast-container';
-      container.className = 'toast-container position-fixed top-0 end-0 p-3';
-      container.style.zIndex = '1100';
-      document.body.appendChild(container);
-      return container;
-    }
   </script>
 </body>
 </html>

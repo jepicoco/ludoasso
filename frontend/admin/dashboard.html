@@ -57,7 +57,7 @@
                     <div class="form-check">
                       <input class="form-check-input" type="checkbox" id="calc_adhesion" onchange="calculateCotisation()">
                       <label class="form-check-label" for="calc_adhesion">
-                        Adhérent à l'association (réduction applicable)
+                        Membre de l'association (reduction applicable)
                       </label>
                     </div>
                   </div>
@@ -288,7 +288,7 @@
               <div class="d-flex align-items-center">
                 <i class="bi bi-people fs-1 me-3"></i>
                 <div>
-                  <div class="text-white-50">Adhérents actifs</div>
+                  <div class="text-white-50">Usagers actifs</div>
                   <h3 class="mb-0">${stats.adherents.actifs}</h3>
                 </div>
               </div>
@@ -349,9 +349,9 @@
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>Adhérent</th>
+              <th>Usager</th>
               <th>Jeu</th>
-              <th>Retour prévu</th>
+              <th>Retour prevu</th>
               <th>Retard</th>
               <th>Actions</th>
             </tr>
@@ -361,8 +361,8 @@
               const daysLate = Math.floor((new Date() - new Date(emprunt.date_retour_prevue)) / (1000 * 60 * 60 * 24));
               return `
                 <tr>
-                  <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
-                  <td>${emprunt.jeu.titre}</td>
+                  <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
+                  <td>${emprunt.jeu?.titre || 'N/A'}</td>
                   <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
                   <td><span class="badge bg-danger">${daysLate} jours</span></td>
                   <td>

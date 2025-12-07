@@ -36,7 +36,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="text-muted mb-2">Total Adhérents</h6>
+                                        <h6 class="text-muted mb-2">Total Usagers</h6>
                                         <h2 class="mb-0" id="statTotalAdherents">-</h2>
                                     </div>
                                     <div class="fs-1 text-primary">
@@ -52,7 +52,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="text-muted mb-2">Adhérents Actifs</h6>
+                                        <h6 class="text-muted mb-2">Usagers Actifs</h6>
                                         <h2 class="mb-0" id="statAdherentsActifs">-</h2>
                                     </div>
                                     <div class="fs-1 text-success">
@@ -146,11 +146,11 @@
                         </div>
                     </div>
 
-                    <!-- Top adhérents actifs -->
+                    <!-- Top usagers actifs -->
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="card-title mb-0"><i class="bi bi-star"></i> Top 10 Adhérents les Plus Actifs</h5>
+                                <h5 class="card-title mb-0"><i class="bi bi-star"></i> Top 10 Usagers les Plus Actifs</h5>
                             </div>
                             <div class="card-body">
                                 <div id="topAdherentsList">
@@ -401,9 +401,9 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Adhérent</th>
+                                    <th>Usager</th>
                                     <th>Jeu</th>
-                                    <th>Retour prévu</th>
+                                    <th>Retour prevu</th>
                                     <th>Statut</th>
                                 </tr>
                             </thead>
@@ -413,8 +413,8 @@
                                     return `
                                         <tr>
                                             <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
-                                            <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
-                                            <td><strong>${emprunt.jeu.titre}</strong></td>
+                                            <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
+                                            <td><strong>${emprunt.jeu?.titre || 'N/A'}</strong></td>
                                             <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
                                             <td>
                                                 ${emprunt.statut === 'retourne'

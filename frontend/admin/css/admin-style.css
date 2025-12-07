@@ -146,7 +146,7 @@
     transform: scale(1.05);
 }
 
-/* Sidebar menu - Premier element (Scanner) mis en avant */
+/* Sidebar menu - Premier element (Scanner) mis en avant 
 #admin-sidebar .list-group-flush > .list-group-item:first-child {
     padding: 15px 5px;
     text-align: center;
@@ -167,4 +167,4 @@
 
 #admin-sidebar .list-group-flush > .list-group-item:first-child.active {
     background: linear-gradient(135deg, #146c43 0%, #13795b 100%);
-}
+}*/

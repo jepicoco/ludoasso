@@ -17,16 +17,7 @@ async function migrate() {
     const tables = await queryInterface.showAllTables();
     const tableExists = tables.includes('modules_actifs');
 
-    if (tableExists) {
-      console.log('La table modules_actifs existe deja.');
-
-      // Verifier si les donnees existent
-      const [rows] = await sequelize.query('SELECT COUNT(*) as count FROM modules_actifs');
-      if (rows[0].count > 0) {
-        console.log(`${rows[0].count} modules deja presents. Migration terminee.`);
-        return;
-      }
-    } else {
+    if (!tableExists) {
       // 2. Creer la table
       console.log('Creation de la table modules_actifs...');
       await queryInterface.createTable('modules_actifs', {
@@ -161,12 +152,22 @@ async function migrate() {
     ];
 
     for (const module of modulesDefaut) {
-      await queryInterface.bulkInsert('modules_actifs', [{
-        ...module,
-        created_at: new Date(),
-        updated_at: new Date()
-      }]);
-      console.log(`  - ${module.libelle} (${module.code})`);
+      // Verifier si le module existe deja
+      const [existing] = await sequelize.query(
+        `SELECT id FROM modules_actifs WHERE code = ?`,
+        { replacements: [module.code] }
+      );
+
+      if (existing.length > 0) {
+        console.log(`  - ${module.libelle} (${module.code}) - existe deja`);
+      } else {
+        await queryInterface.bulkInsert('modules_actifs', [{
+          ...module,
+          created_at: new Date(),
+          updated_at: new Date()
+        }]);
+        console.log(`  - ${module.libelle} (${module.code}) - ajoute`);
+      }
     }
 
     console.log('\n=== Migration terminee avec succes ===');

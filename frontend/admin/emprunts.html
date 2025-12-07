@@ -30,9 +30,9 @@
           </div>
           <div class="card-body">
             <div class="row g-3">
-              <!-- Adherent Selection -->
+              <!-- Usager Selection -->
               <div class="col-md-4">
-                <label class="form-label"><strong>1. Adhérent</strong></label>
+                <label class="form-label"><strong>1. Usager</strong></label>
                 <div class="input-group">
                   <input
                     type="text"
@@ -147,9 +147,9 @@
             <input type="hidden" id="empruntId">
 
             <div class="mb-3">
-              <label for="adherent_id" class="form-label">Adhérent *</label>
+              <label for="adherent_id" class="form-label">Usager *</label>
               <select id="adherent_id" class="form-select" required>
-                <option value="">Sélectionner un adhérent...</option>
+                <option value="">Selectionner un usager...</option>
               </select>
             </div>
 
@@ -207,7 +207,7 @@
           `;
           checkQuickLoan();
         } else {
-          alert('Ce code ne correspond pas à un adhérent');
+          alert('Ce code ne correspond pas a un usager');
         }
       } catch (error) {
         alert('Code-barre invalide: ' + error.message);
@@ -248,7 +248,7 @@
     }
 
     function scanAdherent() {
-      const code = prompt('Scanner ou saisir le code-barre de l\'adhérent:');
+      const code = prompt('Scanner ou saisir le code-barre de l\'usager:');
       if (code) {
         document.getElementById('quickAdherentCode').value = code;
         document.getElementById('quickAdherentCode').dispatchEvent(new Event('change'));
@@ -265,12 +265,12 @@
 
     async function createQuickLoan() {
       if (!quickAdherent || !quickJeu) {
-        alert('Veuillez scanner un adhérent et un jeu');
+        alert('Veuillez scanner un usager et un jeu');
         return;
       }
 
       if (quickAdherent.statut !== 'actif') {
-        alert('Cet adhérent n\'est pas actif');
+        alert('Cet usager n\'est pas actif');
         return;
       }
 
@@ -348,7 +348,7 @@
           <table class="table table-hover">
             <thead>
               <tr>
-                <th>Adhérent</th>
+                <th>Usager</th>
                 <th>Jeu</th>
                 <th>Date emprunt</th>
                 <th>Retour prévu</th>
@@ -365,8 +365,8 @@
 
                 return `
                 <tr>
-                  <td>${emprunt.adherent.prenom} ${emprunt.adherent.nom}</td>
-                  <td><strong>${emprunt.jeu.titre}</strong></td>
+                  <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
+                  <td><strong>${emprunt.jeu?.titre || 'N/A'}</strong></td>
                   <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
                   <td>
                     ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
@@ -442,7 +442,7 @@
         ]);
 
         const adherentSelect = document.getElementById('adherent_id');
-        adherentSelect.innerHTML = '<option value="">Sélectionner un adhérent...</option>';
+        adherentSelect.innerHTML = '<option value="">Selectionner un usager...</option>';
         adherentsData.adherents.forEach(a => {
           const option = document.createElement('option');
           option.value = a.id;

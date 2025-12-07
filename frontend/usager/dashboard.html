@@ -81,6 +81,29 @@
     .adhesion-alert {
       border-radius: 0.75rem;
     }
+    .badge-type {
+      font-size: 0.65rem;
+      padding: 0.2em 0.5em;
+      margin-left: 0.5rem;
+    }
+    .badge-jeu { background: #6f42c1; }
+    .badge-livre { background: #20c997; }
+    .badge-film { background: #fd7e14; }
+    .badge-disque { background: #e83e8c; }
+    .item-image-placeholder {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+    .item-image-placeholder.jeu { background: linear-gradient(135deg, #6f42c1, #8b5cf6); }
+    .item-image-placeholder.livre { background: linear-gradient(135deg, #20c997, #10b981); }
+    .item-image-placeholder.film { background: linear-gradient(135deg, #fd7e14, #f59e0b); }
+    .item-image-placeholder.disque { background: linear-gradient(135deg, #e83e8c, #ec4899); }
   </style>
 </head>
 <body>
@@ -263,6 +286,34 @@
       document.getElementById('userPrenom').textContent = userInfo.prenom || '';
     }
 
+    // Helpers pour les types d'items
+    function getTypeBadge(type) {
+      const badges = {
+        jeu: '<span class="badge badge-type badge-jeu">Jeu</span>',
+        livre: '<span class="badge badge-type badge-livre">Livre</span>',
+        film: '<span class="badge badge-type badge-film">Film</span>',
+        disque: '<span class="badge badge-type badge-disque">Disque</span>'
+      };
+      return badges[type] || '';
+    }
+
+    function getTypeIcon(type) {
+      const icons = {
+        jeu: 'bi-dice-5',
+        livre: 'bi-book',
+        film: 'bi-film',
+        disque: 'bi-vinyl'
+      };
+      return icons[type] || 'bi-box';
+    }
+
+    function renderItemImage(item, type) {
+      if (item?.image_url) {
+        return `<img src="${item.image_url}" alt="" class="item-image me-3" onerror="this.outerHTML='<div class=\\'item-image-placeholder ${type} me-3\\'><i class=\\'bi ${getTypeIcon(type)}\\'></i></div>'">`;
+      }
+      return `<div class="item-image-placeholder ${type} me-3"><i class="bi ${getTypeIcon(type)}"></i></div>`;
+    }
+
     // Charger les emprunts en cours
     async function loadEmprunts() {
       const container = document.getElementById('empruntsContainer');
@@ -330,9 +381,9 @@
           return `
             <div class="card emprunt-card mb-3">
               <div class="card-body d-flex align-items-center">
-                <img src="${emprunt.item?.image_url || '/img/placeholder.png'}" alt="" class="item-image me-3">
+                ${renderItemImage(emprunt.item, emprunt.item_type)}
                 <div class="flex-grow-1">
-                  <h6 class="mb-1">${emprunt.item?.titre || 'Article'}</h6>
+                  <h6 class="mb-1">${emprunt.item?.titre || 'Article'}${getTypeBadge(emprunt.item_type)}</h6>
                   <small class="text-muted">
                     <i class="bi bi-calendar me-1"></i>Retour prevu : ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
                     ${emprunt.nb_prolongations > 0 ? `<span class="ms-2 badge bg-secondary">${emprunt.nb_prolongations} prolongation(s)</span>` : ''}

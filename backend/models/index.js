@@ -1,7 +1,8 @@
 const sequelize = require('../config/sequelize');
 
 // Import model definitions
-const AdherentModel = require('./Adherent');
+// Utilisateur (anciennement Adherent) - utilise le nouveau modele
+const UtilisateurModel = require('./Utilisateur');
 const JeuModel = require('./Jeu');
 const EmpruntModel = require('./Emprunt');
 const TarifCotisationModel = require('./TarifCotisation');
@@ -15,7 +16,7 @@ const TemplateMessageModel = require('./TemplateMessage');
 const EmailLogModel = require('./EmailLog');
 const SmsLogModel = require('./SmsLog');
 const EventTriggerModel = require('./EventTrigger');
-const AdherentArchiveModel = require('./AdherentArchive');
+const UtilisateurArchiveModel = require('./UtilisateurArchive');
 const ArchiveAccessLogModel = require('./ArchiveAccessLog');
 const CompteBancaireModel = require('./CompteBancaire');
 const SiteModel = require('./Site');
@@ -97,8 +98,27 @@ const IpAutoriseeModel = require('./IpAutorisee');
 // Import Prolongation
 const ProlongationModel = require('./Prolongation');
 
+// Import Comptabilite (TVA et Analytique)
+const TauxTVAModel = require('./TauxTVA');
+const SectionAnalytiqueModel = require('./SectionAnalytique');
+const RepartitionAnalytiqueModel = require('./RepartitionAnalytique');
+
+// Import Comptabilite (Phase 1 - FEC et numérotation)
+const CompteurPieceModel = require('./CompteurPiece');
+const EcritureComptableModel = require('./EcritureComptable');
+
+// Import LLM Configuration (Recherche IA)
+const ConfigurationLLMModel = require('./ConfigurationLLM');
+
+// Import Thematiques IA (Recherche naturelle)
+const ThematiqueModel = require('./Thematique');
+const ThematiqueAliasModel = require('./ThematiqueAlias');
+const ArticleThematiqueModel = require('./ArticleThematique');
+const EnrichissementQueueModel = require('./EnrichissementQueue');
+const ArticleThematiqueHistoriqueModel = require('./ArticleThematiqueHistorique');
+
 // Initialize models
-const Adherent = AdherentModel(sequelize);
+const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
 const Emprunt = EmpruntModel(sequelize);
 const TarifCotisation = TarifCotisationModel(sequelize);
@@ -112,7 +132,7 @@ const TemplateMessage = TemplateMessageModel(sequelize);
 const EmailLog = EmailLogModel(sequelize);
 const SmsLog = SmsLogModel(sequelize);
 const EventTrigger = EventTriggerModel(sequelize);
-const AdherentArchive = AdherentArchiveModel(sequelize);
+const UtilisateurArchive = UtilisateurArchiveModel(sequelize);
 const ArchiveAccessLog = ArchiveAccessLogModel(sequelize);
 const CompteBancaire = CompteBancaireModel(sequelize);
 const Site = SiteModel(sequelize);
@@ -194,16 +214,35 @@ const IpAutorisee = IpAutoriseeModel(sequelize);
 // Initialize Prolongation
 const Prolongation = ProlongationModel(sequelize);
 
+// Initialize Comptabilite (TVA et Analytique)
+const TauxTVA = TauxTVAModel(sequelize);
+const SectionAnalytique = SectionAnalytiqueModel(sequelize);
+const RepartitionAnalytique = RepartitionAnalytiqueModel(sequelize);
+
+// Initialize Comptabilite (Phase 1 - FEC et numérotation)
+const CompteurPiece = CompteurPieceModel(sequelize);
+const EcritureComptable = EcritureComptableModel(sequelize);
+
+// Initialize LLM Configuration (Recherche IA)
+const ConfigurationLLM = ConfigurationLLMModel(sequelize);
+
+// Initialize Thematiques IA (Recherche naturelle)
+const Thematique = ThematiqueModel(sequelize);
+const ThematiqueAlias = ThematiqueAliasModel(sequelize);
+const ArticleThematique = ArticleThematiqueModel(sequelize);
+const EnrichissementQueue = EnrichissementQueueModel(sequelize);
+const ArticleThematiqueHistorique = ArticleThematiqueHistoriqueModel(sequelize);
+
 // Define associations
-// Adherent <-> Emprunt (One-to-Many)
-Adherent.hasMany(Emprunt, {
-  foreignKey: 'adherent_id',
+// Utilisateur <-> Emprunt (One-to-Many)
+Utilisateur.hasMany(Emprunt, {
+  foreignKey: 'utilisateur_id',
   as: 'emprunts'
 });
 
-Emprunt.belongsTo(Adherent, {
-  foreignKey: 'adherent_id',
-  as: 'adherent'
+Emprunt.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
 });
 
 // Jeu <-> Emprunt (One-to-Many)
@@ -250,15 +289,15 @@ Emprunt.belongsTo(Disque, {
   as: 'disque'
 });
 
-// Adherent <-> Cotisation (One-to-Many)
-Adherent.hasMany(Cotisation, {
-  foreignKey: 'adherent_id',
+// Utilisateur <-> Cotisation (One-to-Many)
+Utilisateur.hasMany(Cotisation, {
+  foreignKey: 'utilisateur_id',
   as: 'cotisations'
 });
 
-Cotisation.belongsTo(Adherent, {
-  foreignKey: 'adherent_id',
-  as: 'adherent'
+Cotisation.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
 });
 
 // TarifCotisation <-> Cotisation (One-to-Many)
@@ -283,26 +322,26 @@ Cotisation.belongsTo(CodeReduction, {
   as: 'codeReduction'
 });
 
-// Adherent <-> EmailLog (One-to-Many)
-Adherent.hasMany(EmailLog, {
-  foreignKey: 'adherent_id',
+// Utilisateur <-> EmailLog (One-to-Many)
+Utilisateur.hasMany(EmailLog, {
+  foreignKey: 'utilisateur_id',
   as: 'emailLogs'
 });
 
-EmailLog.belongsTo(Adherent, {
-  foreignKey: 'adherent_id',
-  as: 'adherent'
+EmailLog.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
 });
 
-// Adherent <-> SmsLog (One-to-Many)
-Adherent.hasMany(SmsLog, {
-  foreignKey: 'adherent_id',
+// Utilisateur <-> SmsLog (One-to-Many)
+Utilisateur.hasMany(SmsLog, {
+  foreignKey: 'utilisateur_id',
   as: 'smsLogs'
 });
 
-SmsLog.belongsTo(Adherent, {
-  foreignKey: 'adherent_id',
-  as: 'adherent'
+SmsLog.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
 });
 
 // CompteBancaire <-> Site (One-to-Many)
@@ -862,27 +901,106 @@ Prolongation.belongsTo(Emprunt, {
   as: 'emprunt'
 });
 
-// Adherent <-> Prolongation (One-to-Many) - demandeur
-Adherent.hasMany(Prolongation, {
-  foreignKey: 'adherent_id',
+// Utilisateur <-> Prolongation (One-to-Many) - demandeur
+Utilisateur.hasMany(Prolongation, {
+  foreignKey: 'utilisateur_id',
   as: 'prolongationsDemandees'
 });
 
-Prolongation.belongsTo(Adherent, {
-  foreignKey: 'adherent_id',
+Prolongation.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
   as: 'demandeur'
 });
 
-// Adherent <-> Prolongation (One-to-Many) - admin qui traite
-Prolongation.belongsTo(Adherent, {
+// Utilisateur <-> Prolongation (One-to-Many) - admin qui traite
+Prolongation.belongsTo(Utilisateur, {
   foreignKey: 'traite_par',
   as: 'traitePar'
+});
+
+// ========================================
+// ASSOCIATIONS COMPTABILITE (TVA et Analytique)
+// ========================================
+
+// TarifCotisation <-> TauxTVA (Many-to-One)
+TarifCotisation.belongsTo(TauxTVA, {
+  foreignKey: 'taux_tva_id',
+  as: 'tauxTVA'
+});
+
+TauxTVA.hasMany(TarifCotisation, {
+  foreignKey: 'taux_tva_id',
+  as: 'tarifsCotisation'
+});
+
+// SectionAnalytique - auto-reference pour hierarchie
+SectionAnalytique.belongsTo(SectionAnalytique, {
+  foreignKey: 'parent_id',
+  as: 'parent'
+});
+
+SectionAnalytique.hasMany(SectionAnalytique, {
+  foreignKey: 'parent_id',
+  as: 'enfants'
+});
+
+// RepartitionAnalytique <-> SectionAnalytique (Many-to-One)
+RepartitionAnalytique.belongsTo(SectionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'section'
+});
+
+SectionAnalytique.hasMany(RepartitionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'repartitions'
+});
+
+// ========================================
+// ASSOCIATIONS COMPTABILITE (Phase 1 - FEC)
+// ========================================
+
+// EcritureComptable <-> Cotisation (Many-to-One)
+EcritureComptable.belongsTo(Cotisation, {
+  foreignKey: 'cotisation_id',
+  as: 'cotisation'
+});
+
+Cotisation.hasMany(EcritureComptable, {
+  foreignKey: 'cotisation_id',
+  as: 'ecritures'
+});
+
+// ========================================
+// ASSOCIATIONS THEMATIQUES IA
+// ========================================
+
+// Thematique <-> ThematiqueAlias (One-to-Many)
+Thematique.hasMany(ThematiqueAlias, {
+  foreignKey: 'thematique_id',
+  as: 'alias'
+});
+
+ThematiqueAlias.belongsTo(Thematique, {
+  foreignKey: 'thematique_id',
+  as: 'thematique'
+});
+
+// Thematique <-> ArticleThematique (One-to-Many)
+Thematique.hasMany(ArticleThematique, {
+  foreignKey: 'thematique_id',
+  as: 'articles'
+});
+
+ArticleThematique.belongsTo(Thematique, {
+  foreignKey: 'thematique_id',
+  as: 'thematique'
 });
 
 // Export models and sequelize instance
 module.exports = {
   sequelize,
-  Adherent,
+  Utilisateur,
+  UtilisateurArchive,
   Jeu,
   Emprunt,
   TarifCotisation,
@@ -896,7 +1014,6 @@ module.exports = {
   EmailLog,
   SmsLog,
   EventTrigger,
-  AdherentArchive,
   ArchiveAccessLog,
   CompteBancaire,
   Site,
@@ -965,5 +1082,20 @@ module.exports = {
   // IP autorisées (maintenance)
   IpAutorisee,
   // Prolongations
-  Prolongation
+  Prolongation,
+  // Comptabilite (TVA et Analytique)
+  TauxTVA,
+  SectionAnalytique,
+  RepartitionAnalytique,
+  // Comptabilite (Phase 1 - FEC et numérotation)
+  CompteurPiece,
+  EcritureComptable,
+  // LLM Configuration (Recherche IA)
+  ConfigurationLLM,
+  // Thematiques IA (Recherche naturelle)
+  Thematique,
+  ThematiqueAlias,
+  ArticleThematique,
+  EnrichissementQueue,
+  ArticleThematiqueHistorique
 };

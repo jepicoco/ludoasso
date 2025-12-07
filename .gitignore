@@ -41,3 +41,10 @@ Thumbs.db
 
 # Scripts locaux
 scripts/
+test-logging.sh
+TEST_LOGGING.bat
+
+# Documentation (sauf README.md)
+/*.md
+!README.md
+nul

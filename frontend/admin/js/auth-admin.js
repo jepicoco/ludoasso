@@ -27,6 +27,15 @@ const setCurrentUser = (user) => {
   if (user && user.role) {
     localStorage.setItem('userRole', user.role);
   }
+  // Stocker les modules autorisés pour le filtrage des menus
+  if (user && user.modules_autorises !== undefined) {
+    if (user.modules_autorises === null || (Array.isArray(user.modules_autorises) && user.modules_autorises.length === 0)) {
+      // null ou vide = accès à tous, on supprime la clé
+      localStorage.removeItem('userModulesAutorises');
+    } else {
+      localStorage.setItem('userModulesAutorises', JSON.stringify(user.modules_autorises));
+    }
+  }
 };
 
 /**
@@ -35,6 +44,7 @@ const setCurrentUser = (user) => {
 const removeCurrentUser = () => {
   localStorage.removeItem('currentUser');
   localStorage.removeItem('userRole');
+  localStorage.removeItem('userModulesAutorises');
 };
 
 /**

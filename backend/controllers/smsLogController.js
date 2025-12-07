@@ -1,4 +1,4 @@
-const { SmsLog, Adherent } = require('../models');
+const { SmsLog, Utilisateur } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -63,8 +63,8 @@ exports.getAllSmsLogs = async (req, res) => {
       where,
       include: [
         {
-          model: Adherent,
-          as: 'adherent',
+          model: Utilisateur,
+          as: 'utilisateur',
           attributes: ['id', 'nom', 'prenom', 'telephone'],
           required: false
         }
@@ -74,8 +74,15 @@ exports.getAllSmsLogs = async (req, res) => {
       offset: parseInt(offset)
     });
 
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const logsWithAlias = rows.map(e => {
+      const data = e.toJSON();
+      data.adherent = data.utilisateur;
+      return data;
+    });
+
     res.json({
-      smsLogs: rows,
+      smsLogs: logsWithAlias,
       pagination: {
         total: count,
         page: parseInt(page),
@@ -102,8 +109,8 @@ exports.getSmsLogById = async (req, res) => {
     const smsLog = await SmsLog.findByPk(id, {
       include: [
         {
-          model: Adherent,
-          as: 'adherent',
+          model: Utilisateur,
+          as: 'utilisateur',
           attributes: ['id', 'nom', 'prenom', 'telephone', 'email']
         }
       ]
@@ -115,7 +122,11 @@ exports.getSmsLogById = async (req, res) => {
       });
     }
 
-    res.json(smsLog);
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = smsLog.toJSON();
+    data.adherent = data.utilisateur;
+
+    res.json(data);
   } catch (error) {
     console.error('Erreur récupération log SMS:', error);
     res.status(500).json({

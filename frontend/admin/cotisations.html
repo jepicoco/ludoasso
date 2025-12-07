@@ -103,8 +103,8 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Rechercher adhérent</label>
-                                <input type="text" class="form-control" id="searchAdherent" placeholder="Nom, prénom ou email...">
+                                <label class="form-label">Rechercher usager</label>
+                                <input type="text" class="form-control" id="searchAdherent" placeholder="Nom, prenom ou email...">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">&nbsp;</label>
@@ -123,7 +123,7 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Adhérent</th>
+                                        <th>Usager</th>
                                         <th>Tarif</th>
                                         <th>Période</th>
                                         <th>Montant</th>
@@ -159,12 +159,12 @@
                 </div>
                 <div class="modal-body">
                     <form id="cotisationForm">
-                        <!-- Sélection adhérent -->
+                        <!-- Selection usager -->
                         <div class="mb-3">
-                            <label for="adherent_search" class="form-label">Adhérent *</label>
+                            <label for="adherent_search" class="form-label">Usager *</label>
                             <div class="position-relative">
                                 <input type="text" class="form-control" id="adherent_search"
-                                       placeholder="🔍 Rechercher par nom, prénom, email ou code barre..."
+                                       placeholder="Rechercher par nom, prenom, email ou code barre..."
                                        autocomplete="off"
                                        oninput="filterAdherents()"
                                        onfocus="showAdherentsList()"
@@ -373,9 +373,11 @@
             let filtered = cotisations;
             if (search) {
                 filtered = cotisations.filter(c =>
-                    c.adherent.nom.toLowerCase().includes(search) ||
-                    c.adherent.prenom.toLowerCase().includes(search) ||
-                    c.adherent.email.toLowerCase().includes(search)
+                    c.adherent && (
+                        (c.adherent.nom || '').toLowerCase().includes(search) ||
+                        (c.adherent.prenom || '').toLowerCase().includes(search) ||
+                        (c.adherent.email || '').toLowerCase().includes(search)
+                    )
                 );
             }
 
@@ -387,8 +389,8 @@
             tbody.innerHTML = filtered.map(cot => `
                 <tr>
                     <td>
-                        <strong>${cot.adherent.nom} ${cot.adherent.prenom}</strong><br>
-                        <small class="text-muted">${cot.adherent.email}</small>
+                        <strong>${cot.adherent?.nom || 'N/A'} ${cot.adherent?.prenom || ''}</strong><br>
+                        <small class="text-muted">${cot.adherent?.email || 'Email non disponible'}</small>
                     </td>
                     <td>${cot.tarif.libelle}</td>
                     <td>
@@ -447,7 +449,7 @@
             if (!adherents || adherents.length === 0) {
                 listContainer.innerHTML = `
                     <div class="list-group-item text-center text-muted">
-                        <i class="bi bi-search"></i> Aucun adhérent trouvé
+                        <i class="bi bi-search"></i> Aucun usager trouve
                     </div>
                 `;
                 return;
@@ -588,7 +590,7 @@
             div.innerHTML = `
                 <div class="alert alert-${isAssociation ? 'success' : 'info'} alert-sm">
                     <i class="bi bi-info-circle"></i>
-                    ${isAssociation ? '✅ Adhérent à l\'association - Réduction applicable' : 'ℹ️ Non adhérent à l\'association'}
+                    ${isAssociation ? 'Membre de l\'association - Reduction applicable' : 'Non membre de l\'association'}
                 </div>
             `;
         }
@@ -1153,9 +1155,9 @@
                 document.getElementById('detailsContent').innerHTML = `
                     <table class="table">
                         <tr>
-                            <th width="30%">Adhérent:</th>
-                            <td>${cot.adherent.nom} ${cot.adherent.prenom}<br>
-                                <small class="text-muted">${cot.adherent.email}</small></td>
+                            <th width="30%">Usager:</th>
+                            <td>${cot.adherent?.nom || 'N/A'} ${cot.adherent?.prenom || ''}<br>
+                                <small class="text-muted">${cot.adherent?.email || 'Email non disponible'}</small></td>
                         </tr>
                         <tr>
                             <th>Tarif:</th>

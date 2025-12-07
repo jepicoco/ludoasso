@@ -1,7 +1,10 @@
-const { Adherent, Jeu, Cotisation, ParametresStructure } = require('../models');
+const { Utilisateur, Jeu, Livre, Film, Disque, Cotisation, ParametresStructure } = require('../models');
 const {
   generateAdherentCode,
   generateJeuCode,
+  generateLivreCode,
+  generateFilmCode,
+  generateCdCode,
   decodeBarcode,
   generateBarcodeImage,
   generateBarcodeBase64
@@ -15,15 +18,15 @@ const getAdherentBarcodeImage = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const adherent = await Adherent.findByPk(id);
-    if (!adherent) {
+    const utilisateur = await Utilisateur.findByPk(id);
+    if (!utilisateur) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Adherent not found'
+        message: 'Utilisateur not found'
       });
     }
 
-    const code = adherent.code_barre || generateAdherentCode(id);
+    const code = utilisateur.code_barre || generateAdherentCode(id);
     const imageBuffer = await generateBarcodeImage(code);
 
     res.setHeader('Content-Type', 'image/png');
@@ -94,12 +97,12 @@ const scanBarcode = async (req, res) => {
     }
 
     let entity = null;
-    if (decoded.type === 'adherent') {
-      entity = await Adherent.findByPk(decoded.id);
+    if (decoded.type === 'utilisateur') {
+      entity = await Utilisateur.findByPk(decoded.id);
       if (!entity) {
         return res.status(404).json({
           error: 'Not found',
-          message: 'Adherent not found'
+          message: 'Usager non trouve'
         });
       }
     } else if (decoded.type === 'jeu') {
@@ -135,11 +138,11 @@ const getAdherentCard = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const adherent = await Adherent.findByPk(id);
-    if (!adherent) {
+    const utilisateur = await Utilisateur.findByPk(id);
+    if (!utilisateur) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'Adherent not found'
+        message: 'Utilisateur not found'
       });
     }
 
@@ -152,13 +155,13 @@ const getAdherentCard = async (req, res) => {
     const now = new Date();
     const cotisation = await Cotisation.findOne({
       where: {
-        adherent_id: id,
+        utilisateur_id: id,
         statut: 'validee'
       },
       order: [['periode_fin', 'DESC']]
     });
 
-    const code = adherent.code_barre || generateAdherentCode(id);
+    const code = utilisateur.code_barre || generateAdherentCode(id);
     const barcodeBase64 = await generateBarcodeBase64(code);
 
     // Formater les dates de cotisation
@@ -204,7 +207,7 @@ const getAdherentCard = async (req, res) => {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Carte - ${adherent.nom} ${adherent.prenom}</title>
+  <title>Carte - ${utilisateur.nom} ${utilisateur.prenom}</title>
   <style>
     @page { size: auto; margin: 5mm; }
     @media print {
@@ -266,7 +269,7 @@ const getAdherentCard = async (req, res) => {
       ${logoHtml}
     </div>
     <div class="card-body">
-      <div class="name">${adherent.prenom} ${adherent.nom}</div>
+      <div class="name">${utilisateur.prenom} ${utilisateur.nom}</div>
       <div class="validity">${validityDisplayText}</div>
     </div>
     <div class="barcode-section">
@@ -391,6 +394,316 @@ const getJeuLabel = async (req, res) => {
 };
 
 /**
+ * Get printable livre label HTML
+ * GET /api/barcodes/livre/:id/label
+ */
+const getLivreLabel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const livre = await Livre.findByPk(id);
+    if (!livre) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Livre not found'
+      });
+    }
+
+    const code = livre.code_barre || generateLivreCode(id);
+    const barcodeBase64 = await generateBarcodeBase64(code);
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Étiquette Livre - ${livre.titre}</title>
+  <style>
+    @media print {
+      @page { margin: 0; size: 100mm 60mm; }
+      body { margin: 0; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .label {
+      width: 100mm;
+      height: 60mm;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 4mm;
+      box-sizing: border-box;
+      background: white;
+    }
+    .label-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 2mm;
+      color: #333;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 2mm;
+    }
+    .info {
+      font-size: 11px;
+      margin-bottom: 1mm;
+      color: #555;
+    }
+    .info strong {
+      color: #333;
+    }
+    .barcode {
+      text-align: center;
+      margin-top: 2mm;
+      padding: 2mm;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .barcode img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div class="label-header">${livre.titre}</div>
+    <div class="info"><strong>ISBN:</strong> ${livre.isbn || 'N/A'}</div>
+    <div class="info"><strong>Année:</strong> ${livre.annee_publication || 'N/A'} | <strong>Pages:</strong> ${livre.nb_pages || 'N/A'}</div>
+    <div class="info"><strong>Tome:</strong> ${livre.tome || 'N/A'}</div>
+    <div class="barcode">
+      <img src="${barcodeBase64}" alt="Barcode ${code}">
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error('Get livre label error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get printable film label HTML
+ * GET /api/barcodes/film/:id/label
+ */
+const getFilmLabel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const film = await Film.findByPk(id);
+    if (!film) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Film not found'
+      });
+    }
+
+    const code = film.code_barre || generateFilmCode(id);
+    const barcodeBase64 = await generateBarcodeBase64(code);
+
+    // Formater la durée
+    const dureeFormatted = film.duree ? `${film.duree} min` : 'N/A';
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Étiquette Film - ${film.titre}</title>
+  <style>
+    @media print {
+      @page { margin: 0; size: 100mm 60mm; }
+      body { margin: 0; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .label {
+      width: 100mm;
+      height: 60mm;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 4mm;
+      box-sizing: border-box;
+      background: white;
+    }
+    .label-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 2mm;
+      color: #333;
+      border-bottom: 2px solid #e83e8c;
+      padding-bottom: 2mm;
+    }
+    .info {
+      font-size: 11px;
+      margin-bottom: 1mm;
+      color: #555;
+    }
+    .info strong {
+      color: #333;
+    }
+    .barcode {
+      text-align: center;
+      margin-top: 2mm;
+      padding: 2mm;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .barcode img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div class="label-header">${film.titre}</div>
+    <div class="info"><strong>Année:</strong> ${film.annee_sortie || 'N/A'} | <strong>Durée:</strong> ${dureeFormatted}</div>
+    <div class="info"><strong>Classification:</strong> ${film.classification || 'TP'}</div>
+    <div class="barcode">
+      <img src="${barcodeBase64}" alt="Barcode ${code}">
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error('Get film label error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get printable disque label HTML
+ * GET /api/barcodes/disque/:id/label
+ */
+const getDisqueLabel = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const disque = await Disque.findByPk(id);
+    if (!disque) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Disque not found'
+      });
+    }
+
+    const code = disque.code_barre || generateCdCode(id);
+    const barcodeBase64 = await generateBarcodeBase64(code);
+
+    // Formater la durée
+    const dureeFormatted = disque.duree_totale ? `${disque.duree_totale} min` : 'N/A';
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Étiquette Disque - ${disque.titre}</title>
+  <style>
+    @media print {
+      @page { margin: 0; size: 100mm 60mm; }
+      body { margin: 0; }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .label {
+      width: 100mm;
+      height: 60mm;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 4mm;
+      box-sizing: border-box;
+      background: white;
+    }
+    .label-header {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 2mm;
+      color: #333;
+      border-bottom: 2px solid #fd7e14;
+      padding-bottom: 2mm;
+    }
+    .info {
+      font-size: 11px;
+      margin-bottom: 1mm;
+      color: #555;
+    }
+    .info strong {
+      color: #333;
+    }
+    .barcode {
+      text-align: center;
+      margin-top: 2mm;
+      padding: 2mm;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+    .barcode img {
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div class="label-header">${disque.titre}</div>
+    <div class="info"><strong>Année:</strong> ${disque.annee_sortie || 'N/A'} | <strong>Durée:</strong> ${dureeFormatted}</div>
+    <div class="info"><strong>Pistes:</strong> ${disque.nb_pistes || 'N/A'}</div>
+    <div class="barcode">
+      <img src="${barcodeBase64}" alt="Barcode ${code}">
+    </div>
+  </div>
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (error) {
+    console.error('Get disque label error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
  * Generate batch adherent cards
  * POST /api/barcodes/adherents/batch
  * Body: { ids: [1, 2, 3] }
@@ -406,35 +719,35 @@ const getBatchAdherentCards = async (req, res) => {
       });
     }
 
-    const adherents = await Adherent.findAll({
+    const utilisateurs = await Utilisateur.findAll({
       where: { id: ids }
     });
 
-    if (adherents.length === 0) {
+    if (utilisateurs.length === 0) {
       return res.status(404).json({
         error: 'Not found',
-        message: 'No adherents found with provided IDs'
+        message: 'No utilisateurs found with provided IDs'
       });
     }
 
     const cardsHtml = [];
-    for (const adherent of adherents) {
-      const code = adherent.code_barre || generateAdherentCode(adherent.id);
+    for (const utilisateur of utilisateurs) {
+      const code = utilisateur.code_barre || generateAdherentCode(utilisateur.id);
       const barcodeBase64 = await generateBarcodeBase64(code);
 
       cardsHtml.push(`
   <div class="card">
-    <div class="card-header">LUDOTHÈQUE - CARTE ADHÉRENT</div>
+    <div class="card-header">LUDOTHÈQUE - CARTE USAGER</div>
     <div class="card-body">
-      <div class="name">${adherent.nom} ${adherent.prenom}</div>
+      <div class="name">${utilisateur.nom} ${utilisateur.prenom}</div>
       <div class="info">N° ${code}</div>
-      <div class="info">Email: ${adherent.email}</div>
-      <div class="info">Statut: ${adherent.statut}</div>
+      <div class="info">Email: ${utilisateur.email}</div>
+      <div class="info">Statut: ${utilisateur.statut}</div>
       <div class="barcode">
         <img src="${barcodeBase64}" alt="Barcode ${code}">
       </div>
     </div>
-    <div class="footer">Valide jusqu'au ${adherent.date_fin_adhesion || 'N/A'}</div>
+    <div class="footer">Valide jusqu'au ${utilisateur.date_fin_adhesion || 'N/A'}</div>
   </div>
   <div class="page-break"></div>`);
     }
@@ -533,5 +846,8 @@ module.exports = {
   scanBarcode,
   getAdherentCard,
   getJeuLabel,
+  getLivreLabel,
+  getFilmLabel,
+  getDisqueLabel,
   getBatchAdherentCards
 };

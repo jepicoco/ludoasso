@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { Adherent } = require('../models');
+const { Utilisateur } = require('../models');
 
 /**
  * Middleware to verify JWT token
@@ -36,7 +36,7 @@ const verifyToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Get user from database
-    const user = await Adherent.findByPk(decoded.id);
+    const user = await Utilisateur.findByPk(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -108,7 +108,7 @@ const optionalAuth = async (req, res, next) => {
     if (parts.length === 2 && parts[0] === 'Bearer') {
       const token = parts[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await Adherent.findByPk(decoded.id);
+      const user = await Utilisateur.findByPk(decoded.id);
 
       if (user) {
         req.user = user;
@@ -122,8 +122,16 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Import role checking middleware
+const { checkRole, checkMinRole, isAdmin, isGestionnaire, isBenevole } = require('./checkRole');
+
 module.exports = {
   verifyToken,
   verifyActiveStatus,
-  optionalAuth
+  optionalAuth,
+  checkRole,
+  checkMinRole,
+  isAdmin,
+  isGestionnaire,
+  isBenevole
 };

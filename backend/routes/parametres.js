@@ -12,6 +12,7 @@ const configurationsSMSController = require('../controllers/configurationsSMSCon
 const templatesMessagesController = require('../controllers/templatesMessagesController');
 const modulesActifsController = require('../controllers/modulesActifsController');
 const ipAutoriseesController = require('../controllers/ipAutoriseesController');
+const outilsController = require('../controllers/outilsController');
 
 // ============================================
 // Routes pour les modules actifs
@@ -303,5 +304,15 @@ router.delete('/ip-autorisees/:id', verifyToken, isAdmin(), ipAutoriseesControll
 
 // Activer/désactiver une IP (admin seulement)
 router.patch('/ip-autorisees/:id/toggle', verifyToken, isAdmin(), ipAutoriseesController.toggle);
+
+// ============================================
+// Routes pour les outils d'administration
+// ============================================
+
+// Obtenir les statistiques avant reset (admin seulement)
+router.get('/outils/reset-stats', verifyToken, isAdmin(), outilsController.getResetStats);
+
+// Effectuer un reset de la base de données (admin seulement)
+router.post('/outils/reset', verifyToken, isAdmin(), outilsController.resetDatabase);
 
 module.exports = router;

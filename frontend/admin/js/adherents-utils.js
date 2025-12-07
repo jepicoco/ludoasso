@@ -1,5 +1,5 @@
 // ============================================
-// Utilitaires pour la gestion des adhérents
+// Utilitaires pour la gestion des usagers
 // ============================================
 
 // ============================================
@@ -7,8 +7,8 @@
 // ============================================
 
 /**
- * Recherche un adhérent dans le système externe
- * @param {string} numeroAdherent - Numéro d'adhérent externe
+ * Recherche un usager dans le systeme externe
+ * @param {string} numeroAdherent - Numero d'usager externe
  * @returns {Promise<Object|null>}
  */
 async function rechercherAdherentExterne(numeroAdherent) {
@@ -355,7 +355,7 @@ function calculateAge(birthDate) {
 }
 
 /**
- * Exporte une liste d'adhérents en CSV
+ * Exporte une liste d'usagers en CSV
  */
 function exportToCSV(adherents, filename) {
   const headers = [
@@ -408,7 +408,7 @@ let sortState = {
 };
 
 /**
- * Trie une liste d'adhérents par colonne
+ * Trie une liste d'usagers par colonne
  */
 function sortAdherents(adherents, column) {
   // Toggle direction si même colonne

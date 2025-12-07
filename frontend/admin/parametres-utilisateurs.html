@@ -101,9 +101,9 @@
           </div>
           <div class="d-flex gap-2">
             <button class="btn btn-success" onclick="openPromoteModal()">
-              <i class="bi bi-person-plus"></i> Promouvoir un adherent
+              <i class="bi bi-person-plus"></i> Promouvoir un usager
             </button>
-            <a href="adherents.html?action=new" class="btn btn-primary">
+            <a href="usagers.html?action=new" class="btn btn-primary">
               <i class="bi bi-plus-lg"></i> Creer un compte
             </a>
           </div>
@@ -313,19 +313,19 @@
     </div>
   </div>
 
-  <!-- Modal Promouvoir Adherent -->
+  <!-- Modal Promouvoir Usager -->
   <div class="modal fade" id="modalPromote" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title"><i class="bi bi-person-plus"></i> Promouvoir un adherent</h5>
+          <h5 class="modal-title"><i class="bi bi-person-plus"></i> Promouvoir un usager</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="promote-search" class="form-label">Rechercher un adherent</label>
+            <label for="promote-search" class="form-label">Rechercher un usager</label>
             <input type="text" class="form-control" id="promote-search" placeholder="Nom, prenom ou email...">
-            <div class="form-text">Seuls les adherents sans role administratif sont affiches</div>
+            <div class="form-text">Seuls les usagers sans role administratif sont affiches</div>
           </div>
           <div id="promote-results" class="border rounded" style="max-height: 250px; overflow-y: auto; display: none;">
             <!-- Resultats de recherche -->
@@ -541,7 +541,7 @@
             <td>${statutBadge}</td>
             <td class="text-end">
               <div class="btn-group">
-                <a href="adherents.html?id=${user.id}" class="btn btn-sm btn-outline-secondary btn-action" title="Voir le profil">
+                <a href="usagers.html?id=${user.id}" class="btn btn-sm btn-outline-secondary btn-action" title="Voir le profil">
                   <i class="bi bi-eye"></i>
                 </a>
                 ${canResetPwd ? `
@@ -754,7 +754,7 @@
         const eligibles = adherents.filter(a => !a.role || a.role === 'usager');
 
         if (eligibles.length === 0) {
-          resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">Aucun adherent eligible trouve</div>';
+          resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">Aucun usager eligible trouve</div>';
         } else {
           resultsContainer.innerHTML = eligibles.map(a => `
             <div class="search-result-item" onclick="selectAdherentToPromote(${a.id}, '${a.prenom} ${a.nom}', '${a.email}')">

@@ -1,16 +1,19 @@
 /**
  * Admin Template Generator
  * Génère les éléments communs du template admin (navbar, sidebar)
- * Gère le chargement et le filtrage des modules actifs
+ * Gère le chargement et le filtrage des modules actifs et modules utilisateur
  */
 
-// Cache des modules actifs
+// Cache des modules actifs (globaux)
 const MODULES_CACHE_KEY = 'activeModules';
 const MODULES_CACHE_TIMESTAMP_KEY = 'activeModulesTimestamp';
 const MODULES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Variable globale pour les modules actifs
+// Variable globale pour les modules actifs (globaux)
 window.ACTIVE_MODULES = null;
+
+// Variable globale pour les modules autorisés à l'utilisateur
+window.USER_ALLOWED_MODULES = null;
 
 /**
  * Charge les modules actifs depuis le cache ou l'API
@@ -64,7 +67,55 @@ async function loadActiveModules() {
 }
 
 /**
- * Vérifie si un module est actif
+ * Charge les modules autorisés à l'utilisateur depuis localStorage
+ * Ces modules sont stockés lors de la connexion
+ */
+function loadUserAllowedModules() {
+    try {
+        const userModules = localStorage.getItem('userModulesAutorises');
+        if (userModules) {
+            window.USER_ALLOWED_MODULES = JSON.parse(userModules);
+        } else {
+            // null = accès à tous les modules
+            window.USER_ALLOWED_MODULES = null;
+        }
+    } catch (error) {
+        console.error('Erreur chargement modules utilisateur:', error);
+        window.USER_ALLOWED_MODULES = null;
+    }
+    return window.USER_ALLOWED_MODULES;
+}
+
+/**
+ * Vérifie si l'utilisateur a accès à un module spécifique
+ * @param {string} moduleCode - Code du module
+ * @returns {boolean}
+ */
+function hasUserModuleAccess(moduleCode) {
+    // Si pas de module spécifié, toujours accessible
+    if (!moduleCode) return true;
+
+    // Admin a accès à tout
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'administrateur') return true;
+
+    // Charger les modules utilisateur si pas encore fait
+    if (window.USER_ALLOWED_MODULES === undefined) {
+        loadUserAllowedModules();
+    }
+
+    // null = accès à tous les modules (permissif)
+    if (window.USER_ALLOWED_MODULES === null) return true;
+
+    // Tableau vide = accès à tous
+    if (Array.isArray(window.USER_ALLOWED_MODULES) && window.USER_ALLOWED_MODULES.length === 0) return true;
+
+    // Vérifier si le module est dans la liste autorisée
+    return window.USER_ALLOWED_MODULES.includes(moduleCode);
+}
+
+/**
+ * Vérifie si un module est actif (globalement ET pour l'utilisateur)
  * @param {string} moduleCode - Code du module
  * @returns {boolean}
  */
@@ -72,22 +123,26 @@ function isModuleActive(moduleCode) {
     // Si pas de module spécifié, toujours actif
     if (!moduleCode) return true;
 
-    // Si les modules n'ont pas été chargés ou erreur, considérer actif (fail-safe)
-    if (window.ACTIVE_MODULES === null) return true;
+    // Vérifier d'abord si le module est actif globalement
+    if (window.ACTIVE_MODULES !== null && window.ACTIVE_MODULES.length > 0) {
+        if (!window.ACTIVE_MODULES.includes(moduleCode)) {
+            return false;
+        }
+    }
 
-    // Si tableau vide (pas de token), considérer actif
-    if (window.ACTIVE_MODULES.length === 0) return true;
-
-    return window.ACTIVE_MODULES.includes(moduleCode);
+    // Ensuite vérifier si l'utilisateur a accès à ce module
+    return hasUserModuleAccess(moduleCode);
 }
 
 /**
- * Purge le cache des modules actifs
+ * Purge le cache des modules actifs et utilisateur
  */
 function purgeModulesCache() {
     localStorage.removeItem(MODULES_CACHE_KEY);
     localStorage.removeItem(MODULES_CACHE_TIMESTAMP_KEY);
+    localStorage.removeItem('userModulesAutorises');
     window.ACTIVE_MODULES = null;
+    window.USER_ALLOWED_MODULES = null;
     console.log('Cache des modules purgé');
 }
 
@@ -191,6 +246,8 @@ function renderSidebar(activePage) {
     // Générer le menu sans Scanner
     const menuHTML = otherItems
         .filter(item => {
+            // Toujours garder les séparateurs
+            if (item.separator) return true;
             // Filtrer les items adminOnly si l'utilisateur n'est pas admin
             if (item.adminOnly && userRole !== 'administrateur') {
                 return false;
@@ -202,6 +259,10 @@ function renderSidebar(activePage) {
             return true;
         })
         .map(item => {
+            // Rendu des séparateurs
+            if (item.separator) {
+                return '<div class="sidebar-separator"></div>';
+            }
             const isActive = item.id === activePage ? 'active' : '';
             const colorStyle = item.color ? `style="background-color: ${item.color}; border-left: 4px solid ${item.color};"` : '';
             const activeStyle = item.color && isActive ? `style="background-color: ${item.color}; border-left: 4px solid #333; font-weight: bold;"` : colorStyle;
@@ -254,6 +315,11 @@ function renderSidebar(activePage) {
                 margin-top: 5px;
                 padding-top: 5px;
             }
+            .sidebar-separator {
+                height: 1px;
+                background-color: #dee2e6;
+                margin: 8px 10px;
+            }
         </style>
         ${scannerHTML}
         <div class="list-group list-group-flush sidebar-menu">
@@ -267,8 +333,11 @@ function renderSidebar(activePage) {
  * @param {string} pageId - ID de la page active (dashboard, adherents, etc.)
  */
 async function initTemplate(pageId) {
-    // Charger les modules actifs d'abord
+    // Charger les modules actifs (globaux) d'abord
     await loadActiveModules();
+
+    // Charger les modules autorisés à l'utilisateur
+    loadUserAllowedModules();
 
     // Déterminer la page active
     const activePage = pageId || getActivePageId();

@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Usagers - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1>Gestion des Usagers</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row g-2">
+              <!-- Ligne 1: Actions principales -->
+              <div class="col-12 d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-primary" onclick="openCreateModal()">
+                    <i class="bi bi-plus-circle"></i> Nouvel usager
+                  </button>
+                  <button class="btn btn-outline-success" onclick="exportAdherentsCSV()">
+                    <i class="bi bi-download"></i> Exporter CSV
+                  </button>
+                  <button class="btn btn-secondary" onclick="loadAdherents()">
+                    <i class="bi bi-arrow-clockwise"></i> Actualiser
+                  </button>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <span class="badge bg-info" id="adherentsCount">0 usager(s)</span>
+                  <button class="btn btn-outline-primary btn-sm" onclick="toggleFilters()">
+                    <i class="bi bi-funnel"></i> <span id="filterToggleText">Afficher filtres</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Ligne 2: Filtres (masqués par défaut) -->
+              <div class="col-12" id="filtersSection" style="display: none;">
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <div class="row g-2">
+                      <div class="col-md-3">
+                        <label class="form-label small">Recherche</label>
+                        <input
+                          type="text"
+                          id="searchInput"
+                          class="form-control form-control-sm"
+                          placeholder="Nom, prénom, email..."
+                          onkeyup="handleSearch()"
+                        >
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label small">Statut</label>
+                        <select id="statutFilter" class="form-select form-select-sm" onchange="pagination && pagination.reset(); loadAdherents()">
+                          <option value="">Tous</option>
+                          <option value="actif">Actif</option>
+                          <option value="inactif">Inactif</option>
+                          <option value="suspendu">Suspendu</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label small">Role</label>
+                        <select id="roleFilter" class="form-select form-select-sm" onchange="pagination && pagination.reset(); loadAdherents()">
+                          <option value="">Tous</option>
+                          <option value="usager">Usager</option>
+                          <option value="benevole">Bénévole</option>
+                          <option value="agent">Agent</option>
+                          <option value="gestionnaire">Gestionnaire</option>
+                          <option value="comptable">Comptable</option>
+                          <option value="administrateur">Administrateur</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label small">Membre asso.</label>
+                        <select id="assocFilter" class="form-select form-select-sm" onchange="pagination && pagination.reset(); loadAdherents()">
+                          <option value="">Tous</option>
+                          <option value="true">Oui</option>
+                          <option value="false">Non</option>
+                        </select>
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label small">Actions</label>
+                        <div class="d-flex gap-1">
+                          <button class="btn btn-sm btn-outline-secondary flex-fill" onclick="resetFilters()">
+                            <i class="bi bi-x-circle"></i> Réinitialiser
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="mb-2"></div>
+
+        <!-- Adherents List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="adherentsList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des usagers...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="adherentModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouvel usager</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="adherentForm">
+            <input type="hidden" id="adherentId">
+
+            <!-- Recherche usager externe -->
+            <div class="card mb-4" id="searchExternalCard">
+              <div class="card-body">
+                <h6 class="card-title">
+                  <i class="bi bi-search"></i> Recherche usager externe
+                </h6>
+                <p class="small text-muted">
+                  Recherchez un usager existant dans le systeme externe pour pre-remplir le formulaire
+                </p>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="numeroAdherentExterne"
+                    class="form-control"
+                    placeholder="Numero d'usager (optionnel)"
+                  >
+                  <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    onclick="rechercherEtChargerAdherent()"
+                    id="btnRechercheExterne"
+                  >
+                    <i class="bi bi-search"></i> Rechercher
+                  </button>
+                </div>
+                <small class="text-muted">Exemple: TEST123 pour tester</small>
+              </div>
+            </div>
+
+            <!-- Onglets -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-infos-btn" data-bs-toggle="tab" data-bs-target="#tab-infos" type="button">
+                  <i class="bi bi-person"></i> Informations personnelles
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-coords-btn" data-bs-toggle="tab" data-bs-target="#tab-coords" type="button">
+                  <i class="bi bi-geo-alt"></i> Coordonnées
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-adhesion-btn" data-bs-toggle="tab" data-bs-target="#tab-adhesion" type="button">
+                  <i class="bi bi-calendar-check"></i> Adhésion
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-notes-btn" data-bs-toggle="tab" data-bs-target="#tab-notes" type="button">
+                  <i class="bi bi-journal-text"></i> Notes
+                </button>
+              </li>
+            </ul>
+
+            <!-- Contenu des onglets -->
+            <div class="tab-content">
+              <!-- Onglet: Informations personnelles -->
+              <div class="tab-pane fade show active" id="tab-infos">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="nom" class="form-label">Nom *</label>
+                    <input type="text" id="nom" class="form-control" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="prenom" class="form-label">Prénom *</label>
+                    <input type="text" id="prenom" class="form-control" required>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email *</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" id="email" class="form-control" required>
+                  </div>
+                  <small class="text-muted">Un email de bienvenue sera envoyé automatiquement</small>
+                </div>
+
+                <div class="mb-3" id="passwordGroup">
+                  <label for="password" class="form-label">Mot de passe *</label>
+                  <div class="input-group">
+                    <input type="password" id="password" class="form-control">
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" type="button" id="generatePassword" title="Générer un mot de passe sécurisé">
+                      <i class="bi bi-key"></i> Générer
+                    </button>
+                  </div>
+                  <div class="mt-2">
+                    <div class="progress" style="height: 5px;">
+                      <div id="passwordStrength" class="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <small id="passwordStrengthLabel" class="text-muted"></small>
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="date_naissance" class="form-label">Date de naissance</label>
+                    <input type="date" id="date_naissance" class="form-control">
+                    <small id="ageDisplay" class="text-muted"></small>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="photo_url" class="form-label">Photo (URL)</label>
+                    <input type="url" id="photo_url" class="form-control" placeholder="https://...">
+                    <small class="text-muted">URL de la photo de l'usager</small>
+                  </div>
+                </div>
+
+                <!-- Prévisualisation photo -->
+                <div class="mb-3" id="photoPreview" style="display: none;">
+                  <label class="form-label">Prévisualisation</label>
+                  <div>
+                    <img id="photoPreviewImg" src="" alt="Photo" class="img-thumbnail" style="max-width: 150px;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet: Coordonnées -->
+              <div class="tab-pane fade" id="tab-coords">
+                <div class="mb-3">
+                  <label for="telephone" class="form-label">Téléphone</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                    <input type="tel" id="telephone" class="form-control" placeholder="+33 6 12 34 56 78">
+                  </div>
+                  <small class="text-muted">Format: +33 6 12 34 56 78 ou 06 12 34 56 78</small>
+                </div>
+
+                <div class="mb-3">
+                  <label for="adresse" class="form-label">Adresse</label>
+                  <textarea id="adresse" class="form-control" rows="2" placeholder="Numéro et rue"></textarea>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label for="code_postal" class="form-label">Code postal</label>
+                    <input type="text" id="code_postal" class="form-control" placeholder="75001" maxlength="5">
+                  </div>
+                  <div class="col-md-8">
+                    <label for="ville" class="form-label">Ville</label>
+                    <input type="text" id="ville" class="form-control" placeholder="Paris">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet: Adhésion -->
+              <div class="tab-pane fade" id="tab-adhesion">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="statut" class="form-label">Statut *</label>
+                    <select id="statut" class="form-select" required>
+                      <option value="actif">Actif</option>
+                      <option value="inactif">Inactif</option>
+                      <option value="suspendu">Suspendu</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="role" class="form-label">Rôle *</label>
+                    <select id="role" class="form-select" required onchange="toggleModulesSection()">
+                      <option value="usager">Usager</option>
+                      <option value="benevole">Bénévole</option>
+                      <option value="agent">Agent (accueil/scan)</option>
+                      <option value="gestionnaire">Gestionnaire</option>
+                      <option value="comptable">Comptable</option>
+                      <option value="administrateur">Administrateur</option>
+                    </select>
+                    <small class="text-muted">Détermine les permissions sur le site</small>
+                  </div>
+                </div>
+
+                <!-- Section Modules Autorisés (visible pour agent, gestionnaire, comptable) -->
+                <div class="mb-3" id="modulesSection" style="display: none;">
+                  <label class="form-label">Modules autorisés</label>
+                  <div class="alert alert-info py-2">
+                    <i class="bi bi-info-circle"></i>
+                    <small>Sélectionnez les modules auxquels cet utilisateur aura accès. Si aucun n'est coché, il aura accès à tous les modules.</small>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="module_ludotheque" value="ludotheque">
+                        <label class="form-check-label" for="module_ludotheque">
+                          <i class="bi bi-puzzle text-warning"></i> Ludothèque
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="module_bibliotheque" value="bibliotheque">
+                        <label class="form-check-label" for="module_bibliotheque">
+                          <i class="bi bi-book text-success"></i> Bibliothèque
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="module_filmotheque" value="filmotheque">
+                        <label class="form-check-label" for="module_filmotheque">
+                          <i class="bi bi-film text-danger"></i> Filmothèque
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="module_discotheque" value="discotheque">
+                        <label class="form-check-label" for="module_discotheque">
+                          <i class="bi bi-disc text-primary"></i> Discothèque
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="adhesion_association">
+                    <label class="form-check-label" for="adhesion_association">
+                      Membre de l'association
+                    </label>
+                    <br>
+                    <small class="text-muted">Permet de bénéficier de réductions sur les cotisations</small>
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="date_adhesion" class="form-label">Date d'adhésion</label>
+                    <input type="date" id="date_adhesion" class="form-control">
+                    <small class="text-muted">Aujourd'hui par défaut</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="date_fin_adhesion" class="form-label">Date de fin d'adhésion</label>
+                    <input type="date" id="date_fin_adhesion" class="form-control">
+                    <small class="text-muted">Optionnel</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet: Notes -->
+              <div class="tab-pane fade" id="tab-notes">
+                <div class="mb-3">
+                  <label for="notes" class="form-label">Notes internes</label>
+                  <textarea id="notes" class="form-control" rows="6" placeholder="Notes visibles uniquement par les gestionnaires..."></textarea>
+                  <small class="text-muted">Ces notes ne sont pas visibles par l'usager</small>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="adherentForm" class="btn btn-primary" id="submitBtn">
+            <i class="bi bi-save"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Envoi Email -->
+  <div class="modal fade" id="sendEmailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-envelope"></i> Envoyer un email
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="emailForm">
+            <input type="hidden" id="email-adherent-id">
+
+            <!-- Destinataire -->
+            <div class="mb-3">
+              <label class="form-label">Destinataire</label>
+              <input type="text" class="form-control" id="email-destinataire" readonly>
+            </div>
+
+            <!-- Mode de saisie -->
+            <div class="mb-3">
+              <label class="form-label">Mode de saisie</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="email-mode" id="email-mode-template" value="template" checked>
+                <label class="btn btn-outline-primary" for="email-mode-template">
+                  <i class="bi bi-file-text"></i> Utiliser un template
+                </label>
+
+                <input type="radio" class="btn-check" name="email-mode" id="email-mode-manual" value="manual">
+                <label class="btn btn-outline-primary" for="email-mode-manual">
+                  <i class="bi bi-pencil"></i> Saisie manuelle
+                </label>
+              </div>
+            </div>
+
+            <!-- Section Template -->
+            <div id="email-template-section">
+              <div class="mb-3">
+                <label for="email-template-select" class="form-label">Choisir un template</label>
+                <select class="form-select" id="email-template-select">
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="alert alert-info" id="email-template-preview" style="display: none;">
+                <strong>Aperçu :</strong>
+                <p class="mb-1"><strong>Objet :</strong> <span id="email-preview-subject"></span></p>
+                <p class="mb-0"><strong>Contenu :</strong></p>
+                <div id="email-preview-body" style="max-height: 150px; overflow-y: auto;"></div>
+              </div>
+            </div>
+
+            <!-- Section Manuelle -->
+            <div id="email-manual-section" style="display: none;">
+              <div class="mb-3">
+                <label for="email-subject" class="form-label">Objet *</label>
+                <input type="text" class="form-control" id="email-subject" placeholder="Objet de l'email">
+              </div>
+              <div class="mb-3">
+                <label for="email-body" class="form-label">Message *</label>
+                <textarea class="form-control" id="email-body" rows="8" placeholder="Contenu de l'email (HTML accepté)"></textarea>
+                <small class="text-muted">Vous pouvez utiliser du HTML pour la mise en forme</small>
+              </div>
+            </div>
+
+            <!-- Variables disponibles -->
+            <div class="alert alert-light border">
+              <strong><i class="bi bi-info-circle"></i> Variables disponibles :</strong>
+              <code>{{prenom}}</code>, <code>{{nom}}</code>, <code>{{email}}</code>, <code>{{code_barre}}</code>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sendEmailToAdherent()">
+            <i class="bi bi-send"></i> Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Envoi SMS -->
+  <div class="modal fade" id="sendSmsModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-chat-dots"></i> Envoyer un SMS
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="smsForm">
+            <input type="hidden" id="sms-adherent-id">
+
+            <!-- Destinataire -->
+            <div class="mb-3">
+              <label class="form-label">Destinataire</label>
+              <input type="text" class="form-control" id="sms-destinataire" readonly>
+            </div>
+
+            <!-- Mode de saisie -->
+            <div class="mb-3">
+              <label class="form-label">Mode de saisie</label>
+              <div class="btn-group w-100" role="group">
+                <input type="radio" class="btn-check" name="sms-mode" id="sms-mode-template" value="template" checked>
+                <label class="btn btn-outline-primary" for="sms-mode-template">
+                  <i class="bi bi-file-text"></i> Utiliser un template
+                </label>
+
+                <input type="radio" class="btn-check" name="sms-mode" id="sms-mode-manual" value="manual">
+                <label class="btn btn-outline-primary" for="sms-mode-manual">
+                  <i class="bi bi-pencil"></i> Saisie manuelle
+                </label>
+              </div>
+            </div>
+
+            <!-- Section Template -->
+            <div id="sms-template-section">
+              <div class="mb-3">
+                <label for="sms-template-select" class="form-label">Choisir un template</label>
+                <select class="form-select" id="sms-template-select">
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="alert alert-info" id="sms-template-preview" style="display: none;">
+                <strong>Aperçu :</strong>
+                <p class="mb-0" id="sms-preview-body"></p>
+              </div>
+            </div>
+
+            <!-- Section Manuelle -->
+            <div id="sms-manual-section" style="display: none;">
+              <div class="mb-3">
+                <label for="sms-body" class="form-label">Message *</label>
+                <textarea class="form-control" id="sms-body" rows="4" placeholder="Contenu du SMS" maxlength="160"></textarea>
+                <div class="d-flex justify-content-between">
+                  <small class="text-muted">Maximum 160 caractères</small>
+                  <small class="text-muted"><span id="sms-char-count">0</span>/160</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Variables disponibles -->
+            <div class="alert alert-light border">
+              <strong><i class="bi bi-info-circle"></i> Variables disponibles :</strong>
+              <code>{{prenom}}</code>, <code>{{nom}}</code>, <code>{{telephone}}</code>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sendSmsToAdherent()">
+            <i class="bi bi-send"></i> Envoyer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Visualisation Détaillée -->
+  <div class="modal fade" id="viewAdherentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-person-badge"></i> Details de l'usager
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <!-- Colonne gauche: Photo et infos principales -->
+            <div class="col-md-4 text-center border-end">
+              <img id="view_photo" src="https://via.placeholder.com/150" alt="Photo" class="img-thumbnail mb-3" style="max-width: 150px;">
+              <h5 id="view_nom_prenom">-</h5>
+              <p class="text-muted mb-2">
+                <i class="bi bi-upc-scan"></i> <span id="view_code_barre">-</span>
+              </p>
+              <div id="view_statut_badge" class="mb-3">
+                <span class="badge bg-success">Actif</span>
+              </div>
+              <div class="d-grid gap-2">
+                <button class="btn btn-sm btn-outline-primary" id="btn_view_edit">
+                  <i class="bi bi-pencil"></i> Modifier
+                </button>
+                <button class="btn btn-sm btn-outline-info" id="btn_view_print">
+                  <i class="bi bi-printer"></i> Imprimer carte
+                </button>
+              </div>
+            </div>
+
+            <!-- Colonne droite: Détails -->
+            <div class="col-md-8">
+              <!-- Onglets pour organisation -->
+              <ul class="nav nav-pills mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#view-tab-info" type="button">
+                    <i class="bi bi-info-circle"></i> Infos
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-stats" type="button">
+                    <i class="bi bi-graph-up"></i> Statistiques
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-communications" type="button">
+                    <i class="bi bi-chat-dots"></i> Communications
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-actions" type="button">
+                    <i class="bi bi-lightning"></i> Actions
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content">
+                <!-- Onglet Infos -->
+                <div class="tab-pane fade show active" id="view-tab-info">
+                  <table class="table table-sm">
+                    <tbody>
+                      <tr>
+                        <th style="width: 40%;"><i class="bi bi-envelope"></i> Email</th>
+                        <td id="view_email">-</td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-telephone"></i> Téléphone</th>
+                        <td id="view_telephone">-</td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-calendar"></i> Date de naissance</th>
+                        <td id="view_date_naissance">-</td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-geo-alt"></i> Adresse</th>
+                        <td id="view_adresse_complete">-</td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-shield-check"></i> Rôle</th>
+                        <td><span id="view_role" class="badge bg-secondary">-</span></td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-calendar-check"></i> Date d'adhésion</th>
+                        <td id="view_date_adhesion">-</td>
+                      </tr>
+                      <tr>
+                        <th><i class="bi bi-building"></i> Membre association</th>
+                        <td id="view_adhesion_association">-</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <div id="view_notes_section" style="display: none;">
+                    <h6 class="mt-3"><i class="bi bi-journal-text"></i> Notes internes</h6>
+                    <div class="alert alert-info" id="view_notes">-</div>
+                  </div>
+                </div>
+
+                <!-- Onglet Statistiques -->
+                <div class="tab-pane fade" id="view-tab-stats">
+                  <div class="row text-center mb-3">
+                    <div class="col-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <h3 class="text-primary" id="view_stat_emprunts_total">0</h3>
+                          <small class="text-muted">Total emprunts</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <h3 class="text-success" id="view_stat_emprunts_en_cours">0</h3>
+                          <small class="text-muted">En cours</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <h3 class="text-danger" id="view_stat_emprunts_retard">0</h3>
+                          <small class="text-muted">En retard</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="view_cotisations_section">
+                    <h6><i class="bi bi-credit-card"></i> Cotisations</h6>
+                    <div id="view_cotisations_list">
+                      <p class="text-muted">Chargement...</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Onglet Communications -->
+                <div class="tab-pane fade" id="view-tab-communications">
+                  <div id="view_communications_loading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <span class="ms-2">Chargement de l'historique...</span>
+                  </div>
+                  <div id="view_communications_content" style="display: none;">
+                    <!-- Emails -->
+                    <div class="mb-3">
+                      <h6 class="d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-envelope text-primary"></i> Emails</span>
+                        <span class="badge bg-primary" id="view_emails_count">0</span>
+                      </h6>
+                      <div id="view_emails_list" style="max-height: 200px; overflow-y: auto;">
+                        <p class="text-muted small">Aucun email</p>
+                      </div>
+                    </div>
+
+                    <!-- SMS -->
+                    <div class="mb-3">
+                      <h6 class="d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-chat-dots text-success"></i> SMS</span>
+                        <span class="badge bg-success" id="view_sms_count">0</span>
+                      </h6>
+                      <div id="view_sms_list" style="max-height: 200px; overflow-y: auto;">
+                        <p class="text-muted small">Aucun SMS</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Onglet Actions -->
+                <div class="tab-pane fade" id="view-tab-actions">
+                  <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" id="btn_send_email">
+                      <i class="bi bi-envelope"></i> Envoyer un email
+                    </button>
+                    <button class="btn btn-outline-success" id="btn_send_sms">
+                      <i class="bi bi-phone"></i> Envoyer un SMS
+                    </button>
+                    <hr>
+                    <button class="btn btn-outline-info" id="btn_new_cotisation">
+                      <i class="bi bi-credit-card"></i> Nouvelle cotisation
+                    </button>
+                    <button class="btn btn-outline-warning" id="btn_new_emprunt">
+                      <i class="bi bi-box-arrow-right"></i> Nouveau prêt
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SweetAlert2 pour les modals améliorées -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/pagination.js"></script>
+  <script src="js/adherents-utils.js"></script>
+  <script src="js/adherents-form.js"></script>
+  <script src="js/adherents-view.js"></script>
+  <script src="js/adherents-table.js"></script>
+  <script src="js/adherents-communications.js"></script>
+  <script>
+    // ============================================
+    // Variables globales
+    // ============================================
+    let adherents = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+    let pagination = null;
+
+    // ============================================
+    // Chargement des adhérents avec filtres
+    // ============================================
+    async function loadAdherents(page = null, limit = null) {
+      try {
+        const statut = document.getElementById('statutFilter')?.value || '';
+        const search = document.getElementById('searchInput')?.value || '';
+        const role = document.getElementById('roleFilter')?.value || '';
+        const assoc = document.getElementById('assocFilter')?.value || '';
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (search) params.search = search;
+        if (role) params.role = role;
+        if (assoc) params.adhesion_association = assoc;
+
+        // Pagination params
+        if (pagination) {
+          params.page = page || pagination.getPage();
+          params.limit = limit || pagination.getLimit();
+        }
+
+        const data = await adherentsAPI.getAll(params);
+        adherents = data.adherents;
+
+        // Mettre a jour la pagination si disponible
+        if (pagination && data.pagination) {
+          pagination.update(data.pagination);
+        }
+
+        // Utiliser la fonction de rendu du module table
+        renderAdherents(adherents);
+      } catch (error) {
+        console.error('Error loading adherents:', error);
+        document.getElementById('adherentsList').innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            Erreur lors du chargement des adherents: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // ============================================
+    // Gestion de la recherche avec debounce
+    // ============================================
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        if (pagination) pagination.reset();
+        loadAdherents();
+      }, 500);
+    }
+
+    // ============================================
+    // Fermeture modal
+    // ============================================
+    function closeModal() {
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    // ============================================
+    // Impression carte adhérent
+    // ============================================
+    function printCard(id) {
+      barcodesAPI.printAdherentCard(id);
+    }
+
+    // ============================================
+    // Suppression adhérent
+    // ============================================
+    async function deleteAdherent(id) {
+      const result = await Swal.fire({
+        title: 'Supprimer cet usager ?',
+        text: 'Cette action est irréversible',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          await adherentsAPI.delete(id);
+          showToast('Usager supprime avec succes', 'success');
+          loadAdherents();
+        } catch (error) {
+          console.error('Erreur suppression:', error);
+          showToast('Erreur lors de la suppression: ' + error.message, 'error');
+        }
+      }
+    }
+
+    // ============================================
+    // Initialisation au chargement de la page
+    // ============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialiser le template (navbar + sidebar)
+      initTemplate('usagers');
+
+      // Initialiser la pagination (sans toggle vue compacte pour adherents)
+      pagination = new Pagination({
+        module: 'adherents',
+        containerId: 'paginationControls',
+        onPageChange: (page, limit) => loadAdherents(page, limit),
+        onViewModeChange: null,
+        showViewToggle: false
+      });
+
+      // Charger les adherents apres un court delai
+      setTimeout(loadAdherents, 500);
+    });
+  </script>
+</body>
+</html>

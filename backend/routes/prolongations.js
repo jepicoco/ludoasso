@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Prolongation, Emprunt, Adherent, Jeu, Livre, Film, Disque } = require('../models');
+const { Prolongation, Emprunt, Utilisateur, Jeu, Livre, Film, Disque } = require('../models');
 const { verifyToken } = require('../middleware/auth');
 const { Op } = require('sequelize');
 
@@ -38,12 +38,12 @@ router.get('/', async (req, res) => {
           ]
         },
         {
-          model: Adherent,
+          model: Utilisateur,
           as: 'demandeur',
           attributes: ['id', 'nom', 'prenom', 'email', 'code_barre']
         },
         {
-          model: Adherent,
+          model: Utilisateur,
           as: 'traitePar',
           attributes: ['id', 'nom', 'prenom']
         }
@@ -181,12 +181,12 @@ router.get('/:id', async (req, res) => {
           ]
         },
         {
-          model: Adherent,
+          model: Utilisateur,
           as: 'demandeur',
           attributes: ['id', 'nom', 'prenom', 'email', 'code_barre', 'telephone']
         },
         {
-          model: Adherent,
+          model: Utilisateur,
           as: 'traitePar',
           attributes: ['id', 'nom', 'prenom']
         }

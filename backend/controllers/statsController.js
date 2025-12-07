@@ -1,4 +1,4 @@
-const { Adherent, Jeu, Emprunt } = require('../models');
+const { Utilisateur, Jeu, Emprunt } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -8,16 +8,16 @@ const { Op } = require('sequelize');
 const getDashboardStats = async (req, res) => {
   try {
     // Count adherents by status
-    const adherentsStats = await Adherent.findAll({
+    const utilisateursStats = await Utilisateur.findAll({
       attributes: [
         'statut',
-        [Adherent.sequelize.fn('COUNT', Adherent.sequelize.col('id')), 'count']
+        [Utilisateur.sequelize.fn('COUNT', Utilisateur.sequelize.col('id')), 'count']
       ],
       group: ['statut']
     });
 
-    const totalAdherents = adherentsStats.reduce((sum, stat) => sum + parseInt(stat.dataValues.count), 0);
-    const adherentsActifs = adherentsStats.find(s => s.statut === 'actif')?.dataValues.count || 0;
+    const totalUtilisateurs = utilisateursStats.reduce((sum, stat) => sum + parseInt(stat.dataValues.count), 0);
+    const utilisateursActifs = utilisateursStats.find(s => s.statut === 'actif')?.dataValues.count || 0;
 
     // Count jeux by status
     const jeuxStats = await Jeu.findAll({
@@ -63,15 +63,19 @@ const getDashboardStats = async (req, res) => {
       }
     });
 
+    // Données utilisateurs avec alias adherents pour rétrocompatibilité frontend
+    const utilisateursData = {
+      total: totalUtilisateurs,
+      actifs: parseInt(utilisateursActifs),
+      byStatus: utilisateursStats.map(s => ({
+        statut: s.statut,
+        count: parseInt(s.dataValues.count)
+      }))
+    };
+
     res.json({
-      adherents: {
-        total: totalAdherents,
-        actifs: parseInt(adherentsActifs),
-        byStatus: adherentsStats.map(s => ({
-          statut: s.statut,
-          count: parseInt(s.dataValues.count)
-        }))
-      },
+      utilisateurs: utilisateursData,
+      adherents: utilisateursData, // Alias pour rétrocompatibilité
       jeux: {
         total: totalJeux,
         disponibles: parseInt(jeuxDisponibles),
@@ -156,8 +160,8 @@ const getActiveMembers = async (req, res) => {
         [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('adherent_id')), 'emprunt_count']
       ],
       include: [{
-        model: Adherent,
-        as: 'adherent',
+        model: Utilisateur,
+        as: 'utilisateur',
         attributes: ['id', 'nom', 'prenom', 'email', 'statut']
       }],
       group: ['adherent_id'],
@@ -167,7 +171,8 @@ const getActiveMembers = async (req, res) => {
 
     res.json({
       members: activeMembers.map(m => ({
-        adherent: m.adherent,
+        utilisateur: m.utilisateur,
+        adherent: m.utilisateur, // Alias pour rétrocompatibilité frontend
         emprunts: parseInt(m.dataValues.emprunt_count)
       }))
     });

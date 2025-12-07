@@ -731,7 +731,10 @@ exports.getStats = async (req, res) => {
       GROUP BY g.id, g.nom
       ORDER BY count DESC
       LIMIT 10
-    `, { type: sequelize.QueryTypes.SELECT });
+    `, {
+      type: sequelize.QueryTypes.SELECT,
+      raw: true
+    });
 
     // Films par classification
     const filmsParClassification = await Film.findAll({
@@ -752,7 +755,10 @@ exports.getStats = async (req, res) => {
       HAVING count > 0
       ORDER BY count DESC
       LIMIT 10
-    `, { type: sequelize.QueryTypes.SELECT });
+    `, {
+      type: sequelize.QueryTypes.SELECT,
+      raw: true
+    });
 
     // Top acteurs
     const topActeurs = await sequelize.query(`
@@ -763,7 +769,10 @@ exports.getStats = async (req, res) => {
       HAVING count > 0
       ORDER BY count DESC
       LIMIT 10
-    `, { type: sequelize.QueryTypes.SELECT });
+    `, {
+      type: sequelize.QueryTypes.SELECT,
+      raw: true
+    });
 
     res.json({
       totalFilms,

@@ -1,7 +1,8 @@
-const { Cotisation, Adherent, TarifCotisation, CodeReduction, ModePaiement } = require('../models');
+const { Cotisation, Utilisateur, TarifCotisation, CodeReduction, ModePaiement, ParametresStructure } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
+const pdfService = require('../services/pdfService');
 
 /**
  * Récupérer toutes les cotisations
@@ -47,8 +48,8 @@ exports.getAllCotisations = async (req, res) => {
       where,
       include: [
         {
-          model: Adherent,
-          as: 'adherent',
+          model: Utilisateur,
+          as: 'utilisateur',
           attributes: ['id', 'nom', 'prenom', 'email', 'code_barre']
         },
         {
@@ -60,7 +61,14 @@ exports.getAllCotisations = async (req, res) => {
       order: [['created_at', 'DESC']]
     });
 
-    res.json(cotisations);
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const cotisationsWithAlias = cotisations.map(c => {
+      const data = c.toJSON();
+      data.adherent = data.utilisateur;
+      return data;
+    });
+
+    res.json(cotisationsWithAlias);
   } catch (error) {
     console.error('Erreur lors de la récupération des cotisations:', error);
     res.status(500).json({
@@ -80,8 +88,8 @@ exports.getCotisationById = async (req, res) => {
     const cotisation = await Cotisation.findByPk(id, {
       include: [
         {
-          model: Adherent,
-          as: 'adherent'
+          model: Utilisateur,
+          as: 'utilisateur'
         },
         {
           model: TarifCotisation,
@@ -96,7 +104,11 @@ exports.getCotisationById = async (req, res) => {
       });
     }
 
-    res.json(cotisation);
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = cotisation.toJSON();
+    data.adherent = data.utilisateur;
+
+    res.json(data);
   } catch (error) {
     console.error('Erreur lors de la récupération de la cotisation:', error);
     res.status(500).json({
@@ -131,11 +143,11 @@ exports.createCotisation = async (req, res) => {
       });
     }
 
-    // Vérifier que l'adhérent existe
-    const adherent = await Adherent.findByPk(adherent_id);
-    if (!adherent) {
+    // Vérifier que l'utilisateur existe
+    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    if (!utilisateur) {
       return res.status(404).json({
-        error: 'Adhérent non trouvé'
+        error: 'Utilisateur non trouvé'
       });
     }
 
@@ -189,9 +201,9 @@ exports.createCotisation = async (req, res) => {
     }
 
     // Calculer le montant
-    const estAdherentAssociation = adherent.adhesion_association || false;
+    const estMembreAssociation = utilisateur.adhesion_association || false;
     const montantBase = parseFloat(tarif.montant_base);
-    let montantFinal = tarif.calculerMontant(dateDebut, dateFin, estAdherentAssociation);
+    let montantFinal = tarif.calculerMontant(dateDebut, dateFin, estMembreAssociation);
     let reductionAppliquee = montantBase - montantFinal;
     let codeReductionApplique = null;
     let avoirGenere = 0;
@@ -241,7 +253,7 @@ exports.createCotisation = async (req, res) => {
       montant_base: montantBase,
       reduction_appliquee: reductionAppliquee,
       montant_paye: montantFinal,
-      adhesion_association: estAdherentAssociation,
+      adhesion_association: estMembreAssociation,
       date_paiement: date_paiement || new Date(),
       mode_paiement: modePaiementValue,
       reference_paiement,
@@ -252,8 +264,8 @@ exports.createCotisation = async (req, res) => {
       avoir_genere: avoirGenere
     });
 
-    // Mettre à jour les dates d'adhésion de l'adhérent
-    await adherent.update({
+    // Mettre à jour les dates d'adhésion de l'utilisateur
+    await utilisateur.update({
       date_adhesion: dateDebut,
       date_fin_adhesion: dateFin,
       statut: 'actif'
@@ -261,7 +273,7 @@ exports.createCotisation = async (req, res) => {
 
     // Déclencher l'événement de création de cotisation
     try {
-      await eventTriggerService.triggerCotisationCreated(cotisation, adherent);
+      await eventTriggerService.triggerCotisationCreated(cotisation, utilisateur);
 // console.('Event COTISATION_CREATED déclenché pour cotisation:', cotisation.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
@@ -272,8 +284,8 @@ exports.createCotisation = async (req, res) => {
     const cotisationComplete = await Cotisation.findByPk(cotisation.id, {
       include: [
         {
-          model: Adherent,
-          as: 'adherent',
+          model: Utilisateur,
+          as: 'utilisateur',
           attributes: ['id', 'nom', 'prenom', 'email']
         },
         {
@@ -283,7 +295,11 @@ exports.createCotisation = async (req, res) => {
       ]
     });
 
-    res.status(201).json(cotisationComplete);
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = cotisationComplete.toJSON();
+    data.adherent = data.utilisateur;
+
+    res.status(201).json(data);
   } catch (error) {
     console.error('Erreur lors de la création de la cotisation:', error);
     res.status(500).json({
@@ -318,10 +334,17 @@ exports.updateCotisation = async (req, res) => {
     await cotisation.update(updateData);
 
     const cotisationComplete = await Cotisation.findByPk(id, {
-      include: ['adherent', 'tarif']
+      include: [
+        { model: Utilisateur, as: 'utilisateur' },
+        { model: TarifCotisation, as: 'tarif' }
+      ]
     });
 
-    res.json(cotisationComplete);
+    // Ajouter alias adherent pour rétrocompatibilité frontend
+    const data = cotisationComplete.toJSON();
+    data.adherent = data.utilisateur;
+
+    res.json(data);
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la cotisation:', error);
     res.status(500).json({
@@ -414,10 +437,10 @@ exports.verifierCotisationActive = async (req, res) => {
 
     const dateReference = date ? new Date(date) : new Date();
 
-    const adherent = await Adherent.findByPk(adherent_id);
-    if (!adherent) {
+    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    if (!utilisateur) {
       return res.status(404).json({
-        error: 'Adhérent non trouvé'
+        error: 'Utilisateur non trouvé'
       });
     }
 
@@ -551,6 +574,69 @@ exports.getStatistiques = async (req, res) => {
     console.error('Erreur lors du calcul des statistiques:', error);
     res.status(500).json({
       error: 'Erreur lors du calcul des statistiques',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Générer un reçu PDF pour une cotisation
+ */
+exports.genererRecuPDF = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Récupérer la cotisation avec les relations
+    const cotisation = await Cotisation.findByPk(id, {
+      include: [
+        {
+          model: Utilisateur,
+          as: 'utilisateur'
+        },
+        {
+          model: TarifCotisation,
+          as: 'tarif'
+        }
+      ]
+    });
+
+    if (!cotisation) {
+      return res.status(404).json({
+        error: 'Cotisation non trouvée'
+      });
+    }
+
+    // Récupérer les paramètres de la structure
+    const structure = await ParametresStructure.findOne({
+      order: [['id', 'ASC']]
+    });
+
+    if (!structure) {
+      return res.status(500).json({
+        error: 'Paramètres de structure non configurés'
+      });
+    }
+
+    // Générer le PDF
+    const { filepath, filename } = await pdfService.genererRecuCotisation(cotisation, structure);
+
+    // Télécharger le fichier
+    res.download(filepath, filename, (err) => {
+      if (err) {
+        console.error('Erreur lors du téléchargement du PDF:', err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: 'Erreur lors du téléchargement du PDF',
+            message: err.message
+          });
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la génération du reçu PDF:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la génération du reçu PDF',
       message: error.message
     });
   }

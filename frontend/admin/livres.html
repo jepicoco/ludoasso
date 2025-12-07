@@ -29,6 +29,72 @@
       justify-content: center;
       color: white;
     }
+
+    /* Vue cartes */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    @media (min-width: 768px) { .cards-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1200px) { .cards-grid { grid-template-columns: repeat(6, 1fr); } }
+
+    .item-card {
+      border-radius: 8px;
+      border-width: 2px;
+      border-style: solid;
+      transition: transform 0.2s, box-shadow 0.2s;
+      overflow: hidden;
+      background: white;
+    }
+    .item-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .item-card.status-disponible { border-color: #198754; }
+    .item-card.status-emprunte { border-color: #ffc107; }
+    .item-card.status-maintenance { border-color: #0dcaf0; }
+    .item-card.status-perdu { border-color: #dc3545; }
+    .item-card.status-archive { border-color: #6c757d; }
+
+    .item-card .card-img-wrapper {
+      position: relative;
+    }
+    .item-card .card-img-top {
+      height: 140px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+    .item-card .card-img-placeholder {
+      height: 140px;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2.5rem;
+    }
+    .item-card .card-body { padding: 0.75rem; }
+    .item-card .card-title { font-size: 0.9rem; margin-bottom: 0.5rem; line-height: 1.2; }
+    .item-card .card-text { font-size: 0.75rem; color: #6c757d; }
+    .item-card .card-actions { padding: 0.5rem 0.75rem; border-top: 1px solid #eee; }
+    .item-card .status-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    /* Badges thematiques IA */
+    .type-badge { color: white; font-size: 0.8rem; }
+    .type-badge.type-theme { background-color: #6f42c1; }
+    .type-badge.type-mecanisme { background-color: #0d6efd; }
+    .type-badge.type-ambiance { background-color: #198754; }
+    .type-badge.type-public { background-color: #fd7e14; }
+    .type-badge.type-complexite { background-color: #dc3545; }
+    .type-badge.type-duree { background-color: #20c997; }
+    .type-badge.type-autre { background-color: #6c757d; }
   </style>
 </head>
 <body>
@@ -70,13 +136,13 @@
                   style="width: 200px;"
                   onkeyup="handleSearch()"
                 >
-                <select id="genreFilter" class="form-select" onchange="loadLivres()" style="width: 150px;">
+                <select id="genreFilter" class="form-select" onchange="pagination && pagination.reset(); loadLivres()" style="width: 150px;">
                   <option value="">Tous genres</option>
                 </select>
-                <select id="formatFilter" class="form-select" onchange="loadLivres()" style="width: 140px;">
+                <select id="formatFilter" class="form-select" onchange="pagination && pagination.reset(); loadLivres()" style="width: 140px;">
                   <option value="">Tous formats</option>
                 </select>
-                <select id="statutFilter" class="form-select" onchange="loadLivres()" style="width: 140px;">
+                <select id="statutFilter" class="form-select" onchange="pagination && pagination.reset(); loadLivres()" style="width: 140px;">
                   <option value="">Tous statuts</option>
                   <option value="disponible">Disponible</option>
                   <option value="emprunte">Emprunté</option>
@@ -88,6 +154,9 @@
             </div>
           </div>
         </div>
+
+        <!-- Pagination Controls -->
+        <div id="paginationControls" class="mb-2"></div>
 
         <!-- Livres List -->
         <div class="card">
@@ -338,16 +407,65 @@
     </div>
   </div>
 
+  <!-- View Livre Modal -->
+  <div class="modal fade" id="viewLivreModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Détails du livre</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="viewLivreContent">
+          <!-- Content loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="btnEditFromView">
+            <i class="bi bi-pencil me-1"></i>Modifier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmer la suppression</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Êtes-vous sûr de vouloir supprimer le livre "<strong id="deleteLivreTitle"></strong>" ?</p>
+          <p class="text-muted small mb-0">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+            <i class="bi bi-trash me-1"></i>Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
+  <script src="js/pagination.js"></script>
+  <script src="js/thematiques-article.js"></script>
   <script>
     let livres = [];
     let searchTimeout = null;
     let modalInstance = null;
+    let viewModalInstance = null;
+    let deleteModalInstance = null;
+    let livreToDelete = null;
+    let pagination = null;
 
     // Tom-Select instances
     let tsGenres, tsThemes, tsLangues, tsAuteurs, tsEditeurs, tsCollection;
@@ -365,7 +483,7 @@
     };
 
     // Load livres
-    async function loadLivres() {
+    async function loadLivres(page = null, limit = null) {
       try {
         const statut = document.getElementById('statutFilter').value;
         const genreId = document.getElementById('genreFilter').value;
@@ -378,8 +496,20 @@
         if (formatId) params.format_id = formatId;
         if (search) params.search = search;
 
+        // Pagination params
+        if (pagination) {
+          params.page = page || pagination.getPage();
+          params.limit = limit || pagination.getLimit();
+        }
+
         const data = await livresAPI.getAll(params);
         livres = data.livres || [];
+
+        // Mettre a jour la pagination si disponible
+        if (pagination && data.pagination) {
+          pagination.update(data.pagination);
+        }
+
         renderLivres(livres);
       } catch (error) {
         console.error('Error loading livres:', error);
@@ -492,68 +622,125 @@
 
     function renderLivres(list) {
       const container = document.getElementById('livresList');
+      const viewMode = pagination ? pagination.getViewMode() : 'list';
+      const actionsVisible = pagination ? pagination.getActionsVisible() : false;
 
       if (!list || list.length === 0) {
         container.innerHTML = `
           <p class="text-center text-secondary p-4">
             <i class="bi bi-book fs-1 d-block mb-2"></i>
-            Aucun livre trouvé
+            Aucun livre trouve
           </p>
         `;
         return;
       }
 
-      container.innerHTML = `
-        <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th style="width: 60px;"></th>
-              <th>Titre</th>
-              <th>Auteur(s)</th>
-              <th>Année</th>
-              <th>Format</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
+      if (viewMode === 'cards') {
+        // Vue cartes
+        container.innerHTML = `
+          <div class="cards-grid">
             ${list.map(livre => `
-              <tr class="livre-row">
-                <td>
+              <div class="item-card status-${livre.statut || 'disponible'}" onclick="viewLivre(${livre.id})" style="cursor:pointer;">
+                <div class="card-img-wrapper">
                   ${livre.image_url
-                    ? `<img src="${livre.image_url}" alt="${escapeHtml(livre.titre)}" class="livre-cover" onerror="this.parentElement.innerHTML='<div class=livre-cover-placeholder><i class=bi bi-book></i></div>'">`
-                    : '<div class="livre-cover-placeholder"><i class="bi bi-book"></i></div>'
+                    ? `<img src="${livre.image_url}" class="card-img-top" alt="${escapeHtml(livre.titre)}" onerror="this.outerHTML='<div class=card-img-placeholder><i class=bi bi-book></i></div>'">`
+                    : '<div class="card-img-placeholder"><i class="bi bi-book"></i></div>'
                   }
-                </td>
-                <td>
-                  <strong>${escapeHtml(livre.titre)}</strong>
-                  ${livre.tome ? `<span class="badge bg-secondary ms-1">T.${livre.tome}</span>` : ''}
-                  ${livre.sous_titre ? `<br><small class="text-muted">${escapeHtml(livre.sous_titre)}</small>` : ''}
-                </td>
-                <td>${formatAuteurs(livre)}</td>
-                <td>${livre.annee_publication || '-'}</td>
-                <td>${livre.formatRef?.nom || '-'}</td>
-                <td>${formatStatut(livre.statut)}</td>
-                <td>
-                  <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" onclick="viewLivre(${livre.id})" title="Voir">
+                  <span class="status-badge bg-${getStatutColor(livre.statut)}">${getStatutLabel(livre.statut)}</span>
+                </div>
+                <div class="card-body">
+                  <h6 class="card-title text-truncate" title="${escapeHtml(livre.titre)}">
+                    ${escapeHtml(livre.titre)}
+                    ${livre.tome ? `<span class="badge bg-secondary">T.${livre.tome}</span>` : ''}
+                  </h6>
+                  <p class="card-text mb-1">${formatAuteurs(livre)}</p>
+                  <p class="card-text">${livre.annee_publication || '-'} - ${livre.formatRef?.nom || '-'}</p>
+                </div>
+                ${actionsVisible ? `
+                <div class="card-actions">
+                  <div class="btn-group btn-group-sm w-100">
+                    <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewLivre(${livre.id})" title="Voir">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-outline-secondary" onclick="editLivre(${livre.id})" title="Modifier">
+                    <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editLivre(${livre.id})" title="Modifier">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-outline-danger" onclick="deleteLivre(${livre.id})" title="Supprimer">
+                    <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${livre.id})" title="Imprimer">
+                      <i class="bi bi-printer"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="event.stopPropagation(); deleteLivre(${livre.id}, '${escapeHtml(livre.titre).replace(/'/g, "\\'")}')" title="Supprimer">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
-                </td>
-              </tr>
+                </div>
+                ` : ''}
+              </div>
             `).join('')}
-          </tbody>
-        </table>
-        </div>
-      `;
+          </div>
+        `;
+      } else {
+        // Vue liste (tableau)
+        container.innerHTML = `
+          <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th style="width: 60px;"></th>
+                <th>Titre</th>
+                <th>Auteur(s)</th>
+                <th>Annee</th>
+                <th>Format</th>
+                <th>Statut</th>
+                ${actionsVisible ? '<th>Actions</th>' : ''}
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(livre => `
+                <tr class="livre-row" onclick="viewLivre(${livre.id})" style="cursor:pointer;">
+                  <td>
+                    ${livre.image_url
+                      ? `<img src="${livre.image_url}" alt="${escapeHtml(livre.titre)}" class="livre-cover" onerror="this.parentElement.innerHTML='<div class=livre-cover-placeholder><i class=bi bi-book></i></div>'">`
+                      : '<div class="livre-cover-placeholder"><i class="bi bi-book"></i></div>'
+                    }
+                  </td>
+                  <td>
+                    <strong>${escapeHtml(livre.titre)}</strong>
+                    ${livre.tome ? `<span class="badge bg-secondary ms-1">T.${livre.tome}</span>` : ''}
+                    ${livre.sous_titre ? `<br><small class="text-muted">${escapeHtml(livre.sous_titre)}</small>` : ''}
+                  </td>
+                  <td>${formatAuteurs(livre)}</td>
+                  <td>${livre.annee_publication || '-'}</td>
+                  <td>${livre.formatRef?.nom || '-'}</td>
+                  <td>${formatStatut(livre.statut)}</td>
+                  ${actionsVisible ? `
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button class="btn btn-outline-primary" onclick="event.stopPropagation(); viewLivre(${livre.id})" title="Voir">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editLivre(${livre.id})" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${livre.id})" title="Imprimer">
+                        <i class="bi bi-printer"></i>
+                      </button>
+                      <button class="btn btn-outline-danger" onclick="event.stopPropagation(); deleteLivre(${livre.id}, '${escapeHtml(livre.titre).replace(/'/g, "\\'")}')" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                  ` : ''}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          </div>
+        `;
+      }
+    }
+
+    function printLabel(id) {
+      barcodesAPI.printLivreLabel(id);
     }
 
     function formatAuteurs(livre) {
@@ -583,7 +770,10 @@
 
     function handleSearch() {
       clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => loadLivres(), 500);
+      searchTimeout = setTimeout(() => {
+        if (pagination) pagination.reset();
+        loadLivres();
+      }, 500);
     }
 
     // Modal functions
@@ -640,22 +830,161 @@
     async function viewLivre(id) {
       try {
         const livre = await livresAPI.getById(id);
-        // TODO: Implement view modal like films.html
-        editLivre(id);
+
+        const content = document.getElementById('viewLivreContent');
+        content.innerHTML = `
+          <div class="row">
+            <div class="col-md-4 text-center">
+              ${livre.image_url
+                ? `<img src="${livre.image_url}" alt="${escapeHtml(livre.titre)}" class="img-fluid rounded mb-3" style="max-height: 300px;">`
+                : '<div class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3" style="height: 250px;"><i class="bi bi-book text-white" style="font-size: 4rem;"></i></div>'
+              }
+            </div>
+            <div class="col-md-8">
+              <h4>${escapeHtml(livre.titre)}</h4>
+              ${livre.sous_titre ? `<p class="text-muted fst-italic">${escapeHtml(livre.sous_titre)}</p>` : ''}
+
+              <div class="mb-3">
+                ${livre.tome ? `<span class="badge bg-secondary me-2">Tome ${livre.tome}</span>` : ''}
+                ${livre.annee_publication ? `<span class="badge bg-secondary me-2">${livre.annee_publication}</span>` : ''}
+                ${livre.nb_pages ? `<span class="badge bg-info me-2">${livre.nb_pages} pages</span>` : ''}
+                <span class="badge bg-${getStatutColor(livre.statut)}">${getStatutLabel(livre.statut)}</span>
+              </div>
+
+              ${livre.resume ? `<p>${escapeHtml(livre.resume)}</p>` : ''}
+
+              ${livre.auteursRef?.length ? `
+                <p><strong><i class="bi bi-person me-1"></i>Auteur(s):</strong>
+                  ${livre.auteursRef.map(a => a.prenom ? `${a.prenom} ${a.nom}` : a.nom).join(', ')}
+                </p>
+              ` : ''}
+
+              ${livre.editeursRef?.length ? `
+                <p><strong><i class="bi bi-building me-1"></i>Éditeur(s):</strong>
+                  ${livre.editeursRef.map(e => e.nom).join(', ')}
+                </p>
+              ` : ''}
+
+              ${livre.genresRef?.length ? `
+                <p><strong><i class="bi bi-tags me-1"></i>Genres:</strong>
+                  ${livre.genresRef.map(g => `<span class="badge bg-primary me-1">${g.nom}</span>`).join('')}
+                </p>
+              ` : ''}
+
+              ${livre.themesRef?.length ? `
+                <p><strong><i class="bi bi-palette me-1"></i>Thèmes:</strong>
+                  ${livre.themesRef.map(t => `<span class="badge bg-info me-1">${t.nom}</span>`).join('')}
+                </p>
+              ` : ''}
+
+              ${livre.collectionRef ? `
+                <p><strong><i class="bi bi-collection me-1"></i>Collection:</strong> ${livre.collectionRef.nom}</p>
+              ` : ''}
+
+              <hr>
+
+              <div class="row small text-muted">
+                <div class="col-6">
+                  <p class="mb-1"><strong>ISBN:</strong> ${livre.isbn || '-'}</p>
+                  <p class="mb-1"><strong>Code-barres:</strong> ${livre.code_barre || '-'}</p>
+                  <p class="mb-1"><strong>Format:</strong> ${livre.formatRef?.nom || '-'}</p>
+                  <p class="mb-1"><strong>Emplacement:</strong> ${livre.emplacementRef?.libelle || '-'}</p>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1"><strong>État:</strong> ${getEtatLabel(livre.etat)}</p>
+                  <p class="mb-1"><strong>Emprunts:</strong> ${livre.nb_emprunts || 0}</p>
+                  <p class="mb-1"><strong>Acquisition:</strong> ${livre.date_acquisition || '-'}</p>
+                  <p class="mb-1"><strong>Langues:</strong> ${livre.languesRef?.map(l => l.nom).join(', ') || '-'}</p>
+                </div>
+              </div>
+
+              ${livre.notes ? `
+                <div class="mt-3 p-2 bg-light rounded small">
+                  <strong><i class="bi bi-sticky me-1"></i>Notes:</strong> ${escapeHtml(livre.notes)}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          <div id="thematiques-container-${id}" class="mt-3">
+            <!-- Thematiques IA chargees dynamiquement -->
+          </div>
+        `;
+
+        document.getElementById('btnEditFromView').onclick = () => {
+          if (viewModalInstance) viewModalInstance.hide();
+          editLivre(id);
+        };
+
+        // Charger les thematiques IA si le module est actif
+        if (typeof isModuleActive === 'function' && isModuleActive('recherche_ia')) {
+          const themContainer = document.getElementById(`thematiques-container-${id}`);
+          themContainer.innerHTML = await ThematiquesArticle.renderSection('livre', id, true);
+        }
+
+        if (!viewModalInstance) {
+          viewModalInstance = new bootstrap.Modal(document.getElementById('viewLivreModal'));
+        }
+        viewModalInstance.show();
       } catch (error) {
-        showToast('Erreur: ' + error.message, 'danger');
+        console.error('Error viewing livre:', error);
+        showToast('Erreur lors du chargement du livre', 'danger');
       }
     }
 
-    async function deleteLivre(id) {
-      if (!confirm('Êtes-vous sûr de vouloir supprimer ce livre ?')) return;
+    function getStatutColor(statut) {
+      const colors = {
+        'disponible': 'success',
+        'emprunte': 'warning',
+        'maintenance': 'info',
+        'perdu': 'danger',
+        'archive': 'secondary'
+      };
+      return colors[statut] || 'secondary';
+    }
+
+    function getStatutLabel(statut) {
+      const labels = {
+        'disponible': 'Disponible',
+        'emprunte': 'Emprunté',
+        'maintenance': 'Maintenance',
+        'perdu': 'Perdu',
+        'archive': 'Archivé'
+      };
+      return labels[statut] || statut;
+    }
+
+    function getEtatLabel(etat) {
+      const labels = {
+        'neuf': 'Neuf',
+        'tres_bon': 'Très bon',
+        'bon': 'Bon',
+        'acceptable': 'Acceptable',
+        'mauvais': 'Mauvais'
+      };
+      return labels[etat] || etat;
+    }
+
+    function deleteLivre(id, title) {
+      livreToDelete = id;
+      document.getElementById('deleteLivreTitle').textContent = title || 'ce livre';
+      if (!deleteModalInstance) {
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+      }
+      deleteModalInstance.show();
+    }
+
+    async function confirmDelete() {
+      if (!livreToDelete) return;
 
       try {
-        await livresAPI.delete(id);
+        await livresAPI.delete(livreToDelete);
+        if (deleteModalInstance) deleteModalInstance.hide();
         showToast('Livre supprimé avec succès', 'success');
         loadLivres();
       } catch (error) {
-        showToast('Erreur: ' + error.message, 'danger');
+        showToast('Erreur lors de la suppression: ' + error.message, 'danger');
+      } finally {
+        livreToDelete = null;
       }
     }
 
@@ -789,6 +1118,21 @@
     // Init
     document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('livres');
+
+      // Initialiser la pagination
+      pagination = new Pagination({
+        module: 'livres',
+        containerId: 'paginationControls',
+        onPageChange: (page, limit) => loadLivres(page, limit),
+        onViewModeChange: (mode) => renderLivres(livres),
+        onActionsToggle: (visible) => renderLivres(livres),
+        showViewToggle: true,
+        showActionsToggle: true
+      });
+
+      // Delete confirmation button handler
+      document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
+
       await loadReferentiels();
       initTomSelects();
       loadLivres();

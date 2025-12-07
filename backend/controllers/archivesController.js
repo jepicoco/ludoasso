@@ -1,4 +1,4 @@
-const { Adherent, AdherentArchive, ArchiveAccessLog, Emprunt, Cotisation, EmailLog, SmsLog, sequelize } = require('../models');
+const { Utilisateur, UtilisateurArchive, ArchiveAccessLog, Emprunt, Cotisation, EmailLog, SmsLog, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 // Helper pour logger les accès aux archives
@@ -52,7 +52,7 @@ const getArchives = async (req, res) => {
       where.est_anonymise = anonymise === 'true';
     }
 
-    const { count, rows } = await AdherentArchive.findAndCountAll({
+    const { count, rows } = await UtilisateurArchive.findAndCountAll({
       where,
       order: [['date_archivage', 'DESC']],
       limit: parseInt(limit),
@@ -83,7 +83,7 @@ const getArchiveById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const archive = await AdherentArchive.findByPk(id);
+    const archive = await UtilisateurArchive.findByPk(id);
     if (!archive) {
       return res.status(404).json({ success: false, message: 'Archive non trouvée' });
     }
@@ -141,7 +141,7 @@ const archiverAdherent = async (req, res) => {
     const { id } = req.params;
     const { motif } = req.body;
 
-    const adherent = await Adherent.findByPk(id, { transaction });
+    const adherent = await Utilisateur.findByPk(id, { transaction });
     if (!adherent) {
       await transaction.rollback();
       return res.status(404).json({ success: false, message: 'Adhérent non trouvé' });
@@ -186,7 +186,7 @@ const archiverAdherent = async (req, res) => {
     }
 
     // Créer l'archive
-    const archive = await AdherentArchive.create({
+    const archive = await UtilisateurArchive.create({
       adherent_id: adherent.id,
       code_barre: adherent.code_barre,
       civilite: adherent.civilite || null,
@@ -239,7 +239,7 @@ const archiverInactifs = async (req, res) => {
     dateLimit.setFullYear(dateLimit.getFullYear() - 3);
 
     // Trouver les adhérents sans activité depuis 3 ans
-    const adherents = await Adherent.findAll({ transaction });
+    const adherents = await Utilisateur.findAll({ transaction });
     const aArchiver = [];
 
     for (const adherent of adherents) {
@@ -284,7 +284,7 @@ const archiverInactifs = async (req, res) => {
     // Archiver chaque adhérent
     const archives = [];
     for (const { adherent, derniereActivite } of aArchiver) {
-      const archive = await AdherentArchive.create({
+      const archive = await UtilisateurArchive.create({
         adherent_id: adherent.id,
         code_barre: adherent.code_barre,
         civilite: adherent.civilite || null,
@@ -335,7 +335,7 @@ const previewInactifs = async (req, res) => {
     const dateLimit = new Date();
     dateLimit.setFullYear(dateLimit.getFullYear() - 3);
 
-    const adherents = await Adherent.findAll();
+    const adherents = await Utilisateur.findAll();
     const aArchiver = [];
 
     for (const adherent of adherents) {
@@ -396,7 +396,7 @@ const anonymiserArchive = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const archive = await AdherentArchive.findByPk(id);
+    const archive = await UtilisateurArchive.findByPk(id);
     if (!archive) {
       return res.status(404).json({ success: false, message: 'Archive non trouvée' });
     }
@@ -428,7 +428,7 @@ const anonymiserArchivesInactives = async (req, res) => {
     dateLimit.setFullYear(dateLimit.getFullYear() - 3);
 
     // Trouver les archives non anonymisées avec dernière activité > 3 ans
-    const archives = await AdherentArchive.findAll({
+    const archives = await UtilisateurArchive.findAll({
       where: {
         est_anonymise: false,
         [Op.or]: [
@@ -464,7 +464,7 @@ const previewAnonymisation = async (req, res) => {
     const dateLimit = new Date();
     dateLimit.setFullYear(dateLimit.getFullYear() - 3);
 
-    const archives = await AdherentArchive.findAll({
+    const archives = await UtilisateurArchive.findAll({
       where: {
         est_anonymise: false,
         [Op.or]: [
@@ -490,9 +490,9 @@ const previewAnonymisation = async (req, res) => {
 const getArchivesStats = async (req, res) => {
   try {
     const [total, anonymisees, nonAnonymisees] = await Promise.all([
-      AdherentArchive.count(),
-      AdherentArchive.count({ where: { est_anonymise: true } }),
-      AdherentArchive.count({ where: { est_anonymise: false } })
+      UtilisateurArchive.count(),
+      UtilisateurArchive.count({ where: { est_anonymise: true } }),
+      UtilisateurArchive.count({ where: { est_anonymise: false } })
     ]);
 
     // Adhérents actifs éligibles à l'archivage
@@ -500,7 +500,7 @@ const getArchivesStats = async (req, res) => {
     dateLimit.setFullYear(dateLimit.getFullYear() - 3);
 
     // Compter de façon simplifiée
-    const adherentsActifs = await Adherent.count();
+    const adherentsActifs = await Utilisateur.count();
 
     res.json({
       success: true,

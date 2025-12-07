@@ -53,6 +53,42 @@
       padding: 0.75rem 1.5rem;
     }
 
+    /* Search Mode Toggle */
+    .search-mode-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .search-mode-toggle .form-check-input {
+      width: 3em;
+      height: 1.5em;
+      background-color: rgba(255,255,255,0.3);
+      border: none;
+      cursor: pointer;
+    }
+
+    .search-mode-toggle .form-check-input:checked {
+      background-color: #ffc107;
+    }
+
+    .search-mode-label {
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .search-mode-label.active {
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .search-mode-label i {
+      margin-right: 0.25rem;
+    }
+
     /* Filters */
     .filters-section {
       background: white;
@@ -92,6 +128,21 @@
     .results-info {
       padding: 1rem 0;
       color: #6c757d;
+    }
+
+    /* Thematiques matchees */
+    .thematiques-matchees {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: #e8f4fd;
+      border-radius: 0.5rem;
+    }
+
+    .thematiques-matchees .badge {
+      font-weight: 500;
     }
 
     /* Cards */
@@ -190,6 +241,47 @@
     .status-emprunte { background: #f8d7da; color: #721c24; }
     .status-maintenance { background: #fff3cd; color: #856404; }
 
+    /* Match reason */
+    .item-match-reason {
+      margin-top: 0.75rem;
+      padding: 0.5rem;
+      background: #f0f7ff;
+      border-radius: 0.375rem;
+      font-size: 0.8rem;
+      color: #0d6efd;
+    }
+
+    .item-match-reason i {
+      margin-right: 0.25rem;
+    }
+
+    .thematique-tag {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      background: #e3f2fd;
+      color: #1565c0;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      margin: 0.125rem;
+    }
+
+    /* Score badge */
+    .score-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: rgba(0,0,0,0.7);
+      color: #ffc107;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .item-card-wrapper {
+      position: relative;
+    }
+
     /* Pagination */
     .pagination-section {
       padding: 2rem 0;
@@ -234,6 +326,12 @@
       opacity: 0.5;
     }
 
+    /* Load more button */
+    .load-more-section {
+      text-align: center;
+      padding: 2rem 0;
+    }
+
     /* Footer */
     footer {
       background: #333;
@@ -246,6 +344,26 @@
     footer a {
       color: #20c997;
       text-decoration: none;
+    }
+
+    /* Section groupee par type */
+    .type-section {
+      margin-bottom: 2rem;
+    }
+
+    .type-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .type-section-header h5 {
+      margin: 0;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -271,8 +389,8 @@
           <li class="nav-item">
             <a class="nav-link" href="/infos.html">Infos pratiques</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
+          <li class="nav-item" id="nav-espace" style="display: none;">
+            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/usager/login.html">
               <i class="bi bi-person-circle"></i> Mon espace
             </a>
           </li>
@@ -293,6 +411,20 @@
           </button>
         </form>
       </div>
+
+      <!-- Toggle recherche intelligente -->
+      <div class="search-mode-toggle" id="search-mode-toggle" style="display: none;">
+        <span class="search-mode-label active" id="label-classique" onclick="setSearchMode(false)">
+          <i class="bi bi-search"></i> Classique
+        </span>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="search-mode-switch" onchange="toggleSearchMode()">
+        </div>
+        <span class="search-mode-label" id="label-intelligente" onclick="setSearchMode(true)">
+          <i class="bi bi-lightbulb"></i> Intelligente
+        </span>
+      </div>
+
       <div class="text-center mt-3" id="stats-display">
         <!-- Stats loaded dynamically -->
       </div>
@@ -317,7 +449,13 @@
       <!-- Results count -->
     </div>
 
-    <div class="row g-4" id="catalogue-grid">
+    <!-- Thematiques matchees (recherche intelligente) -->
+    <div class="thematiques-matchees" id="thematiques-matchees" style="display: none;">
+      <span class="text-muted me-2"><i class="bi bi-tags"></i> Thematiques trouvees :</span>
+      <div id="thematiques-list"></div>
+    </div>
+
+    <div id="catalogue-grid">
       <!-- Items loaded dynamically -->
     </div>
 
@@ -335,7 +473,14 @@
       <p>Essayez avec d'autres termes de recherche</p>
     </div>
 
-    <!-- Pagination -->
+    <!-- Load More (recherche intelligente) -->
+    <div class="load-more-section" id="load-more-section" style="display: none;">
+      <button class="btn btn-outline-primary btn-lg" onclick="loadMore()">
+        <i class="bi bi-plus-circle me-2"></i>Afficher plus de resultats
+      </button>
+    </div>
+
+    <!-- Pagination (recherche classique) -->
     <nav class="pagination-section" id="pagination-container">
       <ul class="pagination justify-content-center">
         <!-- Pagination loaded dynamically -->
@@ -360,6 +505,10 @@
     let currentType = '';
     let currentSearch = '';
     let currentPage = 1;
+    let currentOffset = 0;
+    let hasMoreResults = false;
+    let intelligentSearchEnabled = false;
+    let intelligentSearchAvailable = false;
     const limit = 12;
 
     // Icons for each type
@@ -379,10 +528,83 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
+      // Recuperer les parametres URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeParam = urlParams.get('type');
+      const searchParam = urlParams.get('search');
+      const modeParam = urlParams.get('mode');
+
+      if (typeParam) {
+        currentType = typeParam;
+      }
+      if (searchParam) {
+        currentSearch = searchParam;
+        document.getElementById('search-input').value = searchParam;
+      }
+
       await loadConfig();
+      await checkIntelligentSearch();
       await loadStats();
+
+      // Activer recherche intelligente si demande en URL
+      if (modeParam === 'intelligente' && intelligentSearchAvailable) {
+        setSearchMode(true);
+      }
+
       await loadCatalogue();
     });
+
+    // Check if intelligent search is available
+    async function checkIntelligentSearch() {
+      try {
+        const response = await fetch('/api/public/recherche-intelligente/check');
+        const data = await response.json();
+        intelligentSearchAvailable = data.disponible;
+
+        if (intelligentSearchAvailable) {
+          document.getElementById('search-mode-toggle').style.display = 'flex';
+          document.getElementById('search-input').placeholder = 'Rechercher un titre ou decrivez ce que vous cherchez...';
+        }
+      } catch (error) {
+        console.error('Erreur check recherche intelligente:', error);
+      }
+    }
+
+    // Toggle search mode
+    function toggleSearchMode() {
+      intelligentSearchEnabled = document.getElementById('search-mode-switch').checked;
+      updateSearchModeUI();
+
+      // Relancer la recherche si une recherche est en cours
+      if (currentSearch) {
+        currentPage = 1;
+        currentOffset = 0;
+        loadCatalogue();
+      }
+    }
+
+    function setSearchMode(intelligent) {
+      intelligentSearchEnabled = intelligent;
+      document.getElementById('search-mode-switch').checked = intelligent;
+      updateSearchModeUI();
+
+      if (currentSearch) {
+        currentPage = 1;
+        currentOffset = 0;
+        loadCatalogue();
+      }
+    }
+
+    function updateSearchModeUI() {
+      document.getElementById('label-classique').classList.toggle('active', !intelligentSearchEnabled);
+      document.getElementById('label-intelligente').classList.toggle('active', intelligentSearchEnabled);
+
+      if (intelligentSearchEnabled) {
+        document.getElementById('search-input').placeholder = 'Decrivez ce que vous cherchez (ex: jeu de strategie medieval)...';
+      } else {
+        document.getElementById('search-input').placeholder = 'Rechercher un titre...';
+      }
+    }
 
     // Load site configuration
     async function loadConfig() {
@@ -414,6 +636,11 @@
         // Build filter buttons based on active modules
         buildFilters(config.modules);
 
+        // Show "Mon espace" if inscriptions enabled
+        if (config.modules.inscriptions) {
+          document.getElementById('nav-espace').style.display = 'block';
+        }
+
         // Update footer
         document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
 
@@ -426,33 +653,44 @@
     function buildFilters(modules) {
       const container = document.getElementById('filters-container');
 
+      // Reset le bouton "Tout" - actif seulement si pas de type selectionne
+      const allBtn = container.querySelector('[data-type=""]');
+      if (allBtn) {
+        allBtn.classList.toggle('active', !currentType);
+      }
+
       if (modules.ludotheque) {
         container.innerHTML += `
-          <button class="filter-btn" data-type="jeux" onclick="filterByType('jeux')">
+          <button class="filter-btn ${currentType === 'jeux' ? 'active' : ''}" data-type="jeux" onclick="filterByType('jeux')">
             <i class="bi ${typeIcons.jeux}"></i> Jeux
           </button>
         `;
       }
       if (modules.bibliotheque) {
         container.innerHTML += `
-          <button class="filter-btn" data-type="livres" onclick="filterByType('livres')">
+          <button class="filter-btn ${currentType === 'livres' ? 'active' : ''}" data-type="livres" onclick="filterByType('livres')">
             <i class="bi ${typeIcons.livres}"></i> Livres
           </button>
         `;
       }
       if (modules.filmotheque) {
         container.innerHTML += `
-          <button class="filter-btn" data-type="films" onclick="filterByType('films')">
+          <button class="filter-btn ${currentType === 'films' ? 'active' : ''}" data-type="films" onclick="filterByType('films')">
             <i class="bi ${typeIcons.films}"></i> Films
           </button>
         `;
       }
       if (modules.discotheque) {
         container.innerHTML += `
-          <button class="filter-btn" data-type="disques" onclick="filterByType('disques')">
+          <button class="filter-btn ${currentType === 'disques' ? 'active' : ''}" data-type="disques" onclick="filterByType('disques')">
             <i class="bi ${typeIcons.disques}"></i> Disques
           </button>
         `;
+      }
+
+      // Desactiver "Tout" si un type est selectionne
+      if (currentType && allBtn) {
+        allBtn.classList.remove('active');
       }
     }
 
@@ -473,15 +711,31 @@
 
     // Load catalogue
     async function loadCatalogue() {
+      // Determiner si on utilise la recherche intelligente
+      if (intelligentSearchEnabled && currentSearch && currentSearch.length >= 2) {
+        await loadIntelligentSearch();
+      } else {
+        await loadClassicCatalogue();
+      }
+    }
+
+    // Recherche classique
+    async function loadClassicCatalogue() {
       const grid = document.getElementById('catalogue-grid');
       const loading = document.getElementById('loading');
       const emptyState = document.getElementById('empty-state');
       const resultsInfo = document.getElementById('results-info');
+      const thematiquesBanner = document.getElementById('thematiques-matchees');
+      const loadMoreSection = document.getElementById('load-more-section');
+      const paginationContainer = document.getElementById('pagination-container');
 
-      // Show loading
+      // Reset
       grid.innerHTML = '';
       loading.style.display = 'flex';
       emptyState.style.display = 'none';
+      thematiquesBanner.style.display = 'none';
+      loadMoreSection.style.display = 'none';
+      paginationContainer.style.display = 'block';
 
       try {
         let url = `/api/public/catalogue?page=${currentPage}&limit=${limit}`;
@@ -496,7 +750,7 @@
         if (data.items.length === 0) {
           emptyState.style.display = 'block';
           resultsInfo.innerHTML = '';
-          document.getElementById('pagination-container').innerHTML = '';
+          paginationContainer.innerHTML = '';
           return;
         }
 
@@ -509,7 +763,7 @@
         `;
 
         // Render items
-        grid.innerHTML = data.items.map(item => renderItem(item)).join('');
+        grid.innerHTML = '<div class="row g-4">' + data.items.map(item => renderItem(item)).join('') + '</div>';
 
         // Render pagination
         renderPagination(data.page, data.pages);
@@ -521,7 +775,118 @@
       }
     }
 
-    // Render single item card
+    // Recherche intelligente
+    async function loadIntelligentSearch(append = false) {
+      const grid = document.getElementById('catalogue-grid');
+      const loading = document.getElementById('loading');
+      const emptyState = document.getElementById('empty-state');
+      const resultsInfo = document.getElementById('results-info');
+      const thematiquesBanner = document.getElementById('thematiques-matchees');
+      const loadMoreSection = document.getElementById('load-more-section');
+      const paginationContainer = document.getElementById('pagination-container');
+
+      if (!append) {
+        grid.innerHTML = '';
+        currentOffset = 0;
+      }
+
+      loading.style.display = 'flex';
+      emptyState.style.display = 'none';
+      paginationContainer.style.display = 'none';
+
+      try {
+        let url = `/api/public/recherche-intelligente?q=${encodeURIComponent(currentSearch)}&limit=${limit}&offset=${currentOffset}`;
+        if (currentType) url += `&type=${currentType}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (!data.success || data.articles.length === 0) {
+          if (!append) {
+            emptyState.style.display = 'block';
+            thematiquesBanner.style.display = 'none';
+            resultsInfo.innerHTML = data.message || 'Aucun resultat';
+          }
+          loadMoreSection.style.display = 'none';
+          return;
+        }
+
+        // Afficher les thematiques matchees
+        if (data.thematiques && data.thematiques.length > 0 && !append) {
+          thematiquesBanner.style.display = 'flex';
+          document.getElementById('thematiques-list').innerHTML = data.thematiques.map(th =>
+            `<span class="badge bg-primary me-1">${th.nom}</span>`
+          ).join('');
+        }
+
+        // Update results info
+        const currentCount = append ? grid.querySelectorAll('.col-sm-6').length + data.articles.length : data.articles.length;
+        resultsInfo.innerHTML = `
+          <span><i class="bi bi-lightbulb text-warning me-1"></i> ${currentCount} sur ${data.total} resultats</span>
+          <span class="ms-2">pour "<strong>${currentSearch}</strong>"</span>
+          <span class="badge bg-info ms-2">Recherche intelligente</span>
+        `;
+
+        // Grouper les articles par type
+        const parType = {};
+        for (const art of data.articles) {
+          const type = art.article.type;
+          if (!parType[type]) parType[type] = [];
+          parType[type].push(art);
+        }
+
+        // Render par section
+        let html = '';
+        const typeOrder = ['jeu', 'livre', 'film', 'disque'];
+
+        for (const type of typeOrder) {
+          if (!parType[type] || parType[type].length === 0) continue;
+
+          const typeLabel = typeLabels[type + 's'] || type;
+          const typeIcon = typeIcons[type + 's'] || 'bi-box';
+
+          html += `
+            <div class="type-section">
+              <div class="type-section-header">
+                <i class="bi ${typeIcon}"></i>
+                <h5>${typeLabel}</h5>
+                <span class="badge bg-secondary">${parType[type].length}</span>
+              </div>
+              <div class="row g-4">
+                ${parType[type].map(art => renderIntelligentItem(art)).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (append) {
+          grid.innerHTML += html;
+        } else {
+          grid.innerHTML = html;
+        }
+
+        // Show/hide load more
+        hasMoreResults = data.hasMore;
+        loadMoreSection.style.display = hasMoreResults ? 'block' : 'none';
+
+      } catch (error) {
+        console.error('Erreur recherche intelligente:', error);
+        loading.style.display = 'none';
+        if (!append) {
+          emptyState.style.display = 'block';
+        }
+      }
+    }
+
+    // Load more results
+    function loadMore() {
+      currentOffset += limit;
+      loadIntelligentSearch(true);
+    }
+
+    // Render single item card (classic)
     function renderItem(item) {
       const imageHtml = item.image_url
         ? `<img src="${item.image_url}" alt="${item.titre}" class="item-image">`
@@ -532,6 +897,77 @@
         : item.statut === 'emprunte' ? 'Emprunte'
         : item.statut;
 
+      let metaHtml = renderItemMeta(item);
+
+      return `
+        <div class="col-sm-6 col-md-4 col-lg-3">
+          <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
+            ${imageHtml}
+            <div class="item-body">
+              <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
+              <h5 class="item-title">${item.titre}</h5>
+              ${item.sous_titre ? `<p class="item-subtitle">${item.sous_titre}</p>` : ''}
+              <div class="item-meta">
+                ${metaHtml}
+              </div>
+              <div class="mt-2">
+                <span class="item-status ${statusClass}">${statusLabel}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render item from intelligent search (with match reason)
+    function renderIntelligentItem(artData) {
+      const item = artData.article;
+      const imageHtml = item.image_url
+        ? `<img src="${item.image_url}" alt="${item.titre}" class="item-image">`
+        : `<div class="item-image-placeholder"><i class="bi ${typeIcons[item.type + 's'] || 'bi-box'}"></i></div>`;
+
+      const statusClass = `status-${item.statut}`;
+      const statusLabel = item.statut === 'disponible' ? 'Disponible'
+        : item.statut === 'emprunte' ? 'Emprunte'
+        : item.statut;
+
+      let metaHtml = renderItemMeta(item);
+
+      // Match reason - afficher les thematiques qui ont matche
+      const matchedTags = artData.thematiquesMatchees
+        .slice(0, 3)
+        .map(th => `<span class="thematique-tag">${th.nom}</span>`)
+        .join('');
+
+      // Score visual (optionnel)
+      const scorePercent = Math.min(100, Math.round(artData.score * 20));
+
+      return `
+        <div class="col-sm-6 col-md-4 col-lg-3">
+          <div class="item-card-wrapper">
+            <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
+              ${imageHtml}
+              <div class="item-body">
+                <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
+                <h5 class="item-title">${item.titre}</h5>
+                <div class="item-meta">
+                  ${metaHtml}
+                </div>
+                <div class="mt-2">
+                  <span class="item-status ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="item-match-reason">
+                  <i class="bi bi-check-circle"></i> Correspond : ${matchedTags}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Helper to render item meta
+    function renderItemMeta(item) {
       let metaHtml = '';
 
       if (item.type === 'jeu') {
@@ -541,11 +977,11 @@
             : item.nb_joueurs_min;
           metaHtml += `<span><i class="bi bi-people"></i> ${joueurs}</span>`;
         }
-        if (item.duree_moyenne) {
-          metaHtml += `<span><i class="bi bi-clock"></i> ${item.duree_moyenne} min</span>`;
+        if (item.duree_partie) {
+          metaHtml += `<span><i class="bi bi-clock"></i> ${item.duree_partie} min</span>`;
         }
-        if (item.age_minimum) {
-          metaHtml += `<span><i class="bi bi-person"></i> ${item.age_minimum}+</span>`;
+        if (item.age_min) {
+          metaHtml += `<span><i class="bi bi-person"></i> ${item.age_min}+</span>`;
         }
       }
 
@@ -577,24 +1013,7 @@
         metaHtml += `<span><i class="bi bi-calendar"></i> ${item.annee_sortie || item.annee_publication}</span>`;
       }
 
-      return `
-        <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
-            ${imageHtml}
-            <div class="item-body">
-              <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
-              <h5 class="item-title">${item.titre}</h5>
-              ${item.sous_titre ? `<p class="item-subtitle">${item.sous_titre}</p>` : ''}
-              <div class="item-meta">
-                ${metaHtml}
-              </div>
-              <div class="mt-2">
-                <span class="item-status ${statusClass}">${statusLabel}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+      return metaHtml;
     }
 
     // Render pagination
@@ -659,6 +1078,7 @@
     function filterByType(type) {
       currentType = type;
       currentPage = 1;
+      currentOffset = 0;
 
       // Update active button
       document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -676,6 +1096,7 @@
       event.preventDefault();
       currentSearch = document.getElementById('search-input').value.trim();
       currentPage = 1;
+      currentOffset = 0;
       loadCatalogue();
     }
 

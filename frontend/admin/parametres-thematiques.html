@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thematiques IA - Outils - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .thematique-card {
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .thematique-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .thematique-card.selected {
+      border-color: #7c3aed !important;
+      background: rgba(124, 58, 237, 0.05);
+    }
+    .type-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .type-theme { background: #e0f2fe; color: #0369a1; }
+    .type-mecanisme { background: #fef3c7; color: #b45309; }
+    .type-ambiance { background: #fce7f3; color: #be185d; }
+    .type-public { background: #dcfce7; color: #15803d; }
+    .type-complexite { background: #f3e8ff; color: #7c3aed; }
+    .type-duree { background: #e0e7ff; color: #4338ca; }
+    .type-autre { background: #f1f5f9; color: #475569; }
+    .force-indicator {
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .force-indicator .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #059669);
+      transition: width 0.3s;
+    }
+    .stats-card {
+      background: linear-gradient(135deg, #e0cffc, #d0b8f0);
+      border: none;
+    }
+    .stats-card .stats-value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #4a1d96;
+    }
+    .batch-progress {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .batch-log {
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      background: #1a1a2e;
+      color: #10b981;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: monospace;
+    }
+    .alias-badge {
+      font-size: 0.7rem;
+      background: #f1f5f9;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-tags"></i> Thematiques IA</h1>
+            <p class="text-muted mb-0">Gestion des thematiques, enrichissement et deduplication</p>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="thematiquesTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="thematiques-tab" data-bs-toggle="tab" data-bs-target="#thematiques" type="button">
+              <i class="bi bi-list-ul"></i> Thematiques
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="enrichissement-tab" data-bs-toggle="tab" data-bs-target="#enrichissement" type="button">
+              <i class="bi bi-robot"></i> Enrichissement
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="validation-tab" data-bs-toggle="tab" data-bs-target="#validation" type="button">
+              <i class="bi bi-check-circle"></i> Validation
+              <span class="badge bg-warning text-dark ms-1" id="badge-validation" style="display:none;">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="doublons-tab" data-bs-toggle="tab" data-bs-target="#doublons" type="button">
+              <i class="bi bi-diagram-3"></i> Doublons
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="thematiquesTabContent">
+          <!-- ==================== -->
+          <!-- Tab Thematiques      -->
+          <!-- ==================== -->
+          <div class="tab-pane fade show active" id="thematiques" role="tabpanel">
+            <!-- Stats -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-3">
+                <div class="card stats-card h-100">
+                  <div class="card-body text-center">
+                    <div class="stats-value" id="stat-total">0</div>
+                    <div class="text-muted">Thematiques actives</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card h-100">
+                  <div class="card-body text-center">
+                    <div class="stats-value text-primary" id="stat-articles">0</div>
+                    <div class="text-muted">Articles enrichis</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card h-100">
+                  <div class="card-body text-center">
+                    <div class="stats-value text-success" id="stat-alias">0</div>
+                    <div class="text-muted">Alias</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card h-100">
+                  <div class="card-body text-center">
+                    <div class="stats-value text-info" id="stat-inactives">0</div>
+                    <div class="text-muted">Inactives</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filtres et actions -->
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-4">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" class="form-control" id="searchThematique" placeholder="Nom ou description...">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="filterType">
+                      <option value="">Tous</option>
+                      <option value="theme">Theme</option>
+                      <option value="mecanisme">Mecanisme</option>
+                      <option value="ambiance">Ambiance</option>
+                      <option value="public">Public</option>
+                      <option value="complexite">Complexite</option>
+                      <option value="duree">Duree</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="filterActif">
+                      <option value="true">Actives</option>
+                      <option value="false">Inactives</option>
+                      <option value="">Toutes</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Tri</label>
+                    <select class="form-select" id="sortOrder">
+                      <option value="usage">Plus utilisees</option>
+                      <option value="nom">Alphabetique</option>
+                      <option value="recent">Plus recentes</option>
+                    </select>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="openCreateModal()">
+                      <i class="bi bi-plus-lg"></i> Nouvelle
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Liste des thematiques -->
+            <div id="thematiques-list" class="row g-3">
+              <!-- Genere par JS -->
+            </div>
+
+            <!-- Pagination -->
+            <nav class="mt-4" id="pagination-container">
+              <!-- Genere par JS -->
+            </nav>
+          </div>
+
+          <!-- ==================== -->
+          <!-- Tab Enrichissement   -->
+          <!-- ==================== -->
+          <div class="tab-pane fade" id="enrichissement" role="tabpanel">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="card mb-4">
+                  <div class="card-header">
+                    <i class="bi bi-funnel"></i> Configuration du batch
+                  </div>
+                  <div class="card-body">
+                    <div class="mb-3">
+                      <label class="form-label">Types d'articles</label>
+                      <div class="d-flex gap-3">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="type-jeu" checked>
+                          <label class="form-check-label" for="type-jeu">Jeux</label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="type-livre">
+                          <label class="form-check-label" for="type-livre">Livres</label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="type-film">
+                          <label class="form-check-label" for="type-film">Films</label>
+                        </div>
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" id="type-disque">
+                          <label class="form-check-label" for="type-disque">Disques</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Filtre</label>
+                      <select class="form-select" id="batch-filter">
+                        <option value="non-enrichis">Non enrichis seulement</option>
+                        <option value="tous">Tous les articles</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Limite d'articles</label>
+                      <input type="number" class="form-control" id="batch-limit" value="50" min="1" max="500">
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">Priorite</label>
+                      <input type="number" class="form-control" id="batch-priorite" value="0" min="0" max="10">
+                      <div class="form-text">Plus haut = traite en premier</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-outline-primary" onclick="dryRun()">
+                        <i class="bi bi-calculator"></i> Estimer le cout
+                      </button>
+                      <button class="btn btn-primary" onclick="lancerBatch()">
+                        <i class="bi bi-play-fill"></i> Lancer le batch
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <!-- Resultats dry run -->
+                <div class="card mb-4" id="dryrun-results" style="display:none;">
+                  <div class="card-header bg-info text-white">
+                    <i class="bi bi-calculator"></i> Estimation
+                  </div>
+                  <div class="card-body">
+                    <div class="row text-center">
+                      <div class="col-4">
+                        <div class="h3 mb-0" id="dr-articles">0</div>
+                        <small class="text-muted">Articles</small>
+                      </div>
+                      <div class="col-4">
+                        <div class="h3 mb-0" id="dr-cout">$0.00</div>
+                        <small class="text-muted">Cout estime</small>
+                      </div>
+                      <div class="col-4">
+                        <div class="h3 mb-0" id="dr-tokens">0</div>
+                        <small class="text-muted">Tokens</small>
+                      </div>
+                    </div>
+                    <hr>
+                    <div id="dr-sample" class="small">
+                      <!-- Sample de thematiques -->
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Progression batch -->
+                <div class="card" id="batch-progress-card" style="display:none;">
+                  <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-activity"></i> Progression</span>
+                    <button class="btn btn-sm btn-outline-danger" id="btn-annuler-batch" onclick="annulerBatch()">
+                      <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                  </div>
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                      <span id="progress-status">Traitement en cours...</span>
+                      <span id="progress-count">0/0</span>
+                    </div>
+                    <div class="progress mb-3">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated" id="progress-bar" style="width: 0%"></div>
+                    </div>
+                    <!-- Article en cours -->
+                    <div id="current-article" class="mb-3 p-2 bg-light rounded" style="display:none;">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-primary" id="current-article-type">jeu</span>
+                        <strong id="current-article-title">-</strong>
+                      </div>
+                      <div id="current-article-thematiques">
+                        <!-- Thematiques en temps reel -->
+                      </div>
+                    </div>
+                    <div class="batch-log" id="batch-log">
+                      <!-- Logs en temps reel -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batches recents -->
+            <div class="card mt-4">
+              <div class="card-header">
+                <i class="bi bi-clock-history"></i> Batches recents
+              </div>
+              <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Batch ID</th>
+                      <th>Debut</th>
+                      <th>Total</th>
+                      <th>Completes</th>
+                      <th>Valides</th>
+                      <th>Echecs</th>
+                      <th>Cout</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="batches-list">
+                    <!-- Genere par JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== -->
+          <!-- Tab Validation       -->
+          <!-- ==================== -->
+          <div class="tab-pane fade" id="validation" role="tabpanel">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i>
+              Articles enrichis en attente de validation. Cliquez sur un article pour voir les details et modifier les thematiques.
+            </div>
+
+            <!-- Filtres validation -->
+            <div class="card mb-3">
+              <div class="card-body py-2">
+                <div class="row align-items-center">
+                  <div class="col-auto">
+                    <label class="form-label mb-0 small">Filtrer par type:</label>
+                  </div>
+                  <div class="col-auto">
+                    <select class="form-select form-select-sm" id="filter-validation-type" onchange="loadValidation()">
+                      <option value="">Tous</option>
+                      <option value="jeu">Jeux</option>
+                      <option value="livre">Livres</option>
+                      <option value="film">Films</option>
+                      <option value="disque">Disques</option>
+                    </select>
+                  </div>
+                  <div class="col-auto ms-auto">
+                    <button class="btn btn-sm btn-outline-success" onclick="validerTousVisibles()">
+                      <i class="bi bi-check-all"></i> Valider tous
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="validation-list">
+              <!-- Genere par JS -->
+            </div>
+          </div>
+
+          <!-- ==================== -->
+          <!-- Tab Doublons         -->
+          <!-- ==================== -->
+          <div class="tab-pane fade" id="doublons" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-4">
+                    <label class="form-label">Seuil de similarite</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="seuil-doublons" value="80" min="50" max="100">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-primary" onclick="detecterDoublons()">
+                      <i class="bi bi-search"></i> Detecter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="doublons-list">
+              <!-- Genere par JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Creation/Edition -->
+  <div class="modal fade" id="thematiqueModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-title">Nouvelle thematique</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modal-id">
+          <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <input type="text" class="form-control" id="modal-nom" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="modal-type" required>
+              <option value="theme">Theme</option>
+              <option value="mecanisme">Mecanisme</option>
+              <option value="ambiance">Ambiance</option>
+              <option value="public">Public</option>
+              <option value="complexite">Complexite</option>
+              <option value="duree">Duree</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="modal-description" rows="3"></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="modal-actif" checked>
+            <label class="form-check-label" for="modal-actif">Active</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveThematique()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Fusion -->
+  <div class="modal fade" id="fusionModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Fusionner les thematiques</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>La thematique <strong id="fusion-source"></strong> sera fusionnee dans <strong id="fusion-cible"></strong>.</p>
+          <ul>
+            <li>Tous les liens vers la source seront transferes vers la cible</li>
+            <li>Le nom de la source deviendra un alias de la cible</li>
+            <li>La source sera desactivee</li>
+          </ul>
+          <input type="hidden" id="fusion-source-id">
+          <input type="hidden" id="fusion-cible-id">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-warning" onclick="confirmerFusion()">Fusionner</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Validation Detail -->
+  <div class="modal fade" id="validationDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <span class="badge bg-secondary me-2" id="vd-type">jeu</span>
+            <span id="vd-titre">Article</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="vd-item-id">
+
+          <!-- Infos article -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <p class="text-muted mb-2" id="vd-description">-</p>
+              <div class="d-flex gap-3 small text-muted">
+                <span id="vd-annee"></span>
+                <span id="vd-metadonnees"></span>
+                <span><i class="bi bi-robot"></i> <span id="vd-provider">-</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thematiques proposees (editables) -->
+          <h6><i class="bi bi-tags"></i> Thematiques proposees</h6>
+          <div id="vd-thematiques-list" class="mb-3">
+            <!-- Liste editable -->
+          </div>
+
+          <!-- Ajouter thematique -->
+          <div class="card bg-light">
+            <div class="card-body py-2">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <input type="text" class="form-control form-control-sm" id="vd-new-nom" placeholder="Nouvelle thematique">
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select form-select-sm" id="vd-new-type">
+                    <option value="theme">Theme</option>
+                    <option value="mecanisme">Mecanisme</option>
+                    <option value="ambiance">Ambiance</option>
+                    <option value="public">Public</option>
+                    <option value="complexite">Complexite</option>
+                    <option value="duree">Duree</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <div class="input-group input-group-sm">
+                    <input type="number" class="form-control" id="vd-new-force" value="70" min="10" max="100" step="10">
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <button class="btn btn-sm btn-outline-primary w-100" onclick="ajouterThematiqueValidation()">
+                    <i class="bi bi-plus"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" onclick="rejeterItemModal()">
+            <i class="bi bi-x"></i> Rejeter
+          </button>
+          <button type="button" class="btn btn-success" onclick="validerItemModal()">
+            <i class="bi bi-check"></i> Valider
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    // Variables globales
+    let thematiques = [];
+    let currentPage = 1;
+    const pageSize = 24;
+    let currentBatchId = null;
+    let eventSource = null;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('outils', 'thematiques');
+      loadStats();
+      loadThematiques();
+      loadBatches();
+      loadValidation();
+
+      // Event listeners pour filtres
+      document.getElementById('searchThematique').addEventListener('input', debounce(loadThematiques, 300));
+      document.getElementById('filterType').addEventListener('change', loadThematiques);
+      document.getElementById('filterActif').addEventListener('change', loadThematiques);
+      document.getElementById('sortOrder').addEventListener('change', loadThematiques);
+    });
+
+    // Debounce helper
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Charger les statistiques
+    async function loadStats() {
+      try {
+        const stats = await apiRequest('/api/thematiques/stats');
+        document.getElementById('stat-total').textContent = stats.totalActives;
+        document.getElementById('stat-inactives').textContent = stats.totalInactives;
+        document.getElementById('stat-alias').textContent = stats.totalAlias;
+
+        const totalArticles = stats.articlesEnrichis.reduce((sum, a) => sum + parseInt(a.count), 0);
+        document.getElementById('stat-articles').textContent = totalArticles;
+      } catch (e) {
+        console.error('Erreur chargement stats:', e);
+      }
+    }
+
+    // Charger les thematiques
+    async function loadThematiques() {
+      const params = new URLSearchParams({
+        recherche: document.getElementById('searchThematique').value,
+        type: document.getElementById('filterType').value,
+        actif: document.getElementById('filterActif').value,
+        ordre: document.getElementById('sortOrder').value,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
+        includeAlias: 'true'
+      });
+
+      try {
+        const result = await apiRequest(`/api/thematiques?${params}`);
+        thematiques = result.thematiques;
+        renderThematiques();
+        renderPagination(result.total);
+      } catch (e) {
+        console.error('Erreur chargement thematiques:', e);
+      }
+    }
+
+    // Afficher les thematiques
+    function renderThematiques() {
+      const container = document.getElementById('thematiques-list');
+      container.innerHTML = thematiques.map(t => `
+        <div class="col-md-4 col-lg-3">
+          <div class="card thematique-card h-100" onclick="openEditModal(${t.id})">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="card-title mb-0">${escapeHtml(t.nom)}</h6>
+                <span class="badge type-badge type-${t.type}">${t.type}</span>
+              </div>
+              ${t.description ? `<p class="card-text small text-muted mb-2">${escapeHtml(t.description.substring(0, 80))}${t.description.length > 80 ? '...' : ''}</p>` : ''}
+              <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="bi bi-bar-chart"></i> ${t.usage_count} utilisations</small>
+                ${!t.actif ? '<span class="badge bg-secondary">Inactive</span>' : ''}
+              </div>
+              ${t.alias && t.alias.length > 0 ? `
+                <div class="mt-2">
+                  ${t.alias.slice(0, 3).map(a => `<span class="badge alias-badge me-1">${escapeHtml(a.alias)}</span>`).join('')}
+                  ${t.alias.length > 3 ? `<span class="badge alias-badge">+${t.alias.length - 3}</span>` : ''}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Pagination
+    function renderPagination(total) {
+      const totalPages = Math.ceil(total / pageSize);
+      const container = document.getElementById('pagination-container');
+
+      if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+      }
+
+      let html = '<ul class="pagination justify-content-center">';
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+        </li>`;
+      }
+      html += '</ul>';
+      container.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      loadThematiques();
+    }
+
+    // Modal creation
+    function openCreateModal() {
+      document.getElementById('modal-id').value = '';
+      document.getElementById('modal-nom').value = '';
+      document.getElementById('modal-type').value = 'theme';
+      document.getElementById('modal-description').value = '';
+      document.getElementById('modal-actif').checked = true;
+      document.getElementById('modal-title').textContent = 'Nouvelle thematique';
+      new bootstrap.Modal(document.getElementById('thematiqueModal')).show();
+    }
+
+    // Modal edition
+    async function openEditModal(id) {
+      try {
+        const t = await apiRequest(`/api/thematiques/${id}`);
+        document.getElementById('modal-id').value = t.id;
+        document.getElementById('modal-nom').value = t.nom;
+        document.getElementById('modal-type').value = t.type;
+        document.getElementById('modal-description').value = t.description || '';
+        document.getElementById('modal-actif').checked = t.actif;
+        document.getElementById('modal-title').textContent = 'Modifier: ' + t.nom;
+        new bootstrap.Modal(document.getElementById('thematiqueModal')).show();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Sauvegarder thematique
+    async function saveThematique() {
+      const id = document.getElementById('modal-id').value;
+      const data = {
+        nom: document.getElementById('modal-nom').value,
+        type: document.getElementById('modal-type').value,
+        description: document.getElementById('modal-description').value || null,
+        actif: document.getElementById('modal-actif').checked
+      };
+
+      try {
+        if (id) {
+          await apiRequest(`/api/thematiques/${id}`, { method: 'PUT', body: data });
+        } else {
+          await apiRequest('/api/thematiques', { method: 'POST', body: data });
+        }
+        bootstrap.Modal.getInstance(document.getElementById('thematiqueModal')).hide();
+        loadThematiques();
+        loadStats();
+        showToast('Thematique enregistree', 'success');
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Dry run
+    async function dryRun() {
+      const types = [];
+      if (document.getElementById('type-jeu').checked) types.push('jeu');
+      if (document.getElementById('type-livre').checked) types.push('livre');
+      if (document.getElementById('type-film').checked) types.push('film');
+      if (document.getElementById('type-disque').checked) types.push('disque');
+
+      const data = {
+        types,
+        nonEnrichis: document.getElementById('batch-filter').value === 'non-enrichis',
+        limit: parseInt(document.getElementById('batch-limit').value)
+      };
+
+      try {
+        const result = await apiRequest('/api/enrichissement/dry-run', { method: 'POST', body: data });
+
+        document.getElementById('dr-articles').textContent = result.articles;
+        document.getElementById('dr-cout').textContent = '$' + (result.coutEstime || 0).toFixed(4);
+        document.getElementById('dr-tokens').textContent = result.tokensEstimes || 0;
+
+        if (result.sample) {
+          document.getElementById('dr-sample').innerHTML = `
+            <strong>Exemple (${result.sample.type} #${result.sample.id}):</strong><br>
+            ${result.sample.thematiques.map(t => `<span class="badge type-badge type-${t.type} me-1">${t.nom} (${(t.force * 100).toFixed(0)}%)</span>`).join('')}
+          `;
+        }
+
+        document.getElementById('dryrun-results').style.display = 'block';
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Lancer batch
+    async function lancerBatch() {
+      const types = [];
+      if (document.getElementById('type-jeu').checked) types.push('jeu');
+      if (document.getElementById('type-livre').checked) types.push('livre');
+      if (document.getElementById('type-film').checked) types.push('film');
+      if (document.getElementById('type-disque').checked) types.push('disque');
+
+      const data = {
+        types,
+        nonEnrichis: document.getElementById('batch-filter').value === 'non-enrichis',
+        limit: parseInt(document.getElementById('batch-limit').value),
+        priorite: parseInt(document.getElementById('batch-priorite').value)
+      };
+
+      try {
+        const result = await apiRequest('/api/enrichissement/batch', { method: 'POST', body: data });
+
+        if (result.count === 0) {
+          showToast('Aucun article a traiter', 'warning');
+          return;
+        }
+
+        currentBatchId = result.batchId;
+        document.getElementById('batch-progress-card').style.display = 'block';
+        document.getElementById('batch-log').innerHTML = `Batch ${currentBatchId} lance avec ${result.count} articles\n`;
+
+        // Demarrer le streaming
+        streamBatch(currentBatchId, result.count);
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Streaming du batch
+    function streamBatch(batchId, total) {
+      const token = localStorage.getItem('authToken');
+      const log = document.getElementById('batch-log');
+      const progressBar = document.getElementById('progress-bar');
+      const progressCount = document.getElementById('progress-count');
+      const progressStatus = document.getElementById('progress-status');
+      const currentArticle = document.getElementById('current-article');
+      const currentArticleType = document.getElementById('current-article-type');
+      const currentArticleTitle = document.getElementById('current-article-title');
+      const currentArticleThematiques = document.getElementById('current-article-thematiques');
+      const btnAnnuler = document.getElementById('btn-annuler-batch');
+
+      // Activer le bouton annuler
+      btnAnnuler.disabled = false;
+      btnAnnuler.style.display = 'inline-block';
+
+      eventSource = new EventSource(`/api/enrichissement/batch/${batchId}/stream?token=${token}`);
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'progress') {
+          const pct = (data.traite / total * 100).toFixed(0);
+          progressBar.style.width = pct + '%';
+          progressCount.textContent = `${data.traite}/${total}`;
+
+          // Afficher article en cours
+          currentArticle.style.display = 'block';
+          currentArticleType.textContent = data.item.type_article;
+          currentArticleTitle.textContent = data.item.titre;
+
+          // Afficher thematiques en temps reel
+          if (data.item.statut === 'completed' && data.item.thematiques?.length > 0) {
+            currentArticleThematiques.innerHTML = data.item.thematiques.map(t => `
+              <span class="badge type-badge type-${t.type} me-1 mb-1">
+                ${escapeHtml(t.nom)} <small>(${(t.force * 100).toFixed(0)}%)</small>
+              </span>
+            `).join('');
+          } else if (data.item.statut === 'failed') {
+            currentArticleThematiques.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle"></i> ${data.item.erreur || 'Erreur'}</span>`;
+          } else {
+            currentArticleThematiques.innerHTML = '<span class="text-muted">Traitement...</span>';
+          }
+
+          const status = data.item.statut === 'completed' ? '<span class="text-success">OK</span>' : '<span class="text-danger">ERREUR</span>';
+          const thematiquesCount = data.item.thematiques?.length || 0;
+          log.innerHTML += `[${status}] <strong>${escapeHtml(data.item.titre)}</strong> (${data.item.type_article}) - ${thematiquesCount} thematiques\n`;
+          log.scrollTop = log.scrollHeight;
+
+        } else if (data.type === 'complete') {
+          progressBar.classList.remove('progress-bar-animated');
+          progressBar.classList.add('bg-success');
+          progressStatus.textContent = 'Termine !';
+          btnAnnuler.style.display = 'none';
+          currentArticle.style.display = 'none';
+          log.innerHTML += `\n<span class="text-success">=== Termine ===</span>\nCompletes: ${data.stats.completed}\nEchecs: ${data.stats.failed}\nCout total: $${data.stats.cout_total?.toFixed(4) || 0}\n`;
+          loadBatches();
+          loadValidation();
+          loadStats();
+
+        } else if (data.type === 'cancelled') {
+          progressBar.classList.remove('progress-bar-animated');
+          progressBar.classList.add('bg-warning');
+          progressStatus.textContent = 'Annule';
+          btnAnnuler.style.display = 'none';
+          currentArticle.style.display = 'none';
+          log.innerHTML += `\n<span class="text-warning">=== Batch annule ===</span>\nArticles traites: ${data.traite}\n`;
+          loadBatches();
+
+        } else if (data.type === 'end') {
+          eventSource.close();
+          eventSource = null;
+          currentBatchId = null;
+
+        } else if (data.type === 'error') {
+          progressBar.classList.remove('progress-bar-animated');
+          progressBar.classList.add('bg-danger');
+          btnAnnuler.style.display = 'none';
+          log.innerHTML += `\n<span class="text-danger">ERREUR: ${data.message}</span>\n`;
+          eventSource.close();
+          eventSource = null;
+        }
+      };
+
+      eventSource.onerror = () => {
+        log.innerHTML += '\n<span class="text-warning">Connexion perdue</span>\n';
+        eventSource.close();
+        eventSource = null;
+        btnAnnuler.style.display = 'none';
+      };
+    }
+
+    // Annuler le batch en cours
+    async function annulerBatch() {
+      if (!currentBatchId) {
+        showToast('Aucun batch en cours', 'warning');
+        return;
+      }
+
+      if (!confirm('Annuler le batch en cours ?')) return;
+
+      try {
+        const result = await apiRequest(`/api/enrichissement/batch/${currentBatchId}/annuler`, { method: 'POST' });
+        showToast(result.message, 'warning');
+        document.getElementById('btn-annuler-batch').disabled = true;
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Charger les batches recents
+    async function loadBatches() {
+      try {
+        const batches = await apiRequest('/api/enrichissement/batches');
+        document.getElementById('batches-list').innerHTML = batches.map(b => `
+          <tr>
+            <td><code>${b.batch_id?.substring(0, 8) || '-'}...</code></td>
+            <td>${new Date(b.debut).toLocaleString('fr-FR')}</td>
+            <td>${b.total}</td>
+            <td><span class="badge bg-info">${b.completed}</span></td>
+            <td><span class="badge bg-success">${b.validated}</span></td>
+            <td><span class="badge bg-danger">${b.failed}</span></td>
+            <td>$${(b.cout_total || 0).toFixed(4)}</td>
+            <td>
+              ${b.completed > 0 ? `<button class="btn btn-sm btn-outline-success" onclick="validerBatch('${b.batch_id}')">Valider tout</button>` : '-'}
+            </td>
+          </tr>
+        `).join('') || '<tr><td colspan="8" class="text-center text-muted">Aucun batch</td></tr>';
+      } catch (e) {
+        console.error('Erreur chargement batches:', e);
+      }
+    }
+
+    // Valider tout un batch
+    async function validerBatch(batchId) {
+      if (!confirm('Valider toutes les thematiques de ce batch ?')) return;
+
+      try {
+        await apiRequest(`/api/enrichissement/batch/${batchId}/valider`, { method: 'POST' });
+        showToast('Batch valide', 'success');
+        loadBatches();
+        loadValidation();
+        loadStats();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Variable pour stocker les items de validation
+    let validationItems = [];
+    let currentValidationItem = null;
+
+    // Charger les items en attente de validation
+    async function loadValidation() {
+      try {
+        const typeFilter = document.getElementById('filter-validation-type')?.value || '';
+        const url = typeFilter ? `/api/enrichissement/validation?type=${typeFilter}` : '/api/enrichissement/validation';
+        validationItems = await apiRequest(url);
+
+        const badge = document.getElementById('badge-validation');
+        if (validationItems.length > 0) {
+          badge.textContent = validationItems.length;
+          badge.style.display = 'inline';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        document.getElementById('validation-list').innerHTML = validationItems.map(item => `
+          <div class="card mb-3 validation-card" onclick="openValidationDetail(${item.id})" style="cursor:pointer;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <div>
+                <span class="badge bg-secondary">${item.type_article}</span>
+                <strong>${escapeHtml(item.titre)}</strong>
+              </div>
+              <small class="text-muted">${new Date(item.processed_at).toLocaleString('fr-FR')}</small>
+            </div>
+            <div class="card-body">
+              ${item.description ? `<p class="text-muted small mb-2">${escapeHtml(item.description)}${item.description.length >= 200 ? '...' : ''}</p>` : ''}
+              <div class="mb-3">
+                ${(item.thematiques_proposees || []).map(t => `
+                  <span class="badge type-badge type-${t.type} me-1 mb-1">
+                    ${escapeHtml(t.nom)} <small>(${(t.force * 100).toFixed(0)}%)</small>
+                  </span>
+                `).join('')}
+              </div>
+              <div class="d-flex gap-2" onclick="event.stopPropagation();">
+                <button class="btn btn-success btn-sm" onclick="validerItem(${item.id})">
+                  <i class="bi bi-check"></i> Valider
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="openValidationDetail(${item.id})">
+                  <i class="bi bi-pencil"></i> Modifier
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="rejeterItem(${item.id})">
+                  <i class="bi bi-x"></i> Rejeter
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('') || '<div class="alert alert-success">Aucun article en attente de validation</div>';
+      } catch (e) {
+        console.error('Erreur chargement validation:', e);
+      }
+    }
+
+    // Ouvrir le detail pour modification
+    async function openValidationDetail(itemId) {
+      try {
+        currentValidationItem = await apiRequest(`/api/enrichissement/${itemId}`);
+
+        document.getElementById('vd-item-id').value = currentValidationItem.id;
+        document.getElementById('vd-type').textContent = currentValidationItem.type_article;
+        document.getElementById('vd-titre').textContent = currentValidationItem.titre;
+        document.getElementById('vd-description').textContent = currentValidationItem.description || '-';
+        document.getElementById('vd-annee').textContent = currentValidationItem.annee ? `Annee: ${currentValidationItem.annee}` : '';
+        document.getElementById('vd-metadonnees').innerHTML = currentValidationItem.metadonnees?.replace(/\n/g, '<br>') || '';
+        document.getElementById('vd-provider').textContent = `${currentValidationItem.llm_provider || '-'} / ${currentValidationItem.llm_model || '-'}`;
+
+        renderValidationThematiques();
+
+        new bootstrap.Modal(document.getElementById('validationDetailModal')).show();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Afficher les thematiques editables
+    function renderValidationThematiques() {
+      const container = document.getElementById('vd-thematiques-list');
+      const thematiques = currentValidationItem.thematiques_proposees || [];
+
+      container.innerHTML = thematiques.map((t, idx) => `
+        <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-white rounded border">
+          <span class="badge type-badge type-${t.type}">${t.type}</span>
+          <strong class="flex-grow-1">${escapeHtml(t.nom)}</strong>
+          <div class="input-group input-group-sm" style="width: 100px;">
+            <input type="number" class="form-control" value="${(t.force * 100).toFixed(0)}" min="10" max="100" step="10"
+                   onchange="updateThematiqueForce(${idx}, this.value)">
+            <span class="input-group-text">%</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="removeThematiqueValidation(${idx})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `).join('') || '<p class="text-muted">Aucune thematique proposee</p>';
+    }
+
+    // Modifier la force d'une thematique
+    function updateThematiqueForce(idx, value) {
+      if (currentValidationItem.thematiques_proposees[idx]) {
+        currentValidationItem.thematiques_proposees[idx].force = parseInt(value) / 100;
+      }
+    }
+
+    // Supprimer une thematique
+    function removeThematiqueValidation(idx) {
+      currentValidationItem.thematiques_proposees.splice(idx, 1);
+      renderValidationThematiques();
+    }
+
+    // Ajouter une thematique
+    function ajouterThematiqueValidation() {
+      const nom = document.getElementById('vd-new-nom').value.trim();
+      const type = document.getElementById('vd-new-type').value;
+      const force = parseInt(document.getElementById('vd-new-force').value) / 100;
+
+      if (!nom) {
+        showToast('Entrez un nom', 'warning');
+        return;
+      }
+
+      if (!currentValidationItem.thematiques_proposees) {
+        currentValidationItem.thematiques_proposees = [];
+      }
+
+      currentValidationItem.thematiques_proposees.push({ nom, type, force });
+      document.getElementById('vd-new-nom').value = '';
+      renderValidationThematiques();
+    }
+
+    // Valider depuis le modal (sauvegarde les modifications d'abord)
+    async function validerItemModal() {
+      try {
+        const itemId = document.getElementById('vd-item-id').value;
+
+        // Sauvegarder les modifications
+        await apiRequest(`/api/enrichissement/${itemId}/thematiques`, {
+          method: 'PUT',
+          body: { thematiques: currentValidationItem.thematiques_proposees }
+        });
+
+        // Valider
+        await apiRequest(`/api/enrichissement/${itemId}/valider`, { method: 'POST' });
+
+        bootstrap.Modal.getInstance(document.getElementById('validationDetailModal')).hide();
+        showToast('Item valide', 'success');
+        loadValidation();
+        loadStats();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Rejeter depuis le modal
+    async function rejeterItemModal() {
+      try {
+        const itemId = document.getElementById('vd-item-id').value;
+        await apiRequest(`/api/enrichissement/${itemId}/rejeter`, { method: 'POST' });
+        bootstrap.Modal.getInstance(document.getElementById('validationDetailModal')).hide();
+        showToast('Item rejete', 'success');
+        loadValidation();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Valider un item directement (sans modal)
+    async function validerItem(id) {
+      try {
+        await apiRequest(`/api/enrichissement/${id}/valider`, { method: 'POST' });
+        showToast('Item valide', 'success');
+        loadValidation();
+        loadStats();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Rejeter un item directement
+    async function rejeterItem(id) {
+      try {
+        await apiRequest(`/api/enrichissement/${id}/rejeter`, { method: 'POST' });
+        showToast('Item rejete', 'success');
+        loadValidation();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Valider tous les items visibles
+    async function validerTousVisibles() {
+      if (validationItems.length === 0) {
+        showToast('Aucun item a valider', 'info');
+        return;
+      }
+
+      if (!confirm(`Valider les ${validationItems.length} items affiches ?`)) return;
+
+      let succes = 0;
+      for (const item of validationItems) {
+        try {
+          await apiRequest(`/api/enrichissement/${item.id}/valider`, { method: 'POST' });
+          succes++;
+        } catch (e) {
+          console.error(`Erreur validation item ${item.id}:`, e);
+        }
+      }
+
+      showToast(`${succes}/${validationItems.length} items valides`, 'success');
+      loadValidation();
+      loadStats();
+    }
+
+    // Detection doublons
+    async function detecterDoublons() {
+      const seuil = parseInt(document.getElementById('seuil-doublons').value) / 100;
+
+      try {
+        const doublons = await apiRequest(`/api/thematiques/doublons?seuil=${seuil}`);
+
+        document.getElementById('doublons-list').innerHTML = doublons.length > 0 ?
+          doublons.map(d => `
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="row align-items-center">
+                  <div class="col-md-4">
+                    <span class="badge type-badge type-${d.thematique1.type}">${d.thematique1.type}</span>
+                    <strong>${escapeHtml(d.thematique1.nom)}</strong>
+                    <small class="text-muted d-block">${d.thematique1.usage_count} utilisations</small>
+                  </div>
+                  <div class="col-md-2 text-center">
+                    <span class="badge bg-warning text-dark">${d.similarite}% similaire</span>
+                  </div>
+                  <div class="col-md-4">
+                    <span class="badge type-badge type-${d.thematique2.type}">${d.thematique2.type}</span>
+                    <strong>${escapeHtml(d.thematique2.nom)}</strong>
+                    <small class="text-muted d-block">${d.thematique2.usage_count} utilisations</small>
+                  </div>
+                  <div class="col-md-2">
+                    <button class="btn btn-sm btn-outline-warning" onclick="openFusionModal(${d.thematique1.id}, '${escapeHtml(d.thematique1.nom)}', ${d.thematique2.id}, '${escapeHtml(d.thematique2.nom)}')">
+                      <i class="bi bi-arrow-left-right"></i> Fusionner
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('') :
+          '<div class="alert alert-success">Aucun doublon detecte avec ce seuil</div>';
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Modal fusion
+    function openFusionModal(sourceId, sourceNom, cibleId, cibleNom) {
+      document.getElementById('fusion-source-id').value = sourceId;
+      document.getElementById('fusion-cible-id').value = cibleId;
+      document.getElementById('fusion-source').textContent = sourceNom;
+      document.getElementById('fusion-cible').textContent = cibleNom;
+      new bootstrap.Modal(document.getElementById('fusionModal')).show();
+    }
+
+    // Confirmer fusion
+    async function confirmerFusion() {
+      const sourceId = document.getElementById('fusion-source-id').value;
+      const cibleId = document.getElementById('fusion-cible-id').value;
+
+      try {
+        await apiRequest('/api/thematiques/fusionner', {
+          method: 'POST',
+          body: { sourceId: parseInt(sourceId), cibleId: parseInt(cibleId) }
+        });
+        bootstrap.Modal.getInstance(document.getElementById('fusionModal')).hide();
+        showToast('Fusion effectuee', 'success');
+        loadThematiques();
+        loadStats();
+        detecterDoublons();
+      } catch (e) {
+        showToast('Erreur: ' + e.message, 'error');
+      }
+    }
+
+    // Helpers
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      container.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

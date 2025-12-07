@@ -4,7 +4,10 @@
  */
 
 // Configuration des éléments du menu
+// L'ordre détermine l'affichage dans la sidebar
+// separator: true crée une ligne de séparation
 const MENU_ITEMS = [
+    // === Section 1: Scanner + Dashboard ===
     {
         id: 'scanner',
         label: 'Scanner',
@@ -20,12 +23,37 @@ const MENU_ITEMS = [
         icon: 'speedometer2',
         href: 'dashboard.html'
     },
+    // === Séparation 1 ===
+    { separator: true },
+    // === Section 2: Gestion quotidienne ===
     {
-        id: 'adherents',
-        label: 'Adhérents',
-        icon: 'people',
-        href: 'adherents.html'
+        id: 'emprunts',
+        label: 'Emprunts',
+        icon: 'arrow-left-right',
+        href: 'emprunts.html'
     },
+    {
+        id: 'usagers',
+        label: 'Usagers',
+        icon: 'people',
+        href: 'usagers.html'
+    },
+    {
+        id: 'cotisations',
+        label: 'Cotisations',
+        icon: 'receipt',
+        href: 'cotisations.html'
+    },
+    {
+        id: 'historique-communications',
+        label: 'Communications',
+        icon: 'send',
+        href: 'historique-communications.html',
+        module: 'communications'
+    },
+    // === Séparation 2 ===
+    { separator: true },
+    // === Section 3: Les 4 modules/collections ===
     {
         id: 'jeux',
         label: 'Ludothèque',
@@ -58,30 +86,14 @@ const MENU_ITEMS = [
         color: '#B4E7C4',  // Pastel vert
         module: 'discotheque'
     },
-    {
-        id: 'emprunts',
-        label: 'Emprunts',
-        icon: 'arrow-left-right',
-        href: 'emprunts.html'
-    },
-    {
-        id: 'cotisations',
-        label: 'Cotisations',
-        icon: 'receipt',
-        href: 'cotisations.html'
-    },
+    // === Séparation 3 ===
+    { separator: true },
+    // === Section 4: Administration ===
     {
         id: 'statistiques',
         label: 'Statistiques',
         icon: 'graph-up',
         href: 'statistiques.html'
-    },
-    {
-        id: 'historique-communications',
-        label: 'Communications',
-        icon: 'send',
-        href: 'historique-communications.html',
-        module: 'communications'
     },
     {
         id: 'parametres',

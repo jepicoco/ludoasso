@@ -15,11 +15,11 @@ module.exports = (sequelize) => {
         key: 'id'
       }
     },
-    adherent_id: {
+    utilisateur_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'adherents',
+        model: 'utilisateurs',
         key: 'id'
       }
     },
@@ -77,7 +77,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'adherents',
+        model: 'utilisateurs',
         key: 'id'
       },
       comment: 'ID admin qui a traite (si manuelle)'
@@ -94,7 +94,7 @@ module.exports = (sequelize) => {
     updatedAt: 'updated_at',
     indexes: [
       { fields: ['emprunt_id'] },
-      { fields: ['adherent_id'] },
+      { fields: ['utilisateur_id'] },
       { fields: ['statut'] },
       { fields: ['date_demande'] }
     ]

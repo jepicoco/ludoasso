@@ -34,12 +34,20 @@ const PARAMETRES_CATEGORIES = {
       { id: 'declencheurs', label: 'Declencheurs', href: 'parametres-declencheurs.html', icon: 'bi-lightning' }
     ]
   },
+  emprunts: {
+    label: 'Emprunts',
+    icon: 'bi-arrow-repeat',
+    pages: [
+      { id: 'prolongations', label: 'Prolongations', href: 'parametres-emprunts.html', icon: 'bi-clock-history' }
+    ]
+  },
   outils: {
     label: 'Outils',
     icon: 'bi-tools',
     pages: [
       { id: 'import', label: 'Import jeux', href: 'import-jeux.html', icon: 'bi-upload' },
-      { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' }
+      { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' },
+      { id: 'thematiques', label: 'Thematiques IA', href: 'parametres-thematiques.html', icon: 'bi-tags', module: 'recherche_ia' }
     ]
   }
 };
@@ -62,10 +70,14 @@ function renderSubNav(category, currentPageId) {
     return;
   }
 
-  // Filtrer les pages adminOnly si l'utilisateur n'est pas admin
+  // Filtrer les pages adminOnly et par module actif
   const userRole = localStorage.getItem('userRole') || 'usager';
   const filteredPages = cat.pages.filter(page => {
     if (page.adminOnly && userRole !== 'administrateur') {
+      return false;
+    }
+    // Filtrer par module actif (utilise isModuleActive de admin-template.js)
+    if (page.module && typeof isModuleActive === 'function' && !isModuleActive(page.module)) {
       return false;
     }
     return true;
@@ -111,6 +123,7 @@ function getParametresLink(category) {
     general: 'general',
     comptabilite: 'comptabilite',
     communication: 'communication',
+    emprunts: 'emprunts',
     outils: 'outils'
   };
   return `parametres.html#${tabMap[category] || 'general'}`;

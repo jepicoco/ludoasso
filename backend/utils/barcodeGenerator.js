@@ -1,13 +1,16 @@
 const bwipjs = require('bwip-js');
 
 /**
- * Generate adherent barcode string from ID
- * Format: ADH00000001
+ * Generate utilisateur (usager) barcode string from ID
+ * Format: USA00000001
  */
-const generateAdherentCode = (id) => {
+const generateUtilisateurCode = (id) => {
   const paddedId = String(id).padStart(8, '0');
-  return `ADH${paddedId}`;
+  return `USA${paddedId}`;
 };
+
+// Alias pour compatibilite
+const generateAdherentCode = generateUtilisateurCode;
 
 /**
  * Generate jeu barcode string from ID
@@ -47,8 +50,8 @@ const generateCdCode = (id) => {
 
 /**
  * Decode a barcode string to extract type and ID
- * @param {string} code - The barcode string (e.g., "ADH00000001", "JEU00000123", "LIV00000001")
- * @returns {Object} - { type: 'adherent'|'jeu'|'livre'|'film'|'cd', id: number } or null if invalid
+ * @param {string} code - The barcode string (e.g., "USA00000001", "ADH00000001", "JEU00000123", "LIV00000001")
+ * @returns {Object} - { type: 'utilisateur'|'jeu'|'livre'|'film'|'cd', id: number } or null if invalid
  */
 const decodeBarcode = (code) => {
   if (!code || typeof code !== 'string') {
@@ -56,15 +59,17 @@ const decodeBarcode = (code) => {
   }
 
   // Configuration des patterns par type
+  // USA est le nouveau prefixe, ADH est conserve pour compatibilite
   const patterns = {
-    ADH: { type: 'adherent', model: 'Adherent' },
+    USA: { type: 'utilisateur', model: 'Utilisateur' },
+    ADH: { type: 'utilisateur', model: 'Utilisateur' }, // Compatibilite ancien format
     JEU: { type: 'jeu', model: 'Jeu' },
     LIV: { type: 'livre', model: 'Livre' },
     FLM: { type: 'film', model: 'Film' },
     MUS: { type: 'cd', model: 'Cd' }
   };
 
-  // Vérifier chaque pattern
+  // Verifier chaque pattern
   for (const [prefix, info] of Object.entries(patterns)) {
     const match = code.match(new RegExp(`^${prefix}(\\d{8})$`));
     if (match) {
@@ -165,7 +170,9 @@ const generateEAN13Code = (id, type) => {
  */
 const generateCode = (id, type) => {
   switch (type) {
-    case 'adherent': return generateAdherentCode(id);
+    case 'utilisateur':
+    case 'adherent': // Compatibilite
+      return generateUtilisateurCode(id);
     case 'jeu': return generateJeuCode(id);
     case 'livre': return generateLivreCode(id);
     case 'film': return generateFilmCode(id);
@@ -175,7 +182,8 @@ const generateCode = (id, type) => {
 };
 
 module.exports = {
-  generateAdherentCode,
+  generateUtilisateurCode,
+  generateAdherentCode, // Alias pour compatibilite
   generateJeuCode,
   generateLivreCode,
   generateFilmCode,

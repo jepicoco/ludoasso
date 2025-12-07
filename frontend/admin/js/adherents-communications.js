@@ -1,5 +1,5 @@
 /**
- * Gestion des communications (emails et SMS) pour les adhérents
+ * Gestion des communications (emails et SMS) pour les usagers
  */
 
 let emailModalInstance = null;
@@ -98,7 +98,7 @@ async function openSendSmsModal(adherent) {
   currentAdherent = adherent;
 
   if (!adherent.telephone) {
-    showToast('Cet adhérent n\'a pas de numéro de téléphone', 'error');
+    showToast('Cet usager n\'a pas de numero de telephone', 'error');
     return;
   }
 
@@ -235,7 +235,7 @@ async function loadSmsTemplates() {
 // ============================================
 
 /**
- * Prévisualise un template email avec les variables de l'adhérent
+ * Previsualise un template email avec les variables de l'usager
  */
 function previewEmailTemplate(templateCode) {
   const previewDiv = document.getElementById('email-template-preview');
@@ -258,7 +258,7 @@ function previewEmailTemplate(templateCode) {
 }
 
 /**
- * Prévisualise un template SMS avec les variables de l'adhérent
+ * Previsualise un template SMS avec les variables de l'usager
  */
 function previewSmsTemplate(templateCode) {
   const previewDiv = document.getElementById('sms-template-preview');
@@ -302,7 +302,7 @@ function replaceVariables(text, data) {
 // ============================================
 
 /**
- * Envoie un email à l'adhérent
+ * Envoie un email a l'usager
  */
 async function sendEmailToAdherent() {
   try {
@@ -365,7 +365,7 @@ async function sendEmailToAdherent() {
 }
 
 /**
- * Envoie un SMS à l'adhérent
+ * Envoie un SMS a l'usager
  */
 async function sendSmsToAdherent() {
   try {

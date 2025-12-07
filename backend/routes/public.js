@@ -17,6 +17,7 @@ const {
   GenreFilm,
   GenreMusical
 } = require('../models');
+const RechercheNaturelleService = require('../services/rechercheNaturelleService');
 
 // Include configurations for public queries (simplified, no sensitive data)
 const JEU_INCLUDES = [
@@ -186,7 +187,7 @@ router.get('/catalogue', async (req, res) => {
         const { count, rows } = await Jeu.findAndCountAll({
           where: jeuWhere,
           attributes: ['id', 'code_barre', 'titre', 'sous_titre', 'annee_sortie',
-                       'age_minimum', 'nb_joueurs_min', 'nb_joueurs_max', 'duree_moyenne',
+                       'age_min', 'nb_joueurs_min', 'nb_joueurs_max', 'duree_partie',
                        'statut', 'image_url', 'prix_indicatif'],
           include: JEU_INCLUDES,
           order: [[tri === 'titre' ? 'titre' : tri, ordre]],
@@ -518,6 +519,89 @@ router.get('/filtres/:type', async (req, res) => {
   } catch (error) {
     console.error('Erreur filtres:', error);
     res.status(500).json({ error: 'Erreur serveur', message: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/public/recherche-intelligente
+ * @desc    Recherche par thematiques (recherche naturelle)
+ * @access  Public
+ * @query   q=requete&type=jeu|livre|film|disque&limit=20&offset=0
+ */
+router.get('/recherche-intelligente', async (req, res) => {
+  try {
+    const parametres = await ParametresFront.getParametres();
+
+    // Verifier que le module recherche IA est actif
+    if (!parametres.module_recherche_ia) {
+      return res.status(403).json({
+        error: 'Recherche intelligente non activee',
+        message: 'Le module de recherche intelligente n\'est pas active sur ce site'
+      });
+    }
+
+    const { q, type, limit = 20, offset = 0 } = req.query;
+
+    if (!q || q.trim().length < 2) {
+      return res.status(400).json({
+        error: 'Requete invalide',
+        message: 'Veuillez entrer au moins 2 caracteres'
+      });
+    }
+
+    // Mapper le type frontend vers le type backend
+    const typeMap = {
+      'jeux': 'jeu',
+      'livres': 'livre',
+      'films': 'film',
+      'disques': 'disque'
+    };
+
+    const typeArticle = type ? typeMap[type] || type : null;
+
+    // Verifier que le module correspondant est actif
+    if (typeArticle) {
+      const moduleMap = {
+        'jeu': parametres.module_ludotheque,
+        'livre': parametres.module_bibliotheque,
+        'film': parametres.module_filmotheque,
+        'disque': parametres.module_discotheque
+      };
+
+      if (!moduleMap[typeArticle]) {
+        return res.status(400).json({
+          error: 'Module inactif',
+          message: 'Ce type de contenu n\'est pas disponible'
+        });
+      }
+    }
+
+    const result = await RechercheNaturelleService.rechercher(q, {
+      typeArticle,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Erreur recherche intelligente:', error);
+    res.status(500).json({ error: 'Erreur serveur', message: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/public/recherche-intelligente/check
+ * @desc    Verifie si la recherche intelligente est disponible
+ * @access  Public
+ */
+router.get('/recherche-intelligente/check', async (req, res) => {
+  try {
+    const parametres = await ParametresFront.getParametres();
+    res.json({
+      disponible: !!parametres.module_recherche_ia
+    });
+  } catch (error) {
+    res.json({ disponible: false });
   }
 });
 

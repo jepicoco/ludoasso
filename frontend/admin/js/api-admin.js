@@ -49,13 +49,18 @@ const apiRequest = async (endpoint, options = {}) => {
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
 
+  // Parse response JSON
+  const data = await response.json();
+
   if (response.status === 401) {
     removeAuthToken();
-    window.location.href = '/admin/login.html';
-    throw new Error('Unauthorized');
+    // Ne pas rediriger si on est déjà sur la page de login (évite rechargement en boucle)
+    const isLoginPage = window.location.pathname.includes('login.html');
+    if (!isLoginPage) {
+      window.location.href = '/admin/login.html';
+    }
+    throw new Error(data.message || 'Identifiants invalides');
   }
-
-  const data = await response.json();
 
   if (!response.ok) {
     throw new Error(data.message || 'API request failed');
@@ -330,6 +335,21 @@ const barcodesAPI = {
     return `${API_BASE_URL}/barcodes/jeu/${id}/label?token=${token}`;
   },
 
+  getLivreLabelURL(id) {
+    const token = getAuthToken();
+    return `${API_BASE_URL}/barcodes/livre/${id}/label?token=${token}`;
+  },
+
+  getFilmLabelURL(id) {
+    const token = getAuthToken();
+    return `${API_BASE_URL}/barcodes/film/${id}/label?token=${token}`;
+  },
+
+  getDisqueLabelURL(id) {
+    const token = getAuthToken();
+    return `${API_BASE_URL}/barcodes/disque/${id}/label?token=${token}`;
+  },
+
   /**
    * Imprime la carte adherent avec verification de cotisation
    * Affiche une popup si pas de cotisation ou expiree
@@ -410,6 +430,18 @@ const barcodesAPI = {
 
   async printJeuLabel(id) {
     window.open(this.getJeuLabelURL(id), '_blank');
+  },
+
+  async printLivreLabel(id) {
+    window.open(this.getLivreLabelURL(id), '_blank');
+  },
+
+  async printFilmLabel(id) {
+    window.open(this.getFilmLabelURL(id), '_blank');
+  },
+
+  async printDisqueLabel(id) {
+    window.open(this.getDisqueLabelURL(id), '_blank');
   },
 
   async printBatchCards(ids) {

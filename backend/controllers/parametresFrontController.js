@@ -3,7 +3,15 @@
  * Gestion des parametres du site public (SEO, modules, CGV/CGU...)
  */
 
+const crypto = require('crypto');
 const { ParametresFront } = require('../models');
+
+/**
+ * Genere une cle aleatoire pour le bypass de maintenance
+ */
+const generateMaintenanceKey = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
 
 /**
  * Recuperer tous les parametres front
@@ -45,8 +53,8 @@ exports.updateParametres = async (req, res) => {
       // Mode
       mode_fonctionnement,
       // Modules
-      module_ludotheque, module_bibliotheque, module_inscriptions,
-      module_reservations, module_paiement_en_ligne,
+      module_ludotheque, module_bibliotheque, module_filmotheque, module_discotheque,
+      module_inscriptions, module_reservations, module_paiement_en_ligne,
       // Legal
       cgv, cgu, politique_confidentialite, mentions_legales,
       // Contact
@@ -56,14 +64,30 @@ exports.updateParametres = async (req, res) => {
       // Personnalisation
       couleur_primaire, couleur_secondaire, css_personnalise,
       // Maintenance
-      mode_maintenance, message_maintenance
+      mode_maintenance, message_maintenance,
+      // Prolongations - Ludotheque
+      prolongation_jours_ludotheque, prolongation_auto_max_ludotheque,
+      prolongation_manuelle_ludotheque, prolongation_msg_reservation_ludotheque,
+      prolongation_active_ludotheque,
+      // Prolongations - Bibliotheque
+      prolongation_jours_bibliotheque, prolongation_auto_max_bibliotheque,
+      prolongation_manuelle_bibliotheque, prolongation_msg_reservation_bibliotheque,
+      prolongation_active_bibliotheque,
+      // Prolongations - Filmotheque
+      prolongation_jours_filmotheque, prolongation_auto_max_filmotheque,
+      prolongation_manuelle_filmotheque, prolongation_msg_reservation_filmotheque,
+      prolongation_active_filmotheque,
+      // Prolongations - Discotheque
+      prolongation_jours_discotheque, prolongation_auto_max_discotheque,
+      prolongation_manuelle_discotheque, prolongation_msg_reservation_discotheque,
+      prolongation_active_discotheque
     } = req.body;
 
     let parametres = await ParametresFront.findOne();
 
     if (!parametres) {
       // Creer les parametres s'ils n'existent pas
-      parametres = await ParametresFront.create({
+      const createData = {
         nom_site: nom_site || 'Ludotheque',
         logo_url, favicon_url,
         meta_description, meta_keywords, meta_author,
@@ -71,6 +95,8 @@ exports.updateParametres = async (req, res) => {
         mode_fonctionnement: mode_fonctionnement || 'complet',
         module_ludotheque: module_ludotheque !== false,
         module_bibliotheque: module_bibliotheque || false,
+        module_filmotheque: module_filmotheque || false,
+        module_discotheque: module_discotheque || false,
         module_inscriptions: module_inscriptions !== false,
         module_reservations: module_reservations || false,
         module_paiement_en_ligne: module_paiement_en_ligne || false,
@@ -80,7 +106,14 @@ exports.updateParametres = async (req, res) => {
         couleur_primaire, couleur_secondaire, css_personnalise,
         mode_maintenance: mode_maintenance || false,
         message_maintenance
-      });
+      };
+
+      // Generer une cle de maintenance si le mode est active
+      if (createData.mode_maintenance) {
+        createData.maintenance_key = generateMaintenanceKey();
+      }
+
+      parametres = await ParametresFront.create(createData);
     } else {
       // Mettre a jour les parametres existants
       const updates = {};
@@ -105,6 +138,8 @@ exports.updateParametres = async (req, res) => {
       // Modules
       if (module_ludotheque !== undefined) updates.module_ludotheque = module_ludotheque;
       if (module_bibliotheque !== undefined) updates.module_bibliotheque = module_bibliotheque;
+      if (module_filmotheque !== undefined) updates.module_filmotheque = module_filmotheque;
+      if (module_discotheque !== undefined) updates.module_discotheque = module_discotheque;
       if (module_inscriptions !== undefined) updates.module_inscriptions = module_inscriptions;
       if (module_reservations !== undefined) updates.module_reservations = module_reservations;
       if (module_paiement_en_ligne !== undefined) updates.module_paiement_en_ligne = module_paiement_en_ligne;
@@ -132,8 +167,42 @@ exports.updateParametres = async (req, res) => {
       if (css_personnalise !== undefined) updates.css_personnalise = css_personnalise;
 
       // Maintenance
-      if (mode_maintenance !== undefined) updates.mode_maintenance = mode_maintenance;
+      if (mode_maintenance !== undefined) {
+        updates.mode_maintenance = mode_maintenance;
+        // Generer une nouvelle cle si on active la maintenance
+        if (mode_maintenance === true) {
+          updates.maintenance_key = generateMaintenanceKey();
+        }
+      }
       if (message_maintenance !== undefined) updates.message_maintenance = message_maintenance;
+
+      // Prolongations - Ludotheque
+      if (prolongation_jours_ludotheque !== undefined) updates.prolongation_jours_ludotheque = prolongation_jours_ludotheque;
+      if (prolongation_auto_max_ludotheque !== undefined) updates.prolongation_auto_max_ludotheque = prolongation_auto_max_ludotheque;
+      if (prolongation_manuelle_ludotheque !== undefined) updates.prolongation_manuelle_ludotheque = prolongation_manuelle_ludotheque;
+      if (prolongation_msg_reservation_ludotheque !== undefined) updates.prolongation_msg_reservation_ludotheque = prolongation_msg_reservation_ludotheque;
+      if (prolongation_active_ludotheque !== undefined) updates.prolongation_active_ludotheque = prolongation_active_ludotheque;
+
+      // Prolongations - Bibliotheque
+      if (prolongation_jours_bibliotheque !== undefined) updates.prolongation_jours_bibliotheque = prolongation_jours_bibliotheque;
+      if (prolongation_auto_max_bibliotheque !== undefined) updates.prolongation_auto_max_bibliotheque = prolongation_auto_max_bibliotheque;
+      if (prolongation_manuelle_bibliotheque !== undefined) updates.prolongation_manuelle_bibliotheque = prolongation_manuelle_bibliotheque;
+      if (prolongation_msg_reservation_bibliotheque !== undefined) updates.prolongation_msg_reservation_bibliotheque = prolongation_msg_reservation_bibliotheque;
+      if (prolongation_active_bibliotheque !== undefined) updates.prolongation_active_bibliotheque = prolongation_active_bibliotheque;
+
+      // Prolongations - Filmotheque
+      if (prolongation_jours_filmotheque !== undefined) updates.prolongation_jours_filmotheque = prolongation_jours_filmotheque;
+      if (prolongation_auto_max_filmotheque !== undefined) updates.prolongation_auto_max_filmotheque = prolongation_auto_max_filmotheque;
+      if (prolongation_manuelle_filmotheque !== undefined) updates.prolongation_manuelle_filmotheque = prolongation_manuelle_filmotheque;
+      if (prolongation_msg_reservation_filmotheque !== undefined) updates.prolongation_msg_reservation_filmotheque = prolongation_msg_reservation_filmotheque;
+      if (prolongation_active_filmotheque !== undefined) updates.prolongation_active_filmotheque = prolongation_active_filmotheque;
+
+      // Prolongations - Discotheque
+      if (prolongation_jours_discotheque !== undefined) updates.prolongation_jours_discotheque = prolongation_jours_discotheque;
+      if (prolongation_auto_max_discotheque !== undefined) updates.prolongation_auto_max_discotheque = prolongation_auto_max_discotheque;
+      if (prolongation_manuelle_discotheque !== undefined) updates.prolongation_manuelle_discotheque = prolongation_manuelle_discotheque;
+      if (prolongation_msg_reservation_discotheque !== undefined) updates.prolongation_msg_reservation_discotheque = prolongation_msg_reservation_discotheque;
+      if (prolongation_active_discotheque !== undefined) updates.prolongation_active_discotheque = prolongation_active_discotheque;
 
       await parametres.update(updates);
     }
@@ -165,7 +234,7 @@ exports.updateSection = async (req, res) => {
     const champsParSection = {
       identite: ['nom_site', 'logo_url', 'favicon_url'],
       seo: ['meta_description', 'meta_keywords', 'meta_author', 'og_image_url', 'google_analytics_id', 'google_site_verification', 'robots_txt'],
-      modules: ['mode_fonctionnement', 'module_ludotheque', 'module_bibliotheque', 'module_inscriptions', 'module_reservations', 'module_paiement_en_ligne'],
+      modules: ['mode_fonctionnement', 'module_ludotheque', 'module_bibliotheque', 'module_filmotheque', 'module_discotheque', 'module_inscriptions', 'module_reservations', 'module_paiement_en_ligne'],
       legal: ['cgv', 'cgu', 'politique_confidentialite', 'mentions_legales'],
       contact: ['email_contact', 'telephone_contact', 'adresse_contact'],
       reseaux: ['facebook_url', 'instagram_url', 'twitter_url', 'youtube_url'],
@@ -180,6 +249,11 @@ exports.updateSection = async (req, res) => {
       if (updates[key] !== undefined) {
         updatesFiltered[key] = updates[key];
       }
+    }
+
+    // Si on active la maintenance, generer une nouvelle cle
+    if (section === 'maintenance' && updatesFiltered.mode_maintenance === true) {
+      updatesFiltered.maintenance_key = generateMaintenanceKey();
     }
 
     await parametres.update(updatesFiltered);

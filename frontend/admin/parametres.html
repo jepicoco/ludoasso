@@ -79,6 +79,12 @@
             </button>
           </li>
           <li class="nav-item" role="presentation">
+            <button class="nav-link" id="services-externes-tab" data-bs-toggle="tab" data-bs-target="#services-externes"
+                    type="button" role="tab">
+              <i class="bi bi-cloud"></i> Services externes
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
             <button class="nav-link" id="outils-tab" data-bs-toggle="tab" data-bs-target="#outils"
                     type="button" role="tab">
               <i class="bi bi-tools"></i> Outils
@@ -200,7 +206,7 @@
                         <i class="bi bi-currency-euro text-success"></i>
                       </div>
                       <h5 class="card-title text-dark">Tarifs cotisation</h5>
-                      <p class="text-muted mb-0">Tarifs des adhesions, prorata, reductions adherents</p>
+                      <p class="text-muted mb-0">Tarifs des adhesions, prorata, reductions membres</p>
                     </div>
                   </div>
                 </a>
@@ -243,36 +249,6 @@
           <!-- ======================== -->
           <div class="tab-pane fade" id="communication" role="tabpanel">
             <div class="row g-4">
-              <!-- Configuration Email -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-email.html" class="text-decoration-none">
-                  <div class="card param-card border-primary">
-                    <div class="card-body">
-                      <div class="icon-container bg-primary bg-opacity-10">
-                        <i class="bi bi-envelope-at text-primary"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Configuration Email</h5>
-                      <p class="text-muted mb-0">Serveur SMTP, expediteur, parametres</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Configuration SMS -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-sms.html" class="text-decoration-none">
-                  <div class="card param-card border-success">
-                    <div class="card-body">
-                      <div class="icon-container bg-success bg-opacity-10">
-                        <i class="bi bi-phone text-success"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Configuration SMS</h5>
-                      <p class="text-muted mb-0">Fournisseur SMS, credits, expediteur</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
               <!-- Templates -->
               <div class="col-md-6 col-lg-4">
                 <a href="parametres-templates.html" class="text-decoration-none">
@@ -321,6 +297,58 @@
           </div>
 
           <!-- ======================== -->
+          <!-- Services Externes Tab    -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="services-externes" role="tabpanel">
+            <div class="row g-4">
+              <!-- Configuration Email -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-email.html" class="text-decoration-none">
+                  <div class="card param-card border-primary">
+                    <div class="card-body">
+                      <div class="icon-container bg-primary bg-opacity-10">
+                        <i class="bi bi-envelope-at text-primary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Configuration Email</h5>
+                      <p class="text-muted mb-0">Serveur SMTP, expediteur, parametres</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Configuration SMS -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-sms.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-phone text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Configuration SMS</h5>
+                      <p class="text-muted mb-0">Fournisseur SMS, credits, expediteur</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Configuration LLM (IA) - visible uniquement si module recherche_ia actif -->
+              <div class="col-md-6 col-lg-4" id="card-llm">
+                <a href="parametres-llm.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-robot text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Intelligence Artificielle</h5>
+                      <p class="text-muted mb-0">Providers LLM (Claude, GPT, Mistral...)</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
           <!-- Outils Tab               -->
           <!-- ======================== -->
           <div class="tab-pane fade" id="outils" role="tabpanel">
@@ -349,7 +377,7 @@
                         <i class="bi bi-archive text-warning"></i>
                       </div>
                       <h5 class="card-title text-dark">Archives RGPD</h5>
-                      <p class="text-muted mb-0">Adherents archives, anonymisation</p>
+                      <p class="text-muted mb-0">Usagers archives, anonymisation</p>
                     </div>
                   </div>
                 </a>
@@ -368,21 +396,232 @@
                 </div>
               </div>
 
-              <!-- Maintenance BDD (placeholder) -->
+              <!-- Reset BDD -->
               <div class="col-md-6 col-lg-4">
-                <div class="card param-card border-secondary disabled">
-                  <div class="card-body">
-                    <div class="icon-container bg-secondary bg-opacity-10">
-                      <i class="bi bi-database-check text-secondary"></i>
+                <a href="#" class="text-decoration-none" onclick="openResetModal(); return false;">
+                  <div class="card param-card border-danger">
+                    <div class="card-body">
+                      <div class="icon-container bg-danger bg-opacity-10">
+                        <i class="bi bi-database-x text-danger"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Reset Base de donnees</h5>
+                      <p class="text-muted mb-0">Reinitialiser les donnees (IRREVERSIBLE)</p>
                     </div>
-                    <h5 class="card-title text-dark">Maintenance BDD</h5>
-                    <p class="text-muted mb-0">Verifier l'integrite (bientot disponible)</p>
                   </div>
-                </div>
+                </a>
+              </div>
+
+              <!-- Thematiques IA - visible uniquement si module recherche_ia actif -->
+              <div class="col-md-6 col-lg-4" id="card-thematiques">
+                <a href="parametres-thematiques.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #7c3aed;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #e0cffc, #d0b8f0);">
+                        <i class="bi bi-tags" style="color: #4a1d96;"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Thematiques IA</h5>
+                      <p class="text-muted mb-0">Enrichissement, deduplication, gestion des themes</p>
+                    </div>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
 
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Reset BDD - Etape 1 : Selection -->
+  <div class="modal fade" id="resetModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>Reinitialisation de la base de donnees</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <strong><i class="bi bi-exclamation-octagon-fill"></i> ATTENTION !</strong><br>
+            Cette operation est <strong>IRREVERSIBLE</strong>. Toutes les donnees selectionnees seront definitivement supprimees.
+          </div>
+
+          <h6 class="mb-3">Selectionnez les elements a reinitialiser :</h6>
+
+          <div class="row g-3">
+            <!-- Jeux -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetJeux" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetJeux">
+                  <i class="bi bi-dice-6 text-warning me-2"></i>
+                  <strong>Jeux (Ludotheque)</strong>
+                  <br><small class="text-muted">Supprime tous les jeux et leurs emprunts associes</small>
+                  <br><span class="badge bg-secondary" id="statsJeux">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Livres -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetLivres" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetLivres">
+                  <i class="bi bi-book text-primary me-2"></i>
+                  <strong>Livres (Bibliotheque)</strong>
+                  <br><small class="text-muted">Supprime tous les livres et leurs emprunts associes</small>
+                  <br><span class="badge bg-secondary" id="statsLivres">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Films -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetFilms" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetFilms">
+                  <i class="bi bi-film text-danger me-2"></i>
+                  <strong>Films (Filmotheque)</strong>
+                  <br><small class="text-muted">Supprime tous les films et leurs emprunts associes</small>
+                  <br><span class="badge bg-secondary" id="statsFilms">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Musique -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetMusique" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetMusique">
+                  <i class="bi bi-vinyl text-success me-2"></i>
+                  <strong>Musique (Discotheque)</strong>
+                  <br><small class="text-muted">Supprime tous les disques et leurs emprunts associes</small>
+                  <br><span class="badge bg-secondary" id="statsMusique">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Emprunts -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetEmprunts" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetEmprunts">
+                  <i class="bi bi-arrow-left-right text-purple me-2" style="color: #6f42c1;"></i>
+                  <strong>Emprunts</strong>
+                  <br><small class="text-muted">Supprime tous les emprunts et remet les articles en disponible</small>
+                  <br><span class="badge bg-secondary" id="statsEmprunts">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Cotisations -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetCotisations" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetCotisations">
+                  <i class="bi bi-receipt text-orange me-2" style="color: #fd7e14;"></i>
+                  <strong>Cotisations</strong>
+                  <br><small class="text-muted">Supprime toutes les cotisations et prolongations</small>
+                  <br><span class="badge bg-secondary" id="statsCotisations">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Utilisateurs -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetUtilisateurs" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetUtilisateurs">
+                  <i class="bi bi-people text-info me-2"></i>
+                  <strong>Utilisateurs</strong>
+                  <br><small class="text-muted">Supprime tous les usagers <strong>sauf l'admin connecte</strong></small>
+                  <br><span class="badge bg-secondary" id="statsUtilisateurs">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tarifs & Reductions -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetTarifs" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetTarifs">
+                  <i class="bi bi-tags me-2" style="color: #20c997;"></i>
+                  <strong>Tarifs & Reductions</strong>
+                  <br><small class="text-muted">Supprime tarifs cotisations, codes reduction, modes paiement</small>
+                  <br><span class="badge bg-secondary" id="statsTarifs">-</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Parametres Communications -->
+            <div class="col-md-6">
+              <div class="form-check border rounded p-3">
+                <input class="form-check-input" type="checkbox" id="resetParametres" onchange="updateResetStats()">
+                <label class="form-check-label" for="resetParametres">
+                  <i class="bi bi-gear text-secondary me-2"></i>
+                  <strong>Parametres Communications</strong>
+                  <br><small class="text-muted">Reset des configs email, SMS, LLM et logs de communication</small>
+                  <br><span class="badge bg-secondary" id="statsParametres">-</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="btnProceedReset" onclick="showConfirmationModal()" disabled>
+            <i class="bi bi-arrow-right"></i> Continuer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Reset BDD - Etape 2 : Confirmation finale -->
+  <div class="modal fade" id="resetConfirmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-shield-exclamation me-2"></i>Confirmation finale</h5>
+        </div>
+        <div class="modal-body text-center">
+          <div class="mb-4">
+            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 4rem;"></i>
+          </div>
+          <h5 class="text-danger mb-3">DERNIERE CHANCE !</h5>
+          <p>Vous etes sur le point de supprimer definitivement les donnees suivantes :</p>
+          <div id="confirmationSummary" class="alert alert-warning text-start mb-3">
+            <!-- Rempli dynamiquement -->
+          </div>
+          <p class="mb-3">Pour confirmer, tapez <strong>CONFIRMER-RESET</strong> ci-dessous :</p>
+          <input type="text" class="form-control text-center" id="confirmationCode" placeholder="CONFIRMER-RESET" oninput="checkConfirmationCode()">
+          <small class="text-muted">La casse doit etre exacte</small>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button type="button" class="btn btn-secondary" onclick="backToSelection()">
+            <i class="bi bi-arrow-left"></i> Retour
+          </button>
+          <button type="button" class="btn btn-danger" id="btnFinalReset" onclick="executeReset()" disabled>
+            <i class="bi bi-trash3"></i> SUPPRIMER DEFINITIVEMENT
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Resultat -->
+  <div class="modal fade" id="resetResultModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header" id="resultModalHeader">
+          <h5 class="modal-title" id="resultModalTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="resultModalBody">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="location.reload()">Fermer</button>
         </div>
       </div>
     </div>
@@ -429,7 +668,7 @@
     });
 
     /**
-     * Masque les onglets selon les modules actifs
+     * Masque les onglets et cartes selon les modules actifs
      */
     async function filterTabsByModules() {
       // Mapping onglet -> code module
@@ -447,6 +686,166 @@
           }
         }
       }
+
+      // Masquer les cartes dependantes du module recherche_ia
+      if (!isModuleActive('recherche_ia')) {
+        const cardLlm = document.getElementById('card-llm');
+        if (cardLlm) cardLlm.style.display = 'none';
+
+        const cardThematiques = document.getElementById('card-thematiques');
+        if (cardThematiques) cardThematiques.style.display = 'none';
+      }
+    }
+
+    // ========================================
+    // Fonctions pour le Reset de BDD
+    // ========================================
+
+    let resetStats = null;
+    let resetModal, resetConfirmModal, resetResultModal;
+
+    // Ouvrir le modal de reset
+    async function openResetModal() {
+      resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+      resetConfirmModal = new bootstrap.Modal(document.getElementById('resetConfirmModal'));
+      resetResultModal = new bootstrap.Modal(document.getElementById('resetResultModal'));
+
+      // Charger les statistiques
+      try {
+        resetStats = await apiRequest('/parametres/outils/reset-stats');
+        document.getElementById('statsJeux').textContent = `${resetStats.jeux} jeux`;
+        document.getElementById('statsLivres').textContent = `${resetStats.livres} livres`;
+        document.getElementById('statsFilms').textContent = `${resetStats.films} films`;
+        document.getElementById('statsMusique').textContent = `${resetStats.disques} disques`;
+        document.getElementById('statsEmprunts').textContent = `${resetStats.emprunts} emprunts`;
+        document.getElementById('statsCotisations').textContent = `${resetStats.cotisations} cotisations`;
+        document.getElementById('statsUtilisateurs').textContent = `${resetStats.utilisateurs} utilisateurs`;
+        document.getElementById('statsTarifs').textContent = `${resetStats.tarifs} tarifs, ${resetStats.codesReduction} codes`;
+        document.getElementById('statsParametres').textContent = `${resetStats.emailLogs + resetStats.smsLogs} logs`;
+      } catch (error) {
+        console.error('Erreur chargement stats:', error);
+      }
+
+      // Reset des checkboxes
+      document.querySelectorAll('#resetModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+      document.getElementById('btnProceedReset').disabled = true;
+
+      resetModal.show();
+    }
+
+    // Mettre a jour l'etat du bouton Continuer
+    function updateResetStats() {
+      const anyChecked = document.querySelectorAll('#resetModal input[type="checkbox"]:checked').length > 0;
+      document.getElementById('btnProceedReset').disabled = !anyChecked;
+    }
+
+    // Afficher le modal de confirmation
+    function showConfirmationModal() {
+      // Construire le resume
+      const summary = [];
+      if (document.getElementById('resetJeux').checked) {
+        summary.push(`<li><i class="bi bi-dice-6 text-warning"></i> ${resetStats.jeux} jeux (Ludotheque)</li>`);
+      }
+      if (document.getElementById('resetLivres').checked) {
+        summary.push(`<li><i class="bi bi-book text-primary"></i> ${resetStats.livres} livres (Bibliotheque)</li>`);
+      }
+      if (document.getElementById('resetFilms').checked) {
+        summary.push(`<li><i class="bi bi-film text-danger"></i> ${resetStats.films} films (Filmotheque)</li>`);
+      }
+      if (document.getElementById('resetMusique').checked) {
+        summary.push(`<li><i class="bi bi-vinyl text-success"></i> ${resetStats.disques} disques (Discotheque)</li>`);
+      }
+      if (document.getElementById('resetEmprunts').checked) {
+        summary.push(`<li><i class="bi bi-arrow-left-right" style="color: #6f42c1;"></i> ${resetStats.emprunts} emprunts</li>`);
+      }
+      if (document.getElementById('resetCotisations').checked) {
+        summary.push(`<li><i class="bi bi-receipt" style="color: #fd7e14;"></i> ${resetStats.cotisations} cotisations</li>`);
+      }
+      if (document.getElementById('resetUtilisateurs').checked) {
+        summary.push(`<li><i class="bi bi-people text-info"></i> ${resetStats.utilisateurs} utilisateurs</li>`);
+      }
+      if (document.getElementById('resetTarifs').checked) {
+        summary.push(`<li><i class="bi bi-tags" style="color: #20c997;"></i> ${resetStats.tarifs} tarifs, ${resetStats.codesReduction} codes reduction</li>`);
+      }
+      if (document.getElementById('resetParametres').checked) {
+        summary.push(`<li><i class="bi bi-gear text-secondary"></i> Configurations et ${resetStats.emailLogs + resetStats.smsLogs} logs</li>`);
+      }
+
+      document.getElementById('confirmationSummary').innerHTML = `<ul class="mb-0">${summary.join('')}</ul>`;
+      document.getElementById('confirmationCode').value = '';
+      document.getElementById('btnFinalReset').disabled = true;
+
+      resetModal.hide();
+      resetConfirmModal.show();
+    }
+
+    // Verifier le code de confirmation
+    function checkConfirmationCode() {
+      const code = document.getElementById('confirmationCode').value;
+      document.getElementById('btnFinalReset').disabled = code !== 'CONFIRMER-RESET';
+    }
+
+    // Retourner a la selection
+    function backToSelection() {
+      resetConfirmModal.hide();
+      resetModal.show();
+    }
+
+    // Executer le reset
+    async function executeReset() {
+      const btn = document.getElementById('btnFinalReset');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Suppression en cours...';
+
+      try {
+        const result = await apiRequest('/parametres/outils/reset', {
+          method: 'POST',
+          body: JSON.stringify({
+            resetJeux: document.getElementById('resetJeux').checked,
+            resetLivres: document.getElementById('resetLivres').checked,
+            resetFilms: document.getElementById('resetFilms').checked,
+            resetMusique: document.getElementById('resetMusique').checked,
+            resetEmprunts: document.getElementById('resetEmprunts').checked,
+            resetCotisations: document.getElementById('resetCotisations').checked,
+            resetUtilisateurs: document.getElementById('resetUtilisateurs').checked,
+            resetTarifs: document.getElementById('resetTarifs').checked,
+            resetParametres: document.getElementById('resetParametres').checked,
+            confirmationCode: document.getElementById('confirmationCode').value
+          })
+        });
+
+        resetConfirmModal.hide();
+
+        // Afficher le resultat
+        document.getElementById('resultModalHeader').className = 'modal-header bg-success text-white';
+        document.getElementById('resultModalTitle').innerHTML = '<i class="bi bi-check-circle me-2"></i>Reset effectue avec succes';
+        document.getElementById('resultModalBody').innerHTML = `
+          <div class="alert alert-success">
+            <p>Les donnees suivantes ont ete supprimees :</p>
+            <ul>
+              ${result.operations.map(op => `<li>${op.category}</li>`).join('')}
+            </ul>
+          </div>
+          <p class="text-muted">La page va se recharger pour appliquer les changements.</p>
+        `;
+        resetResultModal.show();
+
+      } catch (error) {
+        resetConfirmModal.hide();
+
+        document.getElementById('resultModalHeader').className = 'modal-header bg-danger text-white';
+        document.getElementById('resultModalTitle').innerHTML = '<i class="bi bi-x-circle me-2"></i>Erreur';
+        document.getElementById('resultModalBody').innerHTML = `
+          <div class="alert alert-danger">
+            <p>Une erreur est survenue lors du reset :</p>
+            <p><strong>${error.message || 'Erreur inconnue'}</strong></p>
+          </div>
+        `;
+        resetResultModal.show();
+      }
+
+      btn.innerHTML = '<i class="bi bi-trash3"></i> SUPPRIMER DEFINITIVEMENT';
+      btn.disabled = false;
     }
   </script>
 </body>

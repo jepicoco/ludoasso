@@ -168,6 +168,70 @@ class EmailService {
   }
 
   /**
+   * Envoie un email avec pièce jointe
+   */
+  async sendEmailWithAttachment(to, subject, html, attachmentPath, attachmentName) {
+    // Vérifier si le module communications est actif
+    const moduleActif = await this.isModuleActive();
+    if (!moduleActif) {
+      throw new Error('Module Communications désactivé - L\'envoi d\'emails est suspendu');
+    }
+
+    if (!this.transporter) {
+      await this.initialize();
+    }
+
+    if (!this.transporter) {
+      throw new Error('Service email non initialisé');
+    }
+
+    const mailOptions = {
+      from: this.defaultConfig.email_expediteur,
+      to,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: attachmentName,
+          path: attachmentPath
+        }
+      ]
+    };
+
+    // Créer le log avant l'envoi
+    const emailLog = await EmailLog.create({
+      destinataire: to,
+      objet: subject,
+      corps: html,
+      statut: 'en_attente',
+      date_envoi: new Date(),
+      metadata: { attachment: attachmentName }
+    });
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+
+      // Mettre à jour le log avec succès
+      await emailLog.update({
+        statut: 'envoye',
+        message_id: info.messageId
+      });
+
+      return { success: true, messageId: info.messageId, logId: emailLog.id };
+    } catch (error) {
+      console.error('Erreur envoi email avec pièce jointe:', error.message);
+
+      // Mettre à jour le log avec l'erreur
+      await emailLog.update({
+        statut: 'erreur',
+        erreur_message: error.message
+      });
+
+      throw error;
+    }
+  }
+
+  /**
    * Envoie un email
    */
   async sendEmail({ to, subject, html, from = null, templateCode = null, metadata = null, adherentId = null, empruntId = null, cotisationId = null }) {

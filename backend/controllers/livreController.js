@@ -1,5 +1,5 @@
 const {
-  Livre, Emprunt, Adherent,
+  Livre, Emprunt, Utilisateur,
   GenreLitteraire, FormatLivre, CollectionLivre, EmplacementLivre,
   Auteur, Editeur, Theme, Langue,
   LivreAuteur, LivreEditeur, LivreGenre, LivreTheme, LivreLangue

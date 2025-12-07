@@ -1,4 +1,4 @@
-const { EventTrigger, TemplateMessage, ConfigurationSMS, Emprunt, Jeu, Adherent } = require('../models');
+const { EventTrigger, TemplateMessage, ConfigurationSMS, Emprunt, Jeu, Utilisateur } = require('../models');
 const emailService = require('./emailService');
 const smsService = require('../utils/smsService');
 const { Op } = require('sequelize');

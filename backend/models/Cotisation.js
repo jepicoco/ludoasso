@@ -7,14 +7,14 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    adherent_id: {
+    utilisateur_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'adherents',
+        model: 'utilisateurs',
         key: 'id'
       },
-      comment: 'Adhérent concerné par cette cotisation'
+      comment: 'Utilisateur concerne par cette cotisation'
     },
     tarif_cotisation_id: {
       type: DataTypes.INTEGER,
@@ -134,7 +134,7 @@ module.exports = (sequelize) => {
     updatedAt: 'updated_at',
     indexes: [
       {
-        fields: ['adherent_id']
+        fields: ['utilisateur_id']
       },
       {
         fields: ['statut']
@@ -191,12 +191,12 @@ module.exports = (sequelize) => {
   };
 
   // Class methods
-  Cotisation.trouverCotisationActive = async function(adherentId, dateReference = new Date()) {
+  Cotisation.trouverCotisationActive = async function(utilisateurId, dateReference = new Date()) {
     const date = new Date(dateReference);
 
     return await this.findOne({
       where: {
-        adherent_id: adherentId,
+        utilisateur_id: utilisateurId,
         statut: 'en_cours',
         periode_debut: {
           [sequelize.Sequelize.Op.lte]: date

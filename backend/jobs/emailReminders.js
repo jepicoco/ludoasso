@@ -1,4 +1,4 @@
-const { Emprunt, Adherent, Jeu } = require('../models');
+const { Emprunt, Utilisateur, Jeu } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 
@@ -33,8 +33,8 @@ class EmailRemindersJob {
         },
         include: [
           {
-            model: Adherent,
-            as: 'adherent',
+            model: Utilisateur,
+            as: 'utilisateur',
             where: { statut: 'actif' }
           },
           {
@@ -53,7 +53,7 @@ class EmailRemindersJob {
         try {
           await emailService.sendRappelAvantEcheance(
             emprunt,
-            emprunt.adherent,
+            emprunt.utilisateur,
             emprunt.jeu
           );
           successCount++;
@@ -95,8 +95,8 @@ class EmailRemindersJob {
         },
         include: [
           {
-            model: Adherent,
-            as: 'adherent',
+            model: Utilisateur,
+            as: 'utilisateur',
             where: { statut: 'actif' }
           },
           {
@@ -115,7 +115,7 @@ class EmailRemindersJob {
         try {
           await emailService.sendRappelEcheance(
             emprunt,
-            emprunt.adherent,
+            emprunt.utilisateur,
             emprunt.jeu
           );
           successCount++;
@@ -155,8 +155,8 @@ class EmailRemindersJob {
         },
         include: [
           {
-            model: Adherent,
-            as: 'adherent',
+            model: Utilisateur,
+            as: 'utilisateur',
             where: { statut: 'actif' }
           },
           {
@@ -181,7 +181,7 @@ class EmailRemindersJob {
           try {
             await emailService.sendRelanceRetard(
               emprunt,
-              emprunt.adherent,
+              emprunt.utilisateur,
               emprunt.jeu
             );
 
@@ -221,8 +221,8 @@ class EmailRemindersJob {
       const dateDans30JoursFin = new Date(dateDans30Jours);
       dateDans30JoursFin.setHours(23, 59, 59, 999);
 
-      // Récupérer les adhérents dont la cotisation expire dans 30 jours
-      const adherents = await Adherent.findAll({
+      // Récupérer les utilisateurs dont la cotisation expire dans 30 jours
+      const utilisateurs = await Utilisateur.findAll({
         where: {
           statut: 'actif',
           date_fin_adhesion: {
@@ -231,20 +231,20 @@ class EmailRemindersJob {
         }
       });
 
-      console.log(`[EmailReminders] ${adherents.length} rappel(s) cotisation à envoyer`);
+      console.log(`[EmailReminders] ${utilisateurs.length} rappel(s) cotisation à envoyer`);
 
       let successCount = 0;
       let errorCount = 0;
 
-      for (const adherent of adherents) {
+      for (const utilisateur of utilisateurs) {
         try {
           await emailService.sendCotisationRappel(
-            adherent,
-            adherent.date_fin_adhesion
+            utilisateur,
+            utilisateur.date_fin_adhesion
           );
           successCount++;
         } catch (error) {
-          console.error(`[EmailReminders] Erreur envoi rappel cotisation pour adhérent ${adherent.id}:`, error);
+          console.error(`[EmailReminders] Erreur envoi rappel cotisation pour utilisateur ${utilisateur.id}:`, error);
           errorCount++;
         }
       }

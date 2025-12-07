@@ -26,84 +26,134 @@
     /* Navbar */
     .navbar {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      padding: 1rem 0;
+      padding: 0.75rem 0;
     }
-
     .navbar-brand {
       font-weight: bold;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .navbar-brand img {
+      height: 40px;
+      width: auto;
+    }
+    .nav-link {
+      font-weight: 500;
+    }
+    .btn-espace {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white !important;
+      border-radius: 50px;
+      padding: 0.5rem 1.25rem !important;
+      transition: all 0.2s;
+    }
+    .btn-espace:hover {
+      background: white;
+      color: var(--primary-color) !important;
     }
 
     /* Hero Section */
     .hero {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       color: white;
-      padding: 4rem 0;
+      padding: 4rem 0 3rem;
       text-align: center;
     }
-
     .hero h1 {
-      font-size: 3rem;
+      font-size: 2.75rem;
       font-weight: bold;
       margin-bottom: 1rem;
     }
-
     .hero p {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       opacity: 0.9;
       max-width: 600px;
       margin: 0 auto 2rem;
     }
-
     .hero .btn-light {
       padding: 0.75rem 2rem;
       font-size: 1.1rem;
       border-radius: 50px;
+      font-weight: 500;
     }
 
-    /* Features Section */
-    .features {
+    /* Modules Section */
+    .modules-section {
       padding: 4rem 0;
       background: #f8f9fa;
     }
-
-    .feature-card {
+    .section-title {
       text-align: center;
-      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+    .section-title h2 {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    .section-title p {
+      color: #6c757d;
+    }
+    .modules-row {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+    .module-col {
+      flex: 1;
+      min-width: 0;
+      max-width: 280px;
+    }
+    .module-card {
+      text-align: center;
+      padding: 2rem 1.5rem;
       background: white;
       border-radius: 1rem;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
       height: 100%;
-      transition: transform 0.3s ease;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
     }
-
-    .feature-card:hover {
-      transform: translateY(-5px);
+    .module-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.15);
     }
-
-    .feature-icon {
+    .module-icon {
       width: 80px;
       height: 80px;
-      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-      border-radius: 50%;
+      border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 1.5rem;
-    }
-
-    .feature-icon i {
       font-size: 2rem;
       color: white;
     }
-
-    .feature-card h3 {
+    .module-icon.jeux { background: linear-gradient(135deg, #6f42c1, #8b5cf6); }
+    .module-icon.livres { background: linear-gradient(135deg, #20c997, #10b981); }
+    .module-icon.films { background: linear-gradient(135deg, #fd7e14, #f59e0b); }
+    .module-icon.disques { background: linear-gradient(135deg, #e83e8c, #ec4899); }
+    .module-card h3 {
+      font-size: 1.25rem;
       color: #333;
+      margin-bottom: 0.75rem;
+    }
+    .module-card p {
+      color: #6c757d;
+      font-size: 0.95rem;
       margin-bottom: 1rem;
     }
-
-    .feature-card p {
-      color: #6c757d;
+    .module-count {
+      font-size: 0.85rem;
+      color: var(--primary-color);
+      font-weight: 600;
     }
 
     /* Stats Section */
@@ -112,69 +162,151 @@
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       color: white;
     }
-
     .stat-item {
       text-align: center;
+      padding: 1rem;
     }
-
     .stat-number {
-      font-size: 3rem;
+      font-size: 2.5rem;
       font-weight: bold;
     }
-
     .stat-label {
-      font-size: 1.1rem;
+      font-size: 1rem;
       opacity: 0.9;
+    }
+
+    /* Features Section */
+    .features-section {
+      padding: 4rem 0;
+    }
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .feature-icon-sm {
+      width: 50px;
+      height: 50px;
+      min-width: 50px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+    }
+    .feature-item h5 {
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+      color: #333;
+    }
+    .feature-item p {
+      color: #6c757d;
+      margin-bottom: 0;
+      font-size: 0.95rem;
     }
 
     /* Info Section */
     .info-section {
       padding: 4rem 0;
+      background: #f8f9fa;
     }
-
     .info-card {
       background: white;
       border-radius: 1rem;
       padding: 2rem;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
       height: 100%;
     }
-
     .info-card h4 {
       color: var(--primary-color);
       margin-bottom: 1.5rem;
-    }
-
-    .info-card i.bi-check-circle {
-      color: #20c997;
-      margin-right: 0.5rem;
+      font-size: 1.25rem;
     }
 
     /* Footer */
     footer {
-      background: #333;
+      background: #2d3748;
       color: white;
-      padding: 2rem 0;
-      text-align: center;
+      padding: 3rem 0 2rem;
     }
-
-    footer a {
-      color: #20c997;
+    .footer-brand {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .footer-links a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      display: block;
+      margin-bottom: 0.5rem;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover {
+      color: white;
+    }
+    .social-links {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .social-links a {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .social-links a:hover {
+      background: var(--primary-color);
+      transform: translateY(-2px);
+    }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      text-align: center;
+      color: rgba(255,255,255,0.6);
+      font-size: 0.9rem;
+    }
+    .footer-bottom a {
+      color: rgba(255,255,255,0.6);
       text-decoration: none;
     }
-
-    footer a:hover {
+    .footer-bottom a:hover {
       color: white;
     }
 
     /* Responsive */
-    @media (max-width: 768px) {
+    @media (max-width: 992px) {
+      .modules-row {
+        flex-wrap: wrap;
+      }
+      .module-col {
+        flex: 0 0 calc(50% - 0.75rem);
+        max-width: calc(50% - 0.75rem);
+      }
+    }
+    @media (max-width: 576px) {
       .hero h1 {
         font-size: 2rem;
       }
-
       .stat-number {
         font-size: 2rem;
+      }
+      .module-card {
+        padding: 1.5rem 1rem;
+      }
+      .module-col {
+        flex: 0 0 100%;
+        max-width: 100%;
       }
     }
   </style>
@@ -183,15 +315,16 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <a class="navbar-brand d-flex align-items-center" href="/">
-        <i class="bi bi-dice-5 me-2" style="font-size: 2rem;"></i>
+      <a class="navbar-brand" href="/">
+        <img src="" alt="" id="site-logo" class="d-none">
+        <i class="bi bi-collection" id="site-icon"></i>
         <span id="site-name">Chargement...</span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav ms-auto align-items-center">
           <li class="nav-item">
             <a class="nav-link active" href="/">Accueil</a>
           </li>
@@ -201,9 +334,9 @@
           <li class="nav-item">
             <a class="nav-link" href="/infos.html">Infos pratiques</a>
           </li>
-          <li class="nav-item" id="nav-espace" style="display: none;">
-            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
-              <i class="bi bi-person-circle"></i> Mon espace
+          <li class="nav-item ms-lg-2" id="nav-espace" style="display: none;">
+            <a class="nav-link btn-espace" href="/usager/login.html">
+              <i class="bi bi-person-circle me-1"></i>Mon espace
             </a>
           </li>
         </ul>
@@ -217,25 +350,82 @@
       <h1 id="hero-title">Bienvenue</h1>
       <p id="hero-description">Decouvrez notre collection a emprunter.</p>
       <a href="/catalogue.html" class="btn btn-light">
-        <i class="bi bi-search"></i> Parcourir le catalogue
+        <i class="bi bi-search me-2"></i>Parcourir le catalogue
       </a>
     </div>
   </section>
 
-  <!-- Features Section -->
-  <section class="features" id="features-section">
+  <!-- Modules Section -->
+  <section class="modules-section" id="modules-section">
     <div class="container">
-      <div class="row g-4" id="features-grid">
-        <!-- Features loaded dynamically based on active modules -->
+      <div class="section-title">
+        <h2>Nos collections</h2>
+        <p>Decouvrez tout ce que nous avons a vous proposer</p>
+      </div>
+      <div class="modules-row" id="modules-grid">
+        <!-- Modules loaded dynamically -->
       </div>
     </div>
   </section>
 
   <!-- Stats Section -->
-  <section class="stats">
+  <section class="stats" id="stats-section">
     <div class="container">
       <div class="row" id="stats-grid">
         <!-- Stats loaded dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-5 mb-4 mb-lg-0">
+          <h2 class="mb-3">Pourquoi nous rejoindre ?</h2>
+          <p class="text-muted mb-4">
+            Profitez de nombreux avantages en devenant membre de notre association.
+          </p>
+          <a href="/infos.html" class="btn btn-outline-primary">
+            <i class="bi bi-info-circle me-2"></i>En savoir plus
+          </a>
+        </div>
+        <div class="col-lg-7">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="feature-item">
+                <div class="feature-icon-sm"><i class="bi bi-calendar-check"></i></div>
+                <div>
+                  <h5>Emprunt facile</h5>
+                  <p>Empruntez pour plusieurs semaines avec possibilite de prolongation.</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon-sm"><i class="bi bi-currency-euro"></i></div>
+                <div>
+                  <h5>Tarifs accessibles</h5>
+                  <p>Une cotisation annuelle abordable pour toute la famille.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="feature-item">
+                <div class="feature-icon-sm"><i class="bi bi-people"></i></div>
+                <div>
+                  <h5>Animations</h5>
+                  <p>Participez a nos evenements et animations regulieres.</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon-sm"><i class="bi bi-laptop"></i></div>
+                <div>
+                  <h5>Espace en ligne</h5>
+                  <p>Gerez vos emprunts et prolongations depuis votre espace.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -244,20 +434,20 @@
   <section class="info-section">
     <div class="container">
       <div class="row g-4">
-        <div class="col-md-6">
+        <div class="col-lg-6">
           <div class="info-card">
-            <h4><i class="bi bi-clock"></i> Horaires d'ouverture</h4>
+            <h4><i class="bi bi-clock me-2"></i>Horaires d'ouverture</h4>
             <div id="horaires-container">
               <p class="text-muted">Chargement...</p>
             </div>
-            <a href="/infos.html" class="btn btn-outline-primary btn-sm mt-2">
-              Voir tous les horaires
+            <a href="/infos.html" class="btn btn-outline-primary btn-sm mt-3">
+              <i class="bi bi-calendar3 me-1"></i>Voir tous les horaires
             </a>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-lg-6">
           <div class="info-card">
-            <h4><i class="bi bi-geo-alt"></i> Nous trouver</h4>
+            <h4><i class="bi bi-geo-alt me-2"></i>Nous trouver</h4>
             <div id="contact-container">
               <p class="text-muted">Chargement...</p>
             </div>
@@ -270,21 +460,85 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p class="mb-2" id="footer-text">&copy; 2025 - Tous droits reserves</p>
-      <p class="mb-0">
-        <a href="/admin/login.html"><i class="bi bi-lock"></i> Administration</a>
-      </p>
+      <div class="row">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+          <div class="footer-brand" id="footer-name">Association</div>
+          <p class="text-white-50 mb-3" id="footer-desc">Votre espace de decouverte et de partage.</p>
+          <div class="social-links" id="social-links">
+            <!-- Social links loaded dynamically -->
+          </div>
+        </div>
+        <div class="col-6 col-lg-2">
+          <h6 class="mb-3">Navigation</h6>
+          <div class="footer-links">
+            <a href="/">Accueil</a>
+            <a href="/catalogue.html">Catalogue</a>
+            <a href="/infos.html">Infos pratiques</a>
+          </div>
+        </div>
+        <div class="col-6 col-lg-2">
+          <h6 class="mb-3">Collections</h6>
+          <div class="footer-links" id="footer-modules">
+            <!-- Module links loaded dynamically -->
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <h6 class="mb-3">Contact</h6>
+          <div class="footer-links" id="footer-contact">
+            <!-- Contact loaded dynamically -->
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span id="footer-copyright">&copy; 2025 - Tous droits reserves</span>
+        <span class="mx-2">|</span>
+        <a href="/admin/login.html"><i class="bi bi-lock me-1"></i>Administration</a>
+      </div>
     </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let config = null;
+    let stats = null;
+
+    // Module definitions
+    const moduleConfig = {
+      ludotheque: {
+        key: 'jeux',
+        icon: 'bi-controller',
+        title: 'Jeux de societe',
+        desc: 'Jeux de plateau, jeux de cartes, jeux d\'ambiance, jeux pour enfants...',
+        filter: 'jeux'
+      },
+      bibliotheque: {
+        key: 'livres',
+        icon: 'bi-book',
+        title: 'Livres',
+        desc: 'Romans, BD, mangas, documentaires et livres jeunesse a decouvrir.',
+        filter: 'livres'
+      },
+      filmotheque: {
+        key: 'films',
+        icon: 'bi-film',
+        title: 'Films & Series',
+        desc: 'DVDs et Blu-rays : films, documentaires, series a emprunter.',
+        filter: 'films'
+      },
+      discotheque: {
+        key: 'disques',
+        icon: 'bi-vinyl',
+        title: 'Musique',
+        desc: 'CDs et vinyles : tous les genres musicaux a votre disposition.',
+        filter: 'disques'
+      }
+    };
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      await loadConfig();
-      await loadStats();
+      await Promise.all([loadConfig(), loadStats()]);
+      buildModules();
+      buildStats();
       await loadSites();
     });
 
@@ -298,12 +552,22 @@
         document.getElementById('page-title').textContent = config.nom_site;
         document.getElementById('site-name').textContent = config.nom_site;
         document.getElementById('hero-title').textContent = `Bienvenue a ${config.nom_site}`;
+        document.getElementById('footer-name').textContent = config.nom_site;
+
+        // Logo
+        if (config.logo_url) {
+          const logo = document.getElementById('site-logo');
+          logo.src = config.logo_url;
+          logo.classList.remove('d-none');
+          document.getElementById('site-icon').classList.add('d-none');
+        }
 
         // Meta tags
         if (config.meta_description) {
           document.getElementById('meta-description').content = config.meta_description;
           document.getElementById('og-description').content = config.meta_description;
           document.getElementById('hero-description').textContent = config.meta_description;
+          document.getElementById('footer-desc').textContent = config.meta_description;
         }
         if (config.meta_keywords) {
           document.getElementById('meta-keywords').content = config.meta_keywords;
@@ -335,134 +599,149 @@
           document.getElementById('nav-espace').style.display = 'block';
         }
 
-        // Build features based on active modules
-        buildFeatures(config.modules);
+        // Footer copyright
+        document.getElementById('footer-copyright').textContent = `© ${new Date().getFullYear()} ${config.nom_site} - Tous droits reserves`;
 
-        // Update footer
-        document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
+        // Social links
+        renderSocialLinks();
 
-        // Update contact info
-        renderContact();
+        // Footer contact
+        renderFooterContact();
 
       } catch (error) {
         console.error('Erreur chargement config:', error);
       }
     }
 
-    // Build features section based on active modules
-    function buildFeatures(modules) {
-      const grid = document.getElementById('features-grid');
-      let features = [];
-
-      if (modules.ludotheque) {
-        features.push({
-          icon: 'bi-controller',
-          title: 'Jeux de societe',
-          desc: 'Jeux de plateau, jeux de cartes, jeux d\'ambiance, jeux pour enfants...'
-        });
-      }
-      if (modules.bibliotheque) {
-        features.push({
-          icon: 'bi-book',
-          title: 'Livres',
-          desc: 'Romans, BD, mangas, documentaires et livres jeunesse a decouvrir.'
-        });
-      }
-      if (modules.filmotheque) {
-        features.push({
-          icon: 'bi-film',
-          title: 'Films',
-          desc: 'DVDs et Blu-rays : films, documentaires, series a emprunter.'
-        });
-      }
-      if (modules.discotheque) {
-        features.push({
-          icon: 'bi-disc',
-          title: 'Musique',
-          desc: 'CDs et vinnyls : tous les genres musicaux a votre disposition.'
-        });
-      }
-
-      // Add generic features
-      features.push({
-        icon: 'bi-calendar-check',
-        title: 'Emprunt facile',
-        desc: 'Empruntez facilement pour plusieurs semaines. Prolongation possible.'
-      });
-      features.push({
-        icon: 'bi-people',
-        title: 'Animations',
-        desc: 'Participez a nos evenements et animations tout au long de l\'annee.'
-      });
-
-      // Limit to 3 features
-      features = features.slice(0, 3);
-
-      grid.innerHTML = features.map(f => `
-        <div class="col-md-4">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi ${f.icon}"></i>
-            </div>
-            <h3>${f.title}</h3>
-            <p>${f.desc}</p>
-          </div>
-        </div>
-      `).join('');
-    }
-
     // Load stats
     async function loadStats() {
       try {
         const response = await fetch('/api/public/stats');
-        const stats = await response.json();
-
-        const grid = document.getElementById('stats-grid');
-        let statsHtml = '';
-
-        if (stats.jeux !== undefined) {
-          statsHtml += createStatItem(stats.jeux, 'Jeux');
-        }
-        if (stats.livres !== undefined) {
-          statsHtml += createStatItem(stats.livres, 'Livres');
-        }
-        if (stats.films !== undefined) {
-          statsHtml += createStatItem(stats.films, 'Films');
-        }
-        if (stats.disques !== undefined) {
-          statsHtml += createStatItem(stats.disques, 'Disques');
-        }
-
-        // If only one type, add total
-        const typeCount = Object.keys(stats).filter(k => k !== 'total').length;
-        if (typeCount === 1 && stats.total > 0) {
-          // Just show total for single module
-          grid.innerHTML = `
-            <div class="col-12">
-              <div class="stat-item">
-                <div class="stat-number">${stats.total}+</div>
-                <div class="stat-label">Items disponibles</div>
-              </div>
-            </div>
-          `;
-        } else {
-          grid.innerHTML = statsHtml;
-        }
-
+        stats = await response.json();
       } catch (error) {
         console.error('Erreur chargement stats:', error);
+        stats = { total: 0 };
       }
     }
 
-    function createStatItem(count, label) {
-      return `
-        <div class="col-md-3 col-6">
-          <div class="stat-item">
-            <div class="stat-number">${count}+</div>
-            <div class="stat-label">${label}</div>
+    // Build modules section
+    function buildModules() {
+      const grid = document.getElementById('modules-grid');
+      const footerModules = document.getElementById('footer-modules');
+      let modulesHtml = '';
+      let footerHtml = '';
+      let activeModules = 0;
+
+      for (const [moduleName, moduleData] of Object.entries(moduleConfig)) {
+        if (config.modules[moduleName]) {
+          activeModules++;
+          const count = stats[moduleData.key] || 0;
+
+          modulesHtml += `
+            <div class="module-col">
+              <a href="/catalogue.html?type=${moduleData.filter}" class="module-card">
+                <div class="module-icon ${moduleData.key}">
+                  <i class="bi ${moduleData.icon}"></i>
+                </div>
+                <h3>${moduleData.title}</h3>
+                <p>${moduleData.desc}</p>
+                <span class="module-count"><i class="bi bi-collection me-1"></i>${count} items disponibles</span>
+              </a>
+            </div>
+          `;
+
+          footerHtml += `<a href="/catalogue.html?type=${moduleData.filter}">${moduleData.title}</a>`;
+        }
+      }
+
+      grid.innerHTML = modulesHtml;
+      footerModules.innerHTML = footerHtml;
+
+      // Hide section if no modules
+      if (activeModules === 0) {
+        document.getElementById('modules-section').style.display = 'none';
+      }
+    }
+
+    // Build stats section
+    function buildStats() {
+      const grid = document.getElementById('stats-grid');
+      let statsHtml = '';
+      let statCount = 0;
+
+      for (const [moduleName, moduleData] of Object.entries(moduleConfig)) {
+        if (config.modules[moduleName] && stats[moduleData.key] !== undefined) {
+          statCount++;
+          statsHtml += `
+            <div class="col-6 col-md-3">
+              <div class="stat-item">
+                <div class="stat-number">${stats[moduleData.key]}+</div>
+                <div class="stat-label">${moduleData.title}</div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // Add total if multiple modules
+      if (statCount > 1) {
+        statsHtml += `
+          <div class="col-6 col-md-3">
+            <div class="stat-item">
+              <div class="stat-number">${stats.total || 0}+</div>
+              <div class="stat-label">Total</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+
+      grid.innerHTML = statsHtml;
+
+      // Hide section if no stats
+      if (statCount === 0) {
+        document.getElementById('stats-section').style.display = 'none';
+      }
+    }
+
+    // Render social links
+    function renderSocialLinks() {
+      const container = document.getElementById('social-links');
+      let html = '';
+
+      if (config.reseaux_sociaux) {
+        if (config.reseaux_sociaux.facebook) {
+          html += `<a href="${config.reseaux_sociaux.facebook}" target="_blank" title="Facebook"><i class="bi bi-facebook"></i></a>`;
+        }
+        if (config.reseaux_sociaux.instagram) {
+          html += `<a href="${config.reseaux_sociaux.instagram}" target="_blank" title="Instagram"><i class="bi bi-instagram"></i></a>`;
+        }
+        if (config.reseaux_sociaux.twitter) {
+          html += `<a href="${config.reseaux_sociaux.twitter}" target="_blank" title="Twitter"><i class="bi bi-twitter-x"></i></a>`;
+        }
+        if (config.reseaux_sociaux.youtube) {
+          html += `<a href="${config.reseaux_sociaux.youtube}" target="_blank" title="YouTube"><i class="bi bi-youtube"></i></a>`;
+        }
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Render footer contact
+    function renderFooterContact() {
+      const container = document.getElementById('footer-contact');
+      let html = '';
+
+      if (config.adresse_contact) {
+        html += `<a href="/infos.html"><i class="bi bi-geo-alt me-2"></i>${config.adresse_contact.split('\n')[0]}</a>`;
+      }
+      if (config.telephone_contact) {
+        html += `<a href="tel:${config.telephone_contact}"><i class="bi bi-telephone me-2"></i>${config.telephone_contact}</a>`;
+      }
+      if (config.email_contact) {
+        html += `<a href="mailto:${config.email_contact}"><i class="bi bi-envelope me-2"></i>${config.email_contact}</a>`;
+      }
+
+      container.innerHTML = html || '<span class="text-white-50">Contact non configure</span>';
     }
 
     // Load sites for opening hours
@@ -472,10 +751,9 @@
         const data = await response.json();
 
         if (data.sites.length > 0) {
-          const site = data.sites[0]; // First/main site
+          const site = data.sites[0];
           renderHoraires(site.horaires);
         }
-
       } catch (error) {
         console.error('Erreur chargement sites:', error);
       }
@@ -491,15 +769,13 @@
         return;
       }
 
-      // Group by day
       const horairesByDay = {};
       JOURS.forEach((jour, i) => horairesByDay[i] = []);
       horaires.forEach(h => horairesByDay[h.jour_semaine].push(h));
 
-      // Get today (0 = Monday)
       const today = (new Date().getDay() + 6) % 7;
 
-      let html = '<ul class="list-unstyled">';
+      let html = '<ul class="list-unstyled mb-0">';
       JOURS.forEach((jour, i) => {
         const dayHoraires = horairesByDay[i];
         const isToday = i === today;
@@ -511,8 +787,8 @@
 
         html += `
           <li class="mb-2 ${isToday ? 'fw-bold' : ''}">
-            <i class="bi ${isClosed ? 'bi-x-circle text-danger' : 'bi-check-circle text-success'}"></i>
-            ${jour}${isToday ? ' (Aujourd\'hui)' : ''} : ${heures}
+            <i class="bi ${isClosed ? 'bi-x-circle text-danger' : 'bi-check-circle text-success'} me-2"></i>
+            ${jour}${isToday ? ' <span class="badge bg-primary ms-1">Aujourd\'hui</span>' : ''} : ${heures}
           </li>
         `;
       });
@@ -527,15 +803,13 @@
       let html = '';
 
       if (config.adresse_contact) {
-        html += `<p><strong>${config.nom_site}</strong><br>${config.adresse_contact.replace(/\n/g, '<br>')}</p>`;
+        html += `<p class="mb-2"><i class="bi bi-geo-alt text-primary me-2"></i>${config.adresse_contact.replace(/\n/g, '<br>')}</p>`;
       }
-
       if (config.telephone_contact) {
-        html += `<p class="mb-1"><i class="bi bi-telephone text-success me-2"></i><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></p>`;
+        html += `<p class="mb-2"><i class="bi bi-telephone text-primary me-2"></i><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></p>`;
       }
-
       if (config.email_contact) {
-        html += `<p class="mb-0"><i class="bi bi-envelope text-success me-2"></i><a href="mailto:${config.email_contact}">${config.email_contact}</a></p>`;
+        html += `<p class="mb-0"><i class="bi bi-envelope text-primary me-2"></i><a href="mailto:${config.email_contact}">${config.email_contact}</a></p>`;
       }
 
       if (!html) {

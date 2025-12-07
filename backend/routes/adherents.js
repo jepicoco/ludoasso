@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const adherentController = require('../controllers/adherentController');
+const utilisateurController = require('../controllers/utilisateurController');
 const { verifyToken } = require('../middleware/auth');
 
 /**
@@ -9,55 +9,55 @@ const { verifyToken } = require('../middleware/auth');
  * @access  Private
  * @query   ?statut=actif&search=dupont&page=1&limit=50
  */
-router.get('/', verifyToken, adherentController.getAllAdherents);
+router.get('/', verifyToken, utilisateurController.getAllAdherents);
 
 /**
  * @route   GET /api/adherents/:id
  * @desc    Get adherent by ID with emprunts
  * @access  Private
  */
-router.get('/:id', verifyToken, adherentController.getAdherentById);
+router.get('/:id', verifyToken, utilisateurController.getAdherentById);
 
 /**
  * @route   GET /api/adherents/:id/stats
  * @desc    Get adherent statistics
  * @access  Private
  */
-router.get('/:id/stats', verifyToken, adherentController.getAdherentStats);
+router.get('/:id/stats', verifyToken, utilisateurController.getAdherentStats);
 
 /**
  * @route   POST /api/adherents
  * @desc    Create new adherent
  * @access  Private
  */
-router.post('/', verifyToken, adherentController.createAdherent);
+router.post('/', verifyToken, utilisateurController.createAdherent);
 
 /**
  * @route   PUT /api/adherents/:id
  * @desc    Update adherent
  * @access  Private
  */
-router.put('/:id', verifyToken, adherentController.updateAdherent);
+router.put('/:id', verifyToken, utilisateurController.updateAdherent);
 
 /**
  * @route   DELETE /api/adherents/:id
  * @desc    Delete adherent
  * @access  Private
  */
-router.delete('/:id', verifyToken, adherentController.deleteAdherent);
+router.delete('/:id', verifyToken, utilisateurController.deleteAdherent);
 
 /**
  * @route   POST /api/adherents/:id/send-email
  * @desc    Send email to adherent (manual or template)
  * @access  Private
  */
-router.post('/:id/send-email', verifyToken, adherentController.sendEmail);
+router.post('/:id/send-email', verifyToken, utilisateurController.sendEmail);
 
 /**
  * @route   POST /api/adherents/:id/send-sms
  * @desc    Send SMS to adherent (manual or template)
  * @access  Private
  */
-router.post('/:id/send-sms', verifyToken, adherentController.sendSms);
+router.post('/:id/send-sms', verifyToken, utilisateurController.sendSms);
 
 module.exports = router;

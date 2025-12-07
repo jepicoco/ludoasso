@@ -54,14 +54,14 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'Message d\'erreur si échec'
     },
-    adherent_id: {
+    utilisateur_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'adherents',
+        model: 'utilisateurs',
         key: 'id'
       },
-      comment: 'ID de l\'adhérent concerné'
+      comment: 'ID de l\'utilisateur concerne'
     },
     emprunt_id: {
       type: DataTypes.INTEGER,
@@ -97,7 +97,7 @@ module.exports = (sequelize) => {
         fields: ['date_envoi']
       },
       {
-        fields: ['adherent_id']
+        fields: ['utilisateur_id']
       }
     ]
   });

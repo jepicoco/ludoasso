@@ -7,11 +7,11 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
-    adherent_id: {
+    utilisateur_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'adherents',
+        model: 'utilisateurs',
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -102,7 +102,7 @@ module.exports = (sequelize) => {
     timestamps: false,
     indexes: [
       {
-        fields: ['adherent_id']
+        fields: ['utilisateur_id']
       },
       {
         fields: ['jeu_id']

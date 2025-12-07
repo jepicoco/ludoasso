@@ -113,6 +113,12 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Paiement en ligne actif'
     },
+    module_recherche_ia: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Recherche intelligente IA activee sur le site usager'
+    },
 
     // === Pages legales ===
     cgv: {
@@ -200,6 +206,11 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Site en mode maintenance'
     },
+    maintenance_key: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      comment: 'Cle aleatoire generee a chaque activation de la maintenance, utilisee pour valider les cookies de bypass'
+    },
     message_maintenance: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -213,6 +224,12 @@ module.exports = (sequelize) => {
     },
 
     // === Parametres de prolongation - Ludotheque ===
+    prolongation_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations activees pour les jeux'
+    },
     prolongation_jours_ludotheque: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -239,6 +256,12 @@ module.exports = (sequelize) => {
     },
 
     // === Parametres de prolongation - Bibliotheque ===
+    prolongation_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations activees pour les livres'
+    },
     prolongation_jours_bibliotheque: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -265,6 +288,12 @@ module.exports = (sequelize) => {
     },
 
     // === Parametres de prolongation - Filmotheque ===
+    prolongation_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations activees pour les films'
+    },
     prolongation_jours_filmotheque: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -291,6 +320,12 @@ module.exports = (sequelize) => {
     },
 
     // === Parametres de prolongation - Discotheque ===
+    prolongation_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations activees pour les disques'
+    },
     prolongation_jours_discotheque: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -314,6 +349,97 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: true,
       comment: 'Afficher message si reserve (disques)'
+    },
+
+    // === Parametres TVA par module ===
+    tva_assujetti: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Association assujettie a la TVA'
+    },
+    tva_numero: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      comment: 'Numero de TVA intracommunautaire (ex: FR12345678901)'
+    },
+
+    // TVA Cotisations
+    cotisations_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Cotisations soumises a TVA'
+    },
+    cotisations_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour cotisations (FK taux_tva)'
+    },
+
+    // TVA Ludotheque
+    ludotheque_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Prestations ludotheque soumises a TVA'
+    },
+    ludotheque_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour ludotheque (FK taux_tva)'
+    },
+
+    // TVA Bibliotheque
+    bibliotheque_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Prestations bibliotheque soumises a TVA'
+    },
+    bibliotheque_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour bibliotheque (FK taux_tva)'
+    },
+
+    // TVA Filmotheque
+    filmotheque_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Prestations filmotheque soumises a TVA'
+    },
+    filmotheque_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour filmotheque (FK taux_tva)'
+    },
+
+    // TVA Discotheque
+    discotheque_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Prestations discotheque soumises a TVA'
+    },
+    discotheque_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour discotheque (FK taux_tva)'
+    },
+
+    // TVA Animations/Ateliers
+    animations_soumis_tva: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Animations/ateliers soumis a TVA'
+    },
+    animations_taux_tva_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Taux TVA par defaut pour animations (FK taux_tva)'
     }
   }, {
     tableName: 'parametres_front',
@@ -345,8 +471,12 @@ module.exports = (sequelize) => {
       mode_fonctionnement: this.mode_fonctionnement,
       module_ludotheque: this.module_ludotheque,
       module_bibliotheque: this.module_bibliotheque,
+      module_filmotheque: this.module_filmotheque,
+      module_discotheque: this.module_discotheque,
       module_inscriptions: this.module_inscriptions,
       module_reservations: this.module_reservations,
+      module_paiement_en_ligne: this.module_paiement_en_ligne,
+      module_recherche_ia: this.module_recherche_ia,
       email_contact: this.email_contact,
       telephone_contact: this.telephone_contact,
       adresse_contact: this.adresse_contact,

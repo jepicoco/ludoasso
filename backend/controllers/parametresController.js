@@ -1,4 +1,4 @@
-const { ParametresStructure, Adherent } = require('../models');
+const { ParametresStructure, Utilisateur } = require('../models');
 
 /**
  * Récupérer les paramètres de la structure
@@ -135,7 +135,7 @@ exports.getUtilisateurs = async (req, res) => {
       where.statut = statut;
     }
 
-    const utilisateurs = await Adherent.findAll({
+    const utilisateurs = await Utilisateur.findAll({
       where,
       attributes: [
         'id', 'nom', 'prenom', 'email', 'telephone',
@@ -173,7 +173,7 @@ exports.changerRole = async (req, res) => {
     }
 
     // Récupérer l'utilisateur
-    const utilisateur = await Adherent.findByPk(id);
+    const utilisateur = await Utilisateur.findByPk(id);
 
     if (!utilisateur) {
       return res.status(404).json({
@@ -225,7 +225,7 @@ exports.resetPassword = async (req, res) => {
     const emailService = require('../services/emailService');
 
     // Récupérer l'utilisateur
-    const utilisateur = await Adherent.findByPk(id);
+    const utilisateur = await Utilisateur.findByPk(id);
 
     if (!utilisateur) {
       return res.status(404).json({

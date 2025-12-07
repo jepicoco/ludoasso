@@ -44,10 +44,14 @@ const COOKIE_MAX_AGE = 3 * 24 * 60 * 60 * 1000;
  *
  * Ce middleware vérifie :
  * 1. Si le mode maintenance est activé
- * 2. Si l'IP du visiteur est autorisée (locales ou liste blanche)
- * 3. Si un cookie de bypass valide existe
+ * 2. Si un cookie de bypass valide existe (clé correspondante)
+ * 3. Si l'IP du visiteur est autorisée (locales ou liste blanche)
  *
- * Si le visiteur n'est pas autorisé, renvoie une réponse 503 avec le message de maintenance.
+ * Logique de validation du cookie :
+ * - Si la clé du cookie correspond à la clé en base → bypass valide
+ * - Si la clé ne correspond pas → vérifier si l'IP est toujours autorisée
+ *   - Si oui → mettre à jour le cookie avec la nouvelle clé
+ *   - Si non → bypass invalide, afficher page maintenance
  *
  * Usage: Appliquer sur les routes du site public (pas l'admin, pas l'API)
  */
@@ -61,29 +65,51 @@ const checkMaintenance = async (req, res, next) => {
       return next();
     }
 
-    // Vérifier le cookie de bypass
+    const maintenanceKey = parametres.maintenance_key;
     const cookies = parseCookies(req);
-    if (cookies[BYPASS_COOKIE_NAME]) {
-      // Le cookie existe, vérifier qu'il n'a pas expiré
-      // Le cookie lui-même a une durée de vie, donc si il existe il est valide
-      return next();
-    }
+    const cookieKey = cookies[BYPASS_COOKIE_NAME];
 
-    // Récupérer l'IP du client
-    const clientIp = getClientIp(req);
+    // Vérifier le cookie de bypass
+    if (cookieKey) {
+      // La clé du cookie correspond à la clé actuelle → bypass valide
+      if (cookieKey === maintenanceKey) {
+        return next();
+      }
 
-    // Vérifier si l'IP est autorisée
-    const estAutorisee = await IpAutorisee.estAutorisee(clientIp, parametres.autoriser_ip_locales);
+      // La clé ne correspond pas (maintenance réactivée avec nouvelle clé)
+      // Vérifier si l'IP est toujours autorisée pour mettre à jour le cookie
+      const clientIp = getClientIp(req);
+      const estAutorisee = await IpAutorisee.estAutorisee(clientIp, parametres.autoriser_ip_locales);
 
-    if (estAutorisee) {
-      // Créer un cookie de bypass pour les prochaines requêtes
-      res.cookie(BYPASS_COOKIE_NAME, 'true', {
-        maxAge: COOKIE_MAX_AGE,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
-      return next();
+      if (estAutorisee && maintenanceKey) {
+        // IP toujours autorisée, mettre à jour le cookie avec la nouvelle clé
+        res.cookie(BYPASS_COOKIE_NAME, maintenanceKey, {
+          maxAge: COOKIE_MAX_AGE,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        return next();
+      }
+
+      // IP non autorisée ou pas de clé, le bypass n'est plus valide
+      // Supprimer le cookie obsolète
+      res.clearCookie(BYPASS_COOKIE_NAME);
+    } else {
+      // Pas de cookie, vérifier si l'IP est autorisée
+      const clientIp = getClientIp(req);
+      const estAutorisee = await IpAutorisee.estAutorisee(clientIp, parametres.autoriser_ip_locales);
+
+      if (estAutorisee && maintenanceKey) {
+        // Créer un cookie de bypass avec la clé actuelle
+        res.cookie(BYPASS_COOKIE_NAME, maintenanceKey, {
+          maxAge: COOKIE_MAX_AGE,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        return next();
+      }
     }
 
     // L'IP n'est pas autorisée, renvoyer la page de maintenance
@@ -97,15 +123,20 @@ const checkMaintenance = async (req, res, next) => {
 };
 
 /**
- * Middleware pour définir le cookie de bypass après un unlock triforce réussi
+ * Définir le cookie de bypass avec la clé de maintenance actuelle
+ * Utilisé après un unlock triforce réussi
+ * @param {Object} res - Response Express
+ * @param {string} maintenanceKey - La clé de maintenance actuelle
  */
-const setBypassCookie = (req, res) => {
-  res.cookie(BYPASS_COOKIE_NAME, 'true', {
-    maxAge: COOKIE_MAX_AGE,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  });
+const setBypassCookie = (res, maintenanceKey) => {
+  if (maintenanceKey) {
+    res.cookie(BYPASS_COOKIE_NAME, maintenanceKey, {
+      maxAge: COOKIE_MAX_AGE,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+  }
 };
 
 module.exports = {

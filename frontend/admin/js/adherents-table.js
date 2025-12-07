@@ -1,36 +1,28 @@
 // ============================================
-// Gestion du tableau des adhérents amélioré
+// Gestion du tableau des adherents ameliore
 // ============================================
 
 let filteredAdherents = [];
-let currentPage = 1;
-const itemsPerPage = 20;
 
 /**
- * Affiche les adhérents avec tri et pagination
+ * Affiche les adherents (pagination geree par pagination.js)
  */
 function renderAdherents(list) {
   const container = document.getElementById('adherentsList');
   filteredAdherents = list;
 
-  // Mettre à jour le compteur
-  document.getElementById('adherentsCount').textContent = `${list.length} adhérent(s)`;
+  // Mettre a jour le compteur
+  document.getElementById('adherentsCount').textContent = `${list.length} usager(s)`;
 
   if (!list || list.length === 0) {
     container.innerHTML = `
       <p class="text-center text-secondary p-4">
         <i class="bi bi-inbox" style="font-size: 3rem;"></i><br>
-        Aucun adhérent trouvé
+        Aucun usager trouve
       </p>
     `;
     return;
   }
-
-  // Pagination
-  const totalPages = Math.ceil(list.length / itemsPerPage);
-  const start = (currentPage - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  const paginatedList = list.slice(start, end);
 
   container.innerHTML = `
     <div class="table-responsive">
@@ -49,19 +41,19 @@ function renderAdherents(list) {
             <th style="cursor: pointer;" onclick="sortAndRender('email')">
               Email ${getSortIcon('email')}
             </th>
-            <th>Téléphone</th>
-            <th>Rôle</th>
+            <th>Telephone</th>
+            <th>Role</th>
             <th style="cursor: pointer;" onclick="sortAndRender('statut')">
               Statut ${getSortIcon('statut')}
             </th>
             <th style="cursor: pointer;" onclick="sortAndRender('date_adhesion')">
-              Date adhésion ${getSortIcon('date_adhesion')}
+              Date adhesion ${getSortIcon('date_adhesion')}
             </th>
             <th style="width: 250px;">Actions</th>
           </tr>
         </thead>
         <tbody>
-          ${paginatedList.map(adherent => {
+          ${list.map(adherent => {
             const roleColors = {
               'administrateur': 'danger',
               'comptable': 'warning',
@@ -95,7 +87,7 @@ function renderAdherents(list) {
                 <td><small>${new Date(adherent.date_adhesion).toLocaleDateString('fr-FR')}</small></td>
                 <td>
                   <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-outline-primary" onclick="viewAdherent(${adherent.id})" title="Voir détails">
+                    <button class="btn btn-outline-primary" onclick="viewAdherent(${adherent.id})" title="Voir details">
                       <i class="bi bi-eye"></i>
                     </button>
                     <button class="btn btn-outline-secondary" onclick="editAdherent(${adherent.id})" title="Modifier">
@@ -116,29 +108,10 @@ function renderAdherents(list) {
       </table>
     </div>
 
-    <!-- Pagination -->
-    ${totalPages > 1 ? `
-      <nav aria-label="Pagination">
-        <ul class="pagination pagination-sm justify-content-center">
-          <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Précédent</a>
-          </li>
-          ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
-            <li class="page-item ${page === currentPage ? 'active' : ''}">
-              <a class="page-link" href="#" onclick="changePage(${page})">${page}</a>
-            </li>
-          `).join('')}
-          <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Suivant</a>
-          </li>
-        </ul>
-      </nav>
-    ` : ''}
-
-    <!-- Barre d'actions groupées -->
+    <!-- Barre d'actions groupees -->
     <div id="bulkActionsBar" class="alert alert-info d-none" role="alert">
       <div class="d-flex justify-content-between align-items-center">
-        <span><strong><span id="selectedCount">0</span> adhérent(s) sélectionné(s)</strong></span>
+        <span><strong><span id="selectedCount">0</span> usager(s) selectionne(s)</strong></span>
         <div class="btn-group btn-group-sm">
           <button class="btn btn-outline-primary" onclick="bulkSendEmail()">
             <i class="bi bi-envelope"></i> Envoyer email
@@ -147,26 +120,15 @@ function renderAdherents(list) {
             <i class="bi bi-phone"></i> Envoyer SMS
           </button>
           <button class="btn btn-outline-secondary" onclick="bulkExport()">
-            <i class="bi bi-download"></i> Exporter sélection
+            <i class="bi bi-download"></i> Exporter selection
           </button>
         </div>
       </div>
     </div>
   `;
 
-  // Mettre à jour compteur sélection
+  // Mettre a jour compteur selection
   updateBulkActionsBar();
-}
-
-/**
- * Change de page
- */
-function changePage(page) {
-  const totalPages = Math.ceil(filteredAdherents.length / itemsPerPage);
-  if (page < 1 || page > totalPages) return;
-
-  currentPage = page;
-  renderAdherents(filteredAdherents);
 }
 
 /**

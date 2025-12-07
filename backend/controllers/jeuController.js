@@ -1,5 +1,5 @@
 const {
-  Jeu, Emprunt, Adherent,
+  Jeu, Emprunt, Utilisateur,
   Categorie, Theme, Mecanisme, Langue,
   Editeur, Auteur, Illustrateur,
   Gamme, EmplacementJeu,
@@ -152,7 +152,7 @@ const getJeuById = async (req, res) => {
           model: Emprunt,
           as: 'emprunts',
           include: [{
-            model: Adherent,
+            model: Utilisateur,
             as: 'adherent'
           }],
           order: [['date_emprunt', 'DESC']],

@@ -6,16 +6,17 @@
 const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
-const { Adherent, ParametresFront } = require('../models');
+const { Utilisateur, ParametresFront } = require('../models');
 const emailService = require('../services/emailService');
 const { authUsager } = require('../middleware/usagerAuth');
+const { loginLimiter, resetPasswordLimiter } = require('../middleware/rateLimiter');
 
 /**
  * @route   POST /api/usager/auth/login
  * @desc    Connexion d'un usager (email ou code_barre)
  * @access  Public
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { identifiant, password } = req.body;
 
@@ -27,7 +28,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Rechercher par email OU code_barre
-    const adherent = await Adherent.findOne({
+    const utilisateur =await Utilisateur.findOne({
       where: {
         [Op.or]: [
           { email: identifiant },
@@ -36,7 +37,7 @@ router.post('/login', async (req, res) => {
       }
     });
 
-    if (!adherent) {
+    if (!utilisateur) {
       return res.status(401).json({
         error: 'Identifiants invalides',
         message: 'Email/code barre ou mot de passe incorrect'
@@ -44,7 +45,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Verifier le mot de passe
-    const isMatch = await adherent.comparePassword(password);
+    const isMatch = await utilisateur.comparePassword(password);
 
     if (!isMatch) {
       return res.status(401).json({
@@ -54,27 +55,27 @@ router.post('/login', async (req, res) => {
     }
 
     // Verifier le statut
-    if (adherent.statut !== 'actif') {
+    if (utilisateur.statut !== 'actif') {
       return res.status(403).json({
         error: 'Compte inactif',
-        message: `Votre compte est ${adherent.statut}. Contactez l'association.`
+        message: `Votre compte est ${utilisateur.statut}. Contactez l'association.`
       });
     }
 
     // Generer le token
-    const token = adherent.generateAuthToken();
+    const token = utilisateur.generateAuthToken();
 
     res.json({
       message: 'Connexion reussie',
       token,
       usager: {
-        id: adherent.id,
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        email: adherent.email,
-        code_barre: adherent.code_barre,
-        statut: adherent.statut,
-        date_fin_adhesion: adherent.date_fin_adhesion
+        id: utilisateur.id,
+        prenom: utilisateur.prenom,
+        nom: utilisateur.nom,
+        email: utilisateur.email,
+        code_barre: utilisateur.code_barre,
+        statut: utilisateur.statut,
+        date_fin_adhesion: utilisateur.date_fin_adhesion
       }
     });
   } catch (error) {
@@ -88,31 +89,33 @@ router.post('/login', async (req, res) => {
 
 /**
  * @route   POST /api/usager/auth/forgot-password
- * @desc    Demande de reinitialisation de mot de passe
+ * @desc    Demande de reinitialisation de mot de passe (par email ou code-barres)
  * @access  Public
  */
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', resetPasswordLimiter, async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, code_barre } = req.body;
 
-    if (!email) {
+    if (!email && !code_barre) {
       return res.status(400).json({
-        error: 'Email requis',
-        message: 'Veuillez fournir votre email'
+        error: 'Identifiant requis',
+        message: 'Veuillez fournir votre email ou scanner votre carte'
       });
     }
 
-    const adherent = await Adherent.findOne({ where: { email } });
+    // Rechercher par email ou code_barre
+    const whereClause = email ? { email } : { code_barre };
+    const utilisateur =await Utilisateur.findOne({ where: whereClause });
 
     // Toujours repondre OK pour eviter l'enumeration
-    if (!adherent) {
+    if (!utilisateur) {
       return res.json({
         message: 'Si cet email existe, un lien de reinitialisation a ete envoye'
       });
     }
 
     // Generer le token
-    const resetToken = await adherent.generatePasswordResetToken();
+    const resetToken = await utilisateur.generatePasswordResetToken();
 
     // Recuperer le nom du site
     const params = await ParametresFront.getParametres();
@@ -123,11 +126,11 @@ router.post('/forgot-password', async (req, res) => {
     // Envoyer l'email
     try {
       await emailService.sendEmail({
-        to: adherent.email,
+        to: utilisateur.email,
         subject: `Reinitialisation de votre mot de passe - ${params.nom_site || 'Association'}`,
         html: `
           <h2>Reinitialisation de mot de passe</h2>
-          <p>Bonjour ${adherent.prenom},</p>
+          <p>Bonjour ${utilisateur.prenom},</p>
           <p>Vous avez demande la reinitialisation de votre mot de passe.</p>
           <p>Cliquez sur le lien ci-dessous pour creer un nouveau mot de passe :</p>
           <p><a href="${resetUrl}" style="display: inline-block; padding: 10px 20px; background-color: ${params.couleur_primaire || '#0d6efd'}; color: white; text-decoration: none; border-radius: 5px;">Reinitialiser mon mot de passe</a></p>
@@ -136,7 +139,7 @@ router.post('/forgot-password', async (req, res) => {
           <br>
           <p>Cordialement,<br>${params.nom_site || 'L\'equipe'}</p>
         `,
-        adherentId: adherent.id
+        adherentId: utilisateur.id
       });
     } catch (emailError) {
       console.error('Erreur envoi email reset:', emailError);
@@ -160,7 +163,7 @@ router.post('/forgot-password', async (req, res) => {
  * @desc    Reinitialisation du mot de passe avec token
  * @access  Public
  */
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', resetPasswordLimiter, async (req, res) => {
   try {
     const { token, password, confirmPassword } = req.body;
 
@@ -186,9 +189,9 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Trouver l'adherent avec le token valide
-    const adherent = await Adherent.findByResetToken(token);
+    const utilisateur =await Utilisateur.findByResetToken(token);
 
-    if (!adherent) {
+    if (!utilisateur) {
       return res.status(400).json({
         error: 'Token invalide',
         message: 'Le lien est invalide ou a expire'
@@ -196,11 +199,11 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Mettre a jour le mot de passe
-    adherent.password = password;
-    adherent.password_reset_token = null;
-    adherent.password_reset_expires = null;
-    adherent.password_created = true;
-    await adherent.save();
+    utilisateur.password = password;
+    utilisateur.password_reset_token = null;
+    utilisateur.password_reset_expires = null;
+    utilisateur.password_created = true;
+    await utilisateur.save();
 
     res.json({
       message: 'Mot de passe mis a jour avec succes'
@@ -219,7 +222,7 @@ router.post('/reset-password', async (req, res) => {
  * @desc    Creation initiale du mot de passe (premier acces)
  * @access  Public
  */
-router.post('/create-password', async (req, res) => {
+router.post('/create-password', resetPasswordLimiter, async (req, res) => {
   try {
     const { token, password, confirmPassword } = req.body;
 
@@ -245,9 +248,9 @@ router.post('/create-password', async (req, res) => {
     }
 
     // Trouver l'adherent avec le token valide
-    const adherent = await Adherent.findByResetToken(token);
+    const utilisateur =await Utilisateur.findByResetToken(token);
 
-    if (!adherent) {
+    if (!utilisateur) {
       return res.status(400).json({
         error: 'Token invalide',
         message: 'Le lien est invalide ou a expire'
@@ -255,7 +258,7 @@ router.post('/create-password', async (req, res) => {
     }
 
     // Verifier que le mot de passe n'a pas deja ete cree
-    if (adherent.password_created) {
+    if (utilisateur.password_created) {
       return res.status(400).json({
         error: 'Deja cree',
         message: 'Votre mot de passe a deja ete cree. Utilisez "Mot de passe oublie".'
@@ -263,24 +266,24 @@ router.post('/create-password', async (req, res) => {
     }
 
     // Mettre a jour le mot de passe
-    adherent.password = password;
-    adherent.password_reset_token = null;
-    adherent.password_reset_expires = null;
-    adherent.password_created = true;
-    await adherent.save();
+    utilisateur.password = password;
+    utilisateur.password_reset_token = null;
+    utilisateur.password_reset_expires = null;
+    utilisateur.password_created = true;
+    await utilisateur.save();
 
     // Generer un token de connexion
-    const authToken = adherent.generateAuthToken();
+    const authToken = utilisateur.generateAuthToken();
 
     res.json({
       message: 'Mot de passe cree avec succes',
       token: authToken,
       usager: {
-        id: adherent.id,
-        prenom: adherent.prenom,
-        nom: adherent.nom,
-        email: adherent.email,
-        code_barre: adherent.code_barre
+        id: utilisateur.id,
+        prenom: utilisateur.prenom,
+        nom: utilisateur.nom,
+        email: utilisateur.email,
+        code_barre: utilisateur.code_barre
       }
     });
   } catch (error) {
@@ -299,7 +302,7 @@ router.post('/create-password', async (req, res) => {
  */
 router.get('/me', authUsager, async (req, res) => {
   try {
-    const adherent = await Adherent.findByPk(req.usagerId, {
+    const utilisateur =await Utilisateur.findByPk(req.usagerId, {
       attributes: [
         'id', 'code_barre', 'prenom', 'nom', 'email', 'telephone',
         'adresse', 'ville', 'code_postal', 'date_naissance',
@@ -307,19 +310,19 @@ router.get('/me', authUsager, async (req, res) => {
       ]
     });
 
-    if (!adherent) {
+    if (!utilisateur) {
       return res.status(404).json({
         error: 'Non trouve',
-        message: 'Adherent non trouve'
+        message: 'Utilisateur non trouve'
       });
     }
 
     // Verifier si l'adhesion est expiree
-    const adhesionExpiree = adherent.date_fin_adhesion &&
-      new Date(adherent.date_fin_adhesion) < new Date();
+    const adhesionExpiree = utilisateur.date_fin_adhesion &&
+      new Date(utilisateur.date_fin_adhesion) < new Date();
 
     res.json({
-      ...adherent.toJSON(),
+      ...utilisateur.toJSON(),
       adhesion_expiree: adhesionExpiree
     });
   } catch (error) {
@@ -361,10 +364,10 @@ router.put('/password', authUsager, async (req, res) => {
       });
     }
 
-    const adherent = await Adherent.findByPk(req.usagerId);
+    const utilisateur =await Utilisateur.findByPk(req.usagerId);
 
     // Verifier l'ancien mot de passe
-    const isMatch = await adherent.comparePassword(currentPassword);
+    const isMatch = await utilisateur.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(401).json({
         error: 'Mot de passe incorrect',
@@ -373,8 +376,8 @@ router.put('/password', authUsager, async (req, res) => {
     }
 
     // Mettre a jour
-    adherent.password = newPassword;
-    await adherent.save();
+    utilisateur.password = newPassword;
+    await utilisateur.save();
 
     res.json({
       message: 'Mot de passe mis a jour avec succes'
@@ -397,9 +400,9 @@ router.get('/verify-token/:token', async (req, res) => {
   try {
     const { token } = req.params;
 
-    const adherent = await Adherent.findByResetToken(token);
+    const utilisateur =await Utilisateur.findByResetToken(token);
 
-    if (!adherent) {
+    if (!utilisateur) {
       return res.status(400).json({
         valid: false,
         message: 'Token invalide ou expire'
@@ -408,8 +411,8 @@ router.get('/verify-token/:token', async (req, res) => {
 
     res.json({
       valid: true,
-      isFirstAccess: !adherent.password_created,
-      email: adherent.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') // Masquer l'email
+      isFirstAccess: !utilisateur.password_created,
+      email: utilisateur.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') // Masquer l'email
     });
   } catch (error) {
     console.error('Erreur verify token:', error);
