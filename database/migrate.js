@@ -78,11 +78,17 @@ function loadMigration(filename) {
   const migration = require(filepath);
 
   // Vérifier que la migration a les fonctions up et down
+  // Si pas de fonction exportée, c'est une ancienne migration (format standalone)
   if (typeof migration.up !== 'function') {
-    throw new Error(`Migration ${filename} must export an 'up' function`);
-  }
-  if (typeof migration.down !== 'function') {
-    throw new Error(`Migration ${filename} must export a 'down' function`);
+    return {
+      up: async () => {
+        console.log(`    (ancienne migration - format standalone, à exécuter manuellement si besoin)`);
+      },
+      down: async () => {
+        console.log(`    (ancienne migration - format standalone, à exécuter manuellement si besoin)`);
+      },
+      isLegacy: true
+    };
   }
 
   return migration;
@@ -171,6 +177,14 @@ async function up() {
 
       try {
         const migration = loadMigration(file);
+
+        if (migration.isLegacy) {
+          console.log(`  \x1b[33m⚠ Migration legacy (format standalone)\x1b[0m`);
+          console.log(`    Exécuter manuellement: node database/migrations/${file}`);
+          // Ne pas marquer comme exécutée - l'utilisateur doit la gérer manuellement
+          continue;
+        }
+
         await migration.up(connection);
         await markAsExecuted(connection, file, batch);
         console.log(`  \x1b[32m✓ Succès\x1b[0m`);
