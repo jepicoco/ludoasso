@@ -15,6 +15,86 @@ window.ACTIVE_MODULES = null;
 // Variable globale pour les modules autorisés à l'utilisateur
 window.USER_ALLOWED_MODULES = null;
 
+// Hierarchie des roles (niveau croissant)
+const ROLE_HIERARCHY = {
+    'usager': 0,
+    'benevole': 1,
+    'agent': 2,
+    'gestionnaire': 3,
+    'comptable': 4,
+    'administrateur': 5
+};
+
+/**
+ * Obtient le role de l'utilisateur depuis le token JWT ou localStorage
+ * @returns {string} Le role de l'utilisateur
+ */
+function getUserRole() {
+    // D'abord essayer depuis localStorage
+    const storedRole = localStorage.getItem('userRole');
+    if (storedRole) return storedRole;
+
+    // Sinon extraire du token JWT
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role) {
+                localStorage.setItem('userRole', payload.role);
+                return payload.role;
+            }
+        } catch (e) {
+            console.error('Erreur parsing token:', e);
+        }
+    }
+
+    return 'usager';
+}
+
+/**
+ * Verifie si l'utilisateur a au moins le niveau de role requis
+ * @param {string} minRole - Role minimum requis
+ * @returns {boolean}
+ */
+function hasMinRole(minRole) {
+    const userRole = getUserRole();
+    const userLevel = ROLE_HIERARCHY[userRole] || 0;
+    const requiredLevel = ROLE_HIERARCHY[minRole] || 0;
+    return userLevel >= requiredLevel;
+}
+
+/**
+ * Verifie si l'utilisateur est administrateur
+ * @returns {boolean}
+ */
+function isAdmin() {
+    return getUserRole() === 'administrateur';
+}
+
+/**
+ * Verifie si l'utilisateur est au moins comptable
+ * @returns {boolean}
+ */
+function isComptableOrAdmin() {
+    return hasMinRole('comptable');
+}
+
+/**
+ * Verifie si l'utilisateur est au moins gestionnaire
+ * @returns {boolean}
+ */
+function isGestionnaireOrAbove() {
+    return hasMinRole('gestionnaire');
+}
+
+/**
+ * Verifie si l'utilisateur est au moins benevole
+ * @returns {boolean}
+ */
+function isBenevoleOrAbove() {
+    return hasMinRole('benevole');
+}
+
 /**
  * Charge les modules actifs depuis le cache ou l'API
  * @returns {Promise<Array<string>>} Liste des codes de modules actifs
@@ -250,6 +330,10 @@ function renderSidebar(activePage) {
             if (item.separator) return true;
             // Filtrer les items adminOnly si l'utilisateur n'est pas admin
             if (item.adminOnly && userRole !== 'administrateur') {
+                return false;
+            }
+            // Filtrer par minRole si specifie
+            if (item.minRole && !hasMinRole(item.minRole)) {
                 return false;
             }
             // Filtrer par module actif

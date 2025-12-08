@@ -3,18 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistiques - Ludothèque Admin</title>
+    <title>Statistiques - Administration</title>
     <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .module-tab {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .module-tab:hover {
+            transform: translateY(-2px);
+        }
+        .module-tab.active {
+            border-width: 3px !important;
+        }
+        .stat-card {
+            transition: all 0.2s;
+        }
+        .stat-card:hover {
+            transform: scale(1.02);
+        }
+        .module-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+        .progress-thin {
+            height: 8px;
+        }
+    </style>
 </head>
 <body>
-    <!-- Navigation (généré par JS) -->
+    <!-- Navigation -->
     <nav id="admin-navbar"></nav>
 
     <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Sidebar (généré par JS) -->
+            <!-- Sidebar -->
             <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
             <!-- Main Content -->
@@ -29,135 +54,68 @@
                 <!-- Alerts -->
                 <div id="alertContainer"></div>
 
-                <!-- Statistiques globales -->
+                <!-- Onglets Modules -->
+                <div class="row g-3 mb-4" id="moduleTabs">
+                    <!-- Genere dynamiquement -->
+                </div>
+
+                <!-- Stats Globales (toujours visibles) -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <div class="card border-primary">
+                        <div class="card border-primary stat-card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="text-muted mb-2">Total Usagers</h6>
                                         <h2 class="mb-0" id="statTotalAdherents">-</h2>
                                     </div>
-                                    <div class="fs-1 text-primary">
+                                    <div class="module-icon text-primary">
                                         <i class="bi bi-people"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
-                        <div class="card border-success">
+                        <div class="card border-success stat-card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="text-muted mb-2">Usagers Actifs</h6>
                                         <h2 class="mb-0" id="statAdherentsActifs">-</h2>
                                     </div>
-                                    <div class="fs-1 text-success">
+                                    <div class="module-icon text-success">
                                         <i class="bi bi-person-check"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
-                        <div class="card border-info">
+                        <div class="card border-info stat-card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="text-muted mb-2">Total Jeux</h6>
-                                        <h2 class="mb-0" id="statTotalJeux">-</h2>
+                                        <h6 class="text-muted mb-2">Total Collection</h6>
+                                        <h2 class="mb-0" id="statTotalCollection">-</h2>
                                     </div>
-                                    <div class="fs-1 text-info">
-                                        <i class="bi bi-dice-6"></i>
+                                    <div class="module-icon text-info">
+                                        <i class="bi bi-collection"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
-                        <div class="card border-warning">
+                        <div class="card border-warning stat-card">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <h6 class="text-muted mb-2">Jeux Disponibles</h6>
-                                        <h2 class="mb-0" id="statJeuxDisponibles">-</h2>
+                                        <h6 class="text-muted mb-2">Emprunts en Cours</h6>
+                                        <h2 class="mb-0" id="statEmpruntsEnCours">-</h2>
                                     </div>
-                                    <div class="fs-1 text-warning">
-                                        <i class="bi bi-check-circle"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Statistiques emprunts -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-4">
-                        <div class="card bg-primary text-white">
-                            <div class="card-body">
-                                <h6 class="mb-2">Emprunts en Cours</h6>
-                                <h2 class="mb-0" id="statEmpruntsEnCours">-</h2>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="card bg-danger text-white">
-                            <div class="card-body">
-                                <h6 class="mb-2">Emprunts en Retard</h6>
-                                <h2 class="mb-0" id="statEmpruntsEnRetard">-</h2>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h6 class="mb-2">Total Emprunts (ce mois)</h6>
-                                <h2 class="mb-0" id="statEmpruntsMois">-</h2>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Graphiques et détails -->
-                <div class="row g-3 mb-4">
-                    <!-- Top jeux empruntés -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0"><i class="bi bi-trophy"></i> Top 10 Jeux les Plus Empruntés</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="topJeuxList">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Top usagers actifs -->
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0"><i class="bi bi-star"></i> Top 10 Usagers les Plus Actifs</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="topAdherentsList">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
+                                    <div class="module-icon text-warning">
+                                        <i class="bi bi-arrow-left-right"></i>
                                     </div>
                                 </div>
                             </div>
@@ -165,39 +123,50 @@
                     </div>
                 </div>
 
-                <!-- Répartition par catégorie -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0"><i class="bi bi-pie-chart"></i> Répartition des Jeux par Catégorie</h5>
+                <!-- Stats du module selectionne -->
+                <div id="moduleStatsContainer">
+                    <!-- Genere dynamiquement selon le module selectionne -->
+                </div>
+
+                <!-- Section Comptabilite (comptable+ uniquement) -->
+                <div id="comptabiliteSection" class="d-none">
+                    <hr class="my-4">
+                    <h4 class="mb-3"><i class="bi bi-cash-coin"></i> Statistiques Comptables</h4>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="mb-2">Chiffre d'Affaires <span id="comptaYear"></span></h6>
+                                    <h2 class="mb-0" id="comptaCA">-</h2>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <div id="categoriesChart">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
-                                    </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="mb-2">Cotisations Actives</h6>
+                                    <h2 class="mb-0" id="comptaCotisationsActives">-</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6 class="mb-2">Cotisations ce Mois</h6>
+                                    <h2 class="mb-0" id="comptaCotisationsMois">-</h2>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Emprunts récents -->
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0"><i class="bi bi-clock-history"></i> Derniers Emprunts</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="recentEmpruntsList">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0"><i class="bi bi-bar-chart"></i> Cotisations Mensuelles</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="comptaMensuelChart">
+                                <div class="text-center p-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Chargement...</span>
                                     </div>
                                 </div>
                             </div>
@@ -214,110 +183,333 @@
     <script src="js/admin-navigation.js"></script>
     <script src="js/admin-template.js"></script>
     <script>
-        // Load statistics on page load
+        // Configuration des modules
+        const MODULE_CONFIG = {
+            ludotheque: { icon: 'dice-6', color: 'primary', label: 'Ludotheque', itemLabel: 'jeux' },
+            bibliotheque: { icon: 'book', color: 'success', label: 'Bibliotheque', itemLabel: 'livres' },
+            filmotheque: { icon: 'film', color: 'danger', label: 'Filmotheque', itemLabel: 'films' },
+            discotheque: { icon: 'disc', color: 'warning', label: 'Discotheque', itemLabel: 'disques' }
+        };
+
+        let currentModule = null;
+        let dashboardData = null;
+        let userRole = null;
+
         document.addEventListener('DOMContentLoaded', () => {
             initTemplate('statistiques');
+            // Recuperer le role depuis le token
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    userRole = payload.role;
+                } catch (e) {
+                    console.error('Error parsing token:', e);
+                }
+            }
             loadStatistics();
         });
 
         async function loadStatistics() {
             try {
-                await Promise.all([
-                    loadGlobalStats(),
-                    loadTopJeux(),
-                    loadTopAdherents(),
-                    loadCategoriesStats(),
-                    loadRecentEmprunts()
-                ]);
+                // Charger le dashboard principal
+                dashboardData = await apiRequest('/stats/dashboard');
+
+                // Afficher les onglets des modules accessibles
+                renderModuleTabs(dashboardData.accessibleModules);
+
+                // Afficher les stats globales
+                renderGlobalStats(dashboardData);
+
+                // Selectionner le premier module par defaut
+                if (dashboardData.accessibleModules?.length > 0) {
+                    selectModule(dashboardData.accessibleModules[0]);
+                }
+
+                // Charger les stats comptables si comptable+
+                if (isComptable()) {
+                    document.getElementById('comptabiliteSection').classList.remove('d-none');
+                    loadComptabiliteStats();
+                }
             } catch (error) {
                 showAlert('Erreur lors du chargement des statistiques: ' + error.message, 'danger');
             }
         }
 
-        async function loadGlobalStats() {
-            try {
-                const stats = await apiRequest('/stats/dashboard');
-
-                // Adhérents
-                document.getElementById('statTotalAdherents').textContent = stats.adherents?.total || 0;
-                document.getElementById('statAdherentsActifs').textContent = stats.adherents?.actifs || 0;
-
-                // Jeux
-                document.getElementById('statTotalJeux').textContent = stats.jeux?.total || 0;
-                document.getElementById('statJeuxDisponibles').textContent = stats.jeux?.disponibles || 0;
-
-                // Emprunts
-                document.getElementById('statEmpruntsEnCours').textContent = stats.emprunts?.enCours || 0;
-                document.getElementById('statEmpruntsEnRetard').textContent = stats.emprunts?.enRetard || 0;
-                document.getElementById('statEmpruntsMois').textContent = stats.activity?.empruntsRecents || 0;
-            } catch (error) {
-                console.error('Error loading global stats:', error);
-            }
+        function isComptable() {
+            const comptableRoles = ['comptable', 'administrateur'];
+            return comptableRoles.includes(userRole);
         }
 
-        async function loadTopJeux() {
+        function renderModuleTabs(modules) {
+            const container = document.getElementById('moduleTabs');
+
+            if (!modules || modules.length === 0) {
+                container.innerHTML = '<div class="col-12"><div class="alert alert-warning">Aucun module accessible</div></div>';
+                return;
+            }
+
+            container.innerHTML = modules.map(moduleCode => {
+                const config = MODULE_CONFIG[moduleCode];
+                if (!config) return '';
+
+                const moduleStats = dashboardData.modules?.[moduleCode];
+                const total = moduleStats?.collection?.total || 0;
+                const emprunts = moduleStats?.emprunts?.enCours || 0;
+
+                return `
+                    <div class="col-md-3 col-6">
+                        <div class="card module-tab border-${config.color}"
+                             id="tab-${moduleCode}"
+                             onclick="selectModule('${moduleCode}')">
+                            <div class="card-body text-center">
+                                <i class="bi bi-${config.icon} fs-1 text-${config.color}"></i>
+                                <h5 class="card-title mt-2">${config.label}</h5>
+                                <div class="d-flex justify-content-around mt-2">
+                                    <small class="text-muted">${total} ${config.itemLabel}</small>
+                                    <small class="text-${config.color}">${emprunts} emprunts</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderGlobalStats(data) {
+            document.getElementById('statTotalAdherents').textContent = data.utilisateurs?.total || 0;
+            document.getElementById('statAdherentsActifs').textContent = data.utilisateurs?.actifs || 0;
+            document.getElementById('statTotalCollection').textContent = data.global?.collection?.total || 0;
+            document.getElementById('statEmpruntsEnCours').textContent = data.global?.emprunts?.enCours || 0;
+        }
+
+        function selectModule(moduleCode) {
+            // Mettre a jour l'onglet actif
+            document.querySelectorAll('.module-tab').forEach(tab => {
+                tab.classList.remove('active', 'shadow');
+            });
+            const activeTab = document.getElementById(`tab-${moduleCode}`);
+            if (activeTab) {
+                activeTab.classList.add('active', 'shadow');
+            }
+
+            currentModule = moduleCode;
+            renderModuleStats(moduleCode);
+            loadModuleDetails(moduleCode);
+        }
+
+        function renderModuleStats(moduleCode) {
+            const config = MODULE_CONFIG[moduleCode];
+            const moduleStats = dashboardData.modules?.[moduleCode];
+
+            if (!config || !moduleStats) {
+                document.getElementById('moduleStatsContainer').innerHTML =
+                    '<div class="alert alert-warning">Donnees non disponibles pour ce module</div>';
+                return;
+            }
+
+            const collection = moduleStats.collection;
+            const emprunts = moduleStats.emprunts;
+            const disponibilite = collection.total > 0
+                ? ((collection.disponibles / collection.total) * 100).toFixed(1)
+                : 0;
+
+            document.getElementById('moduleStatsContainer').innerHTML = `
+                <!-- Stats du module -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="card border-${config.color} stat-card">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Total ${config.itemLabel}</h6>
+                                <h3 class="mb-0 text-${config.color}">${collection.total}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-success stat-card">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Disponibles</h6>
+                                <h3 class="mb-0 text-success">${collection.disponibles}</h3>
+                                <div class="progress progress-thin mt-2">
+                                    <div class="progress-bar bg-success" style="width: ${disponibilite}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-info stat-card">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Empruntes</h6>
+                                <h3 class="mb-0 text-info">${collection.empruntes}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card border-danger stat-card">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">En Retard</h6>
+                                <h3 class="mb-0 text-danger">${emprunts.enRetard}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details du module -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-trophy text-${config.color}"></i>
+                                    Top 10 ${config.itemLabel} les plus empruntes
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="topItemsList">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-${config.color}" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-star text-warning"></i>
+                                    Top 10 Usagers les Plus Actifs
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="topAdherentsList">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-pie-chart text-${config.color}"></i>
+                                    Repartition par Categorie
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="categoriesChart">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-${config.color}" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emprunts mensuels -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-bar-chart text-${config.color}"></i>
+                                    Emprunts Mensuels (12 derniers mois)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="monthlyChart">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-${config.color}" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadModuleDetails(moduleCode) {
+            const config = MODULE_CONFIG[moduleCode];
+
+            await Promise.all([
+                loadTopItems(moduleCode, config),
+                loadTopAdherents(moduleCode),
+                loadCategories(moduleCode, config),
+                loadMonthlyStats(moduleCode, config)
+            ]);
+        }
+
+        async function loadTopItems(moduleCode, config) {
             try {
-                const data = await apiRequest('/stats/popular-games?limit=10');
-                const jeux = data.games?.map(g => ({
-                    ...g.jeu,
-                    emprunts_count: g.emprunts
-                })) || [];
+                const data = await apiRequest(`/stats/popular-items?module=${moduleCode}&limit=10`);
+                const items = data.items || [];
 
-                const container = document.getElementById('topJeuxList');
+                const container = document.getElementById('topItemsList');
 
-                if (jeux.length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                if (items.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
                     return;
                 }
 
                 container.innerHTML = `
                     <div class="list-group list-group-flush">
-                        ${jeux.map((jeu, index) => `
+                        ${items.map((entry, index) => `
                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
-                                    <strong>${jeu.titre}</strong>
-                                    <br>
-                                    <small class="text-muted">${jeu.editeur || 'N/A'}</small>
+                                    <span class="badge bg-${config.color} rounded-pill me-2">${index + 1}</span>
+                                    <strong>${entry.item?.titre || 'N/A'}</strong>
                                 </div>
-                                <span class="badge bg-info rounded-pill">${jeu.emprunts_count || 0} emprunts</span>
+                                <span class="badge bg-info rounded-pill">${entry.emprunts} emprunts</span>
                             </div>
                         `).join('')}
                     </div>
                 `;
             } catch (error) {
-                console.error('Error loading top jeux:', error);
-                document.getElementById('topJeuxList').innerHTML =
+                console.error('Error loading top items:', error);
+                document.getElementById('topItemsList').innerHTML =
                     '<p class="text-center text-muted">Erreur de chargement</p>';
             }
         }
 
-        async function loadTopAdherents() {
+        async function loadTopAdherents(moduleCode) {
             try {
-                const data = await apiRequest('/stats/active-members?limit=10');
-                const adherents = data.members?.map(m => ({
-                    ...m.adherent,
-                    emprunts_count: m.emprunts
-                })) || [];
+                const data = await apiRequest(`/stats/active-members?module=${moduleCode}&limit=10`);
+                const members = data.members || [];
 
                 const container = document.getElementById('topAdherentsList');
 
-                if (adherents.length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                if (members.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
                     return;
                 }
 
                 container.innerHTML = `
                     <div class="list-group list-group-flush">
-                        ${adherents.map((adherent, index) => `
+                        ${members.map((entry, index) => `
                             <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
                                     <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
-                                    <strong>${adherent.prenom} ${adherent.nom}</strong>
+                                    <strong>${entry.utilisateur?.prenom || ''} ${entry.utilisateur?.nom || 'N/A'}</strong>
                                     <br>
-                                    <small class="text-muted">${adherent.email}</small>
+                                    <small class="text-muted">${entry.utilisateur?.email || ''}</small>
                                 </div>
-                                <span class="badge bg-success rounded-pill">${adherent.emprunts_count || 0} emprunts</span>
+                                <span class="badge bg-success rounded-pill">${entry.emprunts} emprunts</span>
                             </div>
                         `).join('')}
                     </div>
@@ -329,47 +521,33 @@
             }
         }
 
-        async function loadCategoriesStats() {
+        async function loadCategories(moduleCode, config) {
             try {
-                const data = await apiRequest('/jeux');
-                const jeux = data.jeux || [];
-
-                // Count by category
-                const categories = {};
-                jeux.forEach(jeu => {
-                    const cat = jeu.categorie || 'Non catégorisé';
-                    categories[cat] = (categories[cat] || 0) + 1;
-                });
+                const data = await apiRequest(`/stats/categories?module=${moduleCode}`);
+                const categories = data.categories || [];
 
                 const container = document.getElementById('categoriesChart');
 
-                if (Object.keys(categories).length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Aucune donnée disponible</p>';
+                if (categories.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
                     return;
                 }
 
-                // Sort by count
-                const sortedCategories = Object.entries(categories)
-                    .sort((a, b) => b[1] - a[1]);
-
-                const total = jeux.length;
+                const total = categories.reduce((sum, c) => sum + c.count, 0);
 
                 container.innerHTML = `
                     <div class="row">
-                        ${sortedCategories.map(([cat, count]) => {
-                            const percentage = ((count / total) * 100).toFixed(1);
+                        ${categories.slice(0, 12).map(cat => {
+                            const percentage = ((cat.count / total) * 100).toFixed(1);
                             return `
                                 <div class="col-md-4 mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span><strong>${cat}</strong></span>
-                                        <span class="text-muted">${count} jeux (${percentage}%)</span>
+                                        <span><strong>${cat.categorie || 'Non categorise'}</strong></span>
+                                        <span class="text-muted">${cat.count} (${percentage}%)</span>
                                     </div>
-                                    <div class="progress" style="height: 25px;">
-                                        <div class="progress-bar" role="progressbar"
-                                             style="width: ${percentage}%"
-                                             aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
-                                            ${percentage}%
-                                        </div>
+                                    <div class="progress progress-thin">
+                                        <div class="progress-bar bg-${config.color}" role="progressbar"
+                                             style="width: ${percentage}%"></div>
                                     </div>
                                 </div>
                             `;
@@ -377,69 +555,114 @@
                     </div>
                 `;
             } catch (error) {
-                console.error('Error loading categories stats:', error);
+                console.error('Error loading categories:', error);
                 document.getElementById('categoriesChart').innerHTML =
                     '<p class="text-center text-muted">Erreur de chargement</p>';
             }
         }
 
-        async function loadRecentEmprunts() {
+        async function loadMonthlyStats(moduleCode, config) {
             try {
-                const data = await apiRequest('/emprunts?limit=10&sort=date_emprunt');
-                const emprunts = data.emprunts || [];
+                const data = await apiRequest(`/stats/monthly?module=${moduleCode}&months=12`);
+                const monthly = data.data || [];
 
-                const container = document.getElementById('recentEmpruntsList');
+                const container = document.getElementById('monthlyChart');
 
-                if (emprunts.length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Aucun emprunt récent</p>';
+                if (monthly.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
                     return;
                 }
 
+                const maxValue = Math.max(...monthly.map(m => m.emprunts), 1);
+
                 container.innerHTML = `
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Usager</th>
-                                    <th>Jeu</th>
-                                    <th>Retour prevu</th>
-                                    <th>Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${emprunts.map(emprunt => {
-                                    const isLate = new Date(emprunt.date_retour_prevue) < new Date() && emprunt.statut !== 'retourne';
-                                    return `
-                                        <tr>
-                                            <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
-                                            <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
-                                            <td><strong>${emprunt.jeu?.titre || 'N/A'}</strong></td>
-                                            <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
-                                            <td>
-                                                ${emprunt.statut === 'retourne'
-                                                    ? '<span class="badge bg-success">Retourné</span>'
-                                                    : isLate
-                                                    ? '<span class="badge bg-danger">En retard</span>'
-                                                    : '<span class="badge bg-info">En cours</span>'}
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
+                    <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
+                        ${monthly.map(m => {
+                            const height = (m.emprunts / maxValue) * 100;
+                            const [year, month] = m.month.split('-');
+                            const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            const label = monthNames[parseInt(month) - 1];
+                            return `
+                                <div class="text-center" style="flex: 1; max-width: 60px;">
+                                    <div class="bg-${config.color} rounded-top mx-1"
+                                         style="height: ${Math.max(height, 5)}%; min-height: 5px;"
+                                         title="${m.emprunts} emprunts">
+                                    </div>
+                                    <small class="text-muted d-block mt-1">${label}</small>
+                                    <small class="fw-bold">${m.emprunts}</small>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 `;
             } catch (error) {
-                console.error('Error loading recent emprunts:', error);
-                document.getElementById('recentEmpruntsList').innerHTML =
+                console.error('Error loading monthly stats:', error);
+                document.getElementById('monthlyChart').innerHTML =
                     '<p class="text-center text-muted">Erreur de chargement</p>';
             }
         }
 
+        async function loadComptabiliteStats() {
+            try {
+                const currentYear = new Date().getFullYear();
+                const data = await apiRequest(`/stats/cotisations?year=${currentYear}`);
+
+                document.getElementById('comptaYear').textContent = currentYear;
+                document.getElementById('comptaCA').textContent = `${data.summary?.totalCA || 0} EUR`;
+
+                const actives = data.summary?.byStatus?.find(s => s.statut === 'en_cours');
+                document.getElementById('comptaCotisationsActives').textContent = actives?.count || 0;
+
+                // Cotisations du mois en cours
+                const currentMonth = new Date().toISOString().slice(0, 7);
+                const thisMonth = data.monthly?.find(m => m.month === currentMonth);
+                document.getElementById('comptaCotisationsMois').textContent = thisMonth?.count || 0;
+
+                // Graphique mensuel
+                renderComptaMensuel(data.monthly || []);
+            } catch (error) {
+                console.error('Error loading comptabilite stats:', error);
+                document.getElementById('comptabiliteSection').innerHTML = `
+                    <div class="alert alert-danger">Erreur de chargement des statistiques comptables</div>
+                `;
+            }
+        }
+
+        function renderComptaMensuel(monthly) {
+            const container = document.getElementById('comptaMensuelChart');
+
+            if (monthly.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
+                return;
+            }
+
+            const maxValue = Math.max(...monthly.map(m => parseFloat(m.total)), 1);
+
+            container.innerHTML = `
+                <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
+                    ${monthly.map(m => {
+                        const height = (parseFloat(m.total) / maxValue) * 100;
+                        const [year, month] = m.month.split('-');
+                        const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const label = monthNames[parseInt(month) - 1];
+                        return `
+                            <div class="text-center" style="flex: 1; max-width: 80px;">
+                                <div class="bg-success rounded-top mx-1"
+                                     style="height: ${Math.max(height, 5)}%; min-height: 5px;"
+                                     title="${m.total} EUR - ${m.count} cotisations">
+                                </div>
+                                <small class="text-muted d-block mt-1">${label}</small>
+                                <small class="fw-bold">${m.total} EUR</small>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
         function refreshStats() {
             loadStatistics();
-            showAlert('Statistiques actualisées', 'success');
+            showAlert('Statistiques actualisees', 'success');
         }
 
         function showAlert(message, type = 'info') {

@@ -1,69 +1,201 @@
-const { Utilisateur, Jeu, Emprunt } = require('../models');
+/**
+ * Controller pour les statistiques multi-modules avec gestion des droits
+ *
+ * Filtrage par module selon les droits de l'utilisateur:
+ * - gestionnaire+ : voit tous les modules
+ * - benevole/agent : voit uniquement ses modules autorises
+ * - comptable+ : acces aux stats financieres
+ */
+
+const { Utilisateur, Jeu, Livre, Film, Disque, Emprunt, Cotisation, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const { getUserAllowedModules, hasModuleAccess, hasRoleLevel, MODULES, MODULE_MAPPING } = require('../middleware/checkRole');
 
 /**
- * Get dashboard statistics
- * GET /api/stats/dashboard
+ * Obtenir les modules accessibles pour les stats selon l'utilisateur
+ * @param {Object} user - Utilisateur connecte
+ * @param {Array} requestedModules - Modules demandes (optionnel)
+ * @returns {Array} Liste des modules accessibles
+ */
+const getAccessibleModules = (user, requestedModules = null) => {
+  const allowedModules = getUserAllowedModules(user);
+
+  // Si gestionnaire+ ou admin, tous les modules sont accessibles
+  if (allowedModules === null) {
+    return requestedModules || MODULES;
+  }
+
+  // Sinon, filtrer selon les modules autorises
+  if (requestedModules) {
+    return requestedModules.filter(m => allowedModules.includes(m));
+  }
+
+  return allowedModules;
+};
+
+/**
+ * Construire la condition WHERE pour filtrer les emprunts par modules accessibles
+ * @param {Array} modules - Liste des modules accessibles
+ * @returns {Object} Condition Sequelize
+ */
+const buildModuleWhereClause = (modules) => {
+  const conditions = [];
+
+  if (modules.includes('ludotheque')) {
+    conditions.push({ jeu_id: { [Op.ne]: null } });
+  }
+  if (modules.includes('bibliotheque')) {
+    conditions.push({ livre_id: { [Op.ne]: null } });
+  }
+  if (modules.includes('filmotheque')) {
+    conditions.push({ film_id: { [Op.ne]: null } });
+  }
+  if (modules.includes('discotheque')) {
+    conditions.push({ cd_id: { [Op.ne]: null } });
+  }
+
+  return conditions.length > 0 ? { [Op.or]: conditions } : {};
+};
+
+/**
+ * Get dashboard statistics - Multi-modules avec filtrage par droits
+ * GET /api/stats/dashboard?modules=ludotheque,bibliotheque
  */
 const getDashboardStats = async (req, res) => {
   try {
-    // Count adherents by status
+    const user = req.user;
+    const requestedModules = req.query.modules
+      ? req.query.modules.split(',').filter(m => MODULES.includes(m))
+      : null;
+
+    const accessibleModules = getAccessibleModules(user, requestedModules);
+
+    // Stats globales utilisateurs (visible par tous)
     const utilisateursStats = await Utilisateur.findAll({
       attributes: [
         'statut',
-        [Utilisateur.sequelize.fn('COUNT', Utilisateur.sequelize.col('id')), 'count']
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
       ],
+      where: { role: 'usager' }, // Ne compter que les usagers, pas le staff
       group: ['statut']
     });
 
     const totalUtilisateurs = utilisateursStats.reduce((sum, stat) => sum + parseInt(stat.dataValues.count), 0);
     const utilisateursActifs = utilisateursStats.find(s => s.statut === 'actif')?.dataValues.count || 0;
 
-    // Count jeux by status
-    const jeuxStats = await Jeu.findAll({
-      attributes: [
-        'statut',
-        [Jeu.sequelize.fn('COUNT', Jeu.sequelize.col('id')), 'count']
-      ],
-      group: ['statut']
-    });
+    // Stats par module accessible
+    const modulesStats = {};
 
-    const totalJeux = jeuxStats.reduce((sum, stat) => sum + parseInt(stat.dataValues.count), 0);
-    const jeuxDisponibles = jeuxStats.find(s => s.statut === 'disponible')?.dataValues.count || 0;
-    const jeuxEmpruntes = jeuxStats.find(s => s.statut === 'emprunte')?.dataValues.count || 0;
+    for (const moduleCode of accessibleModules) {
+      const mapping = MODULE_MAPPING[moduleCode];
+      if (!mapping) continue;
 
-    // Count emprunts by status
+      let Model, countField;
+      switch (moduleCode) {
+        case 'ludotheque':
+          Model = Jeu;
+          countField = 'jeu_id';
+          break;
+        case 'bibliotheque':
+          Model = Livre;
+          countField = 'livre_id';
+          break;
+        case 'filmotheque':
+          Model = Film;
+          countField = 'film_id';
+          break;
+        case 'discotheque':
+          Model = Disque;
+          countField = 'cd_id';
+          break;
+        default:
+          continue;
+      }
+
+      // Stats de la collection
+      const stats = await Model.findAll({
+        attributes: [
+          'statut',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        group: ['statut']
+      });
+
+      const total = stats.reduce((sum, stat) => sum + parseInt(stat.dataValues.count), 0);
+      const disponibles = stats.find(s => s.statut === 'disponible')?.dataValues.count || 0;
+      const empruntes = stats.find(s => s.statut === 'emprunte')?.dataValues.count || 0;
+
+      // Emprunts pour ce module
+      const empruntsEnCours = await Emprunt.count({
+        where: {
+          statut: 'en_cours',
+          [countField]: { [Op.ne]: null }
+        }
+      });
+
+      const empruntsEnRetard = await Emprunt.count({
+        where: {
+          statut: { [Op.in]: ['en_cours', 'en_retard'] },
+          date_retour_prevue: { [Op.lt]: new Date() },
+          [countField]: { [Op.ne]: null }
+        }
+      });
+
+      modulesStats[moduleCode] = {
+        code: moduleCode,
+        libelle: getModuleLibelle(moduleCode),
+        collection: {
+          total,
+          disponibles: parseInt(disponibles),
+          empruntes: parseInt(empruntes),
+          byStatus: stats.map(s => ({
+            statut: s.statut,
+            count: parseInt(s.dataValues.count)
+          }))
+        },
+        emprunts: {
+          enCours: empruntsEnCours,
+          enRetard: empruntsEnRetard
+        }
+      };
+    }
+
+    // Stats globales emprunts (filtrees par modules accessibles)
+    const moduleWhere = buildModuleWhereClause(accessibleModules);
+
     const empruntsEnCours = await Emprunt.count({
-      where: { statut: 'en_cours' }
+      where: { statut: 'en_cours', ...moduleWhere }
     });
 
     const empruntsEnRetard = await Emprunt.count({
       where: {
         statut: { [Op.in]: ['en_cours', 'en_retard'] },
-        date_retour_prevue: { [Op.lt]: new Date() }
+        date_retour_prevue: { [Op.lt]: new Date() },
+        ...moduleWhere
       }
     });
 
-    const empruntsTotal = await Emprunt.count();
+    const empruntsTotal = await Emprunt.count({ where: moduleWhere });
 
-    // Recent activity - emprunts created in last 7 days
+    // Activite recente
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const empruntsRecents = await Emprunt.count({
       where: {
-        date_emprunt: { [Op.gte]: sevenDaysAgo }
+        date_emprunt: { [Op.gte]: sevenDaysAgo },
+        ...moduleWhere
       }
     });
 
-    // Recent returns - emprunts returned in last 7 days
     const retoursRecents = await Emprunt.count({
       where: {
-        date_retour_effective: { [Op.gte]: sevenDaysAgo }
+        date_retour_effective: { [Op.gte]: sevenDaysAgo },
+        ...moduleWhere
       }
     });
 
-    // Données utilisateurs avec alias adherents pour rétrocompatibilité frontend
+    // Donnees utilisateurs avec alias pour retrocompatibilite
     const utilisateursData = {
       total: totalUtilisateurs,
       actifs: parseInt(utilisateursActifs),
@@ -73,18 +205,31 @@ const getDashboardStats = async (req, res) => {
       }))
     };
 
+    // Calculer totaux globaux depuis les modules
+    const globalCollection = {
+      total: Object.values(modulesStats).reduce((sum, m) => sum + m.collection.total, 0),
+      disponibles: Object.values(modulesStats).reduce((sum, m) => sum + m.collection.disponibles, 0),
+      empruntes: Object.values(modulesStats).reduce((sum, m) => sum + m.collection.empruntes, 0)
+    };
+
     res.json({
+      accessibleModules,
       utilisateurs: utilisateursData,
-      adherents: utilisateursData, // Alias pour rétrocompatibilité
-      jeux: {
-        total: totalJeux,
-        disponibles: parseInt(jeuxDisponibles),
-        empruntes: parseInt(jeuxEmpruntes),
-        byStatus: jeuxStats.map(s => ({
-          statut: s.statut,
-          count: parseInt(s.dataValues.count)
-        }))
+      adherents: utilisateursData, // Alias retrocompatibilite
+      global: {
+        collection: globalCollection,
+        emprunts: {
+          total: empruntsTotal,
+          enCours: empruntsEnCours,
+          enRetard: empruntsEnRetard,
+          tauxRetard: empruntsEnCours > 0
+            ? ((empruntsEnRetard / empruntsEnCours) * 100).toFixed(2)
+            : 0
+        }
       },
+      modules: modulesStats,
+      // Retrocompatibilite: expose jeux si ludotheque accessible
+      jeux: modulesStats.ludotheque?.collection || null,
       emprunts: {
         total: empruntsTotal,
         enCours: empruntsEnCours,
@@ -109,25 +254,132 @@ const getDashboardStats = async (req, res) => {
 };
 
 /**
- * Get popular games statistics
- * GET /api/stats/popular-games
+ * Get popular items statistics - Multi-modules
+ * GET /api/stats/popular-items?module=ludotheque&limit=10
+ */
+const getPopularItems = async (req, res) => {
+  try {
+    const user = req.user;
+    const { module: moduleCode, limit = 10 } = req.query;
+
+    // Si un module specifique est demande, verifier l'acces
+    if (moduleCode && !hasModuleAccess(user, moduleCode)) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: `Vous n'avez pas acces au module ${moduleCode}`
+      });
+    }
+
+    const accessibleModules = moduleCode
+      ? [moduleCode]
+      : getAccessibleModules(user);
+
+    const results = {};
+
+    for (const mod of accessibleModules) {
+      const mapping = MODULE_MAPPING[mod];
+      if (!mapping) continue;
+
+      let Model, includeAs;
+      switch (mod) {
+        case 'ludotheque':
+          Model = Jeu;
+          includeAs = 'jeu';
+          break;
+        case 'bibliotheque':
+          Model = Livre;
+          includeAs = 'livre';
+          break;
+        case 'filmotheque':
+          Model = Film;
+          includeAs = 'film';
+          break;
+        case 'discotheque':
+          Model = Disque;
+          includeAs = 'disque';
+          break;
+        default:
+          continue;
+      }
+
+      const popularItems = await Emprunt.findAll({
+        attributes: [
+          [mapping.field],
+          [sequelize.fn('COUNT', sequelize.col(mapping.field)), 'emprunt_count']
+        ],
+        where: {
+          [mapping.field]: { [Op.ne]: null }
+        },
+        include: [{
+          model: Model,
+          as: includeAs,
+          attributes: ['id', 'titre', 'statut', 'image_url']
+        }],
+        group: [mapping.field],
+        order: [[sequelize.literal('emprunt_count'), 'DESC']],
+        limit: parseInt(limit)
+      });
+
+      results[mod] = {
+        libelle: getModuleLibelle(mod),
+        items: popularItems.map(item => ({
+          item: item[includeAs],
+          emprunts: parseInt(item.dataValues.emprunt_count)
+        }))
+      };
+    }
+
+    // Retrocompatibilite: si un seul module demande, retourner format simplifie
+    if (moduleCode && results[moduleCode]) {
+      return res.json({
+        module: moduleCode,
+        games: results[moduleCode].items, // Alias retrocompatibilite
+        items: results[moduleCode].items
+      });
+    }
+
+    res.json({ modules: results });
+  } catch (error) {
+    console.error('Get popular items error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get popular games statistics - Retrocompatibilite
+ * GET /api/stats/popular-games?limit=10
  */
 const getPopularGames = async (req, res) => {
   try {
+    const user = req.user;
     const { limit = 10 } = req.query;
+
+    // Verifier acces au module ludotheque
+    if (!hasModuleAccess(user, 'ludotheque')) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: 'Vous n\'avez pas acces au module ludotheque'
+      });
+    }
 
     const popularGames = await Emprunt.findAll({
       attributes: [
         'jeu_id',
-        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('jeu_id')), 'emprunt_count']
+        [sequelize.fn('COUNT', sequelize.col('jeu_id')), 'emprunt_count']
       ],
+      where: {
+        jeu_id: { [Op.ne]: null }
+      },
       include: [{
         model: Jeu,
         as: 'jeu',
         attributes: ['id', 'titre', 'editeur', 'statut', 'image_url']
       }],
       group: ['jeu_id'],
-      order: [[Emprunt.sequelize.literal('emprunt_count'), 'DESC']],
+      order: [[sequelize.literal('emprunt_count'), 'DESC']],
       limit: parseInt(limit)
     });
 
@@ -148,31 +400,46 @@ const getPopularGames = async (req, res) => {
 
 /**
  * Get active members statistics
- * GET /api/stats/active-members
+ * GET /api/stats/active-members?limit=10&module=ludotheque
  */
 const getActiveMembers = async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const user = req.user;
+    const { limit = 10, module: moduleCode } = req.query;
+
+    const accessibleModules = moduleCode
+      ? (hasModuleAccess(user, moduleCode) ? [moduleCode] : [])
+      : getAccessibleModules(user);
+
+    if (accessibleModules.length === 0) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: 'Aucun module accessible'
+      });
+    }
+
+    const moduleWhere = buildModuleWhereClause(accessibleModules);
 
     const activeMembers = await Emprunt.findAll({
       attributes: [
         'utilisateur_id',
-        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('utilisateur_id')), 'emprunt_count']
+        [sequelize.fn('COUNT', sequelize.col('utilisateur_id')), 'emprunt_count']
       ],
+      where: moduleWhere,
       include: [{
         model: Utilisateur,
         as: 'utilisateur',
         attributes: ['id', 'nom', 'prenom', 'email', 'statut']
       }],
       group: ['utilisateur_id'],
-      order: [[Emprunt.sequelize.literal('emprunt_count'), 'DESC']],
+      order: [[sequelize.literal('emprunt_count'), 'DESC']],
       limit: parseInt(limit)
     });
 
     res.json({
       members: activeMembers.map(m => ({
         utilisateur: m.utilisateur,
-        adherent: m.utilisateur, // Alias pour rétrocompatibilité frontend
+        adherent: m.utilisateur, // Alias retrocompatibilite
         emprunts: parseInt(m.dataValues.emprunt_count)
       }))
     });
@@ -187,18 +454,34 @@ const getActiveMembers = async (req, res) => {
 
 /**
  * Get loan duration statistics
- * GET /api/stats/loan-duration
+ * GET /api/stats/loan-duration?module=ludotheque
  */
 const getLoanDurationStats = async (req, res) => {
   try {
+    const user = req.user;
+    const { module: moduleCode } = req.query;
+
+    const accessibleModules = moduleCode
+      ? (hasModuleAccess(user, moduleCode) ? [moduleCode] : [])
+      : getAccessibleModules(user);
+
+    if (accessibleModules.length === 0) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: 'Aucun module accessible'
+      });
+    }
+
+    const moduleWhere = buildModuleWhereClause(accessibleModules);
+
     const emprunts = await Emprunt.findAll({
       where: {
-        date_retour_effective: { [Op.ne]: null }
+        date_retour_effective: { [Op.ne]: null },
+        ...moduleWhere
       },
       attributes: ['date_emprunt', 'date_retour_effective']
     });
 
-    // Calculate average loan duration
     let totalDuration = 0;
     const durations = emprunts.map(e => {
       const start = new Date(e.date_emprunt);
@@ -212,7 +495,6 @@ const getLoanDurationStats = async (req, res) => {
       ? (totalDuration / emprunts.length).toFixed(2)
       : 0;
 
-    // Calculate min, max
     const minDuration = emprunts.length > 0 ? Math.min(...durations) : 0;
     const maxDuration = emprunts.length > 0 ? Math.max(...durations) : 0;
 
@@ -221,7 +503,8 @@ const getLoanDurationStats = async (req, res) => {
       averageDuration: parseFloat(averageDuration),
       minDuration,
       maxDuration,
-      unit: 'jours'
+      unit: 'jours',
+      modules: accessibleModules
     });
   } catch (error) {
     console.error('Get loan duration stats error:', error);
@@ -234,28 +517,45 @@ const getLoanDurationStats = async (req, res) => {
 
 /**
  * Get monthly statistics
- * GET /api/stats/monthly
+ * GET /api/stats/monthly?months=12&module=ludotheque
  */
 const getMonthlyStats = async (req, res) => {
   try {
-    const { months = 12 } = req.query;
+    const user = req.user;
+    const { months = 12, module: moduleCode } = req.query;
+
+    const accessibleModules = moduleCode
+      ? (hasModuleAccess(user, moduleCode) ? [moduleCode] : [])
+      : getAccessibleModules(user);
+
+    if (accessibleModules.length === 0) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: 'Aucun module accessible'
+      });
+    }
+
     const monthsAgo = new Date();
     monthsAgo.setMonth(monthsAgo.getMonth() - parseInt(months));
 
+    const moduleWhere = buildModuleWhereClause(accessibleModules);
+
     const emprunts = await Emprunt.findAll({
       where: {
-        date_emprunt: { [Op.gte]: monthsAgo }
+        date_emprunt: { [Op.gte]: monthsAgo },
+        ...moduleWhere
       },
       attributes: [
-        [Emprunt.sequelize.fn('DATE_FORMAT', Emprunt.sequelize.col('date_emprunt'), '%Y-%m'), 'month'],
-        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('id')), 'count']
+        [sequelize.fn('DATE_FORMAT', sequelize.col('date_emprunt'), '%Y-%m'), 'month'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
       ],
-      group: [Emprunt.sequelize.fn('DATE_FORMAT', Emprunt.sequelize.col('date_emprunt'), '%Y-%m')],
-      order: [[Emprunt.sequelize.fn('DATE_FORMAT', Emprunt.sequelize.col('date_emprunt'), '%Y-%m'), 'ASC']]
+      group: [sequelize.fn('DATE_FORMAT', sequelize.col('date_emprunt'), '%Y-%m')],
+      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date_emprunt'), '%Y-%m'), 'ASC']]
     });
 
     res.json({
       period: `${months} derniers mois`,
+      modules: accessibleModules,
       data: emprunts.map(e => ({
         month: e.dataValues.month,
         emprunts: parseInt(e.dataValues.count)
@@ -271,53 +571,73 @@ const getMonthlyStats = async (req, res) => {
 };
 
 /**
- * Get category statistics
- * GET /api/stats/categories
+ * Get category/genre statistics
+ * GET /api/stats/categories?module=ludotheque
  */
 const getCategoryStats = async (req, res) => {
   try {
-    // Count jeux by category
-    const categoryStats = await Jeu.findAll({
+    const user = req.user;
+    const { module: moduleCode } = req.query;
+
+    // Par defaut, stats categories pour ludotheque
+    const targetModule = moduleCode || 'ludotheque';
+
+    if (!hasModuleAccess(user, targetModule)) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: `Vous n'avez pas acces au module ${targetModule}`
+      });
+    }
+
+    let Model, field, empruntField;
+    switch (targetModule) {
+      case 'ludotheque':
+        Model = Jeu;
+        field = 'categorie';
+        empruntField = 'jeu_id';
+        break;
+      case 'bibliotheque':
+        Model = Livre;
+        field = 'genre';
+        empruntField = 'livre_id';
+        break;
+      case 'filmotheque':
+        Model = Film;
+        field = 'genre';
+        empruntField = 'film_id';
+        break;
+      case 'discotheque':
+        Model = Disque;
+        field = 'genre';
+        empruntField = 'cd_id';
+        break;
+      default:
+        return res.status(400).json({
+          error: 'Module invalide',
+          message: `Module ${targetModule} non reconnu`
+        });
+    }
+
+    // Count items by category/genre
+    const categoryStats = await Model.findAll({
       attributes: [
-        'categorie',
-        [Jeu.sequelize.fn('COUNT', Jeu.sequelize.col('id')), 'count']
+        field,
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
       ],
       where: {
-        categorie: { [Op.ne]: null }
+        [field]: { [Op.ne]: null }
       },
-      group: ['categorie'],
-      order: [[Jeu.sequelize.literal('count'), 'DESC']]
-    });
-
-    // Count emprunts by category
-    const categoryEmprunts = await Emprunt.findAll({
-      attributes: [
-        [Emprunt.sequelize.col('jeu.categorie'), 'categorie'],
-        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('Emprunt.id')), 'emprunt_count']
-      ],
-      include: [{
-        model: Jeu,
-        as: 'jeu',
-        attributes: [],
-        where: {
-          categorie: { [Op.ne]: null }
-        }
-      }],
-      group: ['jeu.categorie'],
-      order: [[Emprunt.sequelize.literal('emprunt_count'), 'DESC']]
+      group: [field],
+      order: [[sequelize.literal('count'), 'DESC']]
     });
 
     res.json({
-      categories: categoryStats.map(c => {
-        const emprunts = categoryEmprunts.find(
-          e => e.dataValues.categorie === c.categorie
-        );
-        return {
-          categorie: c.categorie,
-          jeuxCount: parseInt(c.dataValues.count),
-          empruntsCount: emprunts ? parseInt(emprunts.dataValues.emprunt_count) : 0
-        };
-      })
+      module: targetModule,
+      field: field,
+      categories: categoryStats.map(c => ({
+        categorie: c[field],
+        count: parseInt(c.dataValues.count)
+      }))
     });
   } catch (error) {
     console.error('Get category stats error:', error);
@@ -328,11 +648,105 @@ const getCategoryStats = async (req, res) => {
   }
 };
 
+/**
+ * Get financial statistics (comptable+ only)
+ * GET /api/stats/cotisations?year=2025
+ */
+const getCotisationsStats = async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Verifier acces comptable
+    if (!hasRoleLevel(user.role, 'comptable')) {
+      return res.status(403).json({
+        error: 'Acces refuse',
+        message: 'Acces reserve aux comptables et administrateurs'
+      });
+    }
+
+    const { year } = req.query;
+    const currentYear = year || new Date().getFullYear();
+
+    const startDate = new Date(`${currentYear}-01-01`);
+    const endDate = new Date(`${currentYear}-12-31`);
+
+    // Stats cotisations
+    const cotisationsStats = await Cotisation.findAll({
+      attributes: [
+        'statut',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.fn('SUM', sequelize.col('montant')), 'total']
+      ],
+      where: {
+        date_paiement: { [Op.between]: [startDate, endDate] }
+      },
+      group: ['statut']
+    });
+
+    // Total CA
+    const totalCA = cotisationsStats
+      .filter(s => s.statut === 'en_cours' || s.statut === 'expiree')
+      .reduce((sum, s) => sum + parseFloat(s.dataValues.total || 0), 0);
+
+    // Cotisations par mois
+    const cotisationsMensuelles = await Cotisation.findAll({
+      attributes: [
+        [sequelize.fn('DATE_FORMAT', sequelize.col('date_paiement'), '%Y-%m'), 'month'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        [sequelize.fn('SUM', sequelize.col('montant')), 'total']
+      ],
+      where: {
+        date_paiement: { [Op.between]: [startDate, endDate] }
+      },
+      group: [sequelize.fn('DATE_FORMAT', sequelize.col('date_paiement'), '%Y-%m')],
+      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('date_paiement'), '%Y-%m'), 'ASC']]
+    });
+
+    res.json({
+      year: parseInt(currentYear),
+      summary: {
+        totalCA: totalCA.toFixed(2),
+        byStatus: cotisationsStats.map(s => ({
+          statut: s.statut,
+          count: parseInt(s.dataValues.count),
+          total: parseFloat(s.dataValues.total || 0).toFixed(2)
+        }))
+      },
+      monthly: cotisationsMensuelles.map(m => ({
+        month: m.dataValues.month,
+        count: parseInt(m.dataValues.count),
+        total: parseFloat(m.dataValues.total || 0).toFixed(2)
+      }))
+    });
+  } catch (error) {
+    console.error('Get cotisations stats error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Helper: Obtenir le libelle d'un module
+ */
+const getModuleLibelle = (moduleCode) => {
+  const libelles = {
+    'ludotheque': 'Ludotheque',
+    'bibliotheque': 'Bibliotheque',
+    'filmotheque': 'Filmotheque',
+    'discotheque': 'Discotheque'
+  };
+  return libelles[moduleCode] || moduleCode;
+};
+
 module.exports = {
   getDashboardStats,
+  getPopularItems,
   getPopularGames,
   getActiveMembers,
   getLoanDurationStats,
   getMonthlyStats,
-  getCategoryStats
+  getCategoryStats,
+  getCotisationsStats
 };

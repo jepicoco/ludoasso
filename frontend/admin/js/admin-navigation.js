@@ -93,7 +93,8 @@ const MENU_ITEMS = [
         id: 'statistiques',
         label: 'Statistiques',
         icon: 'graph-up',
-        href: 'statistiques.html'
+        href: 'statistiques.html',
+        minRole: 'benevole'  // Accessible aux benevoles et au-dessus
     },
     {
         id: 'parametres',
