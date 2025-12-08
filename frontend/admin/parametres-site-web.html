@@ -166,6 +166,11 @@
                 <i class="bi bi-palette"></i> Personnalisation
               </button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button">
+                <i class="bi bi-tools"></i> Maintenance
+              </button>
+            </li>
           </ul>
 
           <!-- Tab Content -->
@@ -668,6 +673,12 @@
                 </div>
               </div>
 
+            </div>
+
+            <!-- ======================== -->
+            <!-- Maintenance Tab          -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="maintenance" role="tabpanel">
               <div class="card section-card border-warning">
                 <div class="card-header bg-warning bg-opacity-10">
                   <i class="bi bi-tools"></i> Mode maintenance
@@ -688,6 +699,30 @@
                     <label for="message_maintenance" class="form-label">Message de maintenance</label>
                     <textarea class="form-control" id="message_maintenance" rows="3"
                               placeholder="Notre site est actuellement en maintenance. Nous serons de retour tres bientot !"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-shield-lock"></i> Acces en maintenance
+                </div>
+                <div class="card-body">
+                  <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="autoriser_ip_locales" checked>
+                    <label class="form-check-label" for="autoriser_ip_locales">
+                      <strong>Autoriser les IPs locales</strong>
+                    </label>
+                  </div>
+                  <p class="text-muted small mb-3">
+                    Permet aux IPs locales (127.x.x.x, 192.168.x.x, ::1) d'acceder au site en mode maintenance.
+                  </p>
+
+                  <hr>
+
+                  <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle"></i>
+                    Votre IP actuelle : <strong id="current-ip">Chargement...</strong>
                   </div>
                 </div>
               </div>
@@ -728,6 +763,7 @@
       renderSubNav('general', 'site-web');
       initEditors();
       loadParametres();
+      loadCurrentIp();
 
       // Afficher la carte Recherche IA si le module est actif dans le holodeck
       if (isModuleActive('recherche_ia')) {
@@ -939,6 +975,7 @@
       // Maintenance
       document.getElementById('mode_maintenance').checked = data.mode_maintenance || false;
       document.getElementById('message_maintenance').value = data.message_maintenance || '';
+      document.getElementById('autoriser_ip_locales').checked = data.autoriser_ip_locales !== false;
 
       // Update char counters
       updateCharCounter('meta_description', 160);
@@ -1002,7 +1039,8 @@
 
         // Maintenance
         mode_maintenance: document.getElementById('mode_maintenance').checked,
-        message_maintenance: document.getElementById('message_maintenance').value || null
+        message_maintenance: document.getElementById('message_maintenance').value || null,
+        autoriser_ip_locales: document.getElementById('autoriser_ip_locales').checked
       };
     }
 
@@ -1080,6 +1118,21 @@
         container.querySelector('.ql-container').style.minHeight = '200px';
       } else {
         container.querySelector('.ql-container').style.minHeight = '500px';
+      }
+    }
+
+    // Charger l'IP actuelle de l'utilisateur
+    async function loadCurrentIp() {
+      try {
+        const response = await fetch('/api/maintenance/my-ip', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('current-ip').textContent = data.ip;
+        }
+      } catch (error) {
+        document.getElementById('current-ip').textContent = 'Non disponible';
       }
     }
 

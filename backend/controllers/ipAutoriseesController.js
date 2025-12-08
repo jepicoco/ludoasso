@@ -235,3 +235,12 @@ exports.getTimestamp = async (req, res) => {
   const timestamp = Math.floor(Date.now() / (5 * 60 * 1000));
   res.json({ t: timestamp });
 };
+
+/**
+ * Obtenir l'IP actuelle du client (pour l'interface admin)
+ * GET /api/maintenance/my-ip
+ */
+exports.getMyIp = async (req, res) => {
+  const ip = getClientIp(req);
+  res.json({ ip });
+};
