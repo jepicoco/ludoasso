@@ -12,6 +12,7 @@
     "db:migrate:down": "node database/migrate.js down",
     "db:migrate:reset": "node database/migrate.js reset",
     "db:migrate:mark-all": "node database/migrate.js mark-all",
+    "db:check-schema": "node database/check-schema.js",
     "migrate": "node database/migrate.js up",
     "seed": "sequelize-cli db:seed:all",
     "init-parametrage": "node database/init-parametrage.js",
