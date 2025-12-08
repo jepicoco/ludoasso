@@ -3,20 +3,21 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { verifyToken } = require('../middleware/auth');
 const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
+const { validate, schemas } = require('../middleware/validate');
 
 /**
  * @route   POST /api/auth/register
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', registerLimiter, authController.register);
+router.post('/register', registerLimiter, validate(schemas.utilisateur.create), authController.register);
 
 /**
  * @route   POST /api/auth/login
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', loginLimiter, authController.login);
+router.post('/login', loginLimiter, validate(schemas.auth.login), authController.login);
 
 /**
  * @route   GET /api/auth/profile

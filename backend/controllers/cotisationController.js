@@ -497,23 +497,23 @@ exports.verifierCotisationActive = async (req, res) => {
 
 /**
  * Mettre à jour automatiquement les statuts des cotisations expirées
+ *
+ * Optimise: utilise un UPDATE groupe au lieu de N saves individuels
  */
 exports.mettreAJourStatutsExpires = async (req, res) => {
   try {
-    const cotisations = await Cotisation.findAll({
-      where: {
-        statut: 'en_cours',
-        periode_fin: {
-          [Op.lt]: new Date()
+    // Mise a jour groupee (evite N+1 writes)
+    const [count] = await Cotisation.update(
+      { statut: 'expiree' },
+      {
+        where: {
+          statut: 'en_cours',
+          periode_fin: {
+            [Op.lt]: new Date()
+          }
         }
       }
-    });
-
-    let count = 0;
-    for (const cotisation of cotisations) {
-      const updated = await cotisation.verifierEtMettreAJourStatut();
-      if (updated) count++;
-    }
+    );
 
     res.json({
       message: `${count} cotisation(s) mise(s) à jour`,

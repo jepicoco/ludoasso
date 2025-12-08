@@ -1,5 +1,5 @@
-const { Emprunt, Utilisateur, Jeu } = require('../models');
-const { Op } = require('sequelize');
+const { Emprunt, Utilisateur, Jeu, sequelize } = require('../models');
+const { Op, Transaction } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
 
@@ -116,8 +116,16 @@ const getEmpruntById = async (req, res) => {
 /**
  * Create new emprunt (loan a game)
  * POST /api/emprunts
+ *
+ * Utilise une transaction avec verrouillage pessimiste pour eviter
+ * les race conditions sur la disponibilite du jeu.
  */
 const createEmprunt = async (req, res) => {
+  // Demarrer une transaction avec isolation READ COMMITTED
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
+  });
+
   try {
     // Support adherent_id pour rétrocompatibilité frontend
     const { adherent_id, utilisateur_id, jeu_id, date_retour_prevue, commentaire } = req.body;
@@ -125,6 +133,7 @@ const createEmprunt = async (req, res) => {
 
     // Validate required fields
     if (!userId || !jeu_id) {
+      await transaction.rollback();
       return res.status(400).json({
         error: 'Validation error',
         message: 'utilisateur_id (ou adherent_id) and jeu_id are required'
@@ -132,8 +141,9 @@ const createEmprunt = async (req, res) => {
     }
 
     // Check if utilisateur exists and is active
-    const utilisateur = await Utilisateur.findByPk(userId);
+    const utilisateur = await Utilisateur.findByPk(userId, { transaction });
     if (!utilisateur) {
+      await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
         message: 'Utilisateur not found'
@@ -141,15 +151,22 @@ const createEmprunt = async (req, res) => {
     }
 
     if (utilisateur.statut !== 'actif') {
+      await transaction.rollback();
       return res.status(403).json({
         error: 'Forbidden',
         message: `Utilisateur account is ${utilisateur.statut}. Only active members can borrow games.`
       });
     }
 
-    // Check if jeu exists and is available
-    const jeu = await Jeu.findByPk(jeu_id);
+    // Check if jeu exists with pessimistic lock (FOR UPDATE)
+    // Cela bloque les autres transactions jusqu'au commit
+    const jeu = await Jeu.findByPk(jeu_id, {
+      transaction,
+      lock: Transaction.LOCK.UPDATE
+    });
+
     if (!jeu) {
+      await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
         message: 'Jeu not found'
@@ -157,6 +174,7 @@ const createEmprunt = async (req, res) => {
     }
 
     if (!jeu.estDisponible()) {
+      await transaction.rollback();
       return res.status(400).json({
         error: 'Game not available',
         message: `Game is currently ${jeu.statut}`
@@ -168,7 +186,7 @@ const createEmprunt = async (req, res) => {
       ? new Date(date_retour_prevue)
       : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
-    // Create emprunt
+    // Create emprunt within transaction
     const emprunt = await Emprunt.create({
       utilisateur_id: userId,
       jeu_id,
@@ -176,12 +194,16 @@ const createEmprunt = async (req, res) => {
       date_retour_prevue: dateRetourPrevue,
       statut: 'en_cours',
       commentaire
-    });
+    }, { transaction });
 
-    // Update game status
-    await jeu.changerStatut('emprunte');
+    // Update game status within transaction
+    jeu.statut = 'emprunte';
+    await jeu.save({ transaction });
 
-    // Reload with associations
+    // Commit la transaction - libere le verrou
+    await transaction.commit();
+
+    // Reload with associations (hors transaction)
     await emprunt.reload({
       include: [
         { model: Utilisateur, as: 'utilisateur' },
@@ -189,10 +211,9 @@ const createEmprunt = async (req, res) => {
       ]
     });
 
-    // Déclencher l'événement de création d'emprunt
+    // Déclencher l'événement de création d'emprunt (hors transaction)
     try {
       await eventTriggerService.triggerEmpruntCreated(emprunt, utilisateur, jeu);
-// console.('Event EMPRUNT_CREATED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
@@ -207,6 +228,9 @@ const createEmprunt = async (req, res) => {
       emprunt: data
     });
   } catch (error) {
+    // Rollback en cas d'erreur
+    await transaction.rollback();
+
     console.error('Create emprunt error:', error);
 
     if (error.name === 'SequelizeValidationError') {
@@ -226,19 +250,29 @@ const createEmprunt = async (req, res) => {
 /**
  * Return a game (complete emprunt)
  * POST /api/emprunts/:id/retour
+ *
+ * Utilise une transaction avec verrouillage pour eviter les retours doubles.
  */
 const retourEmprunt = async (req, res) => {
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
+  });
+
   try {
     const { id } = req.params;
 
+    // Charger l'emprunt avec verrou pessimiste
     const emprunt = await Emprunt.findByPk(id, {
       include: [
         { model: Utilisateur, as: 'utilisateur' },
         { model: Jeu, as: 'jeu' }
-      ]
+      ],
+      transaction,
+      lock: Transaction.LOCK.UPDATE
     });
 
     if (!emprunt) {
+      await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
         message: 'Emprunt not found'
@@ -246,16 +280,28 @@ const retourEmprunt = async (req, res) => {
     }
 
     if (emprunt.statut === 'retourne') {
+      await transaction.rollback();
       return res.status(400).json({
         error: 'Already returned',
         message: 'This game has already been returned'
       });
     }
 
-    // Use the model's retourner method
-    await emprunt.retourner();
+    // Mettre a jour l'emprunt
+    emprunt.date_retour_effective = new Date();
+    emprunt.statut = 'retourne';
+    await emprunt.save({ transaction });
 
-    // Reload to get updated data
+    // Mettre a jour le statut du jeu si present
+    if (emprunt.jeu) {
+      emprunt.jeu.statut = 'disponible';
+      await emprunt.jeu.save({ transaction });
+    }
+
+    // Commit la transaction
+    await transaction.commit();
+
+    // Reload pour avoir les donnees a jour (hors transaction)
     await emprunt.reload({
       include: [
         { model: Utilisateur, as: 'utilisateur' },
@@ -263,10 +309,9 @@ const retourEmprunt = async (req, res) => {
       ]
     });
 
-    // Déclencher l'événement de retour d'emprunt
+    // Déclencher l'événement de retour d'emprunt (hors transaction)
     try {
       await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.utilisateur, emprunt.jeu);
-// console.('Event EMPRUNT_RETURNED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer le retour si l'événement échoue
@@ -281,6 +326,7 @@ const retourEmprunt = async (req, res) => {
       emprunt: data
     });
   } catch (error) {
+    await transaction.rollback();
     console.error('Retour emprunt error:', error);
     res.status(500).json({
       error: 'Server error',
@@ -350,16 +396,25 @@ const updateEmprunt = async (req, res) => {
 /**
  * Delete emprunt
  * DELETE /api/emprunts/:id
+ *
+ * Utilise une transaction pour garantir la coherence lors de la suppression.
  */
 const deleteEmprunt = async (req, res) => {
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
+  });
+
   try {
     const { id } = req.params;
 
     const emprunt = await Emprunt.findByPk(id, {
-      include: [{ model: Jeu, as: 'jeu' }]
+      include: [{ model: Jeu, as: 'jeu' }],
+      transaction,
+      lock: Transaction.LOCK.UPDATE
     });
 
     if (!emprunt) {
+      await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
         message: 'Emprunt not found'
@@ -367,16 +422,20 @@ const deleteEmprunt = async (req, res) => {
     }
 
     // If emprunt is still active, return the game first
-    if (emprunt.statut !== 'retourne') {
-      await emprunt.jeu.changerStatut('disponible');
+    if (emprunt.statut !== 'retourne' && emprunt.jeu) {
+      emprunt.jeu.statut = 'disponible';
+      await emprunt.jeu.save({ transaction });
     }
 
-    await emprunt.destroy();
+    await emprunt.destroy({ transaction });
+
+    await transaction.commit();
 
     res.json({
       message: 'Emprunt deleted successfully'
     });
   } catch (error) {
+    await transaction.rollback();
     console.error('Delete emprunt error:', error);
     res.status(500).json({
       error: 'Server error',
@@ -388,9 +447,23 @@ const deleteEmprunt = async (req, res) => {
 /**
  * Get overdue emprunts
  * GET /api/emprunts/overdue
+ *
+ * Optimise: utilise un UPDATE groupe au lieu de N saves individuels
  */
 const getOverdueEmprunts = async (req, res) => {
   try {
+    // Mise a jour groupee des statuts (evite N+1 writes)
+    await Emprunt.update(
+      { statut: 'en_retard' },
+      {
+        where: {
+          statut: 'en_cours',
+          date_retour_prevue: { [Op.lt]: new Date() }
+        }
+      }
+    );
+
+    // Recuperer tous les emprunts en retard avec leurs associations
     const emprunts = await Emprunt.findAll({
       where: {
         statut: { [Op.in]: ['en_cours', 'en_retard'] },
@@ -402,14 +475,6 @@ const getOverdueEmprunts = async (req, res) => {
       ],
       order: [['date_retour_prevue', 'ASC']]
     });
-
-    // Update status to en_retard
-    for (const emprunt of emprunts) {
-      if (emprunt.statut === 'en_cours') {
-        emprunt.statut = 'en_retard';
-        await emprunt.save();
-      }
-    }
 
     // Ajouter alias adherent pour rétrocompatibilité frontend
     const empruntsWithAlias = emprunts.map(e => {
