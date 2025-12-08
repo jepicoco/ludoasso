@@ -172,31 +172,31 @@ exports.resetDatabase = async (req, res) => {
     if (resetUtilisateurs) {
       // Supprimer les emprunts des autres utilisateurs
       await safeQuery(
-        'DELETE FROM emprunts WHERE adherent_id != :adminId',
+        'DELETE FROM emprunts WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       // Supprimer les cotisations des autres utilisateurs
       await safeQuery(
-        'DELETE FROM cotisations WHERE adherent_id != :adminId',
+        'DELETE FROM cotisations WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       // Supprimer les prolongations des autres utilisateurs
       await safeQuery(
-        'DELETE FROM prolongations WHERE adherent_id != :adminId',
+        'DELETE FROM prolongations WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       // Supprimer les réservations des autres utilisateurs
       await safeQuery(
-        'DELETE FROM reservations WHERE adherent_id != :adminId',
+        'DELETE FROM reservations WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       // Supprimer les logs email/sms des autres utilisateurs
       await safeQuery(
-        'DELETE FROM email_logs WHERE adherent_id != :adminId',
+        'DELETE FROM email_logs WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       await safeQuery(
-        'DELETE FROM sms_logs WHERE adherent_id != :adminId',
+        'DELETE FROM sms_logs WHERE utilisateur_id != :adminId',
         { replacements: { adminId: currentAdminId }, transaction }
       );
       // Supprimer les autres utilisateurs

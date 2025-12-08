@@ -156,15 +156,15 @@ const getActiveMembers = async (req, res) => {
 
     const activeMembers = await Emprunt.findAll({
       attributes: [
-        'adherent_id',
-        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('adherent_id')), 'emprunt_count']
+        'utilisateur_id',
+        [Emprunt.sequelize.fn('COUNT', Emprunt.sequelize.col('utilisateur_id')), 'emprunt_count']
       ],
       include: [{
         model: Utilisateur,
         as: 'utilisateur',
         attributes: ['id', 'nom', 'prenom', 'email', 'statut']
       }],
-      group: ['adherent_id'],
+      group: ['utilisateur_id'],
       order: [[Emprunt.sequelize.literal('emprunt_count'), 'DESC']],
       limit: parseInt(limit)
     });

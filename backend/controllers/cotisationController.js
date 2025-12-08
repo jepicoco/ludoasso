@@ -9,12 +9,15 @@ const pdfService = require('../services/pdfService');
  */
 exports.getAllCotisations = async (req, res) => {
   try {
-    const { adherent_id, statut, annee } = req.query;
+    // Support adherent_id pour rétrocompatibilité frontend
+    const { adherent_id, utilisateur_id, statut, annee } = req.query;
 
     let where = {};
 
-    if (adherent_id) {
-      where.adherent_id = adherent_id;
+    // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
+    const userId = utilisateur_id || adherent_id;
+    if (userId) {
+      where.utilisateur_id = userId;
     }
 
     if (statut) {
@@ -123,8 +126,10 @@ exports.getCotisationById = async (req, res) => {
  */
 exports.createCotisation = async (req, res) => {
   try {
+    // Support adherent_id pour rétrocompatibilité frontend
     const {
       adherent_id,
+      utilisateur_id,
       tarif_cotisation_id,
       date_debut, // Optionnel, sinon calculé automatiquement
       date_fin,   // Optionnel, sinon calculé automatiquement
@@ -136,15 +141,18 @@ exports.createCotisation = async (req, res) => {
       code_reduction_id
     } = req.body;
 
+    // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
+    const userId = utilisateur_id || adherent_id;
+
     // Validation
-    if (!adherent_id || !tarif_cotisation_id) {
+    if (!userId || !tarif_cotisation_id) {
       return res.status(400).json({
-        error: 'L\'adhérent et le tarif sont obligatoires'
+        error: 'L\'utilisateur et le tarif sont obligatoires'
       });
     }
 
     // Vérifier que l'utilisateur existe
-    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    const utilisateur = await Utilisateur.findByPk(userId);
     if (!utilisateur) {
       return res.status(404).json({
         error: 'Utilisateur non trouvé'
@@ -246,7 +254,7 @@ exports.createCotisation = async (req, res) => {
 
     // Créer la cotisation
     const cotisation = await Cotisation.create({
-      adherent_id,
+      utilisateur_id: userId,
       tarif_cotisation_id,
       periode_debut: dateDebut,
       periode_fin: dateFin,
@@ -432,12 +440,14 @@ exports.deleteCotisation = async (req, res) => {
  */
 exports.verifierCotisationActive = async (req, res) => {
   try {
-    const { adherent_id } = req.params;
+    // Support adherent_id pour rétrocompatibilité frontend
+    const { adherent_id, utilisateur_id } = req.params;
+    const userId = utilisateur_id || adherent_id;
     const { date } = req.query;
 
     const dateReference = date ? new Date(date) : new Date();
 
-    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    const utilisateur = await Utilisateur.findByPk(userId);
     if (!utilisateur) {
       return res.status(404).json({
         error: 'Utilisateur non trouvé'
@@ -446,7 +456,7 @@ exports.verifierCotisationActive = async (req, res) => {
 
     const cotisationActive = await Cotisation.findOne({
       where: {
-        adherent_id,
+        utilisateur_id: userId,
         statut: 'en_cours',
         periode_debut: {
           [Op.lte]: dateReference

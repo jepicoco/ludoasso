@@ -9,7 +9,8 @@ const eventTriggerService = require('../services/eventTriggerService');
  */
 const getAllEmprunts = async (req, res) => {
   try {
-    const { statut, adherent_id, jeu_id, page = 1, limit = 50 } = req.query;
+    // Support adherent_id pour rétrocompatibilité frontend, mais utiliser utilisateur_id
+    const { statut, adherent_id, utilisateur_id, jeu_id, page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
 
     const where = {};
@@ -18,8 +19,10 @@ const getAllEmprunts = async (req, res) => {
       where.statut = statut;
     }
 
-    if (adherent_id) {
-      where.adherent_id = adherent_id;
+    // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
+    const userId = utilisateur_id || adherent_id;
+    if (userId) {
+      where.utilisateur_id = userId;
     }
 
     if (jeu_id) {
@@ -116,18 +119,20 @@ const getEmpruntById = async (req, res) => {
  */
 const createEmprunt = async (req, res) => {
   try {
-    const { adherent_id, jeu_id, date_retour_prevue, commentaire } = req.body;
+    // Support adherent_id pour rétrocompatibilité frontend
+    const { adherent_id, utilisateur_id, jeu_id, date_retour_prevue, commentaire } = req.body;
+    const userId = utilisateur_id || adherent_id;
 
     // Validate required fields
-    if (!adherent_id || !jeu_id) {
+    if (!userId || !jeu_id) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'adherent_id and jeu_id are required'
+        message: 'utilisateur_id (ou adherent_id) and jeu_id are required'
       });
     }
 
     // Check if utilisateur exists and is active
-    const utilisateur = await Utilisateur.findByPk(adherent_id);
+    const utilisateur = await Utilisateur.findByPk(userId);
     if (!utilisateur) {
       return res.status(404).json({
         error: 'Not found',
@@ -165,7 +170,7 @@ const createEmprunt = async (req, res) => {
 
     // Create emprunt
     const emprunt = await Emprunt.create({
-      adherent_id,
+      utilisateur_id: userId,
       jeu_id,
       date_emprunt: new Date(),
       date_retour_prevue: dateRetourPrevue,

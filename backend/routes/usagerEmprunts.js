@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
     const { statut, page = 1, limit = 20 } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    const where = { adherent_id: req.usagerId };
+    const where = { utilisateur_id: req.usagerId };
 
     if (statut) {
       where.statut = statut;
@@ -156,7 +156,7 @@ router.get('/en-cours', async (req, res) => {
   try {
     const emprunts = await Emprunt.findAll({
       where: {
-        adherent_id: req.usagerId,
+        utilisateur_id: req.usagerId,
         statut: { [Op.in]: ['en_cours', 'en_retard'] }
       },
       include: [
@@ -224,7 +224,7 @@ router.get('/historique', async (req, res) => {
 
     const { count, rows } = await Emprunt.findAndCountAll({
       where: {
-        adherent_id: req.usagerId,
+        utilisateur_id: req.usagerId,
         statut: 'retourne'
       },
       include: [
@@ -282,7 +282,7 @@ router.post('/:id/prolonger', async (req, res) => {
     const emprunt = await Emprunt.findOne({
       where: {
         id,
-        adherent_id: req.usagerId,
+        utilisateur_id: req.usagerId,
         statut: { [Op.in]: ['en_cours', 'en_retard'] }
       },
       include: [
@@ -346,7 +346,7 @@ router.post('/:id/prolonger', async (req, res) => {
     // Creer la prolongation
     const prolongation = await Prolongation.create({
       emprunt_id: emprunt.id,
-      adherent_id: req.usagerId,
+      utilisateur_id: req.usagerId,
       type: typeProlongation,
       statut: statutProlongation,
       date_demande: new Date(),
@@ -415,7 +415,7 @@ router.get('/:id', async (req, res) => {
     const emprunt = await Emprunt.findOne({
       where: {
         id,
-        adherent_id: req.usagerId
+        utilisateur_id: req.usagerId
       },
       include: [
         { model: Jeu, as: 'jeu' },

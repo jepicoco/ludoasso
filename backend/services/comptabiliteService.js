@@ -114,7 +114,7 @@ class ComptabiliteService {
     const exercice = datePaiement.getFullYear();
 
     // Charger l'utilisateur pour le compte auxiliaire
-    const utilisateur = await Utilisateur.findByPk(cotisation.adherent_id);
+    const utilisateur = await Utilisateur.findByPk(cotisation.utilisateur_id);
     const compteAuxiliaire = utilisateur ? `CLI${String(utilisateur.id).padStart(6, '0')}` : null;
     const utilisateurNom = utilisateur ? `${utilisateur.prenom} ${utilisateur.nom}` : 'Utilisateur inconnu';
 

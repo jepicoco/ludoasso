@@ -44,7 +44,11 @@ scripts/
 test-logging.sh
 TEST_LOGGING.bat
 
-# Documentation (sauf README.md)
+# Documentation (sauf README.md et CLAUDE.md)
 /*.md
 !README.md
+!CLAUDE.md
+
+# Audit reports (confidentiels)
+AUDIT_REPORT.md
 nul

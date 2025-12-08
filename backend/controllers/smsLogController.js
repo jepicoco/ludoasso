@@ -6,11 +6,13 @@ const { Op } = require('sequelize');
  */
 exports.getAllSmsLogs = async (req, res) => {
   try {
+    // Support adherent_id pour rétrocompatibilité
     const {
       statut,
       template_code,
       provider,
       adherent_id,
+      utilisateur_id,
       destinataire,
       date_debut,
       date_fin,
@@ -33,8 +35,10 @@ exports.getAllSmsLogs = async (req, res) => {
       where.provider = provider;
     }
 
-    if (adherent_id) {
-      where.adherent_id = adherent_id;
+    // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
+    const userId = utilisateur_id || adherent_id;
+    if (userId) {
+      where.utilisateur_id = userId;
     }
 
     // Filtre par destinataire (téléphone ou nom)
