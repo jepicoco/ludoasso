@@ -425,10 +425,14 @@ class PDFService {
           pageNum++;
 
           // En-tête de page
-          doc.fontSize(9)
+          const headerLeft = `${structureName} - ${moduleLabel} - Lot #${lot.id}`;
+          const headerRight = `Page ${pageNum}/${totalPages} - ${codesToPrint.length} étiquettes - ${this.formatDate(new Date())}`;
+
+          doc.fontSize(8)
              .font('Helvetica')
              .fillColor('#666666')
-             .text(`${structureName} - ${moduleLabel} - Lot #${lot.id} - Page ${pageNum}/${totalPages}`, margin, margin - 15);
+             .text(headerLeft, margin, margin - 15)
+             .text(headerRight, margin, margin - 15, { align: 'right', width: pageWidth - margin * 2 });
 
           // Générer les étiquettes de cette page
           for (let row = 0; row < rows && currentIndex < codesToPrint.length; row++) {
@@ -443,17 +447,6 @@ class PDFService {
             }
           }
         }
-
-        // Pied de page sur la dernière page
-        doc.fontSize(8)
-           .font('Helvetica')
-           .fillColor('#999999')
-           .text(
-             `Généré le ${this.formatDate(new Date())} - ${codesToPrint.length} étiquettes`,
-             margin,
-             pageHeight - margin,
-             { align: 'center', width: pageWidth - margin * 2 }
-           );
 
         doc.end();
 
