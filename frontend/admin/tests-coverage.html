@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Couverture des Tests - Holodeck - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .coverage-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+    .coverage-header h1 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stat-card {
+      border-radius: 12px;
+      text-align: center;
+      padding: 1.5rem;
+      transition: transform 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+    .stat-card .stat-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .stat-card .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .stat-tests { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
+    .stat-coverage { background: linear-gradient(135deg, #007bff, #6610f2); color: white; }
+    .stat-controllers { background: linear-gradient(135deg, #fd7e14, #ffc107); color: white; }
+    .stat-middlewares { background: linear-gradient(135deg, #e83e8c, #dc3545); color: white; }
+
+    .module-table {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .module-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    .status-tested { color: #28a745; }
+    .status-partial { color: #ffc107; }
+    .status-none { color: #dc3545; }
+    .priority-critical { background: #f8d7da; }
+    .priority-high { background: #fff3cd; }
+    .priority-medium { background: #d1ecf1; }
+    .priority-low { background: #d4edda; }
+
+    .phase-card {
+      border-left: 4px solid;
+      margin-bottom: 1rem;
+    }
+    .phase-complete { border-color: #28a745; }
+    .phase-pending { border-color: #6c757d; }
+
+    .history-table {
+      font-size: 0.9rem;
+    }
+    .history-table .date-col {
+      white-space: nowrap;
+    }
+
+    .run-tests-btn {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="coverage-header">
+          <h1>
+            <i class="bi bi-check2-square"></i>
+            Couverture des Tests Unitaires
+          </h1>
+          <p class="mb-0 mt-2 opacity-75">
+            <i class="bi bi-calendar3"></i> Derniere mise a jour: 2024-12-09
+          </p>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="stat-card stat-tests">
+              <div class="stat-value">825</div>
+              <div class="stat-label">Tests</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card stat-coverage">
+              <div class="stat-value">~60%</div>
+              <div class="stat-label">Couverture</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card stat-controllers">
+              <div class="stat-value">9/35</div>
+              <div class="stat-label">Controllers</div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="stat-card stat-middlewares">
+              <div class="stat-value">6/7</div>
+              <div class="stat-label">Middlewares</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan de Developpement -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-list-check me-2"></i>Plan de Developpement
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="phase-card card phase-complete">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Phase 1 - Critique (Securite)
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                      <li><i class="bi bi-check text-success"></i> authController.test.js (47 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> auth.test.js middleware (24 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> validate.test.js middleware (59 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> emailService.test.js (42 tests)</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="phase-card card phase-complete">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Phase 2 - Haute Priorite (Metier)
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                      <li><i class="bi bi-check text-success"></i> cotisationController.test.js (54 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> empruntController.test.js (48 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> utilisateurController.test.js (61 tests)</li>
+                      <li><i class="bi bi-dash text-muted"></i> eventTriggerService.test.js</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="phase-card card phase-complete">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <i class="bi bi-check-circle-fill text-success me-2"></i>
+                      Phase 3 - Moyenne Priorite
+                    </h6>
+                    <ul class="list-unstyled mb-0 small">
+                      <li><i class="bi bi-check text-success"></i> maintenance.test.js (29 tests)</li>
+                      <li><i class="bi bi-check text-success"></i> rateLimiter.test.js (33 tests)</li>
+                      <li><i class="bi bi-dash text-muted"></i> usagerAuth.test.js</li>
+                      <li><i class="bi bi-dash text-muted"></i> jeuController.test.js</li>
+                      <li><i class="bi bi-dash text-muted"></i> livreController.test.js</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="phase-card card phase-pending">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <i class="bi bi-circle text-muted me-2"></i>
+                      Phase 4 - Collections & Infrastructure
+                    </h6>
+                    <ul class="list-unstyled mb-0 small text-muted">
+                      <li><i class="bi bi-dash"></i> filmController.test.js</li>
+                      <li><i class="bi bi-dash"></i> disqueController.test.js</li>
+                      <li><i class="bi bi-dash"></i> importController.test.js</li>
+                      <li><i class="bi bi-dash"></i> Autres controllers CRUD</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controllers -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-gear me-2"></i>Controllers (35 fichiers)
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover module-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Fichier</th>
+                    <th>Status</th>
+                    <th>Tests</th>
+                    <th>Priorite</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Critiques -->
+                  <tr class="priority-critical">
+                    <td><code>authController.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>47</td>
+                    <td><span class="badge bg-danger">Critique</span></td>
+                  </tr>
+                  <tr class="priority-critical">
+                    <td><code>utilisateurController.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>61</td>
+                    <td><span class="badge bg-danger">Critique</span></td>
+                  </tr>
+                  <!-- Metier -->
+                  <tr class="priority-high">
+                    <td><code>cotisationController.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>54</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>empruntController.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>48</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>statsController.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>49</td>
+                    <td><span class="badge bg-success">Fait</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>jeuController.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>livreController.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>filmController.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                  <tr class="priority-high">
+                    <td><code>disqueController.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td><span class="badge bg-warning text-dark">Haute</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middlewares -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-shield me-2"></i>Middlewares (7 fichiers)
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover module-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Fichier</th>
+                    <th>Status</th>
+                    <th>Tests</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>validate.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>59</td>
+                    <td>18 schemas de validation</td>
+                  </tr>
+                  <tr>
+                    <td><code>auth.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>24</td>
+                    <td>JWT verify, 100% couverture</td>
+                  </tr>
+                  <tr>
+                    <td><code>checkRole.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>44</td>
+                    <td>RBAC complet</td>
+                  </tr>
+                  <tr>
+                    <td><code>maintenance.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>29</td>
+                    <td>IP whitelist, 100% couverture</td>
+                  </tr>
+                  <tr>
+                    <td><code>rateLimiter.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>33</td>
+                    <td>4 limiters</td>
+                  </tr>
+                  <tr>
+                    <td><code>usagerAuth.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td>Portal auth</td>
+                  </tr>
+                  <tr>
+                    <td><code>requestLogger.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td>Simple logging</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-box me-2"></i>Services (12 fichiers)
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover module-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Fichier</th>
+                    <th>Status</th>
+                    <th>Tests</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>emailService.js</code></td>
+                    <td><i class="bi bi-check-circle-fill status-tested"></i> Teste</td>
+                    <td>42</td>
+                    <td>Chiffrement AES-256, 86% couverture</td>
+                  </tr>
+                  <tr>
+                    <td><code>comptabiliteService.js</code></td>
+                    <td><i class="bi bi-dash-circle status-partial"></i> Partiel</td>
+                    <td>~30</td>
+                    <td>Helpers testes</td>
+                  </tr>
+                  <tr>
+                    <td><code>pdfService.js</code></td>
+                    <td><i class="bi bi-dash-circle status-partial"></i> Partiel</td>
+                    <td>~10</td>
+                    <td>Generation PDF</td>
+                  </tr>
+                  <tr>
+                    <td><code>eventTriggerService.js</code></td>
+                    <td><i class="bi bi-x-circle status-none"></i> Non teste</td>
+                    <td>0</td>
+                    <td>Notifications auto - Critique</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historique -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-clock-history me-2"></i>Historique des Mises a Jour
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm history-table mb-0">
+                <thead>
+                  <tr>
+                    <th class="date-col">Date</th>
+                    <th>Action</th>
+                    <th>Tests ajoutes</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>rateLimiter.test.js</td>
+                    <td class="text-success">+33</td>
+                    <td>522</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>maintenance.test.js</td>
+                    <td class="text-success">+29</td>
+                    <td>489</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>utilisateurController.test.js</td>
+                    <td class="text-success">+61</td>
+                    <td>460</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>empruntController.test.js</td>
+                    <td class="text-success">+48</td>
+                    <td>399</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>cotisationController.test.js</td>
+                    <td class="text-success">+54</td>
+                    <td>351</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>emailService.test.js</td>
+                    <td class="text-success">+42</td>
+                    <td>297</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>validate.test.js</td>
+                    <td class="text-success">+59</td>
+                    <td>255</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>auth.test.js</td>
+                    <td class="text-success">+24</td>
+                    <td>196</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>authController.test.js</td>
+                    <td class="text-success">+47</td>
+                    <td>172</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>checkRole.test.js</td>
+                    <td class="text-success">+44</td>
+                    <td>125</td>
+                  </tr>
+                  <tr>
+                    <td class="date-col">2024-12-08</td>
+                    <td>statsController.test.js</td>
+                    <td class="text-success">+49</td>
+                    <td>81</td>
+                  </tr>
+                  <tr class="table-secondary">
+                    <td class="date-col">2024-12-08</td>
+                    <td>Audit initial</td>
+                    <td>-</td>
+                    <td>32</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Commandes -->
+        <div class="card mb-4">
+          <div class="card-header">
+            <i class="bi bi-terminal me-2"></i>Commandes
+          </div>
+          <div class="card-body">
+            <pre class="bg-dark text-light p-3 rounded mb-0"><code># Executer tous les tests
+npm test
+
+# Executer avec couverture
+npm test -- --coverage
+
+# Executer un fichier specifique
+npm test -- authController
+
+# Executer en mode watch
+npm test -- --watch</code></pre>
+          </div>
+        </div>
+
+        <!-- Back button -->
+        <div class="mb-4">
+          <a href="parametres-holodeck.html" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Retour a l'Holodeck
+          </a>
+        </div>
+
+        <!-- Spacer -->
+        <div style="height: 3rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSubNav('general', 'holodeck');
+
+      // Verifier que l'utilisateur est admin
+      const userRole = localStorage.getItem('userRole');
+      if (userRole !== 'administrateur') {
+        document.querySelector('.col-md-10').innerHTML = `
+          <div class="alert alert-danger mt-4">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Acces refuse</strong> - Cette page est reservee aux administrateurs.
+          </div>
+        `;
+        return;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -274,6 +274,68 @@
           </div>
         </div>
 
+        <!-- Section Developpement -->
+        <div class="section-title">
+          <i class="bi bi-code-slash"></i> Developpement
+        </div>
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-dark text-white">
+                <i class="bi bi-check2-square me-2"></i>Tests Unitaires
+              </div>
+              <div class="card-body">
+                <p class="text-muted small">Suivi de la couverture des tests unitaires du projet.</p>
+                <div id="test-stats" class="mb-3">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Tests:</span>
+                    <strong id="test-count">--</strong>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Couverture:</span>
+                    <strong id="test-coverage">--</strong>
+                  </div>
+                </div>
+                <a href="tests-coverage.html" class="btn btn-outline-dark btn-sm w-100">
+                  <i class="bi bi-bar-chart"></i> Voir le rapport
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-secondary text-white">
+                <i class="bi bi-journal-code me-2"></i>Documentation
+              </div>
+              <div class="card-body">
+                <p class="text-muted small">Documentation technique du projet (README, CLAUDE.md).</p>
+                <a href="/README.md" target="_blank" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                  <i class="bi bi-file-text"></i> README.md
+                </a>
+                <a href="/ARCHITECTURE.md" target="_blank" class="btn btn-outline-secondary btn-sm w-100">
+                  <i class="bi bi-diagram-3"></i> ARCHITECTURE.md
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-header bg-info text-white">
+                <i class="bi bi-database me-2"></i>Base de donnees
+              </div>
+              <div class="card-body">
+                <p class="text-muted small">Outils de gestion et verification de la base de donnees.</p>
+                <button class="btn btn-outline-info btn-sm w-100 mb-2" onclick="checkDbSchema()">
+                  <i class="bi bi-search"></i> Verifier le schema
+                </button>
+                <button class="btn btn-outline-info btn-sm w-100" onclick="showDbStats()">
+                  <i class="bi bi-pie-chart"></i> Statistiques DB
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Spacer -->
         <div style="height: 3rem;"></div>
       </div>
@@ -723,7 +785,59 @@
     document.addEventListener('DOMContentLoaded', async () => {
       // Attendre que les modules soient charges
       setTimeout(loadIpAutorisees, 500);
+      // Charger les stats de tests
+      loadTestStats();
     });
+
+    // ========================
+    // Section Developpement
+    // ========================
+
+    async function loadTestStats() {
+      // Stats codees en dur (mises a jour manuellement)
+      document.getElementById('test-count').textContent = '825';
+      document.getElementById('test-coverage').textContent = '~60%';
+    }
+
+    async function checkDbSchema() {
+      showToast('Verification du schema en cours...', 'info');
+      try {
+        const token = getAuthToken();
+        const response = await fetch('/api/parametres/db/check-schema', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          showToast(`Schema OK - ${data.tables || 0} tables`, 'success');
+        } else {
+          showToast('Endpoint non disponible', 'warning');
+        }
+      } catch (error) {
+        showToast('Fonctionnalite a venir', 'info');
+      }
+    }
+
+    async function showDbStats() {
+      showToast('Chargement des statistiques...', 'info');
+      try {
+        const token = getAuthToken();
+        const response = await fetch('/api/stats/summary', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const stats = data.stats || data;
+          let msg = 'Statistiques DB:\n';
+          if (stats.utilisateurs) msg += `- Usagers: ${stats.utilisateurs.total || 0}\n`;
+          if (stats.emprunts) msg += `- Emprunts: ${stats.emprunts.total || 0}\n`;
+          alert(msg);
+        } else {
+          showToast('Erreur chargement stats', 'error');
+        }
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
   </script>
 </body>
 </html>
