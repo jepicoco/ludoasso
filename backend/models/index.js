@@ -117,6 +117,15 @@ const ArticleThematiqueModel = require('./ArticleThematique');
 const EnrichissementQueueModel = require('./EnrichissementQueue');
 const ArticleThematiqueHistoriqueModel = require('./ArticleThematiqueHistorique');
 
+// Import Codes-barres reserves (impression en lot)
+const ParametresCodesBarresModel = require('./ParametresCodesBarres');
+const LotCodesBarresModel = require('./LotCodesBarres');
+const CodeBarreUtilisateurModel = require('./CodeBarreUtilisateur');
+const CodeBarreJeuModel = require('./CodeBarreJeu');
+const CodeBarreLivreModel = require('./CodeBarreLivre');
+const CodeBarreFilmModel = require('./CodeBarreFilm');
+const CodeBarreDisqueModel = require('./CodeBarreDisque');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -232,6 +241,15 @@ const ThematiqueAlias = ThematiqueAliasModel(sequelize);
 const ArticleThematique = ArticleThematiqueModel(sequelize);
 const EnrichissementQueue = EnrichissementQueueModel(sequelize);
 const ArticleThematiqueHistorique = ArticleThematiqueHistoriqueModel(sequelize);
+
+// Initialize Codes-barres reserves (impression en lot)
+const ParametresCodesBarres = ParametresCodesBarresModel(sequelize);
+const LotCodesBarres = LotCodesBarresModel(sequelize);
+const CodeBarreUtilisateur = CodeBarreUtilisateurModel(sequelize);
+const CodeBarreJeu = CodeBarreJeuModel(sequelize);
+const CodeBarreLivre = CodeBarreLivreModel(sequelize);
+const CodeBarreFilm = CodeBarreFilmModel(sequelize);
+const CodeBarreDisque = CodeBarreDisqueModel(sequelize);
 
 // Define associations
 // Utilisateur <-> Emprunt (One-to-Many)
@@ -996,6 +1014,131 @@ ArticleThematique.belongsTo(Thematique, {
   as: 'thematique'
 });
 
+// ========================================
+// ASSOCIATIONS CODES-BARRES RESERVES
+// ========================================
+
+// LotCodesBarres <-> Utilisateur (createur du lot)
+LotCodesBarres.belongsTo(Utilisateur, {
+  foreignKey: 'cree_par',
+  as: 'createur'
+});
+
+Utilisateur.hasMany(LotCodesBarres, {
+  foreignKey: 'cree_par',
+  as: 'lotsCodesBarres'
+});
+
+// LotCodesBarres <-> CodeBarreUtilisateur (One-to-Many)
+LotCodesBarres.hasMany(CodeBarreUtilisateur, {
+  foreignKey: 'lot_id',
+  as: 'codesUtilisateurs'
+});
+
+CodeBarreUtilisateur.belongsTo(LotCodesBarres, {
+  foreignKey: 'lot_id',
+  as: 'lot'
+});
+
+// CodeBarreUtilisateur <-> Utilisateur (association)
+CodeBarreUtilisateur.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+Utilisateur.hasOne(CodeBarreUtilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'codeBarreReserve'
+});
+
+// LotCodesBarres <-> CodeBarreJeu (One-to-Many)
+LotCodesBarres.hasMany(CodeBarreJeu, {
+  foreignKey: 'lot_id',
+  as: 'codesJeux'
+});
+
+CodeBarreJeu.belongsTo(LotCodesBarres, {
+  foreignKey: 'lot_id',
+  as: 'lot'
+});
+
+// CodeBarreJeu <-> Jeu (association)
+CodeBarreJeu.belongsTo(Jeu, {
+  foreignKey: 'jeu_id',
+  as: 'jeu'
+});
+
+Jeu.hasOne(CodeBarreJeu, {
+  foreignKey: 'jeu_id',
+  as: 'codeBarreReserve'
+});
+
+// LotCodesBarres <-> CodeBarreLivre (One-to-Many)
+LotCodesBarres.hasMany(CodeBarreLivre, {
+  foreignKey: 'lot_id',
+  as: 'codesLivres'
+});
+
+CodeBarreLivre.belongsTo(LotCodesBarres, {
+  foreignKey: 'lot_id',
+  as: 'lot'
+});
+
+// CodeBarreLivre <-> Livre (association)
+CodeBarreLivre.belongsTo(Livre, {
+  foreignKey: 'livre_id',
+  as: 'livre'
+});
+
+Livre.hasOne(CodeBarreLivre, {
+  foreignKey: 'livre_id',
+  as: 'codeBarreReserve'
+});
+
+// LotCodesBarres <-> CodeBarreFilm (One-to-Many)
+LotCodesBarres.hasMany(CodeBarreFilm, {
+  foreignKey: 'lot_id',
+  as: 'codesFilms'
+});
+
+CodeBarreFilm.belongsTo(LotCodesBarres, {
+  foreignKey: 'lot_id',
+  as: 'lot'
+});
+
+// CodeBarreFilm <-> Film (association)
+CodeBarreFilm.belongsTo(Film, {
+  foreignKey: 'film_id',
+  as: 'film'
+});
+
+Film.hasOne(CodeBarreFilm, {
+  foreignKey: 'film_id',
+  as: 'codeBarreReserve'
+});
+
+// LotCodesBarres <-> CodeBarreDisque (One-to-Many)
+LotCodesBarres.hasMany(CodeBarreDisque, {
+  foreignKey: 'lot_id',
+  as: 'codesDisques'
+});
+
+CodeBarreDisque.belongsTo(LotCodesBarres, {
+  foreignKey: 'lot_id',
+  as: 'lot'
+});
+
+// CodeBarreDisque <-> Disque (association)
+CodeBarreDisque.belongsTo(Disque, {
+  foreignKey: 'disque_id',
+  as: 'disque'
+});
+
+Disque.hasOne(CodeBarreDisque, {
+  foreignKey: 'disque_id',
+  as: 'codeBarreReserve'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -1097,5 +1240,13 @@ module.exports = {
   ThematiqueAlias,
   ArticleThematique,
   EnrichissementQueue,
-  ArticleThematiqueHistorique
+  ArticleThematiqueHistorique,
+  // Codes-barres reserves (impression en lot)
+  ParametresCodesBarres,
+  LotCodesBarres,
+  CodeBarreUtilisateur,
+  CodeBarreJeu,
+  CodeBarreLivre,
+  CodeBarreFilm,
+  CodeBarreDisque
 };

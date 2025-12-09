@@ -180,6 +180,7 @@ app.use('/api/export-comptable', require('./routes/exportComptable'));
 app.use('/api/parametres/llm', require('./routes/llm'));
 app.use('/api/thematiques', require('./routes/thematiques'));
 app.use('/api/enrichissement', require('./routes/enrichissement'));
+app.use('/api/codes-barres-reserves', require('./routes/codesBarresReserves'));
 
 // Routes espace usager (adherents)
 app.use('/api/usager/auth', require('./routes/usagerAuth'));

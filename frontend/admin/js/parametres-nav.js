@@ -12,6 +12,7 @@ const PARAMETRES_CATEGORIES = {
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'sites', label: 'Sites', href: 'parametres-sites.html', icon: 'bi-building' },
       { id: 'utilisateurs', label: 'Utilisateurs', href: 'parametres-utilisateurs.html', icon: 'bi-people' },
+      { id: 'codes-barres', label: 'Codes-Barres', href: 'parametres-codes-barres.html', icon: 'bi-upc-scan' },
       { id: 'holodeck', label: 'Holodeck', href: 'parametres-holodeck.html', icon: 'bi-grid-3x3-gap', adminOnly: true }
     ]
   },
@@ -156,8 +157,21 @@ function renderBreadcrumb(category, pageLabel) {
   `;
 }
 
+/**
+ * Initialise la sous-navigation si le container existe
+ * @param {string} category - Categorie (general, comptabilite, communication, emprunts, outils)
+ * @param {string} currentPageId - ID de la page courante
+ */
+function initSubNav(category, currentPageId) {
+  const container = document.getElementById('sub-nav-container');
+  if (container) {
+    renderSubNav(category, currentPageId);
+  }
+}
+
 // Export pour utilisation globale
 window.PARAMETRES_CATEGORIES = PARAMETRES_CATEGORIES;
 window.renderSubNav = renderSubNav;
 window.renderBreadcrumb = renderBreadcrumb;
 window.getParametresLink = getParametresLink;
+window.initSubNav = initSubNav;

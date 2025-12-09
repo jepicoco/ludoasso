@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lots Codes-Barres - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .module-tabs .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+    }
+    .module-tabs .nav-link.active {
+      font-weight: 600;
+    }
+    .module-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+    }
+    .module-icon.utilisateur { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .module-icon.jeu { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+    .module-icon.livre { background: rgba(32, 201, 151, 0.1); color: #20c997; }
+    .module-icon.film { background: rgba(253, 126, 20, 0.1); color: #fd7e14; }
+    .module-icon.disque { background: rgba(232, 62, 140, 0.1); color: #e83e8c; }
+
+    .lot-card {
+      border: 1px solid #e9ecef;
+      border-radius: 0.75rem;
+      transition: all 0.2s;
+    }
+    .lot-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .lot-card.annule {
+      opacity: 0.6;
+      background: #f8f9fa;
+    }
+    .lot-card.complet {
+      border-color: #198754;
+    }
+
+    .progress-mini {
+      height: 6px;
+      border-radius: 3px;
+    }
+
+    .code-badge {
+      font-family: monospace;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    .code-badge.reserve { background: #cfe2ff; color: #084298; }
+    .code-badge.utilise { background: #d1e7dd; color: #0f5132; }
+    .code-badge.annule { background: #f8d7da; color: #842029; }
+    .code-badge.grille { background: #dee2e6; color: #6c757d; text-decoration: line-through; }
+
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Toast container */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+    }
+    .toast {
+      min-width: 300px;
+    }
+    .toast.success .toast-header {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+    .toast.error .toast-header {
+      background: #f8d7da;
+      color: #842029;
+    }
+    .toast.info .toast-header {
+      background: #cfe2ff;
+      color: #084298;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres-codes-barres.html">Codes-Barres</a></li>
+                <li class="breadcrumb-item active">Lots</li>
+              </ol>
+            </nav>
+            <h1 class="h3 mb-0"><i class="bi bi-printer me-2"></i>Lots Codes-Barres</h1>
+          </div>
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createLotModal">
+            <i class="bi bi-plus-lg me-1"></i>Nouveau lot
+          </button>
+        </div>
+
+        <!-- Onglets modules -->
+        <ul class="nav nav-tabs module-tabs mb-4" id="module-tabs">
+          <li class="nav-item">
+            <a class="nav-link active" href="#" data-module="utilisateur">
+              <span class="module-icon utilisateur"><i class="bi bi-person-badge"></i></span>
+              Usagers
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-module="jeu">
+              <span class="module-icon jeu"><i class="bi bi-dice-5"></i></span>
+              Jeux
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-module="livre">
+              <span class="module-icon livre"><i class="bi bi-book"></i></span>
+              Livres
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-module="film">
+              <span class="module-icon film"><i class="bi bi-film"></i></span>
+              Films
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-module="disque">
+              <span class="module-icon disque"><i class="bi bi-disc"></i></span>
+              Disques
+            </a>
+          </li>
+        </ul>
+
+        <!-- Filtres -->
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <select class="form-select" id="filter-statut">
+              <option value="">Tous les statuts</option>
+              <option value="actif">Actifs</option>
+              <option value="complet">Complets</option>
+              <option value="annule">Annules</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="search-code" placeholder="Rechercher un code...">
+            </div>
+          </div>
+          <div class="col-md-4 text-end">
+            <span class="text-muted" id="total-count">0 lots</span>
+          </div>
+        </div>
+
+        <!-- Liste des lots -->
+        <div id="lots-container">
+          <div class="empty-state">
+            <i class="bi bi-box-seam"></i>
+            <p>Aucun lot cree pour ce module</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLotModal">
+              <i class="bi bi-plus-lg me-1"></i>Creer un lot
+            </button>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav id="pagination-container" class="mt-4" style="display: none;">
+          <ul class="pagination justify-content-center" id="pagination"></ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal creation lot -->
+  <div class="modal fade" id="createLotModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Creer un lot</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="create-lot-form">
+            <div class="mb-3">
+              <label class="form-label">Module</label>
+              <select class="form-select" id="create-module" required>
+                <option value="utilisateur">Usagers</option>
+                <option value="jeu">Jeux</option>
+                <option value="livre">Livres</option>
+                <option value="film">Films</option>
+                <option value="disque">Disques</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Quantite de codes</label>
+              <input type="number" class="form-control" id="create-quantite" min="1" max="1000" value="50" required>
+              <div class="form-text">Entre 1 et 1000 codes par lot</div>
+            </div>
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle me-2"></i>
+              Les codes seront reserves immediatement et pourront etre imprimes ensuite.
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" id="btn-create-lot">
+            <i class="bi bi-check-lg me-1"></i>Creer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detail lot -->
+  <div class="modal fade" id="lotDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-list-ul me-2"></i>Detail du lot #<span id="detail-lot-id"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="h4 mb-0" id="detail-quantite">0</div>
+                  <small class="text-muted">Total</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="h4 mb-0 text-primary" id="detail-disponibles">0</div>
+                  <small class="text-muted">Disponibles</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="h4 mb-0 text-success" id="detail-utilises">0</div>
+                  <small class="text-muted">Utilises</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="card bg-light">
+                <div class="card-body text-center">
+                  <div class="h4 mb-0 text-danger" id="detail-annules">0</div>
+                  <small class="text-muted">Annules</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Code-barre</th>
+                  <th>Statut</th>
+                  <th>Reserve le</th>
+                  <th>Utilise le</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="detail-codes-table">
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Modal de confirmation generique -->
+  <div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirm-title">Confirmation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="confirm-body">
+          Etes-vous sur ?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="confirm-btn">Confirmer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    // Initialiser le template (navbar + sidebar)
+    initTemplate('parametres');
+
+    const API_BASE = '/api/codes-barres-reserves';
+
+    // Helper pour les appels API authentifies
+    function getAuthHeaders() {
+      const token = localStorage.getItem('authToken');
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      };
+    }
+
+    async function apiGet(endpoint) {
+      const response = await fetch(endpoint, { headers: getAuthHeaders() });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function apiPost(endpoint, data) {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function apiDelete(endpoint) {
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${response.status}`);
+      }
+      return response.json();
+    }
+
+    let currentModule = 'utilisateur';
+    let currentPage = 1;
+    let currentStatut = '';
+    let lots = [];
+    let currentLotDetail = null;
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+      initSubNav('general', 'codes-barres');
+      initModuleTabs();
+      initFilters();
+      initCreateForm();
+      loadLots();
+    });
+
+    // Onglets modules
+    function initModuleTabs() {
+      document.querySelectorAll('[data-module]').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelectorAll('[data-module]').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentModule = tab.dataset.module;
+          currentPage = 1;
+
+          // Mettre a jour le select du modal
+          document.getElementById('create-module').value = currentModule;
+
+          loadLots();
+        });
+      });
+    }
+
+    // Filtres
+    function initFilters() {
+      document.getElementById('filter-statut').addEventListener('change', (e) => {
+        currentStatut = e.target.value;
+        currentPage = 1;
+        loadLots();
+      });
+
+      document.getElementById('search-code').addEventListener('input', debounce((e) => {
+        // Pour l'instant, recherche cote client
+        const search = e.target.value.toLowerCase();
+        renderLots(lots.filter(l =>
+          l.code_debut.toLowerCase().includes(search) ||
+          l.code_fin.toLowerCase().includes(search)
+        ));
+      }, 300));
+    }
+
+    // Charger les lots
+    async function loadLots() {
+      try {
+        let url = `${API_BASE}/lots/${currentModule}?page=${currentPage}&limit=10`;
+        if (currentStatut) url += `&statut=${currentStatut}`;
+
+        const response = await apiGet(url);
+
+        if (response.success) {
+          lots = response.lots;
+          renderLots(lots);
+          renderPagination(response.page, response.totalPages, response.total);
+        }
+      } catch (error) {
+        console.error('Erreur chargement lots:', error);
+        showError('Erreur lors du chargement des lots');
+      }
+    }
+
+    // Afficher les lots
+    function renderLots(lotsList) {
+      const container = document.getElementById('lots-container');
+
+      if (lotsList.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="bi bi-box-seam"></i>
+            <p>Aucun lot ${currentStatut ? `(${currentStatut})` : ''} pour ce module</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createLotModal">
+              <i class="bi bi-plus-lg me-1"></i>Creer un lot
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = lotsList.map(lot => {
+        const pourcentage = lot.pourcentage_utilise || 0;
+        const statusClass = lot.statut === 'annule' ? 'annule' : (lot.statut === 'complet' ? 'complet' : '');
+
+        return `
+          <div class="lot-card card mb-3 ${statusClass}">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-2">
+                  <h5 class="mb-1">Lot #${lot.id}</h5>
+                  <small class="text-muted">${formatDate(lot.date_creation)}</small>
+                </div>
+                <div class="col-md-3">
+                  <div class="mb-1">
+                    <code class="code-badge reserve">${lot.code_debut}</code>
+                    <span class="mx-1">a</span>
+                    <code class="code-badge reserve">${lot.code_fin}</code>
+                  </div>
+                  <small class="text-muted">${lot.quantite} codes</small>
+                </div>
+                <div class="col-md-3">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span>Utilises</span>
+                    <span>${lot.nb_utilises}/${lot.quantite}</span>
+                  </div>
+                  <div class="progress progress-mini">
+                    <div class="progress-bar bg-success" style="width: ${pourcentage}%"></div>
+                  </div>
+                  ${lot.nb_annules > 0 ? `<small class="text-danger">${lot.nb_annules} annule(s)</small>` : ''}
+                </div>
+                <div class="col-md-2">
+                  ${getStatusBadge(lot.statut)}
+                  ${lot.nb_reimpressions > 0 ? `<br><small class="text-muted">${lot.nb_reimpressions} reimpression(s)</small>` : ''}
+                </div>
+                <div class="col-md-2">
+                  <div class="quick-actions justify-content-end">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewLotDetail(${lot.id})" title="Voir detail">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="printLot(${lot.id})" title="Imprimer"
+                            ${lot.statut === 'annule' ? 'disabled' : ''}>
+                      <i class="bi bi-printer"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="cancelLot(${lot.id})" title="Annuler"
+                            ${lot.statut !== 'actif' || lot.nb_utilises >= lot.quantite ? 'disabled' : ''}>
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getStatusBadge(statut) {
+      const badges = {
+        actif: '<span class="badge bg-primary">Actif</span>',
+        complet: '<span class="badge bg-success">Complet</span>',
+        annule: '<span class="badge bg-danger">Annule</span>'
+      };
+      return badges[statut] || statut;
+    }
+
+    // Pagination
+    function renderPagination(page, totalPages, total) {
+      document.getElementById('total-count').textContent = `${total} lot(s)`;
+
+      const container = document.getElementById('pagination-container');
+      const pagination = document.getElementById('pagination');
+
+      if (totalPages <= 1) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+
+      let html = '';
+
+      // Precedent
+      html += `<li class="page-item ${page === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${page - 1})">Precedent</a>
+      </li>`;
+
+      // Pages
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= page - 2 && i <= page + 2)) {
+          html += `<li class="page-item ${i === page ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+          </li>`;
+        } else if (i === page - 3 || i === page + 3) {
+          html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+      }
+
+      // Suivant
+      html += `<li class="page-item ${page === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${page + 1})">Suivant</a>
+      </li>`;
+
+      pagination.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      loadLots();
+    }
+
+    // Creer un lot
+    function initCreateForm() {
+      document.getElementById('btn-create-lot').addEventListener('click', async () => {
+        const module = document.getElementById('create-module').value;
+        const quantite = parseInt(document.getElementById('create-quantite').value);
+
+        if (quantite < 1 || quantite > 1000) {
+          showError('La quantite doit etre entre 1 et 1000');
+          return;
+        }
+
+        const btn = document.getElementById('btn-create-lot');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creation...';
+
+        try {
+          const response = await apiPost(`${API_BASE}/lots/${module}`, { quantite });
+
+          if (response.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createLotModal')).hide();
+
+            // Si module different, changer d'onglet
+            if (module !== currentModule) {
+              document.querySelector(`[data-module="${module}"]`).click();
+            } else {
+              loadLots();
+            }
+
+            showSuccess(`Lot de ${quantite} codes cree avec succes`);
+          } else {
+            throw new Error(response.message);
+          }
+        } catch (error) {
+          console.error('Erreur creation lot:', error);
+          showError(error.message || 'Erreur lors de la creation du lot');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Creer';
+        }
+      });
+    }
+
+    // Voir detail lot
+    async function viewLotDetail(lotId) {
+      try {
+        const response = await apiGet(`${API_BASE}/lots/detail/${lotId}`);
+
+        if (response.success) {
+          currentLotDetail = response.lot;
+          renderLotDetail(response.lot);
+          new bootstrap.Modal(document.getElementById('lotDetailModal')).show();
+        }
+      } catch (error) {
+        console.error('Erreur chargement detail:', error);
+        showError('Erreur lors du chargement du detail');
+      }
+    }
+
+    function renderLotDetail(lot) {
+      document.getElementById('detail-lot-id').textContent = lot.id;
+      document.getElementById('detail-quantite').textContent = lot.quantite;
+      document.getElementById('detail-disponibles').textContent = lot.nb_disponibles;
+      document.getElementById('detail-utilises').textContent = lot.nb_utilises;
+      document.getElementById('detail-annules').textContent = lot.nb_annules;
+
+      const tbody = document.getElementById('detail-codes-table');
+      tbody.innerHTML = lot.codes.map(code => `
+        <tr>
+          <td><code>${code.code_barre}</code></td>
+          <td><span class="code-badge ${code.statut}">${code.statut}</span></td>
+          <td>${formatDate(code.date_reservation)}</td>
+          <td>${code.date_utilisation ? formatDate(code.date_utilisation) : '-'}</td>
+          <td>
+            ${code.statut === 'reserve' ? `
+              <button class="btn btn-sm btn-outline-danger" onclick="cancelCode('${lot.module}', ${code.id}, '${code.code_barre}')" title="Annuler">
+                <i class="bi bi-x"></i>
+              </button>
+            ` : ''}
+            ${code.statut === 'annule' ? `
+              <button class="btn btn-sm btn-outline-success" onclick="restoreCode('${lot.module}', ${code.id}, '${code.code_barre}')" title="Restaurer">
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+            ` : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Imprimer lot
+    async function printLot(lotId, reprint = false) {
+      const lot = lots.find(l => l.id === lotId);
+
+      if (lot?.date_impression) {
+        const confirmed = await showConfirm(
+          'Reimprimer le lot',
+          `Ce lot a deja ete imprime le <strong>${formatDate(lot.date_impression)}</strong>.<br>Voulez-vous le reimprimer ?`,
+          { icon: 'bi-printer', confirmText: 'Reimprimer', btnClass: 'btn-warning' }
+        );
+        if (!confirmed) return;
+      }
+
+      try {
+        // Telecharger le PDF
+        const response = await fetch(`${API_BASE}/lots/${lotId}/print`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({ reprint: lot?.date_impression ? true : false })
+        });
+
+        if (!response.ok) throw new Error('Erreur generation PDF');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `etiquettes-lot-${lotId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        loadLots();
+        showSuccess('PDF genere avec succes');
+
+      } catch (error) {
+        console.error('Erreur impression:', error);
+        showError('Erreur lors de la generation du PDF');
+      }
+    }
+
+    // Annuler lot
+    async function cancelLot(lotId) {
+      const lot = lots.find(l => l.id === lotId);
+      const confirmed = await showConfirm(
+        'Annuler le lot',
+        `Etes-vous sur de vouloir annuler le <strong>Lot #${lotId}</strong> ?<br><br>
+         <span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Tous les codes non utilises (${lot ? lot.quantite - lot.nb_utilises : '?'}) seront annules.</span>`,
+        { icon: 'bi-x-circle', confirmText: 'Annuler le lot', btnClass: 'btn-danger' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await apiDelete(`${API_BASE}/lots/${lotId}`);
+
+        if (response.success) {
+          loadLots();
+          showSuccess(response.message);
+        } else {
+          throw new Error(response.message);
+        }
+      } catch (error) {
+        console.error('Erreur annulation:', error);
+        showError(error.message || 'Erreur lors de l\'annulation');
+      }
+    }
+
+    // Annuler un code
+    async function cancelCode(module, codeId, codeBarre) {
+      const confirmed = await showConfirm(
+        'Annuler le code',
+        `Voulez-vous annuler le code <code>${codeBarre || codeId}</code> ?`,
+        { icon: 'bi-x-circle', confirmText: 'Annuler', btnClass: 'btn-danger' }
+      );
+      if (!confirmed) return;
+
+      try {
+        const response = await apiDelete(`${API_BASE}/codes/${module}/${codeId}`);
+
+        if (response.success) {
+          viewLotDetail(currentLotDetail.id);
+          showSuccess('Code annule');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        showError(error.message);
+      }
+    }
+
+    // Restaurer un code
+    async function restoreCode(module, codeId, codeBarre) {
+      try {
+        const response = await apiPost(`${API_BASE}/codes/${module}/${codeId}/restore`, {});
+
+        if (response.success) {
+          viewLotDetail(currentLotDetail.id);
+          showSuccess(`Code <code>${codeBarre || codeId}</code> restaure`);
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        showError(error.message);
+      }
+    }
+
+    // Helpers
+    function formatDate(date) {
+      if (!date) return '-';
+      return new Date(date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Systeme de toast
+    function showToast(message, type = 'info', duration = 4000) {
+      const container = document.getElementById('toast-container');
+      const id = 'toast-' + Date.now();
+
+      const icons = {
+        success: 'bi-check-circle-fill',
+        error: 'bi-exclamation-triangle-fill',
+        info: 'bi-info-circle-fill'
+      };
+
+      const titles = {
+        success: 'Succes',
+        error: 'Erreur',
+        info: 'Information'
+      };
+
+      const toastHtml = `
+        <div id="${id}" class="toast ${type}" role="alert" aria-live="assertive" aria-atomic="true">
+          <div class="toast-header">
+            <i class="bi ${icons[type]} me-2"></i>
+            <strong class="me-auto">${titles[type]}</strong>
+            <small>maintenant</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+          </div>
+          <div class="toast-body">
+            ${message}
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', toastHtml);
+
+      const toastEl = document.getElementById(id);
+      const toast = new bootstrap.Toast(toastEl, { delay: duration });
+
+      toastEl.addEventListener('hidden.bs.toast', () => {
+        toastEl.remove();
+      });
+
+      toast.show();
+    }
+
+    function showSuccess(message) {
+      showToast(message, 'success');
+    }
+
+    function showError(message) {
+      showToast(message, 'error', 6000);
+    }
+
+    function showInfo(message) {
+      showToast(message, 'info');
+    }
+
+    // Modale de confirmation
+    function showConfirm(title, message, options = {}) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirm-title');
+        const bodyEl = document.getElementById('confirm-body');
+        const btnEl = document.getElementById('confirm-btn');
+
+        titleEl.innerHTML = `<i class="bi ${options.icon || 'bi-question-circle'} me-2"></i>${title}`;
+        bodyEl.innerHTML = message;
+        btnEl.textContent = options.confirmText || 'Confirmer';
+        btnEl.className = `btn ${options.btnClass || 'btn-danger'}`;
+
+        const bsModal = new bootstrap.Modal(modal);
+
+        // Cleanup previous listeners
+        const newBtn = btnEl.cloneNode(true);
+        btnEl.parentNode.replaceChild(newBtn, btnEl);
+
+        newBtn.addEventListener('click', () => {
+          bsModal.hide();
+          resolve(true);
+        });
+
+        modal.addEventListener('hidden.bs.modal', function handler() {
+          modal.removeEventListener('hidden.bs.modal', handler);
+          resolve(false);
+        }, { once: true });
+
+        bsModal.show();
+      });
+    }
+  </script>
+</body>
+</html>

@@ -281,8 +281,18 @@ module.exports = (sequelize) => {
     timestamps: false,
     hooks: {
       afterCreate: async (jeu) => {
-        // Generate barcode: JEU + 8-digit padded ID
-        if (!jeu.code_barre) {
+        // Si un code-barre a ete fourni (pre-imprime ou scanne)
+        if (jeu.code_barre) {
+          try {
+            // Marquer le code comme utilise dans la table des codes reserves
+            const codeBarreService = require('../services/codeBarreService');
+            await codeBarreService.assignCode('jeu', jeu.code_barre, jeu.id);
+          } catch (err) {
+            // Si erreur (code deja utilise, etc.), on log mais on ne bloque pas
+            console.warn(`Avertissement assignation code-barre jeu: ${err.message}`);
+          }
+        } else {
+          // Generer un code automatiquement: JEU + 8-digit padded ID
           const paddedId = String(jeu.id).padStart(8, '0');
           jeu.code_barre = `JEU${paddedId}`;
           await jeu.save();

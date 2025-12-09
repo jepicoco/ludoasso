@@ -107,10 +107,22 @@ module.exports = (sequelize) => {
     updatedAt: 'updated_at',
     hooks: {
       beforeCreate: async (livre, options) => {
+        // Generer un code automatiquement si non fourni
         if (!livre.code_barre) {
           const maxId = await sequelize.models.Livre.max('id') || 0;
           const nextId = maxId + 1;
           livre.code_barre = `LIV${String(nextId).padStart(8, '0')}`;
+        }
+      },
+      afterCreate: async (livre) => {
+        // Marquer le code comme utilise dans la table des codes reserves
+        if (livre.code_barre) {
+          try {
+            const codeBarreService = require('../services/codeBarreService');
+            await codeBarreService.assignCode('livre', livre.code_barre, livre.id);
+          } catch (err) {
+            console.warn(`Avertissement assignation code-barre livre: ${err.message}`);
+          }
         }
       }
     }

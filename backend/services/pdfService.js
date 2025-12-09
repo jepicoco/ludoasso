@@ -1,6 +1,7 @@
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const bwipjs = require('bwip-js');
 
 /**
  * Service de génération de documents PDF
@@ -316,6 +317,261 @@ class PDFService {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Génère un PNG du code-barre
+   * @param {string} codeBarre - Code-barre à générer
+   * @returns {Promise<Buffer>} - Image PNG du code-barre
+   */
+  async generateBarcodeImage(codeBarre) {
+    return new Promise((resolve, reject) => {
+      bwipjs.toBuffer({
+        bcid: 'code128',
+        text: codeBarre,
+        scale: 3,
+        height: 10,
+        includetext: false
+      }, (err, png) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(png);
+        }
+      });
+    });
+  }
+
+  /**
+   * Génère un PDF d'étiquettes codes-barres pour un lot
+   * Format: A4 avec 10 étiquettes (2 colonnes x 5 lignes)
+   * @param {Object} lot - Objet lot avec ses codes
+   * @returns {Promise<Buffer>} - Buffer du PDF
+   */
+  async generateBarcodeLabels(lot) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Récupérer le nom de la structure
+        const { ParametresStructure } = require('../models');
+        let structureName = 'Ludothèque';
+        try {
+          const params = await ParametresStructure.findOne();
+          if (params?.nom_structure) {
+            structureName = params.nom_structure;
+          }
+        } catch (e) {
+          // Utiliser le nom par défaut
+        }
+
+        // Configuration de la page A4
+        const pageWidth = 595.28;   // A4 width in points
+        const pageHeight = 841.89;  // A4 height in points
+        const margin = 30;
+
+        // Configuration des étiquettes (2 colonnes x 5 lignes = 10 par page)
+        const cols = 2;
+        const rows = 5;
+        const labelsPerPage = cols * rows;
+
+        // Calculer les dimensions des étiquettes
+        const labelWidth = (pageWidth - margin * 2 - 20) / cols;  // 20 = espace entre colonnes
+        const labelHeight = (pageHeight - margin * 2 - 40) / rows; // 40 = espaces entre lignes
+
+        // Créer le document PDF
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: margin, bottom: margin, left: margin, right: margin }
+        });
+
+        // Buffer pour stocker le PDF
+        const chunks = [];
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        // Informations du module (pour l'en-tête de page uniquement)
+        const moduleLabels = {
+          utilisateur: 'Usagers',
+          jeu: 'Jeux',
+          livre: 'Livres',
+          film: 'Films',
+          disque: 'Disques'
+        };
+        const moduleLabel = moduleLabels[lot.module] || lot.module;
+
+        // Couleurs par module pour le bandeau
+        const moduleColors = {
+          utilisateur: '#0d6efd',  // Bleu
+          jeu: '#6f42c1',          // Violet
+          livre: '#20c997',        // Turquoise
+          film: '#fd7e14',         // Orange
+          disque: '#e83e8c'        // Rose
+        };
+        const moduleColor = moduleColors[lot.module] || '#6c757d';
+
+        // Filtrer les codes à imprimer (seulement les reserves)
+        const codesToPrint = lot.codes.filter(c => c.statut === 'reserve');
+
+        // Générer les étiquettes
+        let currentIndex = 0;
+        let pageNum = 0;
+        const totalPages = Math.ceil(codesToPrint.length / labelsPerPage);
+
+        while (currentIndex < codesToPrint.length) {
+          // Ajouter une nouvelle page (sauf pour la première)
+          if (pageNum > 0) {
+            doc.addPage();
+          }
+          pageNum++;
+
+          // En-tête de page
+          doc.fontSize(9)
+             .font('Helvetica')
+             .fillColor('#666666')
+             .text(`${structureName} - ${moduleLabel} - Lot #${lot.id} - Page ${pageNum}/${totalPages}`, margin, margin - 15);
+
+          // Générer les étiquettes de cette page
+          for (let row = 0; row < rows && currentIndex < codesToPrint.length; row++) {
+            for (let col = 0; col < cols && currentIndex < codesToPrint.length; col++) {
+              const code = codesToPrint[currentIndex];
+              const x = margin + col * (labelWidth + 10);
+              const y = margin + row * (labelHeight + 8);
+
+              await this.drawLabel(doc, code.code_barre, structureName, moduleColor, x, y, labelWidth, labelHeight);
+
+              currentIndex++;
+            }
+          }
+        }
+
+        // Pied de page sur la dernière page
+        doc.fontSize(8)
+           .font('Helvetica')
+           .fillColor('#999999')
+           .text(
+             `Généré le ${this.formatDate(new Date())} - ${codesToPrint.length} étiquettes`,
+             margin,
+             pageHeight - margin,
+             { align: 'center', width: pageWidth - margin * 2 }
+           );
+
+        doc.end();
+
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Dessine une étiquette de code-barre
+   * @param {PDFDocument} doc - Document PDF
+   * @param {string} codeBarre - Code-barre
+   * @param {string} structureName - Nom de la structure
+   * @param {string} accentColor - Couleur d'accent pour le bandeau
+   * @param {number} x - Position X
+   * @param {number} y - Position Y
+   * @param {number} width - Largeur
+   * @param {number} height - Hauteur
+   */
+  async drawLabel(doc, codeBarre, structureName, accentColor, x, y, width, height) {
+    const padding = 10;
+    const headerHeight = 22;
+
+    // Fond blanc avec ombre légère (simulée par un rectangle gris décalé)
+    doc.save();
+    doc.rect(x + 2, y + 2, width, height)
+       .fill('#E8E8E8');
+    doc.restore();
+
+    // Fond blanc principal
+    doc.save();
+    doc.roundedRect(x, y, width, height, 6)
+       .fill('#FFFFFF');
+    doc.restore();
+
+    // Cadre de l'étiquette
+    doc.roundedRect(x, y, width, height, 6)
+       .stroke('#DDDDDD');
+
+    // Bandeau coloré en haut
+    doc.save();
+    doc.roundedRect(x, y, width, headerHeight, 6)
+       .clip();
+    doc.rect(x, y, width, headerHeight)
+       .fill(accentColor);
+    doc.restore();
+
+    // Nom de la structure dans le bandeau (blanc)
+    doc.fontSize(10)
+       .font('Helvetica-Bold')
+       .fillColor('#FFFFFF')
+       .text(structureName, x + padding, y + 6, {
+         width: width - padding * 2,
+         align: 'center'
+       });
+
+    // Générer l'image du code-barre
+    try {
+      const barcodeImage = await this.generateBarcodeImage(codeBarre);
+
+      // Position du code-barre (centré horizontalement)
+      const barcodeWidth = width - padding * 2 - 10;
+      const barcodeHeight = 45;
+      const barcodeX = x + (width - barcodeWidth) / 2;
+      const barcodeY = y + headerHeight + 12;
+
+      doc.image(barcodeImage, barcodeX, barcodeY, {
+        width: barcodeWidth,
+        height: barcodeHeight
+      });
+
+      // Texte du code-barre en dessous (monospace style)
+      doc.fontSize(11)
+         .font('Helvetica-Bold')
+         .fillColor('#333333')
+         .text(codeBarre, x + padding, barcodeY + barcodeHeight + 8, {
+           width: width - padding * 2,
+           align: 'center',
+           characterSpacing: 1
+         });
+
+    } catch (err) {
+      // Si erreur de génération du code-barre, afficher juste le texte
+      doc.fontSize(14)
+         .font('Helvetica-Bold')
+         .fillColor('#333333')
+         .text(codeBarre, x + padding, y + height / 2, {
+           width: width - padding * 2,
+           align: 'center'
+         });
+    }
+  }
+
+  /**
+   * Génère un PDF d'étiquettes codes-barres personnalisées
+   * @param {Array} codes - Liste des codes à imprimer
+   * @param {Object} options - Options (module, format, etc.)
+   * @returns {Promise<Buffer>} - Buffer du PDF
+   */
+  async generateCustomBarcodeLabels(codes, options = {}) {
+    const {
+      module = 'article',
+      format = 'A4_10',  // A4_10 = 10 étiquettes par page
+      includeDate = true
+    } = options;
+
+    // Construire un lot virtuel
+    const virtualLot = {
+      id: 'custom',
+      module,
+      codes: codes.map(c => ({
+        code_barre: typeof c === 'string' ? c : c.code_barre,
+        statut: 'reserve'
+      }))
+    };
+
+    return this.generateBarcodeLabels(virtualLot);
   }
 }
 

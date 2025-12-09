@@ -117,6 +117,16 @@ module.exports = (sequelize) => {
           const nextId = lastDisque ? lastDisque.id + 1 : 1;
           disque.code_barre = `DSQ${String(nextId).padStart(8, '0')}`;
         }
+      },
+      afterCreate: async (disque) => {
+        if (disque.code_barre) {
+          try {
+            const codeBarreService = require('../services/codeBarreService');
+            await codeBarreService.assignCode('disque', disque.code_barre, disque.id);
+          } catch (err) {
+            console.warn(`Avertissement assignation code-barre disque: ${err.message}`);
+          }
+        }
       }
     }
   });

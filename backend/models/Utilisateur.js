@@ -168,6 +168,15 @@ module.exports = (sequelize) => {
           utilisateur.code_barre = `USA${paddedId}`;
           await utilisateur.update({ code_barre: utilisateur.code_barre }, { hooks: false });
         }
+        // Marquer le code comme utilise dans la table des codes reserves
+        if (utilisateur.code_barre) {
+          try {
+            const codeBarreService = require('../services/codeBarreService');
+            await codeBarreService.assignCode('utilisateur', utilisateur.code_barre, utilisateur.id);
+          } catch (err) {
+            console.warn(`Avertissement assignation code-barre utilisateur: ${err.message}`);
+          }
+        }
       },
       beforeUpdate: async (utilisateur) => {
         if (utilisateur.changed('password')) {

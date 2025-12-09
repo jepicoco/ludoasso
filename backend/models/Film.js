@@ -111,6 +111,16 @@ module.exports = (sequelize) => {
           const nextId = maxId + 1;
           film.code_barre = `FLM${String(nextId).padStart(8, '0')}`;
         }
+      },
+      afterCreate: async (film) => {
+        if (film.code_barre) {
+          try {
+            const codeBarreService = require('../services/codeBarreService');
+            await codeBarreService.assignCode('film', film.code_barre, film.id);
+          } catch (err) {
+            console.warn(`Avertissement assignation code-barre film: ${err.message}`);
+          }
+        }
       }
     }
   });
