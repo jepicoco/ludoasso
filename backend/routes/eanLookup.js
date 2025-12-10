@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const eanLookupController = require('../controllers/eanLookupController');
 const { verifyToken } = require('../middleware/auth');
-const checkRole = require('../middleware/checkRole');
+const { checkRole } = require('../middleware/checkRole');
 
 // Toutes les routes necessitent une authentification
 router.use(verifyToken);
