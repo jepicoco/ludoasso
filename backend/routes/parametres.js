@@ -13,6 +13,48 @@ const templatesMessagesController = require('../controllers/templatesMessagesCon
 const modulesActifsController = require('../controllers/modulesActifsController');
 const ipAutoriseesController = require('../controllers/ipAutoriseesController');
 const outilsController = require('../controllers/outilsController');
+const configurationsAPIController = require('../controllers/configurationsAPIController');
+const themesSiteController = require('../controllers/themesSiteController');
+
+// ============================================
+// Routes pour les themes du site public
+// ============================================
+
+// Importer un theme (doit etre avant :codeOrId)
+router.post('/themes/import', verifyToken, isAdmin(), themesSiteController.importTheme);
+
+// Reordonner les themes
+router.put('/themes/reorder', verifyToken, isAdmin(), themesSiteController.reorder);
+
+// Recuperer tous les themes
+router.get('/themes', verifyToken, isGestionnaire(), themesSiteController.getAll);
+
+// Creer un nouveau theme
+router.post('/themes', verifyToken, isAdmin(), themesSiteController.create);
+
+// Recuperer un theme par code ou ID
+router.get('/themes/:codeOrId', verifyToken, isGestionnaire(), themesSiteController.getByCodeOrId);
+
+// Generer le CSS d'un theme
+router.get('/themes/:codeOrId/css', verifyToken, isGestionnaire(), themesSiteController.getCSS);
+
+// Mettre a jour un theme
+router.put('/themes/:id', verifyToken, isAdmin(), themesSiteController.update);
+
+// Supprimer un theme
+router.delete('/themes/:id', verifyToken, isAdmin(), themesSiteController.delete);
+
+// Dupliquer un theme
+router.post('/themes/:id/duplicate', verifyToken, isAdmin(), themesSiteController.duplicate);
+
+// Activer un theme pour le site
+router.post('/themes/:id/activate', verifyToken, isAdmin(), themesSiteController.activate);
+
+// Exporter un theme en JSON
+router.get('/themes/:id/export', verifyToken, isAdmin(), themesSiteController.exportTheme);
+
+// Toggle actif/inactif
+router.patch('/themes/:id/toggle', verifyToken, isAdmin(), themesSiteController.toggle);
 
 // ============================================
 // Routes pour les modules actifs
@@ -314,5 +356,43 @@ router.get('/outils/reset-stats', verifyToken, isAdmin(), outilsController.getRe
 
 // Effectuer un reset de la base de données (admin seulement)
 router.post('/outils/reset', verifyToken, isAdmin(), outilsController.resetDatabase);
+
+// ============================================
+// Routes pour les configurations API externes
+// (EAN lookup, ISBN lookup, enrichissement)
+// ============================================
+
+// Récupérer les fournisseurs disponibles
+router.get('/apis-externes/providers', verifyToken, isGestionnaire(), configurationsAPIController.getProviders);
+
+// Récupérer toutes les configurations API
+router.get('/apis-externes', verifyToken, isGestionnaire(), configurationsAPIController.getAllConfigurations);
+
+// Récupérer une configuration API par ID
+router.get('/apis-externes/:id', verifyToken, isGestionnaire(), configurationsAPIController.getConfigurationById);
+
+// Créer une configuration API (admin seulement)
+router.post('/apis-externes', verifyToken, isAdmin(), configurationsAPIController.createConfiguration);
+
+// Mettre à jour une configuration API (admin seulement)
+router.put('/apis-externes/:id', verifyToken, isAdmin(), configurationsAPIController.updateConfiguration);
+
+// Supprimer une configuration API (admin seulement)
+router.delete('/apis-externes/:id', verifyToken, isAdmin(), configurationsAPIController.deleteConfiguration);
+
+// Réorganiser les configurations API (admin seulement)
+router.put('/apis-externes-reorder', verifyToken, isAdmin(), configurationsAPIController.reorderConfigurations);
+
+// Activer/désactiver une configuration API (admin seulement)
+router.patch('/apis-externes/:id/toggle', verifyToken, isAdmin(), configurationsAPIController.toggleActif);
+
+// Définir comme configuration par défaut (admin seulement)
+router.patch('/apis-externes/:id/set-default', verifyToken, isAdmin(), configurationsAPIController.setAsDefault);
+
+// Tester une configuration API (admin seulement)
+router.post('/apis-externes/:id/test', verifyToken, isAdmin(), configurationsAPIController.testConnection);
+
+// Obtenir les statistiques d'une configuration API (admin seulement)
+router.get('/apis-externes/:id/stats', verifyToken, isAdmin(), configurationsAPIController.getStats);
 
 module.exports = router;

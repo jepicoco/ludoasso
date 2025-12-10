@@ -18,6 +18,7 @@ const {
   GenreMusical
 } = require('../models');
 const RechercheNaturelleService = require('../services/rechercheNaturelleService');
+const themesSiteController = require('../controllers/themesSiteController');
 
 // Include configurations for public queries (simplified, no sensitive data)
 const JEU_INCLUDES = [
@@ -604,5 +605,30 @@ router.get('/recherche-intelligente/check', async (req, res) => {
     res.json({ disponible: false });
   }
 });
+
+// ============================================
+// Routes pour les themes publics
+// ============================================
+
+/**
+ * @route   GET /api/public/theme
+ * @desc    Get current active theme CSS
+ * @access  Public
+ */
+router.get('/theme', themesSiteController.getPublicTheme);
+
+/**
+ * @route   GET /api/public/themes
+ * @desc    List available themes for public selection (if enabled)
+ * @access  Public
+ */
+router.get('/themes', themesSiteController.getPublicThemes);
+
+/**
+ * @route   GET /api/public/themes/:code/css
+ * @desc    Get CSS for a specific theme
+ * @access  Public
+ */
+router.get('/themes/:code/css', themesSiteController.getPublicThemeCSS);
 
 module.exports = router;

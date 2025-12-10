@@ -126,6 +126,15 @@ const CodeBarreLivreModel = require('./CodeBarreLivre');
 const CodeBarreFilmModel = require('./CodeBarreFilm');
 const CodeBarreDisqueModel = require('./CodeBarreDisque');
 
+// Import Configuration API (lookup EAN/ISBN externe)
+const ConfigurationAPIModel = require('./ConfigurationAPI');
+
+// Import Configuration Export Comptable (multi-formats)
+const ConfigurationExportComptableModel = require('./ConfigurationExportComptable');
+
+// Import ThemeSite (themes du site public)
+const ThemeSiteModel = require('./ThemeSite');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -250,6 +259,15 @@ const CodeBarreJeu = CodeBarreJeuModel(sequelize);
 const CodeBarreLivre = CodeBarreLivreModel(sequelize);
 const CodeBarreFilm = CodeBarreFilmModel(sequelize);
 const CodeBarreDisque = CodeBarreDisqueModel(sequelize);
+
+// Initialize Configuration API (lookup EAN/ISBN externe)
+const ConfigurationAPI = ConfigurationAPIModel(sequelize);
+
+// Initialize Configuration Export Comptable (multi-formats)
+const ConfigurationExportComptable = ConfigurationExportComptableModel(sequelize);
+
+// Initialize ThemeSite (themes du site public)
+const ThemeSite = ThemeSiteModel(sequelize);
 
 // Define associations
 // Utilisateur <-> Emprunt (One-to-Many)
@@ -1248,5 +1266,11 @@ module.exports = {
   CodeBarreJeu,
   CodeBarreLivre,
   CodeBarreFilm,
-  CodeBarreDisque
+  CodeBarreDisque,
+  // Configuration API (lookup EAN/ISBN externe)
+  ConfigurationAPI,
+  // Configuration Export Comptable (multi-formats)
+  ConfigurationExportComptable,
+  // Themes du site public
+  ThemeSite
 };

@@ -1,9 +1,208 @@
-const { EcritureComptable, ParametresStructure } = require('../models');
+const { EcritureComptable, ParametresStructure, ConfigurationExportComptable } = require('../models');
+const ExportComptableService = require('../services/exportComptableService');
 
 /**
  * Controller pour les exports comptables
  */
 class ExportComptableController {
+  // ============================================
+  // NOUVELLES ROUTES MULTI-FORMATS
+  // ============================================
+
+  /**
+   * Recupere les formats d'export disponibles
+   * GET /api/export-comptable/formats
+   */
+  static async getFormats(req, res) {
+    try {
+      const formats = await ConfigurationExportComptable.getActifs();
+
+      res.json({
+        formats: formats.map(f => ({
+          format: f.format,
+          libelle: f.libelle,
+          extension: f.extension,
+          encodage: f.encodage,
+          description: f.description,
+          documentation_url: f.documentation_url,
+          par_defaut: f.par_defaut
+        }))
+      });
+    } catch (error) {
+      console.error('Erreur lors de la recuperation des formats:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la recuperation des formats',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Recupere la configuration d'un format
+   * GET /api/export-comptable/formats/:format
+   */
+  static async getFormatConfig(req, res) {
+    try {
+      const { format } = req.params;
+      const config = await ConfigurationExportComptable.getByFormat(format);
+
+      if (!config) {
+        return res.status(404).json({
+          error: `Format non trouve: ${format}`
+        });
+      }
+
+      res.json(config);
+    } catch (error) {
+      console.error('Erreur lors de la recuperation de la configuration:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la recuperation de la configuration',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Met a jour la configuration d'un format (mapping comptes/journaux)
+   * PUT /api/export-comptable/formats/:format
+   */
+  static async updateFormatConfig(req, res) {
+    try {
+      const { format } = req.params;
+      const config = await ConfigurationExportComptable.getByFormat(format);
+
+      if (!config) {
+        return res.status(404).json({
+          error: `Format non trouve: ${format}`
+        });
+      }
+
+      // Champs modifiables
+      const champsModifiables = [
+        'mapping_comptes',
+        'mapping_journaux',
+        'separateur',
+        'separateur_decimal',
+        'format_date',
+        'encodage',
+        'inclure_entete',
+        'guillemets_texte',
+        'precision_decimale',
+        'options_format'
+      ];
+
+      for (const champ of champsModifiables) {
+        if (req.body[champ] !== undefined) {
+          config[champ] = req.body[champ];
+        }
+      }
+
+      await config.save();
+
+      res.json({
+        message: 'Configuration mise a jour',
+        config
+      });
+    } catch (error) {
+      console.error('Erreur lors de la mise a jour:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la mise a jour',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Exporte les ecritures dans le format specifie
+   * GET /api/export-comptable/export/:format
+   */
+  static async exportFormat(req, res) {
+    try {
+      const { format } = req.params;
+      const { exercice, dateDebut, dateFin, journal } = req.query;
+
+      // Validation
+      if (!exercice && !dateDebut && !dateFin) {
+        return res.status(400).json({
+          error: 'Vous devez specifier un exercice ou une plage de dates'
+        });
+      }
+
+      // Construire les filtres
+      const filtres = {};
+
+      if (exercice) {
+        const exerciceNum = parseInt(exercice);
+        if (isNaN(exerciceNum) || exerciceNum < 2000 || exerciceNum > 2100) {
+          return res.status(400).json({
+            error: 'Exercice invalide. Doit etre une annee entre 2000 et 2100'
+          });
+        }
+        filtres.exercice = exerciceNum;
+      }
+
+      if (dateDebut) {
+        filtres.dateDebut = new Date(dateDebut);
+      }
+
+      if (dateFin) {
+        filtres.dateFin = new Date(dateFin);
+      }
+
+      if (journal) {
+        filtres.journal = journal;
+      }
+
+      // Exporter
+      const result = await ExportComptableService.exporter(format, filtres);
+
+      // Headers pour telechargement
+      res.setHeader('Content-Type', result.contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+      res.setHeader('Content-Length', result.buffer.length);
+      res.setHeader('X-Export-Format', result.format);
+      res.setHeader('X-Export-Ecritures', result.nbEcritures);
+
+      res.send(result.buffer);
+    } catch (error) {
+      console.error('Erreur lors de l\'export:', error);
+      res.status(500).json({
+        error: 'Erreur lors de l\'export',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Statistiques d'un exercice avec formats disponibles
+   * GET /api/export-comptable/statistiques-complet/:exercice
+   */
+  static async getStatistiquesComplet(req, res) {
+    try {
+      const { exercice } = req.params;
+      const exerciceNum = parseInt(exercice);
+
+      if (isNaN(exerciceNum)) {
+        return res.status(400).json({
+          error: 'Exercice invalide'
+        });
+      }
+
+      const stats = await ExportComptableService.getStatistiquesExercice(exerciceNum);
+      res.json(stats);
+    } catch (error) {
+      console.error('Erreur lors de la recuperation des statistiques:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la recuperation des statistiques',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  // ============================================
+  // ROUTES EXISTANTES (COMPATIBILITE)
+  // ============================================
+
   /**
    * Formate une date au format FEC (YYYYMMDD)
    * @param {Date|string} date - Date à formater

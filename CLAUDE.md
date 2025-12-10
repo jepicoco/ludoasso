@@ -14,13 +14,15 @@ npm run dev              # Start with nodemon (auto-reload)
 npm start                # Production start
 
 # Tests
-npm test                 # Run all Jest tests
-npm test -- pdfService   # Run specific test file
-npm test -- --coverage   # Generate coverage report
+npm test                           # Run all Jest tests
+npm test -- pdfService             # Run specific test file by name
+npm test -- --testPathPattern=auth # Run tests matching pattern
+npm test -- --coverage             # Generate coverage report
+npm test -- --watch                # Watch mode for development
 
 # Database Setup (run in order for fresh install)
 npm run migrate          # Run pending migrations
-npm run seed             # Base seeds
+npm run seed             # Base seeds (Sequelize CLI)
 npm run init-parametrage # Initialize system parameters
 npm run setup-complete-communications  # Email/SMS templates + event triggers
 
@@ -31,6 +33,7 @@ npm run db:migrate:down     # Rollback last migration
 npm run db:migrate:reset    # Rollback all migrations
 npm run db:migrate:mark-all # Mark all migrations as executed (for existing DBs)
 npm run db:check-schema     # Verify DB schema matches expected tables/columns
+npm run migrate-fk          # Add missing foreign keys
 
 # Collection Module Setup
 npm run setup-jeux-normalization  # Games normalization tables
@@ -38,8 +41,8 @@ npm run setup-livres              # Books module
 npm run setup-films               # Films module
 npm run setup-disques             # Records module
 
-# Accounting (Phase 1)
-node database/migrations/addPhase1Comptabilite.js up   # Create accounting tables
+# Accounting
+npm run migrate-comptabilite      # Advanced accounting tables
 
 # LLM/AI Features
 npm run migrate-llm           # LLM configuration tables
@@ -47,6 +50,12 @@ npm run migrate-thematiques   # Unified thematiques tables
 
 # User Refactoring (Adherent → Utilisateur)
 npm run migrate-utilisateurs  # Rename adherents to utilisateurs
+
+# Utility Scripts
+npm run generate-data         # Generate mass test data
+npm run seed-all              # Run all seed scripts
+npm run job-email-reminders   # Manual email reminder job
+npm run check-triggers        # Diagnostic: check event triggers status
 ```
 
 ## Architecture
@@ -59,8 +68,24 @@ npm run migrate-utilisateurs  # Rename adherents to utilisateurs
 - `models/` - 100+ Sequelize models with associations in `index.js`. Collections use normalized reference tables (genres, authors, publishers) with many-to-many junction tables.
 - `controllers/` - Business logic
 - `routes/` - API definitions
-- `services/` - `emailService.js` (SMTP with AES-256 encryption), `eventTriggerService.js` (automated notifications), `comptabiliteService.js` (accounting entries), `pdfService.js` (receipt generation)
-- `middleware/` - `auth.js` (JWT), `checkRole.js` (RBAC), `usagerAuth.js` (member auth), `maintenance.js` (maintenance mode with IP whitelist), `rateLimiter.js`
+- `services/`:
+  - `emailService.js` - SMTP with AES-256 credential encryption
+  - `eventTriggerService.js` - Automated notifications on events
+  - `comptabiliteService.js` - Accounting entries generation
+  - `pdfService.js` - PDF receipt/card generation
+  - `codeBarreService.js` - Barcode generation (EAN-13)
+  - `llmService.js` - LLM API integration for AI features
+  - `thematiqueService.js` / `rechercheNaturelleService.js` - Natural language search
+  - `bggService.js` - BoardGameGeek API integration
+  - `eanLookupService.js` - EAN barcode lookup service
+- `middleware/`:
+  - `auth.js` - JWT verification (`verifyToken`)
+  - `checkRole.js` - Role-based access control
+  - `usagerAuth.js` - Member portal authentication
+  - `maintenance.js` - Maintenance mode with IP whitelist
+  - `rateLimiter.js` - Rate limiting configurations
+  - `validate.js` - Request validation middleware
+  - `requestLogger.js` - HTTP request logging
 - `utils/` - `logger.js` (Winston with daily rotation), `auditLogger.js` (structured audit events)
 
 ### Route Structure
@@ -76,6 +101,10 @@ npm run migrate-utilisateurs  # Rename adherents to utilisateurs
 5. **Infrastructure**: `/api/sites`, `/api/comptes-bancaires`, `/api/calendrier`, `/api/referentiels`, `/api/archives`, `/api/import`, `/api/maintenance`, `/api/public`
 
 6. **AI Features**: `/api/thematiques`, `/api/enrichissement`
+
+7. **Communications logs**: `/api/email-logs`, `/api/sms-logs`, `/api/configurations-sms`, `/api/event-triggers`
+
+8. **Barcode batch printing**: `/api/codes-barres-reserves`
 
 ### Frontend (frontend/)
 
@@ -94,8 +123,9 @@ MySQL with Sequelize ORM. Key model groups:
 - **Accounting**: `CompteurPiece`, `EcritureComptable`, `SectionAnalytique`, `TauxTVA`, `RepartitionAnalytique`
 - **AI/Thematiques**: `ConfigurationLLM`, `Thematique`, `ThematiqueAlias`, `ArticleThematique`, `EnrichissementQueue`
 - **Infrastructure**: `Site`, `CompteBancaire`, `HoraireOuverture`, `FermetureExceptionnelle`, `ModuleActif`, `IpAutorisee`
+- **Barcode Batches**: `ParametresCodesBarres`, `LotCodesBarres`, `CodeBarreUtilisateur`, `CodeBarreJeu`, `CodeBarreLivre`, `CodeBarreFilm`, `CodeBarreDisque`
 
-**Note**: The codebase uses "utilisateur" internally and "usager" for frontend labels. The `Adherent` export is maintained as an alias for backward compatibility in `models/index.js`.
+**Terminology Note**: The codebase uses "utilisateur" internally for the user model. The API route `/api/adherents` is maintained as an alias for `/api/utilisateurs` for backward compatibility. Frontend labels use "usager" (member) for the public-facing portal.
 
 ### Authentication
 
@@ -146,10 +176,24 @@ Logs stored in `logs/` with daily rotation (14 days app, 30 days errors).
 ## Environment Variables
 
 ```
+# Database
 DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
-PORT, NODE_ENV
-JWT_SECRET            # Min 32 chars, validated at startup
-EMAIL_ENCRYPTION_KEY  # Min 32 chars, for AES-256-CBC
+
+# Server
+PORT                  # Default: 3000
+NODE_ENV              # development | production
+APP_URL               # Full URL (used for CORS in production)
+APP_NAME              # Application name
+
+# Security (Min 32 chars each, validated at startup)
+JWT_SECRET            # JWT signing key
+EMAIL_ENCRYPTION_KEY  # AES-256-CBC for SMTP credentials
+
+# Rate Limiting
+DISABLE_RATE_LIMIT    # Set to 'true' to disable (dev only)
+
+# Structure Info (for email/SMS templates)
+STRUCTURE_NOM, STRUCTURE_ADRESSE, STRUCTURE_EMAIL, STRUCTURE_TELEPHONE
 ```
 
 Generate secure secrets: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
@@ -174,6 +218,18 @@ When adding a new collection module:
 2. Create junction table models for many-to-many relationships
 3. Define all associations in `models/index.js`
 4. Create migration in `database/migrations/add[Module]Normalization.js`
+
+## Test Structure
+
+Tests are located in `tests/unit/` with the following organization:
+- `tests/unit/controllers/` - Controller unit tests
+- `tests/unit/services/` - Service unit tests
+- `tests/unit/middleware/` - Middleware unit tests
+
+Jest configuration in `jest.config.js`:
+- Test timeout: 10 seconds
+- Mocks are automatically cleared/reset between tests
+- Coverage excludes `server.js` and `models/index.js`
 
 ## Default Admin
 

@@ -546,6 +546,93 @@
       font-size: 1.5rem;
       margin-bottom: 4px;
     }
+
+    /* Zone articles en attente */
+    #pending-items-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 2px dashed var(--scanner-warning);
+      display: none;
+    }
+
+    .pending-items-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .pending-items-header h6 {
+      margin: 0;
+      color: var(--scanner-warning);
+      font-size: 0.95rem;
+    }
+
+    .pending-items-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .pending-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background-color: var(--scanner-accent);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .pending-item-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .pending-item-info i {
+      font-size: 1.2rem;
+      color: var(--scanner-warning);
+    }
+
+    .pending-item-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pending-items-hint {
+      margin: 12px 0 0;
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+    }
+
+    .pending-items-hint i {
+      color: var(--scanner-warning);
+    }
+
+    @media (max-width: 768px) {
+      #pending-items-zone {
+        padding: 15px;
+      }
+
+      .pending-items-list {
+        max-height: 150px;
+      }
+
+      .pending-item {
+        padding: 8px 10px;
+      }
+
+      .pending-item-title {
+        font-size: 0.9rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -599,6 +686,11 @@
           Rechercher article
         </button>
       </div>
+    </div>
+
+    <!-- Zone articles en attente -->
+    <div id="pending-items-zone">
+      <!-- Contenu genere dynamiquement par updatePendingItemsDisplay() -->
     </div>
 
     <!-- Historique -->
@@ -702,25 +794,34 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <h6><i class="bi bi-1-circle text-primary"></i> Pour un emprunt</h6>
+          <h6><i class="bi bi-1-circle text-primary"></i> Pour un emprunt (methode classique)</h6>
           <ol>
             <li>Scannez la carte de l'adherent (code ADHxxxxxxxx)</li>
             <li>Scannez l'article a emprunter (JEU, LIV, FLM ou DSQ)</li>
             <li>L'emprunt est cree automatiquement</li>
           </ol>
 
+          <h6 class="mt-4"><i class="bi bi-hourglass-split text-warning"></i> Mode multi-articles (nouveau !)</h6>
+          <ol>
+            <li>Scannez d'abord tous les articles (sans adherent)</li>
+            <li>Les articles s'ajoutent a la file d'attente</li>
+            <li>Scannez ensuite la carte adherent</li>
+            <li>Tous les articles sont traites automatiquement</li>
+          </ol>
+
           <h6 class="mt-4"><i class="bi bi-2-circle text-success"></i> Pour un retour</h6>
           <ol>
             <li>Scannez simplement l'article emprunte</li>
-            <li>Le retour est enregistre automatiquement</li>
-            <li>Pas besoin de scanner l'adherent</li>
+            <li>Si un adherent est selectionne, le retour est fait immediatement</li>
+            <li>Sinon, l'article s'ajoute a la file d'attente</li>
           </ol>
 
           <h6 class="mt-4"><i class="bi bi-lightbulb text-warning"></i> Astuces</h6>
           <ul>
             <li>Codes-barres : ADH (adherent), JEU (jeu), LIV (livre), FLM (film), DSQ (disque)</li>
-            <li>Vous pouvez enchainer plusieurs emprunts pour le meme adherent</li>
+            <li>Vous pouvez melanger emprunts et retours dans la file d'attente</li>
             <li>Un son confirme chaque action reussie</li>
+            <li>Cliquez sur le X d'un article pour le retirer de la file</li>
           </ul>
         </div>
         <div class="modal-footer">

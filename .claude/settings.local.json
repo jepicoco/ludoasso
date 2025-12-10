@@ -1,29 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git clone:*)",
-      "Bash(ren \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\frontend\\index.html\" \"maintenance.html\")",
-      "Bash(powershell -Command:*)",
-      "Bash(curl:*)",
-      "Bash(node database/migrations/addProlongationParams.js:*)",
-      "Bash(node database/migrations/createProlongationsTable.js:*)",
-      "Bash(node -e:*)",
-      "Bash(ls:*)",
+      "Bash(npm check-updates)",
+      "Bash(git rm:*)",
+      "Bash(npm install:*)",
+      "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\test-models.js\")",
+      "Bash(tree:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add member portal (espace usager) with loan extensions\n\n- Add complete member area at /usager/ with:\n  - Login (email or barcode), forgot password, reset password\n  - Dashboard with personal stats and current loans\n  - Full loan history with extension requests\n\n- Implement loan extension (prolongation) system:\n  - Automatic extensions (configurable max per module)\n  - Manual extension requests requiring admin validation\n  - Per-module configuration (days, auto count, manual allowed)\n  - Warning message when item is reserved (toggleable)\n\n- Add admin interface for extension management:\n  - Configuration page (parametres-emprunts.html)\n  - Pending requests validation/rejection\n\n- Add maintenance mode with IP whitelist\n- Add public pages (catalogue, fiche, infos)\n- Update documentation (README.md, ARCHITECTURE.md)\n\nNew routes:\n- /api/usager/auth/* - Member authentication\n- /api/usager/emprunts/* - Member loans management\n- /api/prolongations/* - Admin extension management\n- /api/maintenance/* - Maintenance mode management\n- /api/public/* - Public catalog access\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git config:*)",
-      "Bash(git commit:*)",
-      "Bash(git push)",
-      "Bash(node database/migrations/addPhase1Comptabilite.js:*)",
-      "Bash(npm test:*)",
-      "Bash(if not exist \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\database\\scripts\" mkdir \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\database\\scripts\")",
-      "Bash(node database/migrations/addMaintenanceKey.js:*)",
-      "Bash(npm run migrate-modules-actifs:*)",
-      "Bash(node:*)",
-      "Bash(copy:*)",
-      "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\backend\\models\\Adherent.js\")",
-      "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\backend\\models\\AdherentArchive.js\")",
-      "Bash(dir:*)"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add multi-article scanner, EAN lookup APIs, accounting exports, and theme system\n\nScanner multi-articles:\n- Queue system for articles scanned without member selected\n- Support for all collection types (Jeux, Livres, Films, Disques)\n- Auto-flush when member is selected\n- Silent error handling in history\n\nEAN Lookup - External APIs:\n- ConfigurationAPI model with encryption, rate limiting, statistics\n- Support for UPCitemdb, BGG, OpenLibrary, GoogleBooks, TMDB, MusicBrainz\n- Admin configuration routes in /api/parametres/apis-externes\n\nAccounting multi-format exports:\n- ConfigurationExportComptable model\n- Export service with strategy pattern\n- Formats: FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON\n- Configurable account and journal mapping per format\n- Routes: /api/export-comptable/formats, /api/export-comptable/export/:format\n\nTheme system:\n- ThemeSite model with 26+ color variables per theme\n- 7 predefined themes (light and dark modes)\n- CSS generation, import/export, duplication\n- Admin routes in /api/parametres/themes\n- Public routes in /api/public/theme(s)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

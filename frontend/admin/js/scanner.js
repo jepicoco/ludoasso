@@ -13,6 +13,9 @@ let isScanning = false;
 let lastScannedCode = null;
 let lastScanTime = 0;
 
+// File d'articles en attente (nouveau systeme multi-articles)
+let pendingItems = [];
+
 // Config
 const SCAN_COOLDOWN = 500; // 0.5 seconde entre chaque scan
 const BARCODE_RESCAN_COOLDOWN = 5000; // 5 secondes avant de pouvoir rescanner le meme code-barre
@@ -223,10 +226,11 @@ async function processBarcode(code) {
 
     if (response.type === 'adherent') {
       await handleAdherentScan(response);
-    } else if (response.type === 'jeu') {
-      await handleJeuScan(response);
+    } else if (['jeu', 'livre', 'film', 'disque'].includes(response.type)) {
+      // Tous les types d'articles sont traites de la meme maniere
+      await handleArticleScan(response);
     } else {
-      throw new Error('Type de code-barre inconnu');
+      throw new Error('Type de code-barre inconnu: ' + response.type);
     }
   } catch (error) {
     console.error('Erreur scan:', error);
@@ -256,34 +260,298 @@ async function handleAdherentScan(response) {
   flashZone('success');
   updateStatus(`Adherent: ${adherent.prenom} ${adherent.nom}`, 'success');
   addToHistory('info', 'Adherent selectionne', `${adherent.prenom} ${adherent.nom}`, response.code);
-}
 
-async function handleJeuScan(response) {
-  const jeu = response.jeu;
-
-  if (jeu.statut === 'disponible') {
-    // Creer un emprunt
-    await createEmprunt(jeu);
-  } else if (jeu.statut === 'emprunte') {
-    // Effectuer un retour
-    await processRetour(jeu);
-  } else {
-    playSound('error');
-    flashZone('error');
-    updateStatus(`Jeu en ${jeu.statut}`, 'error');
-    addToHistory('error', 'Jeu non disponible', `${jeu.titre} - Statut: ${jeu.statut}`, response.code);
+  // Si des articles sont en attente, les traiter automatiquement
+  if (pendingItems.length > 0) {
+    setTimeout(() => flushPendingItems(), 300);
   }
 }
 
-async function createEmprunt(jeu) {
+/**
+ * Gere le scan d'un article (jeu, livre, film, disque)
+ * Unifie le traitement pour tous les types de collections
+ */
+async function handleArticleScan(response) {
+  const articleType = response.type;
+  const article = response[articleType]; // jeu, livre, film ou disque
+  const titre = article.titre;
+
+  // Si pas d'adherent selectionne, ajouter a la file d'attente
   if (!currentAdherent) {
-    // Ouvrir la recherche d'adherent avec le jeu en attente
+    addToPendingItems(article, response.code, articleType);
+    return;
+  }
+
+  if (article.statut === 'disponible') {
+    // Creer un emprunt
+    await createEmprunt(article, articleType);
+  } else if (article.statut === 'emprunte') {
+    // Effectuer un retour
+    await processRetour(article, articleType);
+  } else {
+    playSound('error');
+    flashZone('error');
+    updateStatus(`${getArticleTypeLabel(articleType)} en ${article.statut}`, 'error');
+    addToHistory('error', `${getArticleTypeLabel(articleType)} non disponible`, `${titre} - Statut: ${article.statut}`, response.code);
+  }
+}
+
+// Alias pour compatibilite avec l'ancien code
+async function handleJeuScan(response) {
+  return handleArticleScan(response);
+}
+
+/**
+ * Retourne le libelle francais du type d'article
+ */
+function getArticleTypeLabel(type) {
+  const labels = {
+    jeu: 'Jeu',
+    livre: 'Livre',
+    film: 'Film',
+    disque: 'Disque'
+  };
+  return labels[type] || 'Article';
+}
+
+/**
+ * Retourne l'icone Bootstrap correspondant au type d'article
+ */
+function getArticleTypeIcon(type) {
+  const icons = {
+    jeu: 'bi-dice-5',
+    livre: 'bi-book',
+    film: 'bi-film',
+    disque: 'bi-disc'
+  };
+  return icons[type] || 'bi-box';
+}
+
+// ==================== PENDING ITEMS QUEUE ====================
+
+/**
+ * Ajoute un article a la file d'attente (quand pas d'adherent selectionne)
+ * @param {Object} article - L'article (jeu, livre, film ou disque)
+ * @param {string} code - Le code-barre
+ * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
+ */
+function addToPendingItems(article, code, articleType = 'jeu') {
+  // Verifier si l'article n'est pas deja dans la file
+  const existingIndex = pendingItems.findIndex(item =>
+    item.article.id === article.id && item.articleType === articleType
+  );
+  if (existingIndex !== -1) {
+    playSound('error');
+    updateStatus(`"${article.titre}" deja dans la file`, 'error');
+    return;
+  }
+
+  pendingItems.push({
+    article,
+    articleType,
+    code,
+    addedAt: Date.now()
+  });
+
+  const typeLabel = getArticleTypeLabel(articleType);
+  playSound('success');
+  flashZone('success');
+  updateStatus(`"${article.titre}" ajoute a la file (${pendingItems.length})`, 'success');
+  addToHistory('info', 'File d\'attente', `${typeLabel}: ${article.titre} (${article.statut})`, code);
+
+  updatePendingItemsDisplay();
+}
+
+/**
+ * Retire un article de la file d'attente
+ */
+function removePendingItem(index) {
+  if (index >= 0 && index < pendingItems.length) {
+    const removed = pendingItems.splice(index, 1)[0];
+    addToHistory('info', 'Retire de la file', removed.article.titre, removed.code);
+    updatePendingItemsDisplay();
+  }
+}
+
+/**
+ * Vide la file d'attente
+ */
+function clearPendingItems() {
+  if (pendingItems.length === 0) return;
+
+  if (confirm(`Vider la file d'attente (${pendingItems.length} articles) ?`)) {
+    pendingItems = [];
+    updatePendingItemsDisplay();
+    addToHistory('info', 'File videe', 'Tous les articles retires');
+  }
+}
+
+/**
+ * Traite tous les articles en attente pour l'adherent selectionne
+ */
+async function flushPendingItems() {
+  if (!currentAdherent || pendingItems.length === 0) return;
+
+  const itemsToProcess = [...pendingItems];
+  pendingItems = [];
+  updatePendingItemsDisplay();
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const item of itemsToProcess) {
+    try {
+      if (item.article.statut === 'disponible') {
+        await createEmpruntSilent(item.article, item.articleType);
+        successCount++;
+      } else if (item.article.statut === 'emprunte') {
+        await processRetourSilent(item.article, item.articleType);
+        successCount++;
+      } else {
+        // Statut non gere - erreur silencieuse dans l'historique
+        addToHistory('error', 'Non traite', `${item.article.titre} - Statut: ${item.article.statut}`, item.code);
+        errorCount++;
+      }
+    } catch (error) {
+      // Erreur silencieuse dans l'historique, on continue avec les autres
+      addToHistory('error', 'Erreur traitement', `${item.article.titre}: ${error.message}`, item.code);
+      errorCount++;
+    }
+  }
+
+  // Feedback global
+  if (successCount > 0 && errorCount === 0) {
+    playSound('success');
+    flashZone('success');
+    updateStatus(`${successCount} articles traites`, 'success');
+  } else if (successCount > 0 && errorCount > 0) {
+    playSound('success');
+    updateStatus(`${successCount} OK, ${errorCount} erreurs`, 'error');
+  } else if (errorCount > 0) {
+    playSound('error');
+    flashZone('error');
+    updateStatus(`${errorCount} erreurs`, 'error');
+  }
+}
+
+/**
+ * Cree un emprunt sans feedback UI (pour traitement en lot)
+ * @param {Object} article - L'article a emprunter
+ * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
+ */
+async function createEmpruntSilent(article, articleType = 'jeu') {
+  const dateRetour = new Date();
+  dateRetour.setDate(dateRetour.getDate() + DEFAULT_LOAN_DAYS);
+
+  // Construire l'objet d'emprunt avec le bon ID selon le type
+  const empruntData = {
+    adherent_id: currentAdherent.id,
+    date_retour_prevue: dateRetour.toISOString().split('T')[0]
+  };
+  empruntData[`${articleType}_id`] = article.id;
+
+  await empruntsAPI.create(empruntData);
+
+  const typeLabel = getArticleTypeLabel(articleType);
+  addToHistory('success', 'Emprunt', `${typeLabel}: ${article.titre} → ${currentAdherent.prenom} ${currentAdherent.nom}`, article.code_barre);
+}
+
+/**
+ * Effectue un retour sans feedback UI (pour traitement en lot)
+ * @param {Object} article - L'article a retourner
+ * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
+ */
+async function processRetourSilent(article, articleType = 'jeu') {
+  // Construire le filtre avec le bon ID selon le type
+  const filter = { statut: 'en_cours' };
+  filter[`${articleType}_id`] = article.id;
+
+  const emprunts = await empruntsAPI.getAll(filter);
+
+  if (!emprunts.emprunts || emprunts.emprunts.length === 0) {
+    throw new Error('Aucun emprunt en cours trouve');
+  }
+
+  const emprunt = emprunts.emprunts[0];
+  const adherentNom = emprunt.adherent ? `${emprunt.adherent.prenom} ${emprunt.adherent.nom}` : 'Inconnu';
+
+  await empruntsAPI.return(emprunt.id);
+
+  const typeLabel = getArticleTypeLabel(articleType);
+  addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+}
+
+/**
+ * Met a jour l'affichage de la zone des articles en attente
+ */
+function updatePendingItemsDisplay() {
+  const container = document.getElementById('pending-items-zone');
+  if (!container) return;
+
+  if (pendingItems.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+
+  const listHtml = pendingItems.map((item, index) => {
+    let badgeClass = 'bg-secondary';
+    let actionLabel = '';
+    if (item.article.statut === 'disponible') {
+      badgeClass = 'bg-success';
+      actionLabel = 'Emprunt';
+    } else if (item.article.statut === 'emprunte') {
+      badgeClass = 'bg-warning text-dark';
+      actionLabel = 'Retour';
+    }
+
+    const icon = getArticleTypeIcon(item.articleType);
+
+    return `
+      <div class="pending-item">
+        <div class="pending-item-info">
+          <i class="bi ${icon}"></i>
+          <span class="pending-item-title">${item.article.titre}</span>
+          <span class="badge ${badgeClass} badge-sm">${actionLabel || item.article.statut}</span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger" onclick="removePendingItem(${index})" title="Retirer">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="pending-items-header">
+      <h6><i class="bi bi-hourglass-split"></i> Articles en attente (${pendingItems.length})</h6>
+      <button class="btn btn-sm btn-outline-secondary" onclick="clearPendingItems()" title="Vider la file">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>
+    <div class="pending-items-list">
+      ${listHtml}
+    </div>
+    <p class="pending-items-hint">
+      <i class="bi bi-info-circle"></i> Scannez une carte adherent pour traiter ces articles
+    </p>
+  `;
+}
+
+/**
+ * Cree un emprunt avec feedback UI
+ * @param {Object} article - L'article a emprunter
+ * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
+ */
+async function createEmprunt(article, articleType = 'jeu') {
+  if (!currentAdherent) {
+    // Ouvrir la recherche d'adherent avec l'article en attente
     playSound('error');
     updateStatus('Selectionnez un adherent pour emprunter', 'error');
-    addToHistory('info', 'Adherent requis', `Emprunt de "${jeu.titre}" - Selection adherent...`, jeu.code_barre);
+    addToHistory('info', 'Adherent requis', `Emprunt de "${article.titre}" - Selection adherent...`, article.code_barre);
 
-    // Ouvrir la modal de recherche avec le jeu en attente
-    openSearchAdherent(jeu);
+    // Ouvrir la modal de recherche avec l'article en attente
+    openSearchAdherent({ article, articleType });
     return;
   }
 
@@ -292,34 +560,47 @@ async function createEmprunt(jeu) {
     const dateRetour = new Date();
     dateRetour.setDate(dateRetour.getDate() + DEFAULT_LOAN_DAYS);
 
-    // Creer l'emprunt via API
-    const emprunt = await empruntsAPI.create({
+    // Construire l'objet d'emprunt avec le bon ID selon le type
+    const empruntData = {
       adherent_id: currentAdherent.id,
-      jeu_id: jeu.id,
       date_retour_prevue: dateRetour.toISOString().split('T')[0]
-    });
+    };
+    empruntData[`${articleType}_id`] = article.id;
 
+    // Creer l'emprunt via API
+    await empruntsAPI.create(empruntData);
+
+    const typeLabel = getArticleTypeLabel(articleType);
     playSound('success');
     flashZone('success');
-    updateStatus(`Emprunt cree: ${jeu.titre}`, 'success');
-    addToHistory('success', 'Emprunt', `${jeu.titre} → ${currentAdherent.prenom} ${currentAdherent.nom}`, jeu.code_barre);
+    updateStatus(`Emprunt cree: ${article.titre}`, 'success');
+    addToHistory('success', 'Emprunt', `${typeLabel}: ${article.titre} → ${currentAdherent.prenom} ${currentAdherent.nom}`, article.code_barre);
 
   } catch (error) {
     console.error('Erreur creation emprunt:', error);
     playSound('error');
     flashZone('error');
     updateStatus('Erreur emprunt: ' + (error.message || 'Erreur inconnue'), 'error');
-    addToHistory('error', 'Erreur emprunt', error.message || 'Erreur inconnue', jeu.code_barre);
+    addToHistory('error', 'Erreur emprunt', error.message || 'Erreur inconnue', article.code_barre);
   }
 }
 
-async function processRetour(jeu) {
+/**
+ * Effectue un retour avec feedback UI
+ * @param {Object} article - L'article a retourner
+ * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
+ */
+async function processRetour(article, articleType = 'jeu') {
   try {
-    // Trouver l'emprunt en cours pour ce jeu
-    const emprunts = await empruntsAPI.getAll({ jeu_id: jeu.id, statut: 'en_cours' });
+    // Construire le filtre avec le bon ID selon le type
+    const filter = { statut: 'en_cours' };
+    filter[`${articleType}_id`] = article.id;
+
+    // Trouver l'emprunt en cours pour cet article
+    const emprunts = await empruntsAPI.getAll(filter);
 
     if (!emprunts.emprunts || emprunts.emprunts.length === 0) {
-      throw new Error('Aucun emprunt en cours trouve pour ce jeu');
+      throw new Error(`Aucun emprunt en cours trouve pour cet article`);
     }
 
     const emprunt = emprunts.emprunts[0];
@@ -328,17 +609,18 @@ async function processRetour(jeu) {
     // Effectuer le retour
     await empruntsAPI.return(emprunt.id);
 
+    const typeLabel = getArticleTypeLabel(articleType);
     playSound('success');
     flashZone('success');
-    updateStatus(`Retour: ${jeu.titre}`, 'success');
-    addToHistory('success', 'Retour', `${jeu.titre} (${adherentNom})`, jeu.code_barre);
+    updateStatus(`Retour: ${article.titre}`, 'success');
+    addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
 
   } catch (error) {
     console.error('Erreur retour:', error);
     playSound('error');
     flashZone('error');
     updateStatus('Erreur retour: ' + (error.message || 'Erreur inconnue'), 'error');
-    addToHistory('error', 'Erreur retour', error.message || 'Erreur inconnue', jeu.code_barre);
+    addToHistory('error', 'Erreur retour', error.message || 'Erreur inconnue', article.code_barre);
   }
 }
 
@@ -566,12 +848,12 @@ document.addEventListener('fullscreenchange', () => {
 
 let searchAdherentTimeout = null;
 let searchJeuTimeout = null;
-let pendingJeuForEmprunt = null; // Jeu en attente d'un adherent pour emprunt
+let pendingArticleForEmprunt = null; // Article en attente d'un adherent pour emprunt { article, articleType }
 
 function openSearchAdherent(forEmprunt = false) {
   if (forEmprunt) {
     // Stocke qu'on cherche un adherent pour un emprunt en attente
-    pendingJeuForEmprunt = forEmprunt;
+    pendingArticleForEmprunt = forEmprunt;
   }
 
   const modal = new bootstrap.Modal(document.getElementById('searchAdherentModal'));
@@ -643,7 +925,7 @@ function selectAdherentFromSearch(id, prenom, nom, email, statut, code_barre) {
     flashZone('error');
     updateStatus(`Adherent ${statut}`, 'error');
     addToHistory('error', 'Adherent non actif', `${prenom} ${nom} - Statut: ${statut}`, code_barre);
-    pendingJeuForEmprunt = null;
+    pendingArticleForEmprunt = null;
     return;
   }
 
@@ -655,11 +937,15 @@ function selectAdherentFromSearch(id, prenom, nom, email, statut, code_barre) {
   updateStatus(`Adherent: ${prenom} ${nom}`, 'success');
   addToHistory('info', 'Adherent selectionne', `${prenom} ${nom}`, code_barre);
 
-  // Si on avait un jeu en attente d'emprunt, le traiter maintenant
-  if (pendingJeuForEmprunt && pendingJeuForEmprunt !== true) {
-    const jeu = pendingJeuForEmprunt;
-    pendingJeuForEmprunt = null;
-    setTimeout(() => createEmprunt(jeu), 300);
+  // Si on avait un article en attente d'emprunt, le traiter
+  if (pendingArticleForEmprunt && pendingArticleForEmprunt !== true) {
+    const { article, articleType } = pendingArticleForEmprunt;
+    pendingArticleForEmprunt = null;
+    setTimeout(() => createEmprunt(article, articleType), 300);
+  }
+  // Si des articles sont en attente dans la nouvelle file, les traiter
+  else if (pendingItems.length > 0) {
+    setTimeout(() => flushPendingItems(), 300);
   }
 }
 
@@ -737,8 +1023,8 @@ async function selectJeuFromSearch(jeuId) {
       throw new Error('Jeu non trouve');
     }
 
-    // Traiter comme un scan de jeu
-    await handleJeuScan({ jeu, code: jeu.code_barre });
+    // Traiter comme un scan d'article de type jeu
+    await handleArticleScan({ type: 'jeu', jeu, code: jeu.code_barre });
 
   } catch (error) {
     console.error('Erreur selection jeu:', error);

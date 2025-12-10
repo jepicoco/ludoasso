@@ -76,6 +76,7 @@ const getJeuBarcodeImage = async (req, res) => {
  * Scan and validate barcode
  * POST /api/barcodes/scan
  * Body: { code: "ADH00000001" }
+ * Supports: ADH (adherent), JEU, LIV (livre), FLM (film), DSQ (disque)
  */
 const scanBarcode = async (req, res) => {
   try {
@@ -97,6 +98,8 @@ const scanBarcode = async (req, res) => {
     }
 
     let entity = null;
+    let responseType = decoded.type;
+
     if (decoded.type === 'utilisateur') {
       entity = await Utilisateur.findByPk(decoded.id);
       if (!entity) {
@@ -105,21 +108,52 @@ const scanBarcode = async (req, res) => {
           message: 'Usager non trouve'
         });
       }
+      responseType = 'adherent'; // Pour compatibilite frontend
     } else if (decoded.type === 'jeu') {
       entity = await Jeu.findByPk(decoded.id);
       if (!entity) {
         return res.status(404).json({
           error: 'Not found',
-          message: 'Jeu not found'
+          message: 'Jeu non trouve'
         });
       }
+    } else if (decoded.type === 'livre') {
+      entity = await Livre.findByPk(decoded.id);
+      if (!entity) {
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Livre non trouve'
+        });
+      }
+    } else if (decoded.type === 'film') {
+      entity = await Film.findByPk(decoded.id);
+      if (!entity) {
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Film non trouve'
+        });
+      }
+    } else if (decoded.type === 'cd' || decoded.type === 'disque') {
+      entity = await Disque.findByPk(decoded.id);
+      if (!entity) {
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Disque non trouve'
+        });
+      }
+      responseType = 'disque';
+    } else {
+      return res.status(400).json({
+        error: 'Invalid barcode',
+        message: `Type de code-barre non supporte: ${decoded.type}`
+      });
     }
 
     res.json({
-      type: decoded.type,
+      type: responseType,
       id: decoded.id,
       code,
-      [decoded.type]: entity
+      [responseType]: entity
     });
   } catch (error) {
     console.error('Scan barcode error:', error);
