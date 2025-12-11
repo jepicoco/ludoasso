@@ -304,6 +304,7 @@
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
   <script>
     let allConfigs = [];
     let providers = [];
@@ -312,6 +313,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('parametres');
+      renderSubNav('services-externes', 'apis-externes');
       modalConfig = new bootstrap.Modal(document.getElementById('modalConfig'));
       modalStats = new bootstrap.Modal(document.getElementById('modalStats'));
       await loadProviders();

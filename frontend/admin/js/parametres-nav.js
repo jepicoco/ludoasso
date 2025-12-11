@@ -29,10 +29,19 @@ const PARAMETRES_CATEGORIES = {
     label: 'Communication',
     icon: 'bi-envelope',
     pages: [
+      { id: 'templates', label: 'Templates de messages', href: 'parametres-templates.html', icon: 'bi-file-text' },
+      { id: 'declencheurs', label: 'Declencheurs', href: 'parametres-declencheurs.html', icon: 'bi-lightning' },
+      { id: 'historique', label: 'Historique', href: 'historique-communications.html', icon: 'bi-clock-history' }
+    ]
+  },
+  'services-externes': {
+    label: 'Services externes',
+    icon: 'bi-cloud',
+    pages: [
       { id: 'email', label: 'Configuration Email', href: 'parametres-email.html', icon: 'bi-envelope-at' },
       { id: 'sms', label: 'Configuration SMS', href: 'parametres-sms.html', icon: 'bi-phone' },
-      { id: 'templates', label: 'Templates', href: 'parametres-templates.html', icon: 'bi-file-text' },
-      { id: 'declencheurs', label: 'Declencheurs', href: 'parametres-declencheurs.html', icon: 'bi-lightning' }
+      { id: 'ia', label: 'Intelligence Artificielle', href: 'parametres-llm.html', icon: 'bi-robot' },
+      { id: 'apis-externes', label: 'APIs Externes', href: 'parametres-apis-externes.html', icon: 'bi-cloud-download' }
     ]
   },
   emprunts: {
@@ -47,7 +56,6 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-collection',
     pages: [
       { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' },
-      { id: 'apis-externes', label: 'APIs Externes', href: 'parametres-apis-externes.html', icon: 'bi-cloud-download' },
       { id: 'exports-comptables', label: 'Exports Comptables', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' }
     ]
   },
@@ -140,6 +148,7 @@ function getParametresLink(category) {
     general: 'general',
     comptabilite: 'comptabilite',
     communication: 'communication',
+    'services-externes': 'services-externes',
     emprunts: 'emprunts',
     catalogue: 'catalogue',
     'site-web': 'site-web',
