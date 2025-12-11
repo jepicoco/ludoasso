@@ -231,6 +231,15 @@ const startServer = async () => {
     await sequelize.sync({ alter: false });
     logger.info('Database models synchronized');
 
+    // Initialize default modules (first install)
+    try {
+      const initModulesActifs = require('../database/migrations/addModulesActifs');
+      await initModulesActifs();
+      logger.info('Modules actifs initialized');
+    } catch (err) {
+      logger.warn('Modules actifs initialization skipped or failed:', err.message);
+    }
+
     // Initialize email service
     const emailService = require('./services/emailService');
     await emailService.initialize();
