@@ -5,12 +5,15 @@ const { ThemeSite, ParametresFront } = require('../models');
  */
 class ThemesSiteController {
   /**
-   * Recupere tous les themes actifs
+   * Recupere tous les themes (actifs et inactifs pour l'admin)
    * GET /api/parametres/themes
    */
   static async getAll(req, res) {
     try {
-      const themes = await ThemeSite.getActifs();
+      // Retourner tous les themes pour l'admin (le filtrage se fait cote frontend)
+      const themes = await ThemeSite.findAll({
+        order: [['ordre_affichage', 'ASC'], ['nom', 'ASC']]
+      });
 
       res.json({
         themes: themes.map(t => ({
@@ -20,8 +23,17 @@ class ThemesSiteController {
           description: t.description,
           type: t.type,
           mode: t.mode,
+          actif: t.actif,
           couleur_primaire: t.couleur_primaire,
           couleur_secondaire: t.couleur_secondaire,
+          couleur_accent: t.couleur_accent,
+          couleur_fond_principal: t.couleur_fond_principal,
+          couleur_fond_secondaire: t.couleur_fond_secondaire,
+          couleur_texte_principal: t.couleur_texte_principal,
+          couleur_texte_secondaire: t.couleur_texte_secondaire,
+          navbar_style: t.navbar_style,
+          shadow_style: t.shadow_style,
+          border_radius: t.border_radius,
           preview_image: t.preview_image,
           ordre_affichage: t.ordre_affichage
         }))
