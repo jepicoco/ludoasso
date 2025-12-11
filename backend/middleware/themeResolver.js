@@ -164,24 +164,31 @@ function createThemeResolverMiddleware(frontendPath) {
     // Ne traiter que les pages HTML publiques surchargeables
     const requestedFile = req.path === '/' ? 'index.html' : req.path.substring(1);
 
+    console.log(`[ThemeResolver] Request: ${req.path} -> ${requestedFile}`);
+
     if (!OVERRIDABLE_PAGES.includes(requestedFile)) {
+      console.log(`[ThemeResolver] Not overridable, skipping`);
       return next();
     }
 
     try {
       const themeCode = await getActiveThemeCode();
+      console.log(`[ThemeResolver] Active theme: ${themeCode}`);
 
       if (themeCode) {
         const themeFilePath = getThemeFilePath(themeCode, requestedFile, frontendPath);
+        console.log(`[ThemeResolver] Theme file path: ${themeFilePath}`);
 
         if (themeFilePath) {
           // Le fichier existe dans le thème, on le sert
+          console.log(`[ThemeResolver] Serving theme file: ${themeFilePath}`);
           return res.sendFile(themeFilePath);
         }
       }
 
       // Fallback : servir le fichier par défaut depuis frontend/
       const defaultFilePath = path.join(frontendPath, requestedFile);
+      console.log(`[ThemeResolver] Fallback to default: ${defaultFilePath}`);
       if (fs.existsSync(defaultFilePath)) {
         return res.sendFile(defaultFilePath);
       }

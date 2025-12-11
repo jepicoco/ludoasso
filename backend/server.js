@@ -122,19 +122,27 @@ app.get('/connexion.html', (req, res) => {
 });
 
 // Theme resolver middleware - gère le fallback des fichiers de thème
-// IMPORTANT: Doit être AVANT express.static pour intercepter les pages surchargeables
 const frontendPath = path.join(__dirname, '../frontend');
 
 // Route pour les ressources statiques du thème actif (/theme/css/*, /theme/js/*, etc.)
 app.use('/theme', createThemeStaticMiddleware(frontendPath));
 
-// Middleware de résolution des thèmes pour les pages HTML publiques
-// Intercepte /, /catalogue.html, /fiche.html, etc. et sert la version du thème si elle existe
-app.use(checkMaintenance, createThemeResolverMiddleware(frontendPath));
+// Pages publiques avec résolution de thème - ROUTES EXPLICITES
+// Ces routes DOIVENT être avant express.static pour avoir priorité
+const themeResolverMiddleware = createThemeResolverMiddleware(frontendPath);
 
-// Serve static files from frontend (sans servir index.html automatiquement)
-// Fallback pour les fichiers non trouvés dans le thème
-app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
+app.get('/', checkMaintenance, themeResolverMiddleware);
+app.get('/index.html', checkMaintenance, themeResolverMiddleware);
+app.get('/catalogue.html', checkMaintenance, themeResolverMiddleware);
+app.get('/fiche.html', checkMaintenance, themeResolverMiddleware);
+app.get('/infos.html', checkMaintenance, themeResolverMiddleware);
+app.get('/mentions-legales.html', checkMaintenance, themeResolverMiddleware);
+app.get('/cgu.html', checkMaintenance, themeResolverMiddleware);
+app.get('/cgv.html', checkMaintenance, themeResolverMiddleware);
+app.get('/contact.html', checkMaintenance, themeResolverMiddleware);
+
+// Serve static files from frontend (pour les autres fichiers: JS, CSS, images, etc.)
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.get('/api', (req, res) => {
   res.json({
