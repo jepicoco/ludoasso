@@ -267,6 +267,15 @@ const startServer = async () => {
       logger.warn('Event triggers initialization skipped or failed:', err.message);
     }
 
+    // Initialize default themes (first install)
+    try {
+      const seedThemes = require('../database/seeds/seedThemes');
+      await seedThemes();
+      logger.info('Themes initialized');
+    } catch (err) {
+      logger.warn('Themes initialization skipped or failed:', err.message);
+    }
+
     // Initialize email service
     const emailService = require('./services/emailService');
     await emailService.initialize();

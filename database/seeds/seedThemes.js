@@ -196,6 +196,11 @@ async function run() {
   }
 }
 
-run()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+// Exécution si appelé directement
+if (require.main === module) {
+  run()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
+
+module.exports = run;
