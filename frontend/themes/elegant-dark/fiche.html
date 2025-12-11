@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Fiche - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Fiche Detail - Elegant Dark Theme - Minimal Clean */
+    .fiche-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 3rem;
+      font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .breadcrumb a:hover {
+      color: var(--text-color);
+    }
+
+    .breadcrumb i {
+      color: var(--surface-light);
+      font-size: 0.75rem;
+    }
+
+    .breadcrumb .current {
+      color: var(--text-color);
+    }
+
+    /* Main Layout */
+    .fiche-layout {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 4rem;
+    }
+
+    /* Image Column */
+    .image-column {
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+
+    .image-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .image-wrapper {
+      aspect-ratio: 1;
+      background: var(--background);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-wrapper .placeholder {
+      font-size: 5rem;
+      color: var(--surface-light);
+    }
+
+    .type-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 0.375rem 0.875rem;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .type-badge.jeux { color: #fbbf24; }
+    .type-badge.livres { color: #3b82f6; }
+    .type-badge.films { color: #a855f7; }
+    .type-badge.disques { color: #22d3ee; }
+
+    .status-indicator {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.875rem;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-dot.disponible {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .status-dot.emprunte {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    /* Content Column */
+    .content-column {
+      padding-top: 1rem;
+    }
+
+    .fiche-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .fiche-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    /* Specs */
+    .specs-row {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .spec {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spec .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-color);
+    }
+
+    .spec .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Description */
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .description-text {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text-color);
+      margin-bottom: 3rem;
+    }
+
+    /* Details Grid */
+    .details-section {
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .detail-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-item .label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .detail-item .value {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    /* Actions */
+    .actions-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn-dark {
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-dark.primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+    }
+
+    .btn-dark.primary:hover {
+      filter: brightness(1.1);
+      box-shadow: var(--glow);
+    }
+
+    .btn-dark.ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-color);
+    }
+
+    .btn-dark.ghost:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-light);
+    }
+
+    /* Loading & Error */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6rem;
+    }
+
+    .loading-state i {
+      font-size: 3rem;
+      color: var(--primary-color);
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 6rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      max-width: 500px;
+      margin: 4rem auto;
+    }
+
+    .error-state i {
+      font-size: 4rem;
+      color: #ef4444;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .fiche-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .image-column {
+        position: static;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      .fiche-title {
+        font-size: 2rem;
+      }
+
+      .specs-row {
+        flex-wrap: wrap;
+      }
+
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-hexagon"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">À propos</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">Connexion</a>
+    </div>
+  </header>
+
+  <!-- Fiche Content -->
+  <div class="fiche-container" id="fiche-container">
+    <div class="loading-state" id="loading">
+      <i class="bi bi-arrow-repeat"></i>
+      <span>Chargement...</span>
+    </div>
+  </div>
+
+  <!-- Error State (hidden by default) -->
+  <div class="error-state" id="error-state" style="display: none;">
+    <i class="bi bi-exclamation-circle"></i>
+    <h3>Article introuvable</h3>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">L'article demandé n'existe pas ou a été supprimé.</p>
+    <a href="/catalogue.html" class="btn-dark primary">
+      <i class="bi bi-arrow-left"></i> Retour au catalogue
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <a href="/" class="logo">
+          <i class="bi bi-hexagon"></i>
+          <span id="footer-brand-name">Assotheque</span>
+        </a>
+        <p>Votre médiathèque associative.</p>
+      </div>
+      <div class="footer-section">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Informations</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Légal</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const collection = params.get('collection');
+    const id = params.get('id');
+
+    async function loadFiche() {
+      if (!collection || !id) {
+        showError();
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/public/${collection}/${id}`);
+        if (!resp.ok) {
+          showError();
+          return;
+        }
+
+        const item = await resp.json();
+        renderFiche(item);
+      } catch (e) {
+        showError();
+      }
+    }
+
+    function showError() {
+      document.getElementById('fiche-container').style.display = 'none';
+      document.getElementById('error-state').style.display = 'block';
+    }
+
+    function renderFiche(item) {
+      const title = item.nom || item.titre;
+      document.getElementById('site-title').textContent = `${title} - Assotheque`;
+
+      const container = document.getElementById('fiche-container');
+      container.innerHTML = `
+        <nav class="breadcrumb">
+          <a href="/">Accueil</a>
+          <i class="bi bi-chevron-right"></i>
+          <a href="/catalogue.html">Catalogue</a>
+          <i class="bi bi-chevron-right"></i>
+          <span class="current">${title}</span>
+        </nav>
+
+        <div class="fiche-layout">
+          <div class="image-column">
+            <div class="image-card">
+              <div class="image-wrapper">
+                ${item.image_url
+                  ? `<img src="${item.image_url}" alt="${title}">`
+                  : `<i class="bi bi-${getIcon(collection)} placeholder"></i>`
+                }
+              </div>
+              <span class="type-badge ${collection}">${getLabel(collection)}</span>
+              <span class="status-indicator">
+                <span class="status-dot ${item.statut || 'disponible'}"></span>
+                ${item.statut === 'disponible' ? 'Disponible' : 'Emprunté'}
+              </span>
+            </div>
+          </div>
+
+          <div class="content-column">
+            <h1 class="fiche-title">${title}</h1>
+            <p class="fiche-subtitle">${getSubtitle(item)}</p>
+
+            <div class="specs-row">
+              ${getSpecs(item)}
+            </div>
+
+            <div class="description-section">
+              <h3 class="section-title">Description</h3>
+              <p class="description-text">${item.description || 'Aucune description disponible.'}</p>
+            </div>
+
+            <div class="details-section">
+              <h3 class="section-title">Détails</h3>
+              <div class="details-grid">
+                ${getDetails(item)}
+              </div>
+            </div>
+
+            <div class="actions-section">
+              <a href="/usager/login.html" class="btn-dark primary">
+                <i class="bi bi-person"></i> Se connecter pour emprunter
+              </a>
+              <a href="/catalogue.html?collection=${collection}" class="btn-dark ghost">
+                <i class="bi bi-arrow-left"></i> Retour
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getIcon(c) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[c] || 'box';
+    }
+
+    function getLabel(c) {
+      return { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' }[c] || '';
+    }
+
+    function getSubtitle(item) {
+      if (collection === 'jeux') return item.editeur || '';
+      if (collection === 'livres') return `par ${item.auteur || 'Auteur inconnu'}`;
+      if (collection === 'films') return `réalisé par ${item.realisateur || 'Réalisateur inconnu'}`;
+      if (collection === 'disques') return `par ${item.artiste || 'Artiste inconnu'}`;
+      return '';
+    }
+
+    function getSpecs(item) {
+      let html = '';
+      if (collection === 'jeux') {
+        if (item.joueurs_min || item.joueurs_max) {
+          html += `<div class="spec"><span class="value">${item.joueurs_min || '?'}-${item.joueurs_max || '?'}</span><span class="label">Joueurs</span></div>`;
+        }
+        if (item.duree) {
+          html += `<div class="spec"><span class="value">${item.duree}'</span><span class="label">Durée</span></div>`;
+        }
+        if (item.age_minimum) {
+          html += `<div class="spec"><span class="value">${item.age_minimum}+</span><span class="label">Âge min.</span></div>`;
+        }
+      }
+      if (collection === 'livres') {
+        if (item.annee) html += `<div class="spec"><span class="value">${item.annee}</span><span class="label">Année</span></div>`;
+        if (item.pages) html += `<div class="spec"><span class="value">${item.pages}</span><span class="label">Pages</span></div>`;
+      }
+      if (collection === 'films') {
+        if (item.annee) html += `<div class="spec"><span class="value">${item.annee}</span><span class="label">Année</span></div>`;
+        if (item.duree) html += `<div class="spec"><span class="value">${item.duree}'</span><span class="label">Durée</span></div>`;
+      }
+      if (collection === 'disques') {
+        if (item.annee) html += `<div class="spec"><span class="value">${item.annee}</span><span class="label">Année</span></div>`;
+      }
+      return html || '<div class="spec"><span class="value">—</span><span class="label">Info</span></div>';
+    }
+
+    function getDetails(item) {
+      const exclude = ['id', 'image_url', 'created_at', 'updated_at', 'deletedAt', 'description'];
+      const fields = Object.entries(item).filter(([k, v]) => v && !exclude.includes(k));
+
+      return fields.slice(0, 8).map(([key, value]) => `
+        <div class="detail-item">
+          <span class="label">${formatLabel(key)}</span>
+          <span class="value">${value}</span>
+        </div>
+      `).join('');
+    }
+
+    function formatLabel(key) {
+      const labels = {
+        nom: 'Nom', titre: 'Titre', auteur: 'Auteur', editeur: 'Éditeur',
+        realisateur: 'Réalisateur', artiste: 'Artiste', annee: 'Année',
+        duree: 'Durée', pages: 'Pages', isbn: 'ISBN', statut: 'Statut',
+        joueurs_min: 'Joueurs min', joueurs_max: 'Joueurs max', age_minimum: 'Âge minimum'
+      };
+      return labels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadFiche();
+  </script>
+</body>
+</html>

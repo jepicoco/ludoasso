@@ -113,6 +113,29 @@ const themesPredefinis = [
     border_radius: '8px',
     ordre_affichage: 3,
     actif: true
+  },
+  {
+    code: 'pixel-geek',
+    nom: 'Pixel Geek',
+    description: 'Theme retro gaming style Celeste avec pixel art et effets 8-bit',
+    type: 'system',
+    mode: 'dark',
+    couleur_primaire: '#ff6b9d',
+    couleur_secondaire: '#c850c0',
+    couleur_accent: '#00d4ff',
+    couleur_fond_principal: '#0d0d1a',
+    couleur_fond_secondaire: '#1a1a2e',
+    couleur_texte_principal: '#ffffff',
+    couleur_texte_secondaire: '#a0a0c0',
+    couleur_success: '#7bffa0',
+    couleur_warning: '#ffeb3b',
+    couleur_danger: '#ff4757',
+    couleur_info: '#4158d0',
+    navbar_style: 'solid',
+    shadow_style: 'pixel',
+    border_radius: '0px',
+    ordre_affichage: 4,
+    actif: true
   }
 ];
 

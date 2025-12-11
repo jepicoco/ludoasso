@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Catalogue - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Catalogue - Forest Green Theme - Organic Cards */
+    .leaf-pattern {
+      height: 200px;
+    }
+
+    .page-title {
+      text-align: center;
+      padding: 2rem;
+      color: white;
+    }
+
+    .page-title h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+    }
+
+    .catalogue-wrapper {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    /* Floating Search Card */
+    .search-card {
+      background: white;
+      border-radius: 30px;
+      padding: 1.5rem 2rem;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .search-field {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+
+    .search-field input {
+      width: 100%;
+      padding: 1rem 1rem 1rem 3rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 50px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-field input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .search-field i {
+      position: absolute;
+      left: 1.25rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+    }
+
+    /* Pill Tabs */
+    .collection-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: var(--secondary-color);
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pill-btn:hover {
+      background: rgba(5, 150, 105, 0.15);
+    }
+
+    .pill-btn.active {
+      background: var(--nature-gradient);
+      color: white;
+    }
+
+    .pill-btn i {
+      font-size: 1.1rem;
+    }
+
+    /* Results Header */
+    .results-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding: 1rem 0;
+    }
+
+    .results-text {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+
+    .results-text span {
+      color: var(--primary-color);
+    }
+
+    .view-options {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .view-option {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #e2e8f0;
+      background: white;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .view-option.active {
+      border-color: var(--primary-color);
+      background: var(--secondary-color);
+      color: var(--primary-color);
+    }
+
+    /* Organic Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+
+    .organic-card {
+      background: white;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      color: var(--text-color);
+      position: relative;
+    }
+
+    .organic-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(5, 150, 105, 0.1) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .organic-card:hover {
+      transform: translateY(-8px) rotate(-1deg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .organic-card:hover::before {
+      opacity: 1;
+    }
+
+    .card-image {
+      height: 200px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-image .placeholder-icon {
+      font-size: 4rem;
+      color: #cbd5e1;
+    }
+
+    .card-image.jeux { background: linear-gradient(180deg, #FEF3C7 0%, #FFFBEB 100%); }
+    .card-image.livres { background: linear-gradient(180deg, #DBEAFE 0%, #EFF6FF 100%); }
+    .card-image.films { background: linear-gradient(180deg, #F3E8FF 0%, #FAF5FF 100%); }
+    .card-image.disques { background: linear-gradient(180deg, #D1FAE5 0%, #ECFDF5 100%); }
+
+    .collection-badge {
+      position: absolute;
+      bottom: 0.75rem;
+      left: 0.75rem;
+      padding: 0.375rem 1rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .collection-badge.jeux { color: #d97706; }
+    .collection-badge.livres { color: #2563eb; }
+    .collection-badge.films { color: #9333ea; }
+    .collection-badge.disques { color: #059669; }
+
+    .status-dot {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .status-dot.disponible { background: #22c55e; }
+    .status-dot.emprunte { background: #f59e0b; }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+
+    .card-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--secondary-color);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      transition: all 0.3s ease;
+    }
+
+    .organic-card:hover .card-action {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* List View */
+    .cards-list {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .cards-list.active {
+      display: flex;
+    }
+
+    .cards-grid:not(.active) {
+      display: none;
+    }
+
+    .cards-grid.active {
+      display: grid;
+    }
+
+    .list-card {
+      background: white;
+      border-radius: 20px;
+      padding: 1rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 1.5rem;
+      text-decoration: none;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+    }
+
+    .list-card:hover {
+      transform: translateX(8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .list-card .card-image {
+      width: 150px;
+      height: 150px;
+      border-radius: 16px;
+      flex-shrink: 0;
+    }
+
+    .list-card .card-body {
+      padding: 0.5rem 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: white;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #d1d5db;
+      margin-bottom: 1rem;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 3rem;
+    }
+
+    .pagination-pills {
+      display: flex;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.5rem;
+      border-radius: 50px;
+      box-shadow: var(--shadow);
+    }
+
+    .page-pill {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .page-pill:hover:not(:disabled) {
+      background: var(--secondary-color);
+    }
+
+    .page-pill.active {
+      background: var(--nature-gradient);
+      color: white;
+    }
+
+    @media (max-width: 768px) {
+      .search-card {
+        flex-direction: column;
+      }
+
+      .collection-pills {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .list-card {
+        flex-direction: column;
+      }
+
+      .list-card .card-image {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="leaf-pattern"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tree"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html" class="active">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">Mon Espace</a>
+    </div>
+  </header>
+
+  <!-- Page Title -->
+  <div class="page-title">
+    <h1>Explorez le Catalogue</h1>
+    <p>Trouvez votre prochaine aventure parmi nos collections</p>
+  </div>
+
+  <!-- Catalogue -->
+  <div class="catalogue-wrapper">
+    <!-- Search Card -->
+    <div class="search-card">
+      <div class="search-field">
+        <i class="bi bi-search"></i>
+        <input type="text" id="search" placeholder="Rechercher par titre, auteur, thème...">
+      </div>
+      <div class="collection-pills">
+        <button class="pill-btn active" data-collection="all">
+          <i class="bi bi-grid-3x3-gap"></i> Tout
+        </button>
+        <button class="pill-btn" data-collection="jeux">
+          <i class="bi bi-dice-6"></i> Jeux
+        </button>
+        <button class="pill-btn" data-collection="livres">
+          <i class="bi bi-book"></i> Livres
+        </button>
+        <button class="pill-btn" data-collection="films">
+          <i class="bi bi-film"></i> Films
+        </button>
+        <button class="pill-btn" data-collection="disques">
+          <i class="bi bi-vinyl"></i> Disques
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Bar -->
+    <div class="results-bar">
+      <span class="results-text"><span id="count">0</span> résultats trouvés</span>
+      <div class="view-options">
+        <button class="view-option active" data-view="grid"><i class="bi bi-grid-3x3"></i></button>
+        <button class="view-option" data-view="list"><i class="bi bi-list"></i></button>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div class="cards-grid active" id="grid-view"></div>
+
+    <!-- List View -->
+    <div class="cards-list" id="list-view"></div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty-state" style="display: none;">
+      <i class="bi bi-search"></i>
+      <h3>Aucun résultat</h3>
+      <p>Essayez d'autres mots-clés ou changez de collection</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <div class="pagination-pills" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens</h4>
+        <ul>
+          <li><a href="/mentions-legales.html"><i class="bi bi-file-text"></i> Mentions légales</a></li>
+          <li><a href="/cgu.html"><i class="bi bi-shield-check"></i> CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <script>
+    // State
+    let collection = 'all';
+    let search = '';
+    let view = 'grid';
+    let items = [];
+
+    // Elements
+    const searchInput = document.getElementById('search');
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const emptyEl = document.getElementById('empty-state');
+    const countEl = document.getElementById('count');
+
+    // Events
+    document.querySelectorAll('.pill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        collection = btn.dataset.collection;
+        loadItems();
+      });
+    });
+
+    document.querySelectorAll('.view-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        view = btn.dataset.view;
+        toggleView();
+      });
+    });
+
+    searchInput.addEventListener('input', debounce(() => {
+      search = searchInput.value;
+      loadItems();
+    }, 300));
+
+    async function loadItems() {
+      let all = [];
+      const cols = collection === 'all' ? ['jeux', 'livres', 'films', 'disques'] : [collection];
+
+      for (const c of cols) {
+        const params = new URLSearchParams();
+        if (search) params.append('search', search);
+        const resp = await fetch(`/api/public/${c}?${params}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          all = all.concat((data.items || data).map(i => ({ ...i, collection: c })));
+        }
+      }
+
+      items = all;
+      render();
+    }
+
+    function render() {
+      countEl.textContent = items.length;
+
+      if (items.length === 0) {
+        gridView.style.display = 'none';
+        listView.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+
+      // Grid
+      gridView.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="organic-card">
+          <div class="card-image ${item.collection}">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder-icon"></i>`
+            }
+            <span class="collection-badge ${item.collection}">${getLabel(item.collection)}</span>
+            <span class="status-dot ${item.statut || 'disponible'}"></span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">${item.nom || item.titre}</h3>
+            <p class="card-meta">
+              <i class="bi bi-${getMetaIcon(item.collection)}"></i>
+              ${getMeta(item)}
+            </p>
+            <span class="card-action">
+              <i class="bi bi-arrow-right-circle"></i> Voir la fiche
+            </span>
+          </div>
+        </a>
+      `).join('');
+
+      // List
+      listView.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="list-card">
+          <div class="card-image ${item.collection}">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder-icon"></i>`
+            }
+            <span class="status-dot ${item.statut || 'disponible'}"></span>
+          </div>
+          <div class="card-body">
+            <span class="collection-badge ${item.collection}">${getLabel(item.collection)}</span>
+            <h3 class="card-title">${item.nom || item.titre}</h3>
+            <p class="card-meta">
+              <i class="bi bi-${getMetaIcon(item.collection)}"></i>
+              ${getMeta(item)}
+            </p>
+          </div>
+        </a>
+      `).join('');
+
+      toggleView();
+    }
+
+    function toggleView() {
+      if (view === 'grid') {
+        gridView.classList.add('active');
+        listView.classList.remove('active');
+      } else {
+        gridView.classList.remove('active');
+        listView.classList.add('active');
+      }
+    }
+
+    function getIcon(c) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[c] || 'box';
+    }
+
+    function getLabel(c) {
+      return { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' }[c] || '';
+    }
+
+    function getMetaIcon(c) {
+      return { jeux: 'people', livres: 'person', films: 'camera-reels', disques: 'music-note' }[c] || 'info';
+    }
+
+    function getMeta(item) {
+      if (item.collection === 'jeux') return `${item.joueurs_min || '?'}-${item.joueurs_max || '?'} joueurs`;
+      if (item.collection === 'livres') return item.auteur || '';
+      if (item.collection === 'films') return item.realisateur || '';
+      if (item.collection === 'disques') return item.artiste || '';
+      return '';
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+
+    // Init
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('collection')) {
+      collection = params.get('collection');
+      document.querySelectorAll('.pill-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.collection === collection);
+      });
+    }
+    if (params.get('q')) {
+      search = params.get('q');
+      searchInput.value = search;
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadItems();
+  </script>
+</body>
+</html>

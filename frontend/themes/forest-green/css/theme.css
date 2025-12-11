@@ -1,0 +1,465 @@
+/* Theme Forest Green - Organic Nature Design */
+
+:root {
+  --primary-color: #059669;
+  --primary-light: #34d399;
+  --primary-dark: #047857;
+  --secondary-color: #ecfdf5;
+  --accent-color: #f59e0b;
+  --accent-light: #fcd34d;
+  --text-color: #1f2937;
+  --text-light: #6b7280;
+  --background: #f3f4f6;
+  --card-bg: #ffffff;
+  --nature-gradient: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%);
+  --shadow: 0 4px 20px rgba(5, 150, 105, 0.15);
+  --shadow-lg: 0 10px 40px rgba(5, 150, 105, 0.2);
+  --border-radius: 20px;
+  --border-radius-full: 9999px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
+  background: var(--background);
+  min-height: 100vh;
+  color: var(--text-color);
+}
+
+/* Decorative leaves pattern */
+.leaf-pattern {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 400px;
+  background: var(--nature-gradient);
+  clip-path: ellipse(80% 100% at 50% 0%);
+  z-index: -1;
+}
+
+/* Header - Organic Rounded */
+.site-header {
+  background: white;
+  box-shadow: var(--shadow);
+  border-radius: 0 0 30px 30px;
+  margin: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo i {
+  font-size: 2rem;
+  background: var(--nature-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  background: var(--secondary-color);
+  padding: 0.5rem;
+  border-radius: var(--border-radius-full);
+}
+
+.nav-menu a {
+  color: var(--text-color);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius-full);
+  transition: all 0.3s ease;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-login {
+  background: var(--nature-gradient);
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--border-radius-full);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow);
+}
+
+.btn-login:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Hero Section - Organic Shapes */
+.hero {
+  padding: 4rem 2rem 6rem;
+  text-align: center;
+  color: white;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hero p {
+  font-size: 1.25rem;
+  opacity: 0.95;
+  margin-bottom: 2rem;
+}
+
+/* Search - Floating Pill */
+.search-wrapper {
+  background: white;
+  border-radius: var(--border-radius-full);
+  padding: 0.5rem;
+  max-width: 650px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 1rem 1.5rem;
+  border: none;
+  font-size: 1.1rem;
+  outline: none;
+  background: transparent;
+  border-radius: var(--border-radius-full);
+}
+
+.search-bar button {
+  background: var(--nature-gradient);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--border-radius-full);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-bar button:hover {
+  transform: scale(1.02);
+}
+
+/* Main Content - Card Garden */
+.main-content {
+  max-width: 1400px;
+  margin: -3rem auto 0;
+  padding: 0 2rem;
+  position: relative;
+}
+
+/* Stats Row */
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  background: white;
+  padding: 1rem 2rem;
+  border-radius: var(--border-radius-full);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s ease;
+}
+
+.stat-pill:hover {
+  transform: translateY(-3px);
+}
+
+.stat-pill i {
+  font-size: 1.5rem;
+  color: var(--primary-color);
+}
+
+.stat-pill .number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.stat-pill .label {
+  color: var(--text-light);
+  font-size: 0.85rem;
+}
+
+/* Collections - Organic Grid */
+.collections-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 2rem;
+  color: var(--primary-dark);
+}
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.collection-card {
+  background: white;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--text-color);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow);
+  position: relative;
+}
+
+.collection-card:hover {
+  transform: translateY(-10px) rotate(-1deg);
+  box-shadow: var(--shadow-lg);
+}
+
+.collection-card .card-icon {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.collection-card .card-icon::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  border-radius: 50%;
+  top: -50%;
+  opacity: 0.3;
+}
+
+.collection-card .card-icon i {
+  font-size: 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.collection-card.jeux .card-icon {
+  background: linear-gradient(180deg, #FEF3C7 0%, #FFFBEB 100%);
+  color: #d97706;
+}
+
+.collection-card.jeux .card-icon::before {
+  background: #fcd34d;
+}
+
+.collection-card.livres .card-icon {
+  background: linear-gradient(180deg, #DBEAFE 0%, #EFF6FF 100%);
+  color: #2563eb;
+}
+
+.collection-card.livres .card-icon::before {
+  background: #60a5fa;
+}
+
+.collection-card.films .card-icon {
+  background: linear-gradient(180deg, #F3E8FF 0%, #FAF5FF 100%);
+  color: #9333ea;
+}
+
+.collection-card.films .card-icon::before {
+  background: #c084fc;
+}
+
+.collection-card.disques .card-icon {
+  background: linear-gradient(180deg, #D1FAE5 0%, #ECFDF5 100%);
+  color: #059669;
+}
+
+.collection-card.disques .card-icon::before {
+  background: #34d399;
+}
+
+.collection-card .card-content {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.collection-card h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.collection-card .count {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.collection-card .explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--secondary-color);
+  border-radius: var(--border-radius-full);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  transition: all 0.3s ease;
+}
+
+.collection-card:hover .explore-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Footer - Nature Theme */
+.site-footer {
+  background: var(--primary-dark);
+  color: white;
+  padding: 4rem 2rem 2rem;
+  margin-top: 6rem;
+  position: relative;
+}
+
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: var(--background);
+  clip-path: ellipse(55% 100% at 50% 0%);
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
+}
+
+.footer-section h4 {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-light);
+}
+
+.footer-section ul {
+  list-style: none;
+}
+
+.footer-section a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  line-height: 2.2;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footer-section a:hover {
+  color: white;
+  padding-left: 0.5rem;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  margin-top: 3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .site-header {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .header-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .stats-row {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stat-pill {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  .leaf-pattern {
+    height: 300px;
+  }
+}

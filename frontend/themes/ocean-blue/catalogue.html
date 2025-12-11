@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Catalogue - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Catalogue Page Styles - Ocean Blue Theme */
+    .page-content {
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    /* Side-by-side layout */
+    .catalogue-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    /* Sidebar Filters */
+    .filters-sidebar {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+    }
+
+    .filter-section {
+      margin-bottom: 2rem;
+    }
+
+    .filter-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    .collection-filters {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .collection-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-align: left;
+    }
+
+    .collection-btn:hover {
+      background: rgba(14, 165, 233, 0.1);
+    }
+
+    .collection-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .collection-btn i {
+      font-size: 1.25rem;
+    }
+
+    .collection-btn .count {
+      margin-left: auto;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    .search-box {
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.875rem 1rem 0.875rem 2.75rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+
+    .checkbox-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary-color);
+    }
+
+    /* Main Content */
+    .catalogue-main {
+      min-width: 0;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      background: var(--card-bg);
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .results-count {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .results-count span {
+      color: var(--primary-color);
+    }
+
+    .sort-select {
+      padding: 0.5rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    /* Masonry-like Grid */
+    .items-masonry {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .masonry-item {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .masonry-item:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .masonry-image {
+      aspect-ratio: 4/3;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .masonry-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .masonry-image .placeholder {
+      font-size: 3rem;
+      color: #cbd5e1;
+    }
+
+    .collection-tag {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .collection-tag.jeux {
+      background: rgba(251, 191, 36, 0.9);
+      color: #78350f;
+    }
+
+    .collection-tag.livres {
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+    }
+
+    .collection-tag.films {
+      background: rgba(168, 85, 247, 0.9);
+      color: white;
+    }
+
+    .collection-tag.disques {
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+    }
+
+    .status-indicator {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .status-indicator.disponible {
+      background: #22c55e;
+    }
+
+    .status-indicator.emprunte {
+      background: #f59e0b;
+    }
+
+    .masonry-content {
+      padding: 1.25rem;
+    }
+
+    .masonry-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .masonry-meta {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .masonry-meta i {
+      font-size: 0.9rem;
+    }
+
+    /* Pagination */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 3rem;
+    }
+
+    .pagination-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--card-bg);
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .page-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: rgba(14, 165, 233, 0.1);
+    }
+
+    .page-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: #cbd5e1;
+      margin-bottom: 1rem;
+    }
+
+    /* Mobile */
+    @media (max-width: 1024px) {
+      .catalogue-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-sidebar {
+        position: static;
+      }
+
+      .collection-filters {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .collection-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .items-masonry {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .masonry-content {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tsunami"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/"><i class="bi bi-house"></i> Accueil</a></li>
+          <li><a href="/catalogue.html" style="background: rgba(255,255,255,0.2); color: white;"><i class="bi bi-grid-3x3-gap"></i> Catalogue</a></li>
+          <li><a href="/infos.html"><i class="bi bi-info-circle"></i> Infos</a></li>
+          <li><a href="/contact.html"><i class="bi bi-envelope"></i> Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-box-arrow-in-right"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <div class="page-content">
+    <div class="catalogue-layout">
+      <!-- Sidebar Filters -->
+      <aside class="filters-sidebar">
+        <div class="filter-section">
+          <h3 class="filter-title">Collections</h3>
+          <div class="collection-filters">
+            <button class="collection-btn active" data-collection="all">
+              <i class="bi bi-grid-3x3-gap"></i>
+              <span>Tout</span>
+              <span class="count" id="count-all">0</span>
+            </button>
+            <button class="collection-btn" data-collection="jeux">
+              <i class="bi bi-dice-6"></i>
+              <span>Jeux</span>
+              <span class="count" id="count-jeux">0</span>
+            </button>
+            <button class="collection-btn" data-collection="livres">
+              <i class="bi bi-book"></i>
+              <span>Livres</span>
+              <span class="count" id="count-livres">0</span>
+            </button>
+            <button class="collection-btn" data-collection="films">
+              <i class="bi bi-film"></i>
+              <span>Films</span>
+              <span class="count" id="count-films">0</span>
+            </button>
+            <button class="collection-btn" data-collection="disques">
+              <i class="bi bi-vinyl"></i>
+              <span>Disques</span>
+              <span class="count" id="count-disques">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h3 class="filter-title">Recherche</h3>
+          <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="search" placeholder="Titre, auteur, thème...">
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h3 class="filter-title">Disponibilité</h3>
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="filter-disponible" checked>
+              <span>Disponibles</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="filter-emprunte" checked>
+              <span>Empruntés</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="catalogue-main">
+        <div class="results-header">
+          <span class="results-count"><span id="results-count">0</span> résultats</span>
+          <select class="sort-select" id="sort">
+            <option value="recent">Plus récents</option>
+            <option value="titre">Titre A-Z</option>
+            <option value="titre-desc">Titre Z-A</option>
+          </select>
+        </div>
+
+        <div class="items-masonry" id="items-grid"></div>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <i class="bi bi-inbox"></i>
+          <h3>Aucun résultat</h3>
+          <p>Modifiez vos filtres pour trouver ce que vous cherchez</p>
+        </div>
+
+        <div class="pagination-container">
+          <div class="pagination-wrapper" id="pagination"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <script>
+    // State
+    let state = {
+      collection: 'all',
+      search: '',
+      disponible: true,
+      emprunte: true,
+      sort: 'recent',
+      page: 1,
+      items: [],
+      counts: { all: 0, jeux: 0, livres: 0, films: 0, disques: 0 }
+    };
+
+    // Elements
+    const searchInput = document.getElementById('search');
+    const sortSelect = document.getElementById('sort');
+    const gridEl = document.getElementById('items-grid');
+    const emptyEl = document.getElementById('empty-state');
+    const countEl = document.getElementById('results-count');
+
+    // Event Listeners
+    document.querySelectorAll('.collection-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.collection-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.collection = btn.dataset.collection;
+        state.page = 1;
+        loadItems();
+      });
+    });
+
+    searchInput.addEventListener('input', debounce(() => {
+      state.search = searchInput.value;
+      state.page = 1;
+      loadItems();
+    }, 300));
+
+    sortSelect.addEventListener('change', () => {
+      state.sort = sortSelect.value;
+      loadItems();
+    });
+
+    document.getElementById('filter-disponible').addEventListener('change', (e) => {
+      state.disponible = e.target.checked;
+      loadItems();
+    });
+
+    document.getElementById('filter-emprunte').addEventListener('change', (e) => {
+      state.emprunte = e.target.checked;
+      loadItems();
+    });
+
+    // Load items
+    async function loadItems() {
+      try {
+        let allItems = [];
+        const collections = state.collection === 'all'
+          ? ['jeux', 'livres', 'films', 'disques']
+          : [state.collection];
+
+        for (const coll of collections) {
+          const params = new URLSearchParams();
+          if (state.search) params.append('search', state.search);
+
+          const resp = await fetch(`/api/public/${coll}?${params}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            const items = (data.items || data).map(i => ({ ...i, collection: coll }));
+            allItems = allItems.concat(items);
+            state.counts[coll] = items.length;
+          }
+        }
+
+        // Filter by status
+        if (!state.disponible) {
+          allItems = allItems.filter(i => i.statut !== 'disponible');
+        }
+        if (!state.emprunte) {
+          allItems = allItems.filter(i => i.statut !== 'emprunte');
+        }
+
+        // Sort
+        if (state.sort === 'titre') {
+          allItems.sort((a, b) => (a.nom || a.titre || '').localeCompare(b.nom || b.titre || ''));
+        } else if (state.sort === 'titre-desc') {
+          allItems.sort((a, b) => (b.nom || b.titre || '').localeCompare(a.nom || a.titre || ''));
+        }
+
+        state.items = allItems;
+        state.counts.all = allItems.length;
+        updateCounts();
+        renderItems();
+      } catch (e) {
+        console.error('Erreur:', e);
+      }
+    }
+
+    function updateCounts() {
+      document.getElementById('count-all').textContent = state.counts.all;
+      document.getElementById('count-jeux').textContent = state.counts.jeux;
+      document.getElementById('count-livres').textContent = state.counts.livres;
+      document.getElementById('count-films').textContent = state.counts.films;
+      document.getElementById('count-disques').textContent = state.counts.disques;
+    }
+
+    function renderItems() {
+      countEl.textContent = state.items.length;
+
+      if (state.items.length === 0) {
+        gridEl.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      gridEl.style.display = 'grid';
+      emptyEl.style.display = 'none';
+
+      gridEl.innerHTML = state.items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="masonry-item">
+          <div class="masonry-image">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder"></i>`
+            }
+            <span class="collection-tag ${item.collection}">${getLabel(item.collection)}</span>
+            <span class="status-indicator ${item.statut || 'disponible'}"></span>
+          </div>
+          <div class="masonry-content">
+            <h3 class="masonry-title">${item.nom || item.titre}</h3>
+            <p class="masonry-meta">
+              <i class="bi bi-${getMetaIcon(item)}"></i>
+              ${getMeta(item)}
+            </p>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    function getIcon(coll) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[coll] || 'box';
+    }
+
+    function getLabel(coll) {
+      return { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' }[coll] || '';
+    }
+
+    function getMetaIcon(item) {
+      if (item.collection === 'jeux') return 'people';
+      if (item.collection === 'livres') return 'person';
+      if (item.collection === 'films') return 'camera-reels';
+      if (item.collection === 'disques') return 'music-note-beamed';
+      return 'info';
+    }
+
+    function getMeta(item) {
+      if (item.collection === 'jeux') return `${item.joueurs_min || '?'}-${item.joueurs_max || '?'} joueurs`;
+      if (item.collection === 'livres') return item.auteur || 'Auteur inconnu';
+      if (item.collection === 'films') return item.realisateur || 'Réalisateur inconnu';
+      if (item.collection === 'disques') return item.artiste || 'Artiste inconnu';
+      return '';
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+
+    // Init
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('collection')) {
+      state.collection = params.get('collection');
+      document.querySelectorAll('.collection-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.collection === state.collection);
+      });
+    }
+    if (params.get('q')) {
+      state.search = params.get('q');
+      searchInput.value = state.search;
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadItems();
+  </script>
+</body>
+</html>

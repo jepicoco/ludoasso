@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Fiche - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Fiche Detail - Ocean Blue Theme - Full Width Hero */
+    .fiche-hero {
+      position: relative;
+      padding: 3rem 2rem 8rem;
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #0c4a6e, #075985);
+      z-index: -1;
+    }
+
+    .breadcrumb {
+      max-width: 1400px;
+      margin: 0 auto 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.9rem;
+    }
+
+    .breadcrumb a {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .breadcrumb a:hover {
+      color: white;
+    }
+
+    .hero-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      gap: 3rem;
+      align-items: flex-start;
+    }
+
+    .hero-image {
+      width: 350px;
+      flex-shrink: 0;
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-image .image-container {
+      aspect-ratio: 1;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-image .placeholder {
+      font-size: 5rem;
+      color: #cbd5e1;
+    }
+
+    .hero-info {
+      flex: 1;
+      color: white;
+      padding-top: 1rem;
+    }
+
+    .collection-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: 1.5rem;
+      opacity: 0.8;
+      margin-bottom: 2rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      margin-bottom: 2rem;
+    }
+
+    .status-badge.disponible {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+    }
+
+    .status-badge.emprunte {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fcd34d;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      padding: 1rem 1.5rem;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .stat-box .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .stat-box .label {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .btn-hero {
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-hero.primary {
+      background: white;
+      color: var(--primary-dark);
+    }
+
+    .btn-hero.primary:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-hero.secondary {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn-hero.secondary:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Details Section */
+    .details-section {
+      max-width: 1400px;
+      margin: -4rem auto 4rem;
+      padding: 0 2rem;
+    }
+
+    .details-card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .details-tabs {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 2rem;
+    }
+
+    .tab-btn {
+      padding: 1.25rem 1.5rem;
+      border: none;
+      background: transparent;
+      font-weight: 600;
+      color: var(--text-light);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-color);
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-color);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab-panel {
+      padding: 2rem;
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .description-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text-color);
+      max-width: 800px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .info-card {
+      background: #f8fafc;
+      padding: 1.5rem;
+      border-radius: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .info-card i {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    .info-card .content .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-light);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-card .content .value {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    /* Loading & Error */
+    .loading-state {
+      text-align: center;
+      padding: 4rem;
+      color: white;
+    }
+
+    .loading-state i {
+      font-size: 3rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-state {
+      max-width: 600px;
+      margin: 4rem auto;
+      text-align: center;
+      background: white;
+      padding: 4rem;
+      border-radius: 24px;
+    }
+
+    .error-state i {
+      font-size: 4rem;
+      color: #ef4444;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      .hero-image {
+        width: 100%;
+        max-width: 350px;
+      }
+
+      .hero-stats {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tsunami"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/"><i class="bi bi-house"></i> Accueil</a></li>
+          <li><a href="/catalogue.html"><i class="bi bi-grid-3x3-gap"></i> Catalogue</a></li>
+          <li><a href="/infos.html"><i class="bi bi-info-circle"></i> Infos</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-box-arrow-in-right"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Fiche Hero -->
+  <section class="fiche-hero" id="fiche-hero">
+    <div class="hero-bg"></div>
+
+    <div class="loading-state" id="loading">
+      <i class="bi bi-arrow-repeat"></i>
+      <p>Chargement...</p>
+    </div>
+  </section>
+
+  <!-- Details Section -->
+  <section class="details-section" id="details-section" style="display: none;"></section>
+
+  <!-- Error State -->
+  <div class="error-state" id="error-state" style="display: none;">
+    <i class="bi bi-exclamation-triangle"></i>
+    <h3>Article introuvable</h3>
+    <p>L'article demandé n'existe pas ou a été supprimé.</p>
+    <a href="/catalogue.html" class="btn-hero primary" style="margin-top: 1rem;">
+      <i class="bi bi-arrow-left"></i> Retour au catalogue
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const collection = params.get('collection');
+    const id = params.get('id');
+
+    async function loadFiche() {
+      if (!collection || !id) {
+        showError();
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/api/public/${collection}/${id}`);
+        if (!resp.ok) {
+          showError();
+          return;
+        }
+
+        const item = await resp.json();
+        renderFiche(item);
+      } catch (e) {
+        showError();
+      }
+    }
+
+    function showError() {
+      document.getElementById('fiche-hero').style.display = 'none';
+      document.getElementById('error-state').style.display = 'block';
+    }
+
+    function renderFiche(item) {
+      const title = item.nom || item.titre;
+      document.getElementById('site-title').textContent = `${title} - Assotheque`;
+
+      const heroEl = document.getElementById('fiche-hero');
+      heroEl.innerHTML = `
+        <div class="hero-bg"></div>
+        <nav class="breadcrumb">
+          <a href="/">Accueil</a>
+          <i class="bi bi-chevron-right"></i>
+          <a href="/catalogue.html">Catalogue</a>
+          <i class="bi bi-chevron-right"></i>
+          <span>${title}</span>
+        </nav>
+
+        <div class="hero-content">
+          <div class="hero-image">
+            <div class="image-container">
+              ${item.image_url
+                ? `<img src="${item.image_url}" alt="${title}">`
+                : `<i class="bi bi-${getIcon(collection)} placeholder"></i>`
+              }
+            </div>
+          </div>
+
+          <div class="hero-info">
+            <span class="collection-badge">
+              <i class="bi bi-${getIcon(collection)}"></i>
+              ${getLabel(collection)}
+            </span>
+
+            <h1 class="hero-title">${title}</h1>
+            <p class="hero-subtitle">${getSubtitle(item)}</p>
+
+            <span class="status-badge ${item.statut || 'disponible'}">
+              <i class="bi bi-${item.statut === 'disponible' ? 'check-circle-fill' : 'clock-fill'}"></i>
+              ${item.statut === 'disponible' ? 'Disponible' : 'Actuellement emprunté'}
+            </span>
+
+            <div class="hero-stats">
+              ${getStats(item)}
+            </div>
+
+            <div class="hero-actions">
+              <a href="/usager/login.html" class="btn-hero primary">
+                <i class="bi bi-person"></i> Connectez-vous pour emprunter
+              </a>
+              <a href="/catalogue.html?collection=${collection}" class="btn-hero secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+              </a>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Details section
+      const detailsEl = document.getElementById('details-section');
+      detailsEl.style.display = 'block';
+      detailsEl.innerHTML = `
+        <div class="details-card">
+          <div class="details-tabs">
+            <button class="tab-btn active" data-tab="description">Description</button>
+            <button class="tab-btn" data-tab="infos">Informations</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-description">
+            <div class="description-content">
+              ${item.description || 'Aucune description disponible pour cet article.'}
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-infos">
+            <div class="info-grid">
+              ${getInfoCards(item)}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Tab events
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        });
+      });
+    }
+
+    function getIcon(c) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[c] || 'box';
+    }
+
+    function getLabel(c) {
+      return { jeux: 'Jeu de société', livres: 'Livre', films: 'Film', disques: 'Disque' }[c] || '';
+    }
+
+    function getSubtitle(item) {
+      if (collection === 'jeux') return item.editeur || '';
+      if (collection === 'livres') return item.auteur || '';
+      if (collection === 'films') return item.realisateur || '';
+      if (collection === 'disques') return item.artiste || '';
+      return '';
+    }
+
+    function getStats(item) {
+      let html = '';
+      if (collection === 'jeux') {
+        if (item.joueurs_min || item.joueurs_max) {
+          html += `<div class="stat-box"><div class="value">${item.joueurs_min || '?'}-${item.joueurs_max || '?'}</div><div class="label">Joueurs</div></div>`;
+        }
+        if (item.duree) {
+          html += `<div class="stat-box"><div class="value">${item.duree}</div><div class="label">Minutes</div></div>`;
+        }
+        if (item.age_minimum) {
+          html += `<div class="stat-box"><div class="value">${item.age_minimum}+</div><div class="label">Âge</div></div>`;
+        }
+      }
+      if (collection === 'livres') {
+        if (item.annee) html += `<div class="stat-box"><div class="value">${item.annee}</div><div class="label">Année</div></div>`;
+        if (item.pages) html += `<div class="stat-box"><div class="value">${item.pages}</div><div class="label">Pages</div></div>`;
+      }
+      if (collection === 'films') {
+        if (item.annee) html += `<div class="stat-box"><div class="value">${item.annee}</div><div class="label">Année</div></div>`;
+        if (item.duree) html += `<div class="stat-box"><div class="value">${item.duree}</div><div class="label">Minutes</div></div>`;
+      }
+      if (collection === 'disques') {
+        if (item.annee) html += `<div class="stat-box"><div class="value">${item.annee}</div><div class="label">Année</div></div>`;
+      }
+      return html || '<div class="stat-box"><div class="value">-</div><div class="label">Info</div></div>';
+    }
+
+    function getInfoCards(item) {
+      const fields = Object.entries(item).filter(([k, v]) =>
+        v && !['id', 'image_url', 'created_at', 'updated_at', 'deletedAt', 'description'].includes(k)
+      );
+
+      return fields.map(([key, value]) => `
+        <div class="info-card">
+          <i class="bi bi-${getFieldIcon(key)}"></i>
+          <div class="content">
+            <div class="label">${formatLabel(key)}</div>
+            <div class="value">${value}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getFieldIcon(key) {
+      const icons = {
+        nom: 'card-text', titre: 'card-text', auteur: 'person', editeur: 'building',
+        realisateur: 'camera-reels', artiste: 'person-arms-up', annee: 'calendar',
+        duree: 'clock', pages: 'file-text', isbn: 'upc', statut: 'info-circle',
+        joueurs_min: 'people', joueurs_max: 'people', age_minimum: 'person'
+      };
+      return icons[key] || 'info-circle';
+    }
+
+    function formatLabel(key) {
+      return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadFiche();
+  </script>
+</body>
+</html>
