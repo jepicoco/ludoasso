@@ -180,7 +180,13 @@ function createThemeResolverMiddleware(frontendPath) {
         }
       }
 
-      // Fallback : servir le fichier par défaut
+      // Fallback : servir le fichier par défaut depuis frontend/
+      const defaultFilePath = path.join(frontendPath, requestedFile);
+      if (fs.existsSync(defaultFilePath)) {
+        return res.sendFile(defaultFilePath);
+      }
+
+      // Si le fichier par défaut n'existe pas non plus, 404
       next();
     } catch (error) {
       console.error('Erreur theme resolver:', error.message);
