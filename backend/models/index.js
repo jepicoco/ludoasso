@@ -135,6 +135,9 @@ const ConfigurationExportComptableModel = require('./ConfigurationExportComptabl
 // Import ThemeSite (themes du site public)
 const ThemeSiteModel = require('./ThemeSite');
 
+// Import LeaderboardScore (mini-jeu chat)
+const LeaderboardScoreModel = require('./LeaderboardScore');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -268,6 +271,9 @@ const ConfigurationExportComptable = ConfigurationExportComptableModel(sequelize
 
 // Initialize ThemeSite (themes du site public)
 const ThemeSite = ThemeSiteModel(sequelize);
+
+// Initialize LeaderboardScore (mini-jeu chat)
+const LeaderboardScore = LeaderboardScoreModel(sequelize);
 
 // Define associations
 // Utilisateur <-> Emprunt (One-to-Many)
@@ -1272,5 +1278,7 @@ module.exports = {
   // Configuration Export Comptable (multi-formats)
   ConfigurationExportComptable,
   // Themes du site public
-  ThemeSite
+  ThemeSite,
+  // Mini-jeu chat leaderboard
+  LeaderboardScore
 };

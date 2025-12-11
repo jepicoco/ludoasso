@@ -198,6 +198,17 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'CSS personnalise injecte dans le site'
     },
+    theme_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'ID du theme actif (FK themes_site)'
+    },
+    allow_theme_selection: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Autoriser selection theme par visiteurs'
+    },
 
     // === Maintenance ===
     mode_maintenance: {

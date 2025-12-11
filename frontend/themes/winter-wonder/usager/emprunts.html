@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes emprunts - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      color: var(--snow-white);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-secondary);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      border-bottom: var(--border-frost);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-glass);
+    }
+
+    .tab-btn.active {
+      color: var(--frost-medium);
+      background: var(--bg-glass);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--frost-medium);
+      border-radius: 3px;
+    }
+
+    .tab-btn .count {
+      background: rgba(125, 211, 252, 0.2);
+      color: var(--frost-medium);
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
+    }
+
+    .tab-btn.active .count {
+      background: var(--frost-medium);
+      color: var(--midnight);
+    }
+
+    /* Emprunts List */
+    .emprunts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .emprunt-card {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      transition: all 0.3s ease;
+    }
+
+    .emprunt-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .emprunt-card.late {
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .emprunt-card.urgent {
+      border-color: rgba(245, 158, 11, 0.5);
+    }
+
+    .emprunt-image {
+      width: 80px;
+      height: 80px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .emprunt-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--border-radius-sm);
+    }
+
+    .emprunt-image i {
+      font-size: 2rem;
+      color: var(--slate-medium);
+    }
+
+    .emprunt-image.jeux i { color: var(--warm-amber); }
+    .emprunt-image.livres i { color: var(--frost-medium); }
+    .emprunt-image.films i { color: var(--warm-orange); }
+    .emprunt-image.disques i { color: var(--color-success); }
+
+    .emprunt-info {
+      flex: 1;
+    }
+
+    .emprunt-info h3 {
+      font-size: 1.1rem;
+      margin: 0 0 0.25rem;
+      color: var(--text-primary);
+    }
+
+    .emprunt-info p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .emprunt-meta {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .emprunt-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .emprunt-meta i {
+      color: var(--frost-medium);
+    }
+
+    .emprunt-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.5rem;
+    }
+
+    .emprunt-date {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+
+    .emprunt-date.urgent {
+      color: var(--warm-orange);
+      font-weight: 600;
+    }
+
+    .emprunt-date.late {
+      color: var(--color-danger);
+      font-weight: 600;
+    }
+
+    .btn-prolonger {
+      background: transparent;
+      border: 1px solid var(--frost-medium);
+      color: var(--frost-medium);
+      padding: 0.4rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-prolonger:hover {
+      background: var(--frost-medium);
+      color: var(--midnight);
+    }
+
+    .btn-prolonger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--bg-glass);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--slate-medium);
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-secondary);
+    }
+
+    .loading i {
+      font-size: 1.5rem;
+      color: var(--frost-medium);
+      animation: spin 1s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* User Menu */
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: var(--border-frost);
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-snow2 logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">Tableau de bord</a></li>
+          <li><a href="emprunts.html" class="active">Mes emprunts</a></li>
+          <li><a href="profil.html">Mon profil</a></li>
+        </ul>
+      </nav>
+      <div class="user-menu">
+        <span class="user-name" id="userName"></span>
+        <button class="btn-logout" onclick="logout()">
+          <i class="bi bi-box-arrow-right"></i> Déconnexion
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <div class="page-header">
+      <h1><i class="bi bi-book"></i> Mes emprunts</h1>
+      <p>Consultez vos emprunts en cours et votre historique</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="en-cours">
+        En cours <span class="count" id="countEnCours">0</span>
+      </button>
+      <button class="tab-btn" data-tab="historique">
+        Historique <span class="count" id="countHistorique">0</span>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div id="loading" class="loading">
+      <i class="bi bi-arrow-repeat"></i> Chargement...
+    </div>
+
+    <div id="content-en-cours" class="emprunts-list" style="display: none;"></div>
+    <div id="content-historique" class="emprunts-list" style="display: none;"></div>
+
+    <div id="empty-en-cours" class="empty-state" style="display: none;">
+      <i class="bi bi-inbox"></i>
+      <h3>Aucun emprunt en cours</h3>
+      <p>Rendez-vous au catalogue pour découvrir nos collections !</p>
+      <a href="/catalogue.html" class="btn btn-primary">
+        <i class="bi bi-search"></i> Explorer le catalogue
+      </a>
+    </div>
+
+    <div id="empty-historique" class="empty-state" style="display: none;">
+      <i class="bi bi-clock-history"></i>
+      <h3>Aucun historique</h3>
+      <p>Vos emprunts passés apparaîtront ici</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Mon compte</h4>
+        <ul>
+          <li><a href="dashboard.html">Tableau de bord</a></li>
+          <li><a href="emprunts.html">Mes emprunts</a></li>
+          <li><a href="profil.html">Mon profil</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <!-- Snowfall -->
+  <script src="/theme/js/snowfall.js"></script>
+
+  <script>
+    const API_URL = '/api';
+    let currentTab = 'en-cours';
+    let data = null;
+
+    // Check auth
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      const usagerInfo = JSON.parse(localStorage.getItem('usager_info') || 'null');
+
+      if (!token || !usagerInfo) {
+        window.location.href = 'login.html';
+        return false;
+      }
+
+      document.getElementById('userName').textContent = `${usagerInfo.prenom} ${usagerInfo.nom}`;
+      return true;
+    }
+
+    // Logout
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTab = btn.dataset.tab;
+        renderTab();
+      });
+    });
+
+    // Load emprunts
+    async function loadEmprunts() {
+      const token = localStorage.getItem('usager_token');
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Erreur de chargement');
+        }
+
+        data = await resp.json();
+        document.getElementById('loading').style.display = 'none';
+
+        // Update counts
+        document.getElementById('countEnCours').textContent = data.emprunts_en_cours?.length || 0;
+        document.getElementById('countHistorique').textContent = data.historique?.length || 0;
+
+        renderTab();
+      } catch (e) {
+        console.error('Emprunts error:', e);
+        document.getElementById('loading').innerHTML =
+          '<span style="color: var(--warm-orange);">Erreur de chargement</span>';
+      }
+    }
+
+    function renderTab() {
+      document.getElementById('content-en-cours').style.display = 'none';
+      document.getElementById('content-historique').style.display = 'none';
+      document.getElementById('empty-en-cours').style.display = 'none';
+      document.getElementById('empty-historique').style.display = 'none';
+
+      if (currentTab === 'en-cours') {
+        const emprunts = data?.emprunts_en_cours || [];
+        if (emprunts.length === 0) {
+          document.getElementById('empty-en-cours').style.display = 'block';
+        } else {
+          document.getElementById('content-en-cours').style.display = 'flex';
+          document.getElementById('content-en-cours').innerHTML = emprunts.map(e => renderEmprunt(e, true)).join('');
+        }
+      } else {
+        const emprunts = data?.historique || [];
+        if (emprunts.length === 0) {
+          document.getElementById('empty-historique').style.display = 'block';
+        } else {
+          document.getElementById('content-historique').style.display = 'flex';
+          document.getElementById('content-historique').innerHTML = emprunts.map(e => renderEmprunt(e, false)).join('');
+        }
+      }
+    }
+
+    function renderEmprunt(emprunt, showActions) {
+      const collection = emprunt.type_article || 'jeux';
+      const item = emprunt.Jeu || emprunt.Livre || emprunt.Film || emprunt.Disque || {};
+      const title = item.nom || item.titre || 'Article';
+      const dateEmprunt = new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR');
+      const dateRetour = new Date(emprunt.date_retour_prevue);
+      const today = new Date();
+      const daysLeft = Math.ceil((dateRetour - today) / (1000 * 60 * 60 * 24));
+
+      let cardClass = '';
+      let dateClass = '';
+      let dateText = `Retour prévu : ${dateRetour.toLocaleDateString('fr-FR')}`;
+
+      if (showActions) {
+        if (daysLeft < 0) {
+          cardClass = 'late';
+          dateClass = 'late';
+          dateText = `En retard de ${Math.abs(daysLeft)} jour(s)`;
+        } else if (daysLeft <= 3) {
+          cardClass = 'urgent';
+          dateClass = 'urgent';
+          dateText = `Retour dans ${daysLeft} jour(s)`;
+        }
+      } else {
+        dateText = emprunt.date_retour_effectif
+          ? `Retourné le ${new Date(emprunt.date_retour_effectif).toLocaleDateString('fr-FR')}`
+          : dateText;
+      }
+
+      return `
+        <div class="emprunt-card ${cardClass}">
+          <div class="emprunt-image ${collection}">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${title}">`
+              : `<i class="bi bi-${getIcon(collection)}"></i>`
+            }
+          </div>
+          <div class="emprunt-info">
+            <h3>${title}</h3>
+            <p>${getTypeLabel(collection)}</p>
+            <div class="emprunt-meta">
+              <span><i class="bi bi-calendar"></i> Emprunté le ${dateEmprunt}</span>
+            </div>
+          </div>
+          <div class="emprunt-actions">
+            <div class="emprunt-date ${dateClass}">${dateText}</div>
+            ${showActions && emprunt.prolongations_disponibles > 0 ? `
+              <button class="btn-prolonger" onclick="prolonger(${emprunt.id})">
+                <i class="bi bi-arrow-clockwise"></i> Prolonger
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function getIcon(collection) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[collection] || 'box';
+    }
+
+    function getTypeLabel(collection) {
+      return { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' }[collection] || '';
+    }
+
+    async function prolonger(empruntId) {
+      const token = localStorage.getItem('usager_token');
+
+      try {
+        const resp = await fetch(`${API_URL}/prolongations`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ emprunt_id: empruntId })
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.message || 'Erreur de prolongation');
+        }
+
+        alert('Prolongation effectuée avec succès !');
+        loadEmprunts();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    // Load config
+    async function loadConfig() {
+      try {
+        const resp = await fetch(`${API_URL}/public/config`);
+        const config = await resp.json();
+        const nom = config.nom_site || 'Assotheque';
+        document.getElementById('header-title').textContent = nom.toUpperCase();
+        document.getElementById('footer-name').textContent = nom;
+        document.title = `Mes emprunts - ${nom}`;
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+    }
+
+    // Init
+    document.getElementById('year').textContent = new Date().getFullYear();
+    if (checkAuth()) {
+      loadConfig();
+      loadEmprunts();
+    }
+  </script>
+</body>
+</html>

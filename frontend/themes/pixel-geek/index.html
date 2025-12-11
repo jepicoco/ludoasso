@@ -6,6 +6,485 @@
   <title id="site-title">Assotheque</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* ========================================
+       HERO - Fond qui défile pendant le jeu
+       ======================================== */
+    .hero {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Fond animé qui défile pendant le jeu */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        /* Grille qui défile */
+        linear-gradient(90deg, rgba(107, 63, 160, 0.1) 1px, transparent 1px),
+        linear-gradient(rgba(107, 63, 160, 0.1) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: 0;
+      transition: opacity 0.5s;
+      pointer-events: none;
+    }
+
+    .hero.game-active::before {
+      opacity: 1;
+      animation: hero-grid-scroll 1s linear infinite;
+    }
+
+    @keyframes hero-grid-scroll {
+      0% { background-position: 0 0, 0 0; }
+      100% { background-position: -40px 0, -40px 0; }
+    }
+
+    /* Effet parallax sur le texte */
+    .hero.game-active .hero-content {
+      animation: hero-content-scroll 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes hero-content-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-15px); }
+    }
+
+    /* Masquer texte pendant le jeu */
+    .hero.game-active .press-start,
+    .hero.game-active > .hero-content > p:first-of-type {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    /* Container de recherche devient container du HUD */
+    .search-container {
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    /* Masquer la recherche pendant le jeu */
+    .hero.game-active .pixel-search {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+
+    /* HUD du jeu - remplace la barre de recherche */
+    .game-hud-hero {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+
+    .hero.game-active .game-hud-hero {
+      display: flex;
+    }
+
+    /* Titre visible pendant le jeu avec effet néon */
+    .hero.game-active h1 {
+      animation: titleGlow-game 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes titleGlow-game {
+      0% {
+        text-shadow: 4px 4px 0 var(--pixel-purple), 0 0 30px var(--pixel-cyan);
+        transform: scale(1);
+      }
+      100% {
+        text-shadow: 4px 4px 0 var(--pixel-purple), 0 0 50px var(--pixel-pink), 0 0 80px var(--pixel-cyan);
+        transform: scale(1.02);
+      }
+    }
+
+    /* ========================================
+       CAT LANE - Ligne avec le chat et les items
+       ======================================== */
+    .cat-lane {
+      position: relative;
+      height: 8px;
+      background: linear-gradient(90deg, var(--pixel-purple) 0%, var(--pixel-cyan) 50%, var(--pixel-purple) 100%);
+      overflow: visible;
+      cursor: default;
+    }
+
+    /* Canvas pour les collectibles/obstacles (transparent, au-dessus de la ligne) */
+    .game-lane-canvas {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 80px; /* Zone au-dessus de la ligne */
+      z-index: 50;
+      image-rendering: pixelated;
+      display: none;
+      pointer-events: none;
+    }
+
+    .cat-lane.game-active .game-lane-canvas {
+      display: block;
+    }
+
+    /* Chat idle qui se balade - DISCRET */
+    .idle-cat {
+      position: absolute;
+      bottom: 4px;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      cursor: default;
+      z-index: 100;
+      /* Pas de hover effect - discret */
+    }
+
+    .idle-cat canvas {
+      width: 40px;
+      height: 40px;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+
+    /* Indicateur de progression pour activer le jeu */
+    .cat-activation-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border: 3px solid transparent;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .cat-activation-ring.active {
+      opacity: 1;
+      border-color: var(--pixel-cyan);
+      animation: activation-pulse 0.5s ease-out infinite;
+    }
+
+    @keyframes activation-pulse {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+    }
+
+    /* Game Over - overlay sur toute la zone de jeu */
+    .game-over-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.92);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .game-over-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ========================================
+       GAME HUD - Dans le hero à la place de la recherche
+       ======================================== */
+
+    /* Conteneur HUD principal */
+    .game-hud {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 6px 12px;
+      border: 2px solid var(--pixel-purple);
+    }
+
+    .game-hud-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 10px;
+      border-right: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .game-hud-item:last-child {
+      border-right: none;
+    }
+
+    .game-hud-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.25rem;
+      color: var(--pixel-cyan);
+      margin-bottom: 2px;
+    }
+
+    .game-hud-value {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      color: var(--pixel-yellow);
+    }
+
+    /* Vies */
+    .game-lives {
+      display: flex;
+      gap: 1px;
+    }
+
+    .game-lives i {
+      font-size: 0.5rem;
+      color: var(--pixel-red);
+    }
+
+    .game-lives i.lost {
+      color: #333;
+    }
+
+    /* Titres des items attrapés - à droite du HUD */
+    .game-titles {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 6px 12px;
+      border: 2px solid var(--pixel-mint);
+      min-width: 150px;
+      max-width: 250px;
+    }
+
+    .game-titles-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.2rem;
+      color: var(--pixel-mint);
+      margin-bottom: 2px;
+    }
+
+    .game-titles-value {
+      font-family: 'VT323', monospace;
+      font-size: 0.85rem;
+      color: var(--pixel-yellow);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .game-titles-type {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.2rem;
+      color: var(--pixel-cyan);
+    }
+
+    /* ========================================
+       LEADERBOARD dans le premier stat-box
+       ======================================== */
+    .stat-box.leaderboard-mode .stat-default {
+      display: none;
+    }
+
+    .stat-box .leaderboard-content {
+      display: none;
+    }
+
+    .stat-box.leaderboard-mode .leaderboard-content {
+      display: block;
+    }
+
+    .leaderboard-content {
+      text-align: left;
+    }
+
+    .leaderboard-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.3rem;
+      color: var(--pixel-pink);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .leaderboard-list li {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'VT323', monospace;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      padding: 1px 0;
+    }
+
+    .leaderboard-list li:nth-child(1) { color: var(--pixel-yellow); }
+    .leaderboard-list li:nth-child(2) { color: #c0c0c0; }
+    .leaderboard-list li:nth-child(3) { color: #cd7f32; }
+
+    .leaderboard-list .lb-rank { width: 20px; }
+    .leaderboard-list .lb-name { flex: 1; }
+    .leaderboard-list .lb-score { text-align: right; font-size: 0.75rem; }
+
+    /* Game Over content (dans cat-lane) */
+    .game-over-content {
+      text-align: center;
+    }
+
+    .game-over-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-red);
+      text-shadow: 2px 2px 0 #000;
+      margin-bottom: 8px;
+    }
+
+    .final-score {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      color: var(--pixel-yellow);
+      margin-bottom: 10px;
+    }
+
+    .name-input-row {
+      margin-bottom: 8px;
+    }
+
+    .name-input-row label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.3rem;
+      color: var(--pixel-cyan);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    #playerName {
+      width: 80px;
+      padding: 6px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      text-align: center;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid var(--pixel-cyan);
+      color: var(--pixel-yellow);
+    }
+
+    #playerName:focus {
+      outline: none;
+      border-color: var(--pixel-pink);
+    }
+
+    .game-btn {
+      display: inline-block;
+      margin: 4px;
+      padding: 8px 12px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      border: none;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+
+    .game-btn.primary {
+      background: var(--pixel-pink);
+      color: white;
+    }
+
+    .game-btn.secondary {
+      background: var(--pixel-purple);
+      color: white;
+    }
+
+    .game-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px var(--pixel-cyan);
+    }
+
+    .game-btn.quit {
+      background: #444;
+      color: #ccc;
+    }
+
+    .game-over-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Instructions - flottant au-dessus du jeu */
+    .game-instructions {
+      position: fixed;
+      bottom: 50%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.85);
+      padding: 6px 16px;
+      border: 2px solid var(--pixel-cyan);
+      font-family: 'VT323', monospace;
+      font-size: 0.9rem;
+      color: var(--pixel-yellow);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 300;
+    }
+
+    .game-instructions.show {
+      opacity: 1;
+    }
+
+    /* Stats section avec position relative pour le HUD */
+    .stats-section {
+      position: relative;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .game-ui-container {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .game-hud {
+        padding: 4px 6px;
+        gap: 4px;
+      }
+
+      .game-hud-item {
+        padding: 0 4px;
+      }
+
+      .game-hud-label {
+        font-size: 0.2rem;
+      }
+
+      .game-hud-value {
+        font-size: 0.35rem;
+      }
+
+      .game-lives i {
+        font-size: 0.4rem;
+      }
+
+      .game-instructions {
+        font-size: 0.6rem;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -27,29 +506,88 @@
   </header>
 
   <!-- Hero Section - Title Screen -->
-  <section class="hero">
+  <section class="hero" id="heroSection">
     <div class="hero-content">
       <h1 id="welcome-title">BIENVENUE PLAYER 1</h1>
       <p>Explorez notre collection de jeux, livres, films et disques</p>
 
       <div class="search-container">
+        <!-- Barre de recherche (masquée pendant le jeu) -->
         <form class="pixel-search" action="/catalogue.html" method="get">
           <input type="text" name="q" placeholder="RECHERCHER...">
           <button type="submit">GO!</button>
         </form>
+
+        <!-- HUD du jeu (visible pendant le jeu) -->
+        <div class="game-hud-hero" id="gameHudHero">
+          <div class="game-hud">
+            <div class="game-hud-item">
+              <span class="game-hud-label">SCORE</span>
+              <span class="game-hud-value" id="gameScore">0000000</span>
+            </div>
+            <div class="game-hud-item">
+              <span class="game-hud-label">VIES</span>
+              <div class="game-lives" id="gameLives">
+                <i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i>
+                <i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i>
+                <i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i><i class="bi bi-heart-fill"></i>
+              </div>
+            </div>
+            <div class="game-hud-item">
+              <span class="game-hud-label">SPEED</span>
+              <span class="game-hud-value" id="gameSpeed">x1</span>
+            </div>
+            <div class="game-hud-item">
+              <span class="game-hud-label">TIME</span>
+              <span class="game-hud-value" id="gameTime">00:00</span>
+            </div>
+          </div>
+
+          <!-- Dernier item attrapé -->
+          <div class="game-titles" id="gameTitles">
+            <span class="game-titles-label">DERNIER ITEM</span>
+            <span class="game-titles-type" id="gameTitlesType">-</span>
+            <span class="game-titles-value" id="gameTitlesValue">En attente...</span>
+          </div>
+        </div>
       </div>
 
       <p class="press-start">APPUYEZ SUR ENTREE POUR COMMENCER</p>
     </div>
   </section>
 
+  <!-- Cat Lane - Ligne avec le chat et les items du jeu -->
+  <div class="cat-lane" id="catLane">
+    <!-- Canvas pour les collectibles/obstacles -->
+    <canvas id="gameCanvas" class="game-lane-canvas"></canvas>
+
+    <!-- Chat qui se balade / joue -->
+    <div class="idle-cat" id="idleCat">
+      <canvas id="idleCatCanvas" width="40" height="40"></canvas>
+      <div class="cat-activation-ring" id="activationRing"></div>
+    </div>
+  </div>
+
   <!-- Stats Section - Score Display -->
-  <section class="stats-section">
+  <section class="stats-section" id="statsSection">
     <div class="stats-grid">
-      <div class="stat-box">
-        <i class="bi bi-dice-6"></i>
-        <div class="number" id="stat-jeux">000</div>
-        <div class="label">JEUX</div>
+      <!-- Premier stat-box: JEUX ou LEADERBOARD pendant le jeu -->
+      <div class="stat-box" id="statBoxJeux">
+        <div class="stat-default">
+          <i class="bi bi-dice-6"></i>
+          <div class="number" id="stat-jeux">000</div>
+          <div class="label">JEUX</div>
+        </div>
+        <div class="leaderboard-content">
+          <p class="leaderboard-title">TOP SCORES</p>
+          <ul class="leaderboard-list" id="leaderboardList">
+            <li><span class="lb-rank">1.</span><span class="lb-name">---</span><span class="lb-score">0000000</span></li>
+            <li><span class="lb-rank">2.</span><span class="lb-name">---</span><span class="lb-score">0000000</span></li>
+            <li><span class="lb-rank">3.</span><span class="lb-name">---</span><span class="lb-score">0000000</span></li>
+            <li><span class="lb-rank">4.</span><span class="lb-name">---</span><span class="lb-score">0000000</span></li>
+            <li><span class="lb-rank">5.</span><span class="lb-name">---</span><span class="lb-score">0000000</span></li>
+          </ul>
+        </div>
       </div>
       <div class="stat-box">
         <i class="bi bi-book"></i>
@@ -132,6 +670,27 @@
     </div>
   </section>
 
+  <!-- Game UI elements (position fixed) -->
+  <div class="game-instructions" id="gameInstructions">
+    ESPACE/CLIC = SAUTER | BAS = ROULER
+  </div>
+
+  <div class="game-over-overlay" id="gameOverOverlay">
+    <div class="game-over-content">
+      <p class="game-over-title">GAME OVER</p>
+      <p class="final-score">SCORE: <span id="finalScore">0</span></p>
+      <div class="name-input-row">
+        <label>ENTER NAME</label>
+        <input type="text" id="playerName" maxlength="5" placeholder="AAAAA" autocomplete="off">
+      </div>
+      <div class="game-over-buttons">
+        <button class="game-btn primary" id="btnSubmitScore">SAVE</button>
+        <button class="game-btn secondary" id="btnRetry">RETRY</button>
+        <button class="game-btn quit" id="btnQuit">QUITTER</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer - Credits -->
   <footer class="site-footer">
     <div class="footer-container">
@@ -162,6 +721,10 @@
   </footer>
 
   <script>
+    // =============================================
+    // SITE FUNCTIONS
+    // =============================================
+
     // Format number with leading zeros (like old games)
     function formatScore(num, digits = 3) {
       return num.toString().padStart(digits, '0');
@@ -188,23 +751,23 @@
     // Load config
     async function loadConfig() {
       try {
-        const resp = await fetch('/api/public/parametres');
+        const resp = await fetch('/api/public/config');
         if (!resp.ok) return;
         const data = await resp.json();
 
-        const nom = (data.nom || 'ASSOTHEQUE').toUpperCase();
+        const nom = (data.nom_site || 'ASSOTHEQUE').toUpperCase();
         document.getElementById('site-title').textContent = nom;
         document.getElementById('header-title').textContent = nom;
         document.getElementById('footer-name').textContent = nom;
 
-        if (data.adresse) {
-          document.getElementById('footer-address').textContent = data.adresse.toUpperCase();
+        if (data.contact && data.contact.adresse) {
+          document.getElementById('footer-address').textContent = data.contact.adresse.toUpperCase();
         }
-        if (data.telephone) {
-          document.getElementById('footer-phone').textContent = data.telephone;
+        if (data.contact && data.contact.telephone) {
+          document.getElementById('footer-phone').textContent = data.contact.telephone;
         }
-        if (data.email) {
-          document.getElementById('footer-email').textContent = data.email.toUpperCase();
+        if (data.contact && data.contact.email) {
+          document.getElementById('footer-email').textContent = data.contact.email.toUpperCase();
         }
       } catch (e) {
         console.error('Config error:', e);
@@ -235,7 +798,7 @@
 
     // Keyboard navigation (like a game!)
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !pixelCatGame.gameActive) {
         document.querySelector('.pixel-search input').focus();
       }
     });
@@ -246,6 +809,1339 @@
     // Init
     loadConfig();
     loadStats();
+
+    // =============================================
+    // PIXEL CAT GAME
+    // =============================================
+    const pixelCatGame = (function() {
+      // Elements
+      const catLane = document.getElementById('catLane');
+      const idleCat = document.getElementById('idleCat');
+      const idleCatCanvas = document.getElementById('idleCatCanvas');
+      const activationRing = document.getElementById('activationRing');
+      const gameCanvas = document.getElementById('gameCanvas');
+      const gameInstructions = document.getElementById('gameInstructions');
+      const gameOverOverlay = document.getElementById('gameOverOverlay');
+      const heroSection = document.getElementById('heroSection');
+      const statsSection = document.getElementById('statsSection');
+      const statBoxJeux = document.getElementById('statBoxJeux');
+      const gameTitlesType = document.getElementById('gameTitlesType');
+      const gameTitlesValue = document.getElementById('gameTitlesValue');
+
+      const idleCtx = idleCatCanvas.getContext('2d');
+      const ctx = gameCanvas.getContext('2d');
+
+      // State
+      let gameRevealed = false;
+      let gameActive = false;
+      let gamePaused = false;
+      let catMovingToStart = false; // Chat en déplacement vers position de départ
+
+      // Cat activation (hold 3s or 5 clicks)
+      let clickCount = 0;
+      let clickTimer = null;
+      let holdTimer = null;
+      let holdStartTime = 0;
+      let holdProgress = 0;
+
+      // Idle cat animation
+      let idleCatX = 50;
+      let idleCatDirection = 1;
+      let idleCatFrame = 0;
+      let idleCatState = 'idle'; // idle, walk, run, jump, roll
+      let idleCatTimer = 0;
+      let idleCatPauseTimer = 0;
+
+      // Squash & Stretch (fluidité style Kingdom)
+      let catScaleX = 1;
+      let catScaleY = 1;
+
+      // Position cible pour le démarrage du jeu (sous pixel-search)
+      let targetStartX = 60;
+
+      // Game state
+      const game = {
+        score: 0,
+        lives: 9,
+        speed: 3,
+        speedLevel: 1,
+        time: 0,
+        lastSpeedIncrease: 0,
+        itemsCaught: 0,
+        invincible: false,
+        invincibleTimer: 0,
+        topScore: 0
+      };
+
+      // Cat player in game
+      const cat = {
+        x: 60,
+        y: 0,
+        width: 32,
+        height: 32,
+        velocityY: 0,
+        grounded: true,
+        jumping: false,
+        rolling: false,
+        rollTimer: 0,
+        state: 'run',
+        frame: 0,
+        frameTimer: 0
+      };
+
+      // Ground level
+      let GROUND_Y = 120;
+
+      // Items pool (loaded from DB)
+      let itemsPool = [];
+      let collectibles = [];
+      let obstacles = [];
+      let particles = [];
+      let stars = [];
+
+      // Obstacle types
+      const OBSTACLE_TYPES = [
+        // Au sol - sauter par dessus
+        { type: 'dog', width: 36, height: 28, color: '#8b4513', needJump: true },
+        { type: 'hedgehog', width: 24, height: 18, color: '#654321', needJump: true },
+        { type: 'squirrel', width: 22, height: 26, color: '#d2691e', needJump: true },
+        { type: 'fox', width: 38, height: 26, color: '#ff6347', needJump: true },
+        { type: 'chicken', width: 20, height: 22, color: '#fff5e6', needJump: true },
+        { type: 'snake', width: 32, height: 8, color: '#228b22', needJump: true },
+        { type: 'crocodile', width: 50, height: 18, color: '#2e8b57', needJump: true },
+        // Grands - se baisser
+        { type: 'ostrich', width: 28, height: 50, color: '#333', needRoll: true },
+        // Volants - se baisser
+        { type: 'bat', width: 24, height: 16, color: '#4a4a6a', flying: true, needRoll: true },
+        { type: 'crow', width: 28, height: 18, color: '#1a1a1a', flying: true, needRoll: true },
+        { type: 'bee', width: 18, height: 14, color: '#ffd700', flying: true, needRoll: true }
+      ];
+
+      // Spawn timers
+      let collectibleTimer = 0;
+      let obstacleTimer = 0;
+
+      // Touch handling
+      let touchStartY = 0;
+
+      // ========================================
+      // DRAW FUNCTIONS
+      // ========================================
+
+      // Lerp pour transitions douces
+      function lerp(start, end, t) {
+        return start + (end - start) * t;
+      }
+
+      // Draw pixel cat - vue de face, version compacte (queue dans le canvas)
+      function drawCat(context, x, y, w, h, state, frame, direction = 1, invincibleFlash = false) {
+        context.save();
+
+        if (invincibleFlash && Math.floor(frame / 3) % 2 === 0) {
+          context.globalAlpha = 0.5;
+        }
+
+        // Centre pour les transformations
+        const centerX = x + w / 2;
+        const centerY = y + h / 2;
+
+        context.translate(centerX, centerY);
+
+        // Flip if going left
+        if (direction === -1) {
+          context.scale(-1, 1);
+        }
+
+        // Squash & Stretch
+        context.scale(catScaleX, catScaleY);
+
+        // Revenir au coin supérieur gauche
+        context.translate(-w / 2, -h / 2);
+
+        const white = '#ffffff';
+        const pink = '#ffb6c1';
+        const gray = '#e0e0e0';
+
+        if (state === 'roll') {
+          // Rolling ball
+          const rollOffset = Math.sin(frame * 0.5) * 0.3;
+          context.fillStyle = white;
+          context.beginPath();
+          context.ellipse(w/2, h/2 + 2, 9, 8, rollOffset, 0, Math.PI * 2);
+          context.fill();
+          context.fillStyle = gray;
+          context.beginPath();
+          context.ellipse(w/2, h/2 + 2, 5, 4, rollOffset, 0, Math.PI * 2);
+          context.fill();
+        } else {
+          // === CHAT DE FACE - COMPACT ===
+          const legAnim = Math.sin(frame * 0.3) * 2;
+          const tailWave = Math.sin(frame * 0.1) * 2;
+
+          // Queue (derrière, courbe vers le haut - DANS le canvas)
+          context.strokeStyle = white;
+          context.lineWidth = 3;
+          context.lineCap = 'round';
+          context.beginPath();
+          context.moveTo(w - 6, h - 10);
+          context.quadraticCurveTo(w - 2 + tailWave, h - 16, w - 4 + tailWave, h - 20);
+          context.stroke();
+
+          // Corps (plus petit)
+          context.fillStyle = white;
+          context.fillRect(8, 10, w - 16, h - 18);
+
+          // Tête
+          context.fillRect(6, 2, w - 12, 12);
+
+          // Oreilles (plus petites)
+          context.beginPath();
+          context.moveTo(7, 4);
+          context.lineTo(10, -2);
+          context.lineTo(13, 4);
+          context.fill();
+          context.beginPath();
+          context.moveTo(w - 13, 4);
+          context.lineTo(w - 10, -2);
+          context.lineTo(w - 7, 4);
+          context.fill();
+
+          // Intérieur oreilles
+          context.fillStyle = pink;
+          context.beginPath();
+          context.moveTo(9, 4);
+          context.lineTo(10, 0);
+          context.lineTo(11, 4);
+          context.fill();
+          context.beginPath();
+          context.moveTo(w - 11, 4);
+          context.lineTo(w - 10, 0);
+          context.lineTo(w - 9, 4);
+          context.fill();
+
+          // Yeux
+          context.fillStyle = '#000';
+          const eyeY = state === 'jump' ? 6 : 7;
+          context.fillRect(10, eyeY, 3, 3);
+          context.fillRect(w - 13, eyeY, 3, 3);
+
+          // Reflets yeux
+          context.fillStyle = '#fff';
+          context.fillRect(11, eyeY, 1, 1);
+          context.fillRect(w - 12, eyeY, 1, 1);
+
+          // Nez
+          context.fillStyle = pink;
+          context.fillRect(w/2 - 1, 10, 3, 2);
+
+          // Moustaches (courtes)
+          context.strokeStyle = '#ccc';
+          context.lineWidth = 0.5;
+          context.beginPath();
+          context.moveTo(6, 10);
+          context.lineTo(2, 9);
+          context.moveTo(6, 12);
+          context.lineTo(2, 12);
+          context.moveTo(w - 6, 10);
+          context.lineTo(w - 2, 9);
+          context.moveTo(w - 6, 12);
+          context.lineTo(w - 2, 12);
+          context.stroke();
+
+          // Pattes (allongées pour rejoindre le corps)
+          context.fillStyle = white;
+          if (state === 'jump') {
+            context.fillRect(9, h - 10, 4, 10);
+            context.fillRect(w - 13, h - 10, 4, 10);
+          } else if (state === 'walk' || state === 'run') {
+            context.fillRect(9, h - 8 + legAnim, 4, 8);
+            context.fillRect(w - 13, h - 8 - legAnim, 4, 8);
+          } else {
+            context.fillRect(9, h - 8, 4, 8);
+            context.fillRect(w - 13, h - 8, 4, 8);
+          }
+        }
+
+        context.restore();
+      }
+
+      // Draw collectible (item from DB)
+      function drawCollectible(c) {
+        ctx.save();
+
+        const pulse = 1 + Math.sin(game.time * 0.15 + c.x * 0.1) * 0.1;
+
+        // Glow
+        ctx.shadowColor = c.color;
+        ctx.shadowBlur = 6 * pulse;
+
+        // Draw based on type
+        ctx.fillStyle = c.color;
+
+        if (c.type === 'jeu') {
+          // Box shape (game box)
+          ctx.fillRect(c.x + 2, c.y + 2, 20, 16);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(c.x + 4, c.y + 4, 16, 3);
+        } else if (c.type === 'livre') {
+          // Book shape
+          ctx.fillRect(c.x + 4, c.y + 2, 16, 18);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(c.x + 6, c.y + 4, 12, 2);
+          ctx.fillRect(c.x + 6, c.y + 8, 8, 1);
+        } else if (c.type === 'film') {
+          // Film reel / disc
+          ctx.beginPath();
+          ctx.arc(c.x + 12, c.y + 10, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.arc(c.x + 12, c.y + 10, 3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (c.type === 'disque') {
+          // Vinyl disc
+          ctx.beginPath();
+          ctx.arc(c.x + 12, c.y + 10, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.arc(c.x + 12, c.y + 10, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = c.color;
+          ctx.beginPath();
+          ctx.arc(c.x + 12, c.y + 10, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      // Draw obstacle (same as before)
+      function drawObstacle(o) {
+        ctx.save();
+        ctx.fillStyle = o.color;
+
+        switch(o.type) {
+          case 'dog':
+            ctx.fillRect(o.x + 4, o.y + 8, o.width - 8, o.height - 12);
+            ctx.fillRect(o.x, o.y + 4, 12, 14);
+            ctx.fillRect(o.x, o.y, 4, 6);
+            ctx.fillRect(o.x + 8, o.y, 4, 6);
+            ctx.fillRect(o.x + 6, o.y + o.height - 8, 4, 8);
+            ctx.fillRect(o.x + o.width - 10, o.y + o.height - 8, 4, 8);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(o.x + 2, o.y + 8, 3, 3);
+            break;
+          case 'hedgehog':
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height - 6, o.width/2, o.height/2 - 2, 0, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#4a3728';
+            for (let i = 0; i < 5; i++) {
+              ctx.beginPath();
+              ctx.moveTo(o.x + 4 + i * 4, o.y + 6);
+              ctx.lineTo(o.x + 6 + i * 4, o.y - 2);
+              ctx.lineTo(o.x + 8 + i * 4, o.y + 6);
+              ctx.fill();
+            }
+            break;
+          case 'squirrel':
+            ctx.fillRect(o.x + 4, o.y + 8, o.width - 8, o.height - 12);
+            ctx.beginPath();
+            ctx.arc(o.x + o.width/2, o.y + 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width - 2, o.y + 4, 6, 12, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 'fox':
+            ctx.fillRect(o.x + 8, o.y + 8, o.width - 16, o.height - 12);
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y + 14);
+            ctx.lineTo(o.x + 12, o.y + 4);
+            ctx.lineTo(o.x + 12, o.y + 18);
+            ctx.closePath();
+            ctx.fill();
+            break;
+          case 'chicken':
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height - 8, o.width/2 - 2, o.height/2 - 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(o.x + 4, o.y - 2, 3, 4);
+            break;
+          case 'ostrich':
+            ctx.fillRect(o.x + o.width/2 - 4, o.y, 8, o.height - 16);
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height - 10, o.width/2, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(o.x + o.width/2 - 6, o.y - 4, 12, 10);
+            break;
+          case 'snake':
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y + o.height/2);
+            for (let i = 0; i < o.width; i += 8) {
+              ctx.quadraticCurveTo(o.x + i + 4, o.y + (i % 16 === 0 ? 0 : o.height), o.x + i + 8, o.y + o.height/2);
+            }
+            ctx.lineTo(o.x + o.width, o.y + o.height/2 - 4);
+            ctx.lineTo(o.x + o.width - 4, o.y + o.height/2);
+            ctx.lineTo(o.x + o.width, o.y + o.height/2 + 4);
+            ctx.closePath();
+            ctx.fill();
+            break;
+          case 'crocodile':
+            ctx.fillRect(o.x + 8, o.y + 4, o.width - 16, o.height - 6);
+            ctx.fillRect(o.x, o.y + 2, 16, o.height - 4);
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 4; i++) {
+              ctx.fillRect(o.x + 2 + i * 3, o.y + o.height - 4, 2, 3);
+            }
+            break;
+          case 'bat':
+            // Corps
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height/2, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Ailes (animation de battement)
+            const batWing = Math.sin(game.time * 0.5) * 4;
+            ctx.beginPath();
+            ctx.moveTo(o.x + o.width/2 - 4, o.y + o.height/2);
+            ctx.quadraticCurveTo(o.x, o.y + batWing, o.x + 2, o.y + o.height/2 + 4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(o.x + o.width/2 + 4, o.y + o.height/2);
+            ctx.quadraticCurveTo(o.x + o.width, o.y + batWing, o.x + o.width - 2, o.y + o.height/2 + 4);
+            ctx.fill();
+            // Oreilles
+            ctx.fillRect(o.x + o.width/2 - 5, o.y + 2, 3, 4);
+            ctx.fillRect(o.x + o.width/2 + 2, o.y + 2, 3, 4);
+            // Yeux
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(o.x + o.width/2 - 3, o.y + o.height/2 - 1, 2, 2);
+            ctx.fillRect(o.x + o.width/2 + 1, o.y + o.height/2 - 1, 2, 2);
+            break;
+          case 'crow':
+            // Corps
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height/2 + 2, 8, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Tête
+            ctx.beginPath();
+            ctx.arc(o.x + 6, o.y + o.height/2 - 2, 5, 0, Math.PI * 2);
+            ctx.fill();
+            // Bec
+            ctx.fillStyle = '#ff8c00';
+            ctx.beginPath();
+            ctx.moveTo(o.x, o.y + o.height/2 - 2);
+            ctx.lineTo(o.x - 4, o.y + o.height/2);
+            ctx.lineTo(o.x, o.y + o.height/2 + 2);
+            ctx.closePath();
+            ctx.fill();
+            // Ailes
+            ctx.fillStyle = o.color;
+            const crowWing = Math.sin(game.time * 0.4) * 5;
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2 + 2, o.y + crowWing + 4, 10, 4, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            // Oeil
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(o.x + 4, o.y + o.height/2 - 3, 2, 2);
+            break;
+          case 'bee':
+            // Corps rayé
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2, o.y + o.height/2, 6, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Rayures noires
+            ctx.fillStyle = '#000';
+            ctx.fillRect(o.x + o.width/2 - 2, o.y + o.height/2 - 4, 2, 8);
+            ctx.fillRect(o.x + o.width/2 + 2, o.y + o.height/2 - 4, 2, 8);
+            // Ailes
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            const beeWing = Math.sin(game.time * 0.8) * 3;
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2 - 2, o.y + beeWing, 5, 3, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(o.x + o.width/2 + 2, o.y + beeWing, 5, 3, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            // Dard
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(o.x + o.width - 2, o.y + o.height/2);
+            ctx.lineTo(o.x + o.width + 3, o.y + o.height/2);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#000';
+            ctx.stroke();
+            break;
+        }
+        ctx.restore();
+      }
+
+      // Draw particle
+      function drawParticle(p) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        if (p.type === 'star') {
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const angle = (i * 72 - 90) * Math.PI / 180;
+            const r = i % 2 === 0 ? p.size : p.size / 2;
+            const px = p.x + Math.cos(angle) * r;
+            const py = p.y + Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        ctx.restore();
+      }
+
+      // ========================================
+      // GAME FUNCTIONS
+      // ========================================
+
+      // Load items from DB
+      async function loadItemsPool() {
+        try {
+          const resp = await fetch('/api/public/random-items?count=50');
+          const data = await resp.json();
+          if (data.success && data.items.length > 0) {
+            itemsPool = data.items;
+          }
+        } catch (e) {
+          console.error('Error loading items:', e);
+        }
+      }
+
+      // Spawn collectible
+      function spawnCollectible() {
+        if (itemsPool.length === 0) return;
+
+        const item = itemsPool[Math.floor(Math.random() * itemsPool.length)];
+        // Position Y dans le canvas de 80px (sol à y=72)
+        // Le chat mesure 32px de haut, position au sol: y=40 (72-32)
+        // En sautant il peut monter d'environ 30-40px
+        const yOptions = [
+          GROUND_Y - 18,  // Au niveau du sol (chat debout peut attraper)
+          GROUND_Y - 35,  // Niveau moyen (nécessite petit saut)
+          GROUND_Y - 55   // En hauteur (nécessite saut complet)
+        ];
+        // Pondération: plus d'items faciles/moyens
+        const weights = [0.4, 0.35, 0.25];
+        const rand = Math.random();
+        let yIndex = 0;
+        let cumWeight = 0;
+        for (let i = 0; i < weights.length; i++) {
+          cumWeight += weights[i];
+          if (rand < cumWeight) {
+            yIndex = i;
+            break;
+          }
+        }
+        const y = yOptions[yIndex];
+
+        collectibles.push({
+          x: gameCanvas.width + 20,
+          y: y,
+          width: 22,
+          height: 20,
+          points: 10 + yIndex * 5 + Math.floor(Math.random() * 10), // Plus de points pour les plus hauts
+          ...item
+        });
+      }
+
+      // Spawn obstacle
+      function spawnObstacle() {
+        // Obstacles adaptés à la zone de 80px
+        const groundObstacles = [
+          { type: 'dog', width: 28, height: 22, color: '#8b4513', needJump: true },
+          { type: 'hedgehog', width: 20, height: 14, color: '#654321', needJump: true },
+          { type: 'snake', width: 28, height: 6, color: '#228b22', needJump: true },
+          { type: 'chicken', width: 18, height: 18, color: '#fff5e6', needJump: true },
+          { type: 'fox', width: 30, height: 20, color: '#ff6347', needJump: true }
+        ];
+
+        const flyingObstacles = [
+          { type: 'bat', width: 22, height: 14, color: '#4a4a6a', flying: true, needRoll: true },
+          { type: 'crow', width: 26, height: 16, color: '#1a1a1a', flying: true, needRoll: true },
+          { type: 'bee', width: 16, height: 12, color: '#ffd700', flying: true, needRoll: true }
+        ];
+
+        // 25% de chance d'avoir un ennemi volant
+        const isFlying = Math.random() < 0.25;
+        const obstacleList = isFlying ? flyingObstacles : groundObstacles;
+        const typeIndex = Math.floor(Math.random() * obstacleList.length);
+        const type = obstacleList[typeIndex];
+
+        // Position Y : au sol ou en vol
+        let yPos;
+        if (type.flying) {
+          // Volants : entre 20 et 40 pixels du haut (au niveau de la tête du chat)
+          yPos = 20 + Math.random() * 20;
+        } else {
+          // Au sol
+          yPos = GROUND_Y - type.height;
+        }
+
+        obstacles.push({
+          x: gameCanvas.width + 20,
+          y: yPos,
+          ...type
+        });
+      }
+
+      // Spawn particles
+      function spawnParticles(x, y, color, count = 5) {
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: -Math.random() * 3 - 1,
+            size: Math.random() * 4 + 2,
+            color,
+            life: 1,
+            type: Math.random() > 0.5 ? 'star' : 'square'
+          });
+        }
+      }
+
+      // Collision check avec hitboxes ajustées selon le type d'obstacle
+      function checkCollision(a, b) {
+        // Padding pour des hitboxes plus petites que les sprites
+        const padA = 4;
+        // Padding réduit pour les petits obstacles (serpent, etc)
+        const padBx = Math.min(4, b.width / 6);
+        const padBy = Math.min(4, b.height / 4);
+
+        return a.x + padA < b.x + b.width - padBx &&
+               a.x + a.width - padA > b.x + padBx &&
+               a.y + padA < b.y + b.height - padBy &&
+               a.y + a.height - padA > b.y + padBy;
+      }
+
+      // Debug: dessiner les hitboxes (désactivé en production)
+      const DEBUG_HITBOXES = false;
+
+      // Update UI
+      function updateUI() {
+        document.getElementById('gameScore').textContent = game.score.toString().padStart(7, '0');
+        document.getElementById('gameSpeed').textContent = 'x' + game.speedLevel;
+
+        // Timer (format MM:SS)
+        const seconds = Math.floor(game.time / 60);
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        document.getElementById('gameTime').textContent =
+          mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+      }
+
+      // Update lives
+      function updateLives() {
+        const hearts = document.querySelectorAll('#gameLives i');
+        hearts.forEach((h, i) => h.classList.toggle('lost', i >= game.lives));
+      }
+
+      // Show last caught item - dans le HUD hero
+      function showLastCaught(item) {
+        gameTitlesType.textContent = item.type.toUpperCase();
+        gameTitlesValue.textContent = item.titre || 'Item';
+      }
+
+      // Game over
+      function triggerGameOver() {
+        gameActive = false;
+        document.getElementById('finalScore').textContent = game.score;
+        gameOverOverlay.classList.add('show');
+      }
+
+      // Start game
+      function startGame() {
+        gameActive = true;
+        game.score = 0;
+        game.lives = 9;
+        game.speed = 3;
+        game.speedLevel = 1;
+        game.time = 0;
+        game.lastSpeedIncrease = 0;
+        game.itemsCaught = 0;
+        game.invincible = false;
+
+        // Reset du chat idle joueur (garde sa position de départ)
+        idleCatY = 0;
+        idleCatVelocityY = 0;
+        idleCatJumping = false;
+        idleCatRolling = false;
+        idleCatRollTimer = 0;
+        idleCatDirection = 1;
+
+        collectibles = [];
+        obstacles = [];
+        particles = [];
+        collectibleTimer = 0;
+        obstacleTimer = 0;
+
+        updateUI();
+        updateLives();
+
+        gameOverOverlay.classList.remove('show');
+
+        // Show instructions briefly
+        gameInstructions.classList.add('show');
+        setTimeout(() => gameInstructions.classList.remove('show'), 3000);
+      }
+
+      // Jump - contrôle le chat idle
+      function jump() {
+        if (gameActive && !idleCatJumping && !idleCatRolling) {
+          idleCatJumping = true;
+          idleCatVelocityY = -14; // Force du saut (monte d'environ 45px)
+        }
+      }
+
+      // Roll - contrôle le chat idle
+      function roll() {
+        if (gameActive && !idleCatJumping) {
+          idleCatRolling = true;
+          idleCatRollTimer = 30;
+        }
+      }
+
+      // ========================================
+      // IDLE CAT ANIMATION (devient le joueur en mode jeu)
+      // ========================================
+
+      // Physique du chat idle quand il joue
+      let idleCatY = 0; // Position Y relative (0 = au sol, négatif = en l'air)
+      let idleCatVelocityY = 0;
+      let idleCatJumping = false;
+      let idleCatRolling = false;
+      let idleCatRollTimer = 0;
+
+      function updateIdleCat() {
+        idleCatTimer++;
+
+        // Squash & Stretch - retour progressif à la normale
+        catScaleX = lerp(catScaleX, 1, 0.15);
+        catScaleY = lerp(catScaleY, 1, 0.15);
+
+        if (gameActive) {
+          // Mode jeu - le chat reste fixe en X mais peut sauter/rouler
+          idleCatX = targetStartX;
+          idleCatDirection = 1;
+
+          // Physique du saut (plus douce style Kingdom)
+          if (idleCatJumping) {
+            idleCatVelocityY += 0.8; // Gravité plus douce
+            idleCatY += idleCatVelocityY;
+
+            // Stretch en montant, compress en descendant
+            if (idleCatVelocityY < 0) {
+              catScaleX = 0.85;
+              catScaleY = 1.15;
+            } else {
+              catScaleX = 1.1;
+              catScaleY = 0.9;
+            }
+
+            if (idleCatY >= 0) {
+              idleCatY = 0;
+              idleCatJumping = false;
+              idleCatVelocityY = 0;
+              // Squash à l'atterrissage
+              catScaleX = 1.3;
+              catScaleY = 0.7;
+            }
+          }
+
+          // Rolling
+          if (idleCatRolling) {
+            idleCatRollTimer--;
+            if (idleCatRollTimer <= 0) idleCatRolling = false;
+          }
+
+          // State
+          if (idleCatRolling) {
+            idleCatState = 'roll';
+          } else if (idleCatJumping) {
+            idleCatState = 'jump';
+          } else {
+            idleCatState = 'run';
+          }
+
+          // Position CSS du chat (bottom depuis la ligne)
+          idleCat.style.bottom = (4 - idleCatY) + 'px';
+
+        } else if (catMovingToStart) {
+          // Mode déplacement vers la position de départ
+          idleCatState = 'walk';
+
+          // Direction vers la cible
+          const diff = targetStartX - idleCatX;
+          if (Math.abs(diff) > 2) {
+            idleCatDirection = diff > 0 ? 1 : -1;
+            idleCatX += idleCatDirection * 1.5;
+          } else {
+            idleCatX = targetStartX;
+            idleCatDirection = 1;
+            completeReveal();
+          }
+
+          idleCat.style.bottom = '4px';
+
+        } else if (!gameRevealed) {
+          // Mode idle - le chat se balade
+
+          if (idleCatPauseTimer > 0) {
+            idleCatPauseTimer--;
+            idleCatState = 'idle';
+          } else {
+            idleCatState = 'walk';
+
+            // Move
+            idleCatX += idleCatDirection * 0.5;
+
+            // Bounds
+            const maxX = catLane.clientWidth - 50;
+            if (idleCatX > maxX) {
+              idleCatX = maxX;
+              idleCatDirection = -1;
+              idleCatPauseTimer = 60 + Math.random() * 120;
+            } else if (idleCatX < 10) {
+              idleCatX = 10;
+              idleCatDirection = 1;
+              idleCatPauseTimer = 60 + Math.random() * 120;
+            }
+
+            // Random pause
+            if (Math.random() < 0.005) {
+              idleCatPauseTimer = 60 + Math.random() * 180;
+            }
+          }
+
+          idleCat.style.bottom = '4px';
+        }
+
+        idleCat.style.left = idleCatX + 'px';
+
+        // Animation frame
+        if (idleCatTimer % 6 === 0) {
+          idleCatFrame++;
+        }
+      }
+
+      function drawIdleCat() {
+        idleCtx.clearRect(0, 0, 40, 40);
+        const flashInvincible = gameActive && game.invincible;
+        drawCat(idleCtx, 4, 4, 32, 32, idleCatState, idleCatFrame, idleCatDirection, flashInvincible);
+      }
+
+      // ========================================
+      // GAME UPDATE & DRAW
+      // ========================================
+
+      function updateGame() {
+        if (!gameActive) return;
+
+        game.time++;
+
+        // Speed increase every 10s
+        if (game.time - game.lastSpeedIncrease > 600) {
+          game.speed += 0.5;
+          game.speedLevel++;
+          game.lastSpeedIncrease = game.time;
+          updateUI();
+        }
+
+        // Invincibility
+        if (game.invincible) {
+          game.invincibleTimer--;
+          if (game.invincibleTimer <= 0) game.invincible = false;
+        }
+
+        // Spawn collectibles
+        collectibleTimer++;
+        if (collectibleTimer > 80 + Math.random() * 80) {
+          spawnCollectible();
+          collectibleTimer = 0;
+        }
+
+        // Spawn obstacles
+        obstacleTimer++;
+        const obstacleDelay = Math.max(120, 200 - game.speedLevel * 10);
+        if (obstacleTimer > obstacleDelay + Math.random() * 100) {
+          spawnObstacle();
+          obstacleTimer = 0;
+        }
+
+        // Hitbox du chat (coordonnées canvas)
+        // Le chat CSS: bottom = (4 - idleCatY)px depuis la ligne de 8px
+        // Canvas: 80px de haut, sol à y=72
+        // Position CSS bottom=4 → chat base touche le sol
+        // idleCatY négatif = monte (saut), positif = descend (atterrissage)
+        const catHeight = idleCatRolling ? 16 : 32;
+        const catWidth = 28;
+        // Position Y dans le canvas: sol (72) - hauteur du chat - offset de saut
+        // Quand idleCatY = 0, le chat est au sol
+        // Quand idleCatY = -20, le chat est 20px plus haut (en l'air)
+        const catCanvasY = GROUND_Y - catHeight + idleCatY;
+        const catHitbox = {
+          x: idleCatX + 6, // Centre de la hitbox
+          y: catCanvasY,
+          width: catWidth,
+          height: catHeight
+        };
+
+        // Update collectibles
+        for (let i = collectibles.length - 1; i >= 0; i--) {
+          const c = collectibles[i];
+          c.x -= game.speed;
+
+          if (checkCollision(catHitbox, c)) {
+            game.score += c.points;
+            game.itemsCaught++;
+            spawnParticles(c.x + c.width/2, c.y + c.height/2, c.color, 6);
+            showLastCaught(c);
+            collectibles.splice(i, 1);
+            updateUI();
+            continue;
+          }
+
+          if (c.x + c.width < 0) collectibles.splice(i, 1);
+        }
+
+        // Update obstacles
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+          const o = obstacles[i];
+          o.x -= game.speed;
+
+          if (!game.invincible && checkCollision(catHitbox, o)) {
+            // Peut éviter si :
+            // - roule pour obstacles hauts/volants (needRoll)
+            // - saute assez haut pour passer au-dessus (needJump)
+            let canAvoid = false;
+
+            if (o.needRoll && idleCatRolling) {
+              // Roule permet d'éviter les obstacles hauts et volants
+              canAvoid = true;
+            } else if (o.flying && !idleCatJumping && !idleCatRolling) {
+              // Pour les volants, on peut aussi passer dessous en restant au sol
+              // Le chat évite si sa tête est en dessous de l'obstacle
+              const catTopY = catHitbox.y;
+              const obstacleBottomY = o.y + o.height;
+              canAvoid = catTopY > obstacleBottomY - 5;
+            } else if (o.needJump && idleCatJumping) {
+              // Saute assez haut pour passer au-dessus
+              // Le chat évite si ses pieds sont au-dessus de l'obstacle
+              const catFeetY = catHitbox.y + catHitbox.height;
+              // Pour les obstacles bas (serpent), il suffit d'être un peu au-dessus
+              const obstacleTopY = o.y + o.height * 0.3;
+              canAvoid = catFeetY < obstacleTopY;
+            }
+
+            if (!canAvoid) {
+              game.lives--;
+              game.invincible = true;
+              game.invincibleTimer = 90;
+              spawnParticles(catHitbox.x + catHitbox.width/2, catHitbox.y + catHitbox.height/2, '#ff4757', 8);
+              updateLives();
+              if (game.lives <= 0) {
+                triggerGameOver();
+                return;
+              }
+            }
+          }
+
+          if (o.x + o.width < idleCatX && !o.passed) {
+            o.passed = true;
+            game.score += 5;
+            updateUI();
+          }
+
+          if (o.x + o.width < 0) obstacles.splice(i, 1);
+        }
+
+        // Sauvegarder la hitbox pour le debug
+        game.lastCatHitbox = catHitbox;
+
+        // Update particles
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.1;
+          p.life -= 0.02;
+          if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        // Passive score
+        if (game.time % 10 === 0) {
+          game.score++;
+          updateUI();
+        }
+
+      }
+
+      function drawGame() {
+        ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+        // Fond transparent - la ligne CSS est en dessous
+
+        // Stars qui défilent
+        ctx.fillStyle = '#fff';
+        stars.forEach(star => {
+          const twinkle = Math.sin(game.time * 0.05 + star.twinkle) * 0.5 + 0.5;
+          ctx.globalAlpha = twinkle * 0.5;
+          ctx.fillRect(star.x, star.y, star.size, star.size);
+        });
+        ctx.globalAlpha = 1;
+
+        // Move stars
+        if (gameActive) {
+          stars.forEach(star => {
+            star.x -= game.speed * 0.3;
+            if (star.x < 0) {
+              star.x = gameCanvas.width;
+              star.y = Math.random() * (GROUND_Y - 30);
+            }
+          });
+        }
+
+        // Ligne de sol défilante (effet de mouvement)
+        const groundGrad = ctx.createLinearGradient(0, GROUND_Y, gameCanvas.width, GROUND_Y);
+        groundGrad.addColorStop(0, '#6b3fa0');
+        groundGrad.addColorStop(0.5, '#00d4ff');
+        groundGrad.addColorStop(1, '#6b3fa0');
+        ctx.fillStyle = groundGrad;
+        ctx.fillRect(0, GROUND_Y, gameCanvas.width, 8);
+
+        // Collectibles
+        collectibles.forEach(drawCollectible);
+
+        // Obstacles
+        obstacles.forEach(drawObstacle);
+
+        // Particles
+        particles.forEach(drawParticle);
+
+        // Debug: dessiner les hitboxes
+        if (DEBUG_HITBOXES && game.lastCatHitbox) {
+          // Hitbox du chat
+          ctx.strokeStyle = '#00ff00';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(game.lastCatHitbox.x, game.lastCatHitbox.y, game.lastCatHitbox.width, game.lastCatHitbox.height);
+
+          // Hitboxes des collectibles
+          ctx.strokeStyle = '#00ffff';
+          collectibles.forEach(c => {
+            ctx.strokeRect(c.x, c.y, c.width, c.height);
+          });
+
+          // Hitboxes des obstacles
+          ctx.strokeStyle = '#ff0000';
+          obstacles.forEach(o => {
+            ctx.strokeRect(o.x, o.y, o.width, o.height);
+          });
+        }
+      }
+
+      // ========================================
+      // LEADERBOARD
+      // ========================================
+
+      async function loadLeaderboard() {
+        try {
+          const resp = await fetch('/api/leaderboard?limit=5');
+          const data = await resp.json();
+          if (data.success) {
+            const list = document.getElementById('leaderboardList');
+            const scores = data.data || [];
+
+            // Mettre à jour le top score global
+            if (scores.length > 0 && scores[0].score > game.topScore) {
+              game.topScore = scores[0].score;
+            }
+
+            // Afficher dans le leaderboard du stat-box
+            list.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+              const li = document.createElement('li');
+              if (scores[i]) {
+                li.innerHTML = `<span class="lb-rank">${i+1}.</span><span class="lb-name">${scores[i].pseudo}</span><span class="lb-score">${scores[i].score.toString().padStart(7,'0')}</span>`;
+              } else {
+                li.innerHTML = `<span class="lb-rank">${i+1}.</span><span class="lb-name">---</span><span class="lb-score">0000000</span>`;
+              }
+              list.appendChild(li);
+            }
+          }
+        } catch (e) {
+          console.error('Leaderboard error:', e);
+        }
+      }
+
+      async function submitScore() {
+        const pseudo = document.getElementById('playerName').value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
+        if (!pseudo) {
+          document.getElementById('playerName').focus();
+          return;
+        }
+
+        try {
+          await fetch('/api/leaderboard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pseudo,
+              score: game.score,
+              temps_secondes: Math.floor(game.time / 60),
+              vies_restantes: game.lives,
+              niveau_vitesse: game.speedLevel,
+              friandises_attrapees: game.itemsCaught
+            })
+          });
+          loadLeaderboard();
+          document.getElementById('btnSubmitScore').style.display = 'none';
+        } catch (e) {
+          console.error('Submit error:', e);
+        }
+      }
+
+      // ========================================
+      // ACTIVATION (reveal game)
+      // ========================================
+
+      // Calculer la position X sous le pixel-search
+      function getStartPositionX() {
+        const searchBox = document.querySelector('.pixel-search');
+        if (searchBox) {
+          const searchRect = searchBox.getBoundingClientRect();
+          const laneRect = catLane.getBoundingClientRect();
+          // Position X = gauche de la searchbox - position de la lane + petit offset
+          return searchRect.left - laneRect.left + 20;
+        }
+        return 60; // fallback
+      }
+
+      function revealGame() {
+        if (gameRevealed || catMovingToStart) return;
+
+        // Calculer la position cible
+        targetStartX = getStartPositionX();
+
+        // Commencer à déplacer le chat vers la position de départ
+        catMovingToStart = true;
+        activationRing.classList.remove('active');
+
+        // Le chat va se déplacer dans updateIdleCat()
+        // Une fois arrivé, il déclenchera le vrai réveal
+      }
+
+      function completeReveal() {
+        gameRevealed = true;
+        catMovingToStart = false;
+
+        // Activer le mode jeu
+        heroSection.classList.add('game-active');
+        catLane.classList.add('game-active');
+
+        // Activer le leaderboard dans le premier stat-box
+        statBoxJeux.classList.add('leaderboard-mode');
+
+        // Resize canvas et démarrer
+        resizeCanvas();
+        setTimeout(() => {
+          startGame();
+        }, 300);
+      }
+
+      // Quitter le jeu et revenir à la page normale
+      function quitGame() {
+        // Masquer le game over
+        gameOverOverlay.classList.remove('show');
+
+        // Désactiver le mode jeu
+        heroSection.classList.remove('game-active');
+        catLane.classList.remove('game-active');
+        statBoxJeux.classList.remove('leaderboard-mode');
+
+        // Réinitialiser l'état
+        gameRevealed = false;
+        gameActive = false;
+        catMovingToStart = false;
+
+        // Remettre le chat en mode idle
+        idleCatY = 0;
+        idleCatVelocityY = 0;
+        idleCatJumping = false;
+        idleCatRolling = false;
+        idleCatState = 'idle';
+
+        // Réinitialiser les titres
+        gameTitlesType.textContent = '-';
+        gameTitlesValue.textContent = 'En attente...';
+
+        // Réinitialiser le bouton submit
+        document.getElementById('btnSubmitScore').style.display = 'inline-block';
+      }
+
+      function handleCatClick() {
+        clickCount++;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => clickCount = 0, 1000);
+
+        if (clickCount >= 5) {
+          revealGame();
+          clickCount = 0;
+        }
+      }
+
+      function handleCatHoldStart() {
+        holdStartTime = Date.now();
+        activationRing.classList.add('active');
+
+        holdTimer = setInterval(() => {
+          const elapsed = Date.now() - holdStartTime;
+          if (elapsed >= 3000) {
+            clearInterval(holdTimer);
+            revealGame();
+          }
+        }, 100);
+      }
+
+      function handleCatHoldEnd() {
+        clearInterval(holdTimer);
+        activationRing.classList.remove('active');
+      }
+
+      // ========================================
+      // EVENT LISTENERS
+      // ========================================
+
+      // Idle cat clicks
+      idleCat.addEventListener('click', handleCatClick);
+      idleCat.addEventListener('mousedown', handleCatHoldStart);
+      idleCat.addEventListener('mouseup', handleCatHoldEnd);
+      idleCat.addEventListener('mouseleave', handleCatHoldEnd);
+      idleCat.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleCatClick();
+        handleCatHoldStart();
+      });
+      idleCat.addEventListener('touchend', handleCatHoldEnd);
+
+      // Game controls
+      document.addEventListener('keydown', (e) => {
+        if (!gameRevealed) return;
+
+        if (['Space', 'ArrowUp', 'KeyW'].includes(e.code)) {
+          e.preventDefault();
+          if (!gameActive && !gameOverOverlay.classList.contains('show')) {
+            startGame();
+          } else {
+            jump();
+          }
+        }
+        if (['ArrowDown', 'KeyS'].includes(e.code)) {
+          e.preventDefault();
+          roll();
+        }
+      });
+
+      gameCanvas.addEventListener('click', () => {
+        if (!gameActive && gameRevealed && !gameOverOverlay.classList.contains('show')) {
+          startGame();
+        } else if (gameActive) {
+          jump();
+        }
+      });
+
+      gameCanvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touchStartY = e.touches[0].clientY;
+        if (!gameActive && gameRevealed && !gameOverOverlay.classList.contains('show')) {
+          startGame();
+        } else if (gameActive) {
+          jump();
+        }
+      });
+
+      gameCanvas.addEventListener('touchend', (e) => {
+        if (gameActive) {
+          const touchEndY = e.changedTouches[0].clientY;
+          if (touchEndY - touchStartY > 30) roll();
+        }
+      });
+
+      // Buttons
+      document.getElementById('btnSubmitScore').addEventListener('click', submitScore);
+      document.getElementById('btnRetry').addEventListener('click', () => {
+        document.getElementById('btnSubmitScore').style.display = 'inline-block';
+        startGame();
+      });
+
+      document.getElementById('btnQuit').addEventListener('click', quitGame);
+
+      document.getElementById('playerName').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitScore();
+      });
+
+      // ========================================
+      // RESIZE
+      // ========================================
+
+      function resizeCanvas() {
+        // Le canvas est au-dessus de la ligne (80px de haut)
+        gameCanvas.width = catLane.clientWidth;
+        gameCanvas.height = 80;
+        GROUND_Y = 72; // Le sol est en bas du canvas (laisse 8px pour la ligne)
+      }
+
+      // ========================================
+      // MAIN LOOP
+      // ========================================
+
+      function mainLoop() {
+        // Update
+        updateIdleCat();
+        if (gameActive) updateGame();
+
+        // Draw
+        drawIdleCat();
+        if (gameRevealed) drawGame();
+
+        requestAnimationFrame(mainLoop);
+      }
+
+      // ========================================
+      // INIT
+      // ========================================
+
+      function init() {
+        // Initialisation de base
+        loadItemsPool();
+        loadLeaderboard();
+
+        // Le canvas sera redimensionné quand le jeu sera révélé
+        window.addEventListener('resize', () => {
+          if (gameRevealed) {
+            resizeCanvas();
+          }
+        });
+
+        mainLoop();
+      }
+
+      init();
+
+      // Export public state
+      return {
+        get gameActive() { return gameActive; }
+      };
+    })();
   </script>
 </body>
 </html>

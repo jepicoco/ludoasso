@@ -709,4 +709,89 @@ router.get('/themes', themesSiteController.getPublicThemes);
  */
 router.get('/themes/:code/css', themesSiteController.getPublicThemeCSS);
 
+/**
+ * @route   GET /api/public/random-items
+ * @desc    Get random items from active modules (for mini-game)
+ * @access  Public
+ * @query   count=20 (number of items to return)
+ */
+router.get('/random-items', async (req, res) => {
+  try {
+    const parametres = await ParametresFront.getParametres();
+    const count = Math.min(parseInt(req.query.count) || 20, 100);
+
+    const items = [];
+    const baseWhere = {
+      statut: { [Op.notIn]: ['archive', 'perdu'] }
+    };
+
+    // Collecter les articles de chaque module actif
+    const promises = [];
+
+    if (parametres.module_ludotheque) {
+      promises.push(
+        Jeu.findAll({
+          where: { ...baseWhere, prive: { [Op.ne]: true } },
+          attributes: ['id', 'titre', 'image_url'],
+          order: Jeu.sequelize.random(),
+          limit: Math.ceil(count / 4)
+        }).then(rows => rows.map(r => ({ id: r.id, titre: r.titre, image: r.image_url, type: 'jeu', icon: 'bi-dice-6', color: '#ff6b9d' })))
+      );
+    }
+
+    if (parametres.module_bibliotheque) {
+      promises.push(
+        Livre.findAll({
+          where: baseWhere,
+          attributes: ['id', 'titre', 'image_url'],
+          order: Livre.sequelize.random(),
+          limit: Math.ceil(count / 4)
+        }).then(rows => rows.map(r => ({ id: r.id, titre: r.titre, image: r.image_url, type: 'livre', icon: 'bi-book', color: '#6bcb77' })))
+      );
+    }
+
+    if (parametres.module_filmotheque) {
+      promises.push(
+        Film.findAll({
+          where: baseWhere,
+          attributes: ['id', 'titre', 'image_url'],
+          order: Film.sequelize.random(),
+          limit: Math.ceil(count / 4)
+        }).then(rows => rows.map(r => ({ id: r.id, titre: r.titre, image: r.image_url, type: 'film', icon: 'bi-film', color: '#00d4ff' })))
+      );
+    }
+
+    if (parametres.module_discotheque) {
+      promises.push(
+        Disque.findAll({
+          where: baseWhere,
+          attributes: ['id', 'titre', 'image_url'],
+          order: Disque.sequelize.random(),
+          limit: Math.ceil(count / 4)
+        }).then(rows => rows.map(r => ({ id: r.id, titre: r.titre, image: r.image_url, type: 'disque', icon: 'bi-vinyl', color: '#ffd93d' })))
+      );
+    }
+
+    const results = await Promise.all(promises);
+    results.forEach(arr => items.push(...arr));
+
+    // Melanger et limiter
+    const shuffled = items.sort(() => Math.random() - 0.5).slice(0, count);
+
+    res.json({
+      success: true,
+      items: shuffled,
+      modules: {
+        jeux: parametres.module_ludotheque,
+        livres: parametres.module_bibliotheque,
+        films: parametres.module_filmotheque,
+        disques: parametres.module_discotheque
+      }
+    });
+  } catch (error) {
+    console.error('Erreur random-items:', error);
+    res.status(500).json({ error: 'Erreur serveur', message: error.message });
+  }
+});
+
 module.exports = router;

@@ -40,7 +40,14 @@ const OVERRIDABLE_PAGES = [
   'mentions-legales.html',
   'cgu.html',
   'cgv.html',
-  'contact.html'
+  'contact.html',
+  // Pages usager
+  'usager/login.html',
+  'usager/dashboard.html',
+  'usager/emprunts.html',
+  'usager/profil.html',
+  'usager/forgot-password.html',
+  'usager/reset-password.html'
 ];
 
 /**

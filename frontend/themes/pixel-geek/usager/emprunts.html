@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes emprunts - Espace Usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.9rem;
+      color: var(--pixel-cyan);
+      text-shadow: 3px 3px 0 var(--pixel-purple);
+      margin-bottom: 2rem;
+    }
+
+    /* Tabs */
+    .pixel-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 2rem;
+      border-bottom: 4px solid var(--pixel-purple);
+    }
+
+    .pixel-tab {
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-purple);
+      border-bottom: none;
+      color: var(--text-secondary);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pixel-tab:hover {
+      background: rgba(255, 107, 157, 0.2);
+    }
+
+    .pixel-tab.active {
+      background: var(--pixel-pink);
+      border-color: var(--pixel-pink);
+      color: white;
+      position: relative;
+      top: 4px;
+    }
+
+    .pixel-tab .badge {
+      background: var(--pixel-cyan);
+      color: var(--bg-dark);
+      padding: 0.2rem 0.4rem;
+      font-size: 0.4rem;
+    }
+
+    /* Emprunt cards */
+    .emprunt-card {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-blue);
+      margin-bottom: 1rem;
+      position: relative;
+      transition: all 0.1s ease;
+    }
+
+    .emprunt-card:hover {
+      border-color: var(--pixel-cyan);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--pixel-purple);
+    }
+
+    .emprunt-card-body {
+      padding: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .item-image-placeholder {
+      width: 80px;
+      height: 80px;
+      border: 3px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .item-image-placeholder.jeu { border-color: #6f42c1; color: #6f42c1; }
+    .item-image-placeholder.livre { border-color: #20c997; color: #20c997; }
+    .item-image-placeholder.film { border-color: #fd7e14; color: #fd7e14; }
+    .item-image-placeholder.disque { border-color: #e83e8c; color: #e83e8c; }
+
+    .item-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border: 3px solid var(--pixel-blue);
+    }
+
+    .emprunt-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .emprunt-title {
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin: 0 0 0.5rem;
+    }
+
+    .badge-type {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      padding: 0.25rem 0.5rem;
+      border: 2px solid;
+      margin-left: 0.5rem;
+    }
+
+    .badge-type.jeu { border-color: #6f42c1; color: #6f42c1; }
+    .badge-type.livre { border-color: #20c997; color: #20c997; }
+    .badge-type.film { border-color: #fd7e14; color: #fd7e14; }
+    .badge-type.disque { border-color: #e83e8c; color: #e83e8c; }
+
+    .emprunt-dates {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .emprunt-dates span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .badge-prolongation {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--pixel-purple);
+      color: white;
+    }
+
+    /* Status badges */
+    .badge-status {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      padding: 0.5rem 0.75rem;
+      border: 3px solid;
+      white-space: nowrap;
+    }
+
+    .badge-status.retard {
+      border-color: var(--pixel-red);
+      color: var(--pixel-red);
+      background: rgba(255, 71, 87, 0.2);
+    }
+
+    .badge-status.warning {
+      border-color: var(--pixel-yellow);
+      color: var(--pixel-yellow);
+      background: rgba(255, 235, 59, 0.2);
+    }
+
+    .badge-status.ok {
+      border-color: var(--pixel-mint);
+      color: var(--pixel-mint);
+      background: rgba(123, 255, 160, 0.2);
+    }
+
+    .badge-status.retourne {
+      border-color: var(--pixel-purple);
+      color: var(--pixel-purple);
+      background: rgba(200, 80, 192, 0.2);
+    }
+
+    .emprunt-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .btn-action {
+      padding: 0.5rem 0.75rem;
+      background: transparent;
+      border: 2px solid var(--pixel-cyan);
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .btn-action:hover:not(:disabled) {
+      background: var(--pixel-cyan);
+      color: var(--bg-dark);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-purple);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--pixel-purple);
+      opacity: 0.5;
+    }
+
+    .empty-state h4 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--text-secondary);
+      margin: 1rem 0 0.5rem;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.25rem;
+      margin-top: 2rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .pagination-btn:hover {
+      background: var(--pixel-blue);
+    }
+
+    .pagination-btn.active {
+      background: var(--pixel-pink);
+      border-color: var(--pixel-pink);
+      color: white;
+    }
+
+    .pagination.hidden {
+      display: none;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .pixel-modal {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-cyan);
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 4px solid var(--pixel-cyan);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.55rem;
+      color: var(--pixel-yellow);
+      margin: 0;
+    }
+
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: var(--pixel-red);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem;
+      border-top: 4px solid var(--pixel-cyan);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .btn-modal {
+      padding: 0.75rem 1rem;
+      border: none;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      cursor: pointer;
+    }
+
+    .btn-modal.secondary { background: var(--pixel-purple); color: white; }
+    .btn-modal.primary { background: var(--pixel-pink); color: white; }
+
+    /* Details modal */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 1.5rem;
+    }
+
+    .detail-image {
+      text-align: center;
+    }
+
+    .detail-image img {
+      max-width: 100%;
+      border: 3px solid var(--pixel-blue);
+    }
+
+    .detail-image .item-image-placeholder {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+    }
+
+    .detail-info h4 {
+      font-family: 'VT323', monospace;
+      font-size: 1.5rem;
+      color: var(--pixel-cyan);
+      margin: 0 0 1rem;
+    }
+
+    .detail-table {
+      width: 100%;
+    }
+
+    .detail-table tr {
+      border-bottom: 2px dashed var(--pixel-purple);
+    }
+
+    .detail-table th {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      color: var(--pixel-yellow);
+      padding: 0.75rem 0;
+      text-align: left;
+      width: 40%;
+    }
+
+    .detail-table td {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      padding: 0.75rem 0;
+    }
+
+    /* Timeline */
+    .timeline-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      color: var(--pixel-cyan);
+      margin: 1.5rem 0 1rem;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--pixel-purple);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 2px solid var(--pixel-blue);
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -1.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12px;
+      height: 12px;
+      border: 3px solid var(--pixel-cyan);
+      background: var(--bg-dark);
+    }
+
+    .timeline-item.auto::before { border-color: var(--pixel-mint); }
+    .timeline-item.manuelle::before { border-color: var(--pixel-yellow); }
+    .timeline-item.refusee::before { border-color: var(--pixel-red); }
+
+    .timeline-item strong {
+      color: var(--pixel-yellow);
+      font-size: 0.9rem;
+    }
+
+    .timeline-item .badge {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.3rem;
+      padding: 0.2rem 0.4rem;
+      margin-left: 0.5rem;
+    }
+
+    .timeline-item .badge.success { background: var(--pixel-mint); color: var(--bg-dark); }
+    .timeline-item .badge.danger { background: var(--pixel-red); color: white; }
+    .timeline-item .badge.warning { background: var(--pixel-yellow); color: var(--bg-dark); }
+
+    .timeline-item small {
+      display: block;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .emprunt-card-body {
+        flex-wrap: wrap;
+      }
+
+      .emprunt-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="dashboard.html" class="logo">
+        <i class="bi bi-controller"></i>
+        <span id="siteName">MON ESPACE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">ACCUEIL</a></li>
+          <li><a href="emprunts.html" class="active">EMPRUNTS</a></li>
+        </ul>
+      </nav>
+      <div class="nav-dropdown">
+        <button class="btn-login" id="userMenuBtn">
+          <i class="bi bi-person-circle"></i> <span id="userName">PLAYER</span>
+        </button>
+        <div class="dropdown-menu" id="userDropdown">
+          <a href="profil.html"><i class="bi bi-person"></i> PROFIL</a>
+          <a href="#" id="btnLogout" class="danger"><i class="bi bi-box-arrow-right"></i> LOGOUT</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <h1 class="page-title"><i class="bi bi-collection"></i> MES EMPRUNTS</h1>
+
+    <!-- Tabs -->
+    <div class="pixel-tabs">
+      <a href="#" class="pixel-tab active" data-tab="en-cours">
+        <i class="bi bi-clock"></i> EN COURS
+        <span class="badge" id="countEnCours">0</span>
+      </a>
+      <a href="#" class="pixel-tab" data-tab="historique">
+        <i class="bi bi-archive"></i> HISTORIQUE
+      </a>
+    </div>
+
+    <!-- Content -->
+    <div id="tabContent">
+      <div class="loading">LOADING</div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination hidden" id="paginationContainer"></div>
+  </div>
+
+  <!-- Details Modal -->
+  <div class="modal-overlay hidden" id="detailsModal">
+    <div class="pixel-modal">
+      <div class="modal-header">
+        <h3>DETAILS EMPRUNT</h3>
+        <button class="btn-close-modal" onclick="closeDetailsModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="detailsContent">
+        <div class="loading">LOADING</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prolongation Modal -->
+  <div class="modal-overlay hidden" id="prolongationModal">
+    <div class="pixel-modal">
+      <div class="modal-header">
+        <h3>DEMANDER PROLONGATION</h3>
+        <button class="btn-close-modal" onclick="closeProlongationModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary);">Prolongation pour :</p>
+        <h4 id="prolongationItemTitle" style="font-family: 'VT323', monospace; font-size: 1.3rem; color: var(--pixel-cyan);"></h4>
+        <div style="background: rgba(0, 212, 255, 0.1); border: 2px solid var(--pixel-cyan); padding: 1rem;">
+          <i class="bi bi-info-circle" style="color: var(--pixel-cyan);"></i>
+          <span id="prolongationInfo"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal secondary" onclick="closeProlongationModal()">ANNULER</button>
+        <button class="btn-modal primary" id="btnConfirmProlongation">CONFIRMER</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let currentTab = 'en-cours';
+    let currentPage = 1;
+    let currentEmpruntId = null;
+
+    // Auth
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('usager_token')}`
+      };
+    }
+
+    // User info
+    function loadUserInfo() {
+      const userInfo = JSON.parse(localStorage.getItem('usager_info') || '{}');
+      document.getElementById('userName').textContent = (userInfo.prenom || 'PLAYER').toUpperCase();
+    }
+
+    // Helpers
+    function getTypeBadge(type) {
+      const labels = { jeu: 'JEU', livre: 'LIVRE', film: 'FILM', disque: 'DISQUE' };
+      return `<span class="badge-type ${type}">${labels[type] || 'ITEM'}</span>`;
+    }
+
+    function getTypeIcon(type) {
+      const icons = { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-vinyl' };
+      return icons[type] || 'bi-box';
+    }
+
+    function renderItemImage(item, type, size = 80) {
+      if (item?.image_url) {
+        return `<img src="${item.image_url}" alt="" class="item-image" style="width:${size}px;height:${size}px;" onerror="this.outerHTML='<div class=\\'item-image-placeholder ${type}\\' style=\\'width:${size}px;height:${size}px;\\'><i class=\\'bi ${getTypeIcon(type)}\\'></i></div>'">`;
+      }
+      return `<div class="item-image-placeholder ${type}" style="width:${size}px;height:${size}px;"><i class="bi ${getTypeIcon(type)}"></i></div>`;
+    }
+
+    function getStatutBadge(emprunt) {
+      if (emprunt.statut === 'retourne') {
+        return '<span class="badge-status retourne">RETOURNE</span>';
+      }
+      const jours = emprunt.jours_restants;
+      if (emprunt.statut === 'en_retard' || jours < 0) {
+        return `<span class="badge-status retard">${Math.abs(jours)}J RETARD</span>`;
+      }
+      if (jours <= 3) {
+        return `<span class="badge-status warning">${jours}J LEFT</span>`;
+      }
+      return `<span class="badge-status ok">${jours}J LEFT</span>`;
+    }
+
+    // Load en cours
+    async function loadEnCours() {
+      const container = document.getElementById('tabContent');
+      container.innerHTML = '<div class="loading">LOADING</div>';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/en-cours`, { headers: getHeaders() });
+
+        if (resp.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const data = await resp.json();
+        const emprunts = data.emprunts || [];
+
+        document.getElementById('countEnCours').textContent = emprunts.length;
+        document.getElementById('paginationContainer').classList.add('hidden');
+
+        if (emprunts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <h4>NO ITEMS IN PROGRESS</h4>
+              <p style="color: var(--text-secondary);">Aucun emprunt en cours</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = emprunts.map(e => renderEmpruntCard(e, true)).join('');
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+      }
+    }
+
+    // Load historique
+    async function loadHistorique(page = 1) {
+      const container = document.getElementById('tabContent');
+      container.innerHTML = '<div class="loading">LOADING</div>';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/historique?page=${page}&limit=10`, { headers: getHeaders() });
+        const data = await resp.json();
+        const emprunts = data.historique || [];
+        const pagination = data.pagination;
+
+        if (emprunts.length === 0 && page === 1) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-archive"></i>
+              <h4>NO HISTORY</h4>
+              <p style="color: var(--text-secondary);">Aucun emprunt retourne</p>
+            </div>
+          `;
+          document.getElementById('paginationContainer').classList.add('hidden');
+          return;
+        }
+
+        container.innerHTML = emprunts.map(e => renderEmpruntCard(e, false)).join('');
+
+        if (pagination.pages > 1) {
+          renderPagination(pagination);
+          document.getElementById('paginationContainer').classList.remove('hidden');
+        } else {
+          document.getElementById('paginationContainer').classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+      }
+    }
+
+    // Render emprunt card
+    function renderEmpruntCard(emprunt, showProlongation) {
+      const item = emprunt.item;
+      const type = emprunt.item_type;
+
+      const canProlong = showProlongation && emprunt.prolongation?.possible &&
+        (emprunt.prolongation.auto_restantes > 0 || emprunt.prolongation.manuelle_possible);
+
+      const prolongBtn = canProlong
+        ? `<button class="btn-action" onclick="openProlongation(${emprunt.id}, '${item?.titre?.replace(/'/g, "\\'")}', ${emprunt.prolongation.jours_accordes}, ${emprunt.prolongation.auto_restantes > 0})">
+            <i class="bi bi-arrow-repeat"></i> EXTEND
+           </button>`
+        : '';
+
+      return `
+        <div class="emprunt-card">
+          <div class="emprunt-card-body">
+            ${renderItemImage(item, type)}
+            <div class="emprunt-info">
+              <h4 class="emprunt-title">
+                ${item?.titre || 'Article'}
+                ${getTypeBadge(type)}
+              </h4>
+              <div class="emprunt-dates">
+                <span><i class="bi bi-calendar-plus"></i> ${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</span>
+                <span><i class="bi bi-calendar-check"></i> ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</span>
+                ${emprunt.date_retour_effective ? `<span><i class="bi bi-check-circle"></i> ${new Date(emprunt.date_retour_effective).toLocaleDateString('fr-FR')}</span>` : ''}
+              </div>
+              ${emprunt.nb_prolongations > 0 ? `<span class="badge-prolongation">+${emprunt.nb_prolongations} EXTEND</span>` : ''}
+            </div>
+            <div class="emprunt-actions">
+              ${getStatutBadge(emprunt)}
+              <button class="btn-action" onclick="showDetails(${emprunt.id})">
+                <i class="bi bi-eye"></i> VIEW
+              </button>
+              ${prolongBtn}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Pagination
+    function renderPagination(pagination) {
+      const container = document.getElementById('paginationContainer');
+      let html = '';
+
+      if (pagination.page > 1) {
+        html += `<button class="pagination-btn" onclick="changePage(${pagination.page - 1})">&lt;&lt;</button>`;
+      }
+
+      for (let i = 1; i <= pagination.pages; i++) {
+        html += `<button class="pagination-btn ${i === pagination.page ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+      }
+
+      if (pagination.page < pagination.pages) {
+        html += `<button class="pagination-btn" onclick="changePage(${pagination.page + 1})">&gt;&gt;</button>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      loadHistorique(page);
+    }
+
+    // Details modal
+    async function showDetails(id) {
+      document.getElementById('detailsModal').classList.remove('hidden');
+      const content = document.getElementById('detailsContent');
+      content.innerHTML = '<div class="loading">LOADING</div>';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/${id}`, { headers: getHeaders() });
+        const emprunt = await resp.json();
+        const type = emprunt.item_type;
+
+        let timelineHtml = '';
+        if (emprunt.prolongations?.length > 0) {
+          timelineHtml = `
+            <h5 class="timeline-title">PROLONGATIONS</h5>
+            <div class="timeline">
+              ${emprunt.prolongations.map(p => `
+                <div class="timeline-item ${p.type} ${p.statut === 'refusee' ? 'refusee' : ''}">
+                  <strong>${p.type === 'automatique' ? 'AUTO' : 'MANUAL'}</strong>
+                  +${p.jours_ajoutes}J
+                  <span class="badge ${p.statut === 'validee' ? 'success' : p.statut === 'refusee' ? 'danger' : 'warning'}">${p.statut.toUpperCase()}</span>
+                  <small>${new Date(p.date_demande).toLocaleDateString('fr-FR')}</small>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        content.innerHTML = `
+          <div class="detail-grid">
+            <div class="detail-image">
+              ${renderItemImage(emprunt.item, type, 120)}
+              <div style="margin-top: 0.5rem;">${getTypeBadge(type)}</div>
+            </div>
+            <div class="detail-info">
+              <h4>${emprunt.item?.titre || 'Article'}</h4>
+              <table class="detail-table">
+                <tr><th>EMPRUNT</th><td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td></tr>
+                <tr><th>RETOUR PREVU</th><td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td></tr>
+                ${emprunt.date_retour_initiale ? `<tr><th>RETOUR INITIAL</th><td>${new Date(emprunt.date_retour_initiale).toLocaleDateString('fr-FR')}</td></tr>` : ''}
+                ${emprunt.date_retour_effective ? `<tr><th>RETOURNE</th><td>${new Date(emprunt.date_retour_effective).toLocaleDateString('fr-FR')}</td></tr>` : ''}
+                <tr><th>STATUT</th><td>${getStatutBadge(emprunt)}</td></tr>
+                <tr><th>PROLONGATIONS</th><td>${emprunt.nb_prolongations || 0}</td></tr>
+              </table>
+              ${timelineHtml}
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        content.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+      }
+    }
+
+    function closeDetailsModal() {
+      document.getElementById('detailsModal').classList.add('hidden');
+    }
+
+    // Prolongation
+    function openProlongation(empruntId, titre, jours, isAuto) {
+      currentEmpruntId = empruntId;
+      document.getElementById('prolongationItemTitle').textContent = titre;
+      document.getElementById('prolongationInfo').textContent = isAuto
+        ? `+${jours} jours (automatique)`
+        : `+${jours} jours (soumis a validation)`;
+      document.getElementById('prolongationModal').classList.remove('hidden');
+    }
+
+    function closeProlongationModal() {
+      document.getElementById('prolongationModal').classList.add('hidden');
+    }
+
+    document.getElementById('btnConfirmProlongation').addEventListener('click', async () => {
+      const btn = document.getElementById('btnConfirmProlongation');
+      btn.disabled = true;
+      btn.textContent = 'LOADING...';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/${currentEmpruntId}/prolonger`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.message || 'Erreur');
+
+        closeProlongationModal();
+        alert(data.message);
+        loadEnCours();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'CONFIRMER';
+      }
+    });
+
+    // Tabs
+    document.querySelectorAll('.pixel-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.pixel-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        currentPage = 1;
+
+        if (currentTab === 'en-cours') {
+          loadEnCours();
+        } else {
+          loadHistorique();
+        }
+      });
+    });
+
+    // Dropdown
+    document.getElementById('userMenuBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('active');
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('userDropdown').classList.remove('active');
+    });
+
+    // Logout
+    document.getElementById('btnLogout').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    });
+
+    // Init
+    if (checkAuth()) {
+      loadUserInfo();
+      loadEnCours();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon profil - Espace usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Profile card */
+    .profile-card {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-pink);
+      position: relative;
+    }
+
+    .profile-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--pixel-purple);
+      z-index: -1;
+      transform: translate(6px, 6px);
+    }
+
+    .profile-header {
+      background: linear-gradient(180deg, var(--pixel-pink) 0%, var(--pixel-purple) 100%);
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border: 4px solid var(--pixel-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 2rem;
+      color: var(--pixel-cyan);
+      background: var(--bg-dark);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.65rem;
+      color: var(--pixel-yellow);
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+      margin: 0 0 0.5rem;
+    }
+
+    .profile-email {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .profile-body {
+      padding: 1.5rem;
+    }
+
+    /* Adhesion status */
+    .adhesion-status {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 3px solid;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .adhesion-status.active {
+      border-color: var(--pixel-mint);
+      background: rgba(123, 255, 160, 0.1);
+    }
+
+    .adhesion-status.expired {
+      border-color: var(--pixel-red);
+      background: rgba(255, 71, 87, 0.1);
+    }
+
+    .adhesion-status.warning {
+      border-color: var(--pixel-yellow);
+      background: rgba(255, 235, 59, 0.1);
+    }
+
+    .adhesion-status i {
+      font-size: 1.5rem;
+    }
+
+    .adhesion-status.active i { color: var(--pixel-mint); }
+    .adhesion-status.expired i { color: var(--pixel-red); animation: blink 1s step-start infinite; }
+    .adhesion-status.warning i { color: var(--pixel-yellow); }
+
+    .adhesion-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      color: var(--text-primary);
+    }
+
+    .adhesion-date {
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Info items */
+    .info-item {
+      padding: 0.75rem 0;
+      border-bottom: 2px dashed var(--pixel-purple);
+    }
+
+    .info-item:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      color: var(--pixel-cyan);
+      margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      color: var(--text-primary);
+    }
+
+    /* Section cards */
+    .section-card {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-blue);
+      margin-bottom: 2rem;
+    }
+
+    .section-header {
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 4px solid var(--pixel-blue);
+    }
+
+    .section-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.55rem;
+      color: var(--pixel-cyan);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-body {
+      padding: 1.5rem;
+    }
+
+    /* Info grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Alert */
+    .pixel-alert {
+      padding: 1rem;
+      border: 3px solid var(--pixel-cyan);
+      background: rgba(0, 212, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .pixel-alert i {
+      color: var(--pixel-cyan);
+      font-size: 1.25rem;
+    }
+
+    .pixel-alert p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Form elements */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      color: var(--pixel-cyan);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 3px solid var(--pixel-blue);
+      color: var(--text-primary);
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--pixel-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.3);
+    }
+
+    .form-hint {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .input-group {
+      display: flex;
+    }
+
+    .input-group .form-input {
+      flex: 1;
+    }
+
+    .btn-toggle {
+      padding: 0 1rem;
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      border-left: none;
+      color: var(--pixel-cyan);
+      cursor: pointer;
+    }
+
+    .btn-toggle:hover {
+      background: var(--pixel-blue);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Button */
+    .btn-submit {
+      padding: 0.75rem 1.5rem;
+      background: var(--pixel-pink);
+      border: none;
+      color: white;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .btn-submit:hover {
+      background: var(--pixel-purple);
+      transform: translate(-2px, -2px);
+      box-shadow: 3px 3px 0 var(--pixel-cyan);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 1000;
+    }
+
+    .pixel-toast {
+      background: var(--bg-card);
+      border: 4px solid;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: slideIn 0.3s ease;
+    }
+
+    .pixel-toast.hidden {
+      display: none;
+    }
+
+    .pixel-toast.success {
+      border-color: var(--pixel-mint);
+    }
+
+    .pixel-toast.danger {
+      border-color: var(--pixel-red);
+    }
+
+    .pixel-toast.warning {
+      border-color: var(--pixel-yellow);
+    }
+
+    .pixel-toast i {
+      font-size: 1.25rem;
+    }
+
+    .pixel-toast.success i { color: var(--pixel-mint); }
+    .pixel-toast.danger i { color: var(--pixel-red); }
+    .pixel-toast.warning i { color: var(--pixel-yellow); }
+
+    .pixel-toast .message {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="dashboard.html" class="logo">
+        <i class="bi bi-controller"></i>
+        <span id="siteName">MON ESPACE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html">ACCUEIL</a></li>
+          <li><a href="emprunts.html">EMPRUNTS</a></li>
+        </ul>
+      </nav>
+      <div class="nav-dropdown">
+        <button class="btn-login" id="userMenuBtn">
+          <i class="bi bi-person-circle"></i> <span id="userName">PLAYER</span>
+        </button>
+        <div class="dropdown-menu" id="userDropdown">
+          <a href="profil.html" class="active"><i class="bi bi-person"></i> PROFIL</a>
+          <a href="#" id="btnLogout" class="danger"><i class="bi bi-box-arrow-right"></i> LOGOUT</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <div class="profile-grid">
+      <!-- Profile sidebar -->
+      <div>
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">
+              <i class="bi bi-person"></i>
+            </div>
+            <h2 class="profile-name" id="profileName">LOADING...</h2>
+            <div class="profile-email" id="profileEmail"></div>
+          </div>
+          <div class="profile-body">
+            <div class="adhesion-status active" id="adhesionStatus">
+              <i class="bi bi-card-checklist"></i>
+              <div>
+                <div class="adhesion-label" id="adhesionLabel">ADHESION</div>
+                <div class="adhesion-date" id="adhesionDate"></div>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-label"><i class="bi bi-upc-scan"></i> CODE USAGER</div>
+              <div class="info-value" id="profileCodeBarre">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label"><i class="bi bi-calendar-event"></i> MEMBRE DEPUIS</div>
+              <div class="info-value" id="profileDateAdhesion">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div>
+        <!-- Personal info -->
+        <div class="section-card">
+          <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-person-vcard"></i> INFOS PERSONNELLES</h3>
+          </div>
+          <div class="section-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <div class="info-label">PRENOM</div>
+                <div class="info-value" id="infoPrenom">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">NOM</div>
+                <div class="info-value" id="infoNom">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">DATE DE NAISSANCE</div>
+                <div class="info-value" id="infoDateNaissance">-</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">TELEPHONE</div>
+                <div class="info-value" id="infoTelephone">-</div>
+              </div>
+            </div>
+            <div class="info-item" style="margin-top: 1rem;">
+              <div class="info-label">ADRESSE</div>
+              <div class="info-value" id="infoAdresse">-</div>
+            </div>
+
+            <div class="pixel-alert">
+              <i class="bi bi-info-circle"></i>
+              <p>Pour modifier vos informations personnelles, contactez l'association.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="section-card">
+          <div class="section-header">
+            <h3 class="section-title"><i class="bi bi-shield-lock"></i> SECURITE</h3>
+          </div>
+          <div class="section-body">
+            <p style="color: var(--text-secondary); margin: 0 0 1.5rem;">Modifiez votre mot de passe pour securiser votre compte.</p>
+
+            <form id="passwordForm">
+              <div class="form-group">
+                <label class="form-label">MOT DE PASSE ACTUEL</label>
+                <div class="input-group">
+                  <input type="password" class="form-input" id="currentPassword" required>
+                  <button type="button" class="btn-toggle" onclick="togglePassword('currentPassword')">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">NOUVEAU MOT DE PASSE</label>
+                  <div class="input-group">
+                    <input type="password" class="form-input" id="newPassword" required minlength="6">
+                    <button type="button" class="btn-toggle" onclick="togglePassword('newPassword')">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                  <div class="form-hint">Minimum 6 caracteres</div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">CONFIRMER</label>
+                  <div class="input-group">
+                    <input type="password" class="form-input" id="confirmPassword" required>
+                    <button type="button" class="btn-toggle" onclick="togglePassword('confirmPassword')">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-submit" id="btnChangePassword">
+                  <i class="bi bi-check-lg"></i> SAVE PASSWORD
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container">
+    <div class="pixel-toast hidden" id="toast">
+      <i class="bi bi-info-circle" id="toastIcon"></i>
+      <span class="message" id="toastMessage"></span>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+
+    // Auth
+    const token = localStorage.getItem('usager_token');
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    // Dropdown
+    document.getElementById('userMenuBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('active');
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('userDropdown').classList.remove('active');
+    });
+
+    // Logout
+    document.getElementById('btnLogout').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    });
+
+    // Load profile
+    async function loadProfile() {
+      try {
+        const resp = await fetch(`${API_URL}/usager/auth/me`, { headers: getHeaders() });
+
+        if (resp.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const data = await resp.json();
+
+        document.getElementById('userName').textContent = (data.prenom || 'PLAYER').toUpperCase();
+        document.getElementById('profileName').textContent = `${data.prenom} ${data.nom}`.toUpperCase();
+        document.getElementById('profileEmail').textContent = data.email;
+        document.getElementById('profileCodeBarre').textContent = data.code_barre || '-';
+
+        // Avatar
+        if (data.photo) {
+          document.getElementById('profileAvatar').innerHTML = `<img src="${data.photo}" alt="Photo">`;
+        } else {
+          document.getElementById('profileAvatar').innerHTML = `<span>${(data.prenom || 'U')[0].toUpperCase()}</span>`;
+        }
+
+        // Adhesion
+        updateAdhesionStatus(data);
+
+        // Info
+        document.getElementById('infoPrenom').textContent = data.prenom || '-';
+        document.getElementById('infoNom').textContent = data.nom || '-';
+        document.getElementById('infoTelephone').textContent = data.telephone || '-';
+        document.getElementById('infoDateNaissance').textContent = data.date_naissance
+          ? new Date(data.date_naissance).toLocaleDateString('fr-FR')
+          : '-';
+        document.getElementById('profileDateAdhesion').textContent = data.date_adhesion
+          ? new Date(data.date_adhesion).toLocaleDateString('fr-FR')
+          : '-';
+
+        let adresse = [];
+        if (data.adresse) adresse.push(data.adresse);
+        if (data.code_postal || data.ville) {
+          adresse.push([data.code_postal, data.ville].filter(Boolean).join(' '));
+        }
+        document.getElementById('infoAdresse').textContent = adresse.length > 0 ? adresse.join(', ') : '-';
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur de chargement', 'danger');
+      }
+    }
+
+    function updateAdhesionStatus(data) {
+      const statusDiv = document.getElementById('adhesionStatus');
+      const labelDiv = document.getElementById('adhesionLabel');
+      const dateDiv = document.getElementById('adhesionDate');
+
+      statusDiv.classList.remove('active', 'expired', 'warning');
+
+      if (!data.date_fin_adhesion) {
+        statusDiv.classList.add('active');
+        labelDiv.textContent = 'ADHESION ACTIVE';
+        dateDiv.textContent = 'Sans limite';
+        return;
+      }
+
+      const finAdhesion = new Date(data.date_fin_adhesion);
+      const today = new Date();
+      const daysRemaining = Math.ceil((finAdhesion - today) / (1000 * 60 * 60 * 24));
+
+      if (data.adhesion_expiree || daysRemaining < 0) {
+        statusDiv.classList.add('expired');
+        labelDiv.textContent = 'GAME OVER';
+        dateDiv.textContent = `Expiree le ${finAdhesion.toLocaleDateString('fr-FR')}`;
+      } else if (daysRemaining <= 30) {
+        statusDiv.classList.add('warning');
+        labelDiv.textContent = 'ATTENTION';
+        dateDiv.textContent = `${daysRemaining}J restants`;
+      } else {
+        statusDiv.classList.add('active');
+        labelDiv.textContent = 'ADHESION ACTIVE';
+        dateDiv.textContent = `Jusqu'au ${finAdhesion.toLocaleDateString('fr-FR')}`;
+      }
+    }
+
+    // Change password
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (newPassword !== confirmPassword) {
+        showToast('Les mots de passe ne correspondent pas', 'warning');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showToast('Minimum 6 caracteres requis', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnChangePassword');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;width:1em;height:1em;border:2px solid;border-right-color:transparent;border-radius:50%;animation:spin 0.75s linear infinite;margin-right:0.5rem;"></span>SAVING...';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/auth/password`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.message || 'Erreur');
+        }
+
+        showToast('PASSWORD UPDATED!', 'success');
+        document.getElementById('passwordForm').reset();
+
+      } catch (error) {
+        showToast(error.message, 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> SAVE PASSWORD';
+      }
+    });
+
+    // Toggle password
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.parentElement.querySelector('.btn-toggle i');
+
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+      }
+    }
+
+    // Toast
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden', 'success', 'danger', 'warning');
+      toast.classList.add(type);
+
+      const icons = {
+        success: 'bi-check-circle',
+        danger: 'bi-exclamation-circle',
+        warning: 'bi-exclamation-triangle',
+        info: 'bi-info-circle'
+      };
+
+      toastIcon.className = `bi ${icons[type] || icons.info}`;
+
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    // Init
+    loadProfile();
+  </script>
+</body>
+</html>

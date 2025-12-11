@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Fiche - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Fiche Detail - Reading Nook Style */
+    .page-header {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 1rem 2rem;
+      border-bottom: var(--border-frost);
+    }
+
+    .breadcrumb {
+      max-width: 1200px;
+      margin: 0 auto;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .breadcrumb a {
+      color: var(--frost-medium);
+    }
+
+    .breadcrumb a:hover {
+      color: var(--warm-amber);
+    }
+
+    .breadcrumb span {
+      color: var(--text-primary);
+    }
+
+    .fiche-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Main Card */
+    .fiche-card {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+    }
+
+    .fiche-header {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    /* Item Image */
+    .item-frame {
+      background: rgba(0, 0, 0, 0.2);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .item-image {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .item-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--border-radius-sm);
+    }
+
+    .item-image .placeholder {
+      font-size: 5rem;
+      color: var(--slate-medium);
+    }
+
+    .item-type-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+    }
+
+    .item-type-badge.jeux { color: var(--warm-amber); border: 1px solid var(--warm-amber); }
+    .item-type-badge.livres { color: var(--frost-medium); border: 1px solid var(--frost-medium); }
+    .item-type-badge.films { color: var(--warm-orange); border: 1px solid var(--warm-orange); }
+    .item-type-badge.disques { color: var(--color-success); border: 1px solid var(--color-success); }
+
+    /* Item Info */
+    .item-info {
+      padding: 1rem 0;
+    }
+
+    .item-title {
+      font-size: 1.75rem;
+      color: var(--snow-white);
+      margin-bottom: 0.5rem;
+    }
+
+    .item-subtitle {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Status Badge */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-badge.disponible {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+    }
+
+    .status-badge.emprunte {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+    }
+
+    /* Stats Box */
+    .stats-box {
+      background: rgba(0, 0, 0, 0.2);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stats-box-title {
+      font-size: 0.75rem;
+      color: var(--frost-medium);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-item .value {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--snow-white);
+    }
+
+    .stat-item .label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* Actions */
+    .actions-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Tabs */
+    .tabs-section {
+      border-top: var(--border-frost);
+    }
+
+    .tabs-nav {
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: var(--border-frost);
+    }
+
+    .tab-btn {
+      padding: 1rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--frost-medium);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--frost-medium), var(--frost-blue));
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab-content {
+      padding: 2rem;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .description-text {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--text-primary);
+    }
+
+    /* Details Grid */
+    .details-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: var(--border-frost);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row .label {
+      color: var(--text-secondary);
+    }
+
+    .detail-row .value {
+      color: var(--frost-medium);
+      font-weight: 500;
+    }
+
+    /* Loading & Error */
+    .loading-state {
+      text-align: center;
+      padding: 4rem;
+    }
+
+    .loading-state i {
+      font-size: 3rem;
+      color: var(--frost-medium);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-state p {
+      color: var(--text-secondary);
+      margin-top: 1rem;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 4rem;
+      background: var(--bg-glass);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      max-width: 500px;
+      margin: 4rem auto;
+    }
+
+    .error-state i {
+      font-size: 4rem;
+      color: var(--warm-orange);
+      margin-bottom: 1rem;
+    }
+
+    .error-state h3 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .error-state p {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .fiche-header {
+        grid-template-columns: 1fr;
+      }
+
+      .item-frame {
+        max-width: 320px;
+        margin: 0 auto;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .item-title {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-snow2 logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html" class="active">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <nav class="breadcrumb">
+      <a href="/">Accueil</a> &rsaquo; <a href="/catalogue.html">Catalogue</a> &rsaquo; <span id="breadcrumb-title">Fiche</span>
+    </nav>
+  </div>
+
+  <!-- Fiche Content -->
+  <div class="fiche-container">
+    <div class="fiche-card" id="fiche-card">
+      <div class="loading-state" id="loading">
+        <i class="bi bi-arrow-repeat"></i>
+        <p>Chargement...</p>
+      </div>
+    </div>
+
+    <div class="error-state" id="error-state" style="display: none;">
+      <i class="bi bi-exclamation-circle"></i>
+      <h3>Article non trouvé</h3>
+      <p>Cet article n'existe pas ou a été supprimé.</p>
+      <a href="/catalogue.html" class="btn btn-primary">
+        <i class="bi bi-arrow-left"></i> Retour au catalogue
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <!-- Snowfall -->
+  <script src="/theme/js/snowfall.js"></script>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const collection = params.get('collection');
+    const id = params.get('id');
+
+    async function loadFiche() {
+      if (!collection || !id) {
+        showError();
+        return;
+      }
+
+      try {
+        // Convertir collection (jeux, livres) en type singulier (jeu, livre)
+        const type = collection.replace(/s$/, '');
+        const resp = await fetch(`/api/public/catalogue/${type}/${id}`);
+        if (!resp.ok) {
+          showError();
+          return;
+        }
+
+        const item = await resp.json();
+        renderFiche(item);
+      } catch (e) {
+        showError();
+      }
+    }
+
+    function showError() {
+      document.getElementById('fiche-card').style.display = 'none';
+      document.getElementById('error-state').style.display = 'block';
+    }
+
+    function renderFiche(item) {
+      const title = item.nom || item.titre || 'Sans titre';
+      document.getElementById('site-title').textContent = `${title} - Assotheque`;
+      document.getElementById('breadcrumb-title').textContent = title;
+
+      const card = document.getElementById('fiche-card');
+      card.innerHTML = `
+        <div class="fiche-header">
+          <div class="item-frame">
+            <span class="item-type-badge ${collection}">
+              <i class="bi bi-${getIcon(collection)}"></i> ${collection}
+            </span>
+            <div class="item-image">
+              ${item.image_url
+                ? `<img src="${item.image_url}" alt="${title}">`
+                : `<i class="bi bi-${getIcon(collection)} placeholder"></i>`
+              }
+            </div>
+          </div>
+
+          <div class="item-info">
+            <h1 class="item-title">${title}</h1>
+            <p class="item-subtitle">${getSubtitle(item)}</p>
+
+            <span class="status-badge ${item.statut || 'disponible'}">
+              <i class="bi bi-${item.statut === 'disponible' ? 'check-circle' : 'clock'}"></i>
+              ${item.statut === 'disponible' ? 'Disponible' : 'Emprunté'}
+            </span>
+
+            <div class="stats-box">
+              <div class="stats-box-title">Caractéristiques</div>
+              <div class="stats-grid">
+                ${getStats(item)}
+              </div>
+            </div>
+
+            <div class="actions-row">
+              <a href="/usager/login.html" class="btn btn-primary">
+                <i class="bi bi-person"></i> Se connecter pour emprunter
+              </a>
+              <a href="/catalogue.html?collection=${collection}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Retour
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs-section">
+          <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="description">Description</button>
+            <button class="tab-btn" data-tab="details">Détails</button>
+          </div>
+
+          <div class="tab-content active" id="tab-description">
+            <p class="description-text">${item.description || 'Aucune description disponible.'}</p>
+          </div>
+
+          <div class="tab-content" id="tab-details">
+            <div class="details-list">
+              ${getDetails(item)}
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Tab events
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        });
+      });
+    }
+
+    function getIcon(c) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[c] || 'box';
+    }
+
+    function getSubtitle(item) {
+      if (collection === 'jeux') return item.editeur || '';
+      if (collection === 'livres') return `par ${item.auteur || 'Inconnu'}`;
+      if (collection === 'films') return `de ${item.realisateur || 'Inconnu'}`;
+      if (collection === 'disques') return `par ${item.artiste || 'Inconnu'}`;
+      return '';
+    }
+
+    function getStats(item) {
+      let html = '';
+      if (collection === 'jeux') {
+        html += `<div class="stat-item"><div class="value">${item.joueurs_min || '?'}-${item.joueurs_max || '?'}</div><div class="label">Joueurs</div></div>`;
+        html += `<div class="stat-item"><div class="value">${item.duree || '?'}'</div><div class="label">Durée</div></div>`;
+        html += `<div class="stat-item"><div class="value">${item.age_minimum || '?'}+</div><div class="label">Âge</div></div>`;
+      }
+      if (collection === 'livres') {
+        html += `<div class="stat-item"><div class="value">${item.annee || '?'}</div><div class="label">Année</div></div>`;
+        html += `<div class="stat-item"><div class="value">${item.pages || '?'}</div><div class="label">Pages</div></div>`;
+        html += `<div class="stat-item"><div class="value">-</div><div class="label">-</div></div>`;
+      }
+      if (collection === 'films') {
+        html += `<div class="stat-item"><div class="value">${item.annee || '?'}</div><div class="label">Année</div></div>`;
+        html += `<div class="stat-item"><div class="value">${item.duree || '?'}'</div><div class="label">Durée</div></div>`;
+        html += `<div class="stat-item"><div class="value">-</div><div class="label">-</div></div>`;
+      }
+      if (collection === 'disques') {
+        html += `<div class="stat-item"><div class="value">${item.annee || '?'}</div><div class="label">Année</div></div>`;
+        html += `<div class="stat-item"><div class="value">-</div><div class="label">-</div></div>`;
+        html += `<div class="stat-item"><div class="value">-</div><div class="label">-</div></div>`;
+      }
+      return html || '<div class="stat-item"><div class="value">?</div><div class="label">-</div></div>'.repeat(3);
+    }
+
+    function getDetails(item) {
+      const exclude = ['id', 'image_url', 'created_at', 'updated_at', 'deletedAt', 'description'];
+      const fields = Object.entries(item).filter(([k, v]) => v && !exclude.includes(k));
+
+      return fields.map(([key, value]) => `
+        <div class="detail-row">
+          <span class="label">${formatLabel(key)}</span>
+          <span class="value">${String(value)}</span>
+        </div>
+      `).join('');
+    }
+
+    function formatLabel(key) {
+      const labels = {
+        nom: 'Nom', titre: 'Titre', auteur: 'Auteur', editeur: 'Éditeur',
+        realisateur: 'Réalisateur', artiste: 'Artiste', annee: 'Année',
+        duree: 'Durée', pages: 'Pages', isbn: 'ISBN', statut: 'Statut',
+        joueurs_min: 'Min joueurs', joueurs_max: 'Max joueurs', age_minimum: 'Âge minimum'
+      };
+      return labels[key] || key.replace(/_/g, ' ').charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadFiche();
+  </script>
+</body>
+</html>

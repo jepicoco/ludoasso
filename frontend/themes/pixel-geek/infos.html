@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Infos - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Infos page specific styles */
+    .page-hero {
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .page-hero h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1.25rem;
+      color: var(--pixel-cyan);
+      text-shadow: 4px 4px 0 var(--pixel-purple);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    /* Info sections */
+    .info-section {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .info-section-title {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      color: var(--pixel-mint);
+      margin-bottom: 2rem;
+      text-shadow: 2px 2px 0 var(--pixel-purple);
+    }
+
+    .info-section-title i {
+      margin-right: 0.75rem;
+    }
+
+    /* Site cards - pixel style */
+    .site-card {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-blue);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .site-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--pixel-purple);
+      z-index: -1;
+      transform: translate(6px, 6px);
+    }
+
+    .site-card-header {
+      padding: 1rem 1.25rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 4px solid var(--pixel-blue);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-icon {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: var(--pixel-cyan);
+      border: 3px solid var(--pixel-cyan);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .site-name {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.7rem;
+      color: var(--pixel-yellow);
+      margin: 0;
+    }
+
+    .site-type {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .site-card-body {
+      padding: 1.25rem;
+    }
+
+    /* Horaires table - game menu style */
+    .horaires-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .horaires-table tr {
+      border-bottom: 2px dashed var(--pixel-purple);
+    }
+
+    .horaires-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .horaires-table td {
+      padding: 0.75rem 0;
+    }
+
+    .horaires-table .jour {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+    }
+
+    .horaires-table .heures {
+      text-align: right;
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--pixel-cyan);
+    }
+
+    .horaires-table .ferme {
+      color: var(--pixel-red);
+    }
+
+    .horaires-table .today {
+      background: rgba(123, 255, 160, 0.1);
+    }
+
+    .horaires-table .today .jour {
+      color: var(--pixel-mint);
+    }
+
+    .horaires-table .today .jour::before {
+      content: '> ';
+      color: var(--pixel-yellow);
+      animation: blink 1s step-start infinite;
+    }
+
+    /* Address block */
+    .address-block {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 2px dashed var(--pixel-purple);
+    }
+
+    .address-block p {
+      margin: 0.25rem 0;
+      color: var(--text-secondary);
+    }
+
+    .address-block i {
+      color: var(--pixel-pink);
+      margin-right: 0.5rem;
+    }
+
+    .address-block a {
+      color: var(--pixel-cyan);
+      text-decoration: none;
+    }
+
+    .address-block a:hover {
+      color: var(--pixel-pink);
+    }
+
+    /* Fermetures - warning boxes */
+    .fermeture-card {
+      background: rgba(255, 71, 87, 0.1);
+      border: 3px solid var(--pixel-red);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .fermeture-card i {
+      font-size: 1.5rem;
+      color: var(--pixel-yellow);
+      animation: blink 1s step-start infinite;
+    }
+
+    .fermeture-dates {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-yellow);
+    }
+
+    .fermeture-motif {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* Contact section */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .contact-card {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-pink);
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .contact-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--pixel-purple);
+      z-index: -1;
+      transform: translate(6px, 6px);
+    }
+
+    .contact-card h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.65rem;
+      color: var(--pixel-cyan);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px dashed var(--pixel-purple);
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px dashed rgba(160, 160, 192, 0.3);
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-icon {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--pixel-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pixel-cyan);
+      flex-shrink: 0;
+    }
+
+    .contact-details h4 {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--pixel-yellow);
+      margin: 0 0 0.25rem;
+    }
+
+    .contact-details p {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+
+    .contact-details a {
+      color: var(--pixel-cyan);
+      text-decoration: none;
+    }
+
+    .contact-details a:hover {
+      color: var(--pixel-pink);
+    }
+
+    /* Social links - pixel buttons */
+    .social-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .social-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      color: var(--text-primary);
+      text-decoration: none;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      transition: all 0.1s ease;
+    }
+
+    .social-link:hover {
+      background: var(--pixel-blue);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--pixel-purple);
+    }
+
+    .social-link i {
+      font-size: 1rem;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--pixel-cyan);
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* No data message */
+    .no-data {
+      color: var(--text-secondary);
+      font-style: italic;
+      padding: 1rem;
+      text-align: center;
+      border: 2px dashed var(--pixel-purple);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-controller"></i>
+        <span id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/catalogue.html">CATALOGUE</a></li>
+          <li><a href="/infos.html" class="active">INFOS</a></li>
+          <li><a href="/contact.html">CONTACT</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">LOGIN</a>
+    </div>
+  </header>
+
+  <!-- Page Hero -->
+  <section class="page-hero">
+    <h1>[ INFOS PRATIQUES ]</h1>
+    <p>Horaires, adresse et contact</p>
+  </section>
+
+  <!-- Sites et horaires -->
+  <section class="info-section">
+    <h2 class="info-section-title">
+      <i class="bi bi-clock"></i>
+      HORAIRES D'OUVERTURE
+    </h2>
+
+    <div id="loading-sites" class="loading">CHARGEMENT</div>
+    <div id="sites-container"></div>
+  </section>
+
+  <!-- Fermetures -->
+  <section class="info-section" id="fermetures-section" style="display: none;">
+    <h2 class="info-section-title">
+      <i class="bi bi-exclamation-triangle"></i>
+      ALERTES
+    </h2>
+    <div id="fermetures-container"></div>
+  </section>
+
+  <!-- Contact -->
+  <section class="info-section">
+    <h2 class="info-section-title">
+      <i class="bi bi-envelope"></i>
+      CONTACT
+    </h2>
+
+    <div class="contact-grid">
+      <div class="contact-card">
+        <h3><i class="bi bi-geo-alt me-2"></i>NOUS CONTACTER</h3>
+        <div id="contact-container">
+          <div class="loading">CHARGEMENT</div>
+        </div>
+      </div>
+
+      <div class="contact-card" id="social-section" style="display: none;">
+        <h3><i class="bi bi-share me-2"></i>SUIVEZ-NOUS</h3>
+        <div class="social-links" id="social-container"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>NAVIGATION</h4>
+        <ul>
+          <li><a href="/">ACCUEIL</a></li>
+          <li><a href="/catalogue.html">CATALOGUE</a></li>
+          <li><a href="/infos.html">INFOS</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>LEGAL</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">MENTIONS LEGALES</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>ADMIN</h4>
+        <ul>
+          <li><a href="/admin/login.html">CONNEXION ADMIN</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>[ <span id="year"></span> ] <span id="footer-name">ASSOTHEQUE</span> - POWERED BY PIXEL MAGIC</p>
+    </div>
+  </footer>
+
+  <script>
+    const JOURS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+    let config = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('year').textContent = new Date().getFullYear();
+      await loadConfig();
+      await loadSites();
+    });
+
+    // Load config
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/config');
+        config = await resp.json();
+
+        const nom = (config.nom_site || 'ASSOTHEQUE').toUpperCase();
+        document.getElementById('site-title').textContent = `Infos - ${nom}`;
+        document.getElementById('header-title').textContent = nom;
+        document.getElementById('footer-name').textContent = nom;
+
+        renderContact();
+        renderSocial();
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+    }
+
+    // Load sites
+    async function loadSites() {
+      try {
+        const resp = await fetch('/api/public/sites');
+        const data = await resp.json();
+
+        document.getElementById('loading-sites').style.display = 'none';
+
+        const container = document.getElementById('sites-container');
+        if (!data.sites || data.sites.length === 0) {
+          container.innerHTML = '<div class="no-data">AUCUN SITE CONFIGURE</div>';
+        } else {
+          container.innerHTML = data.sites.map(site => renderSite(site)).join('');
+        }
+
+        // Fermetures
+        if (data.fermetures_a_venir && data.fermetures_a_venir.length > 0) {
+          document.getElementById('fermetures-section').style.display = 'block';
+          document.getElementById('fermetures-container').innerHTML =
+            data.fermetures_a_venir.map(f => renderFermeture(f)).join('');
+        }
+      } catch (e) {
+        console.error('Sites error:', e);
+        document.getElementById('loading-sites').textContent = 'ERREUR DE CHARGEMENT';
+      }
+    }
+
+    // Render site
+    function renderSite(site) {
+      const icon = site.icone || 'building';
+
+      // Group horaires by day
+      const horairesByDay = {};
+      JOURS.forEach((_, i) => horairesByDay[i] = []);
+
+      if (site.horaires) {
+        site.horaires.forEach(h => {
+          horairesByDay[h.jour_semaine].push(h);
+        });
+      }
+
+      const today = (new Date().getDay() + 6) % 7;
+
+      let horairesHtml = '<table class="horaires-table">';
+      JOURS.forEach((jour, i) => {
+        const isToday = i === today;
+        const dayHoraires = horairesByDay[i];
+
+        let heuresHtml;
+        if (dayHoraires.length === 0) {
+          heuresHtml = '<span class="ferme">FERME</span>';
+        } else {
+          heuresHtml = dayHoraires.map(h => {
+            const debut = h.heure_debut.substring(0, 5);
+            const fin = h.heure_fin.substring(0, 5);
+            return `${debut} - ${fin}`;
+          }).join(' / ');
+        }
+
+        horairesHtml += `
+          <tr class="${isToday ? 'today' : ''}">
+            <td class="jour">${jour}</td>
+            <td class="heures">${heuresHtml}</td>
+          </tr>
+        `;
+      });
+      horairesHtml += '</table>';
+
+      let addressHtml = '';
+      if (site.adresse || site.ville || site.telephone || site.email) {
+        addressHtml = '<div class="address-block">';
+        if (site.adresse) {
+          addressHtml += `<p><i class="bi bi-geo-alt"></i>${site.adresse}</p>`;
+        }
+        if (site.code_postal || site.ville) {
+          addressHtml += `<p><i class="bi bi-pin-map"></i>${site.code_postal || ''} ${site.ville || ''}</p>`;
+        }
+        if (site.telephone) {
+          addressHtml += `<p><i class="bi bi-telephone"></i><a href="tel:${site.telephone}">${site.telephone}</a></p>`;
+        }
+        if (site.email) {
+          addressHtml += `<p><i class="bi bi-envelope"></i><a href="mailto:${site.email}">${site.email}</a></p>`;
+        }
+        addressHtml += '</div>';
+      }
+
+      return `
+        <div class="site-card">
+          <div class="site-card-header">
+            <div class="site-icon">
+              <i class="bi bi-${icon}"></i>
+            </div>
+            <div>
+              <h3 class="site-name">${site.nom.toUpperCase()}</h3>
+              <span class="site-type">${site.type === 'mobile' ? 'Site mobile' : 'Site fixe'}</span>
+            </div>
+          </div>
+          <div class="site-card-body">
+            ${horairesHtml}
+            ${addressHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // Render fermeture
+    function renderFermeture(fermeture) {
+      const opts = { day: 'numeric', month: 'short' };
+      const dateDebut = new Date(fermeture.date_debut).toLocaleDateString('fr-FR', opts).toUpperCase();
+      const dateFin = new Date(fermeture.date_fin).toLocaleDateString('fr-FR', opts).toUpperCase();
+
+      const dateStr = fermeture.date_debut === fermeture.date_fin
+        ? dateDebut
+        : `${dateDebut} > ${dateFin}`;
+
+      return `
+        <div class="fermeture-card">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <div class="fermeture-dates">${dateStr}</div>
+            <div class="fermeture-motif">${fermeture.motif || 'Fermeture exceptionnelle'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render contact
+    function renderContact() {
+      const container = document.getElementById('contact-container');
+      let html = '';
+
+      if (config.adresse_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-geo-alt"></i></div>
+            <div class="contact-details">
+              <h4>ADRESSE</h4>
+              <p>${config.adresse_contact.replace(/\n/g, '<br>')}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (config.telephone_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-telephone"></i></div>
+            <div class="contact-details">
+              <h4>TELEPHONE</h4>
+              <p><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (config.email_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-envelope"></i></div>
+            <div class="contact-details">
+              <h4>EMAIL</h4>
+              <p><a href="mailto:${config.email_contact}">${config.email_contact}</a></p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!html) {
+        html = '<div class="no-data">AUCUN CONTACT CONFIGURE</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Render social
+    function renderSocial() {
+      const socials = config.reseaux_sociaux;
+      if (!socials) return;
+
+      const container = document.getElementById('social-container');
+      let html = '';
+
+      if (socials.facebook) {
+        html += `<a href="${socials.facebook}" target="_blank" class="social-link"><i class="bi bi-facebook"></i> FACEBOOK</a>`;
+      }
+      if (socials.instagram) {
+        html += `<a href="${socials.instagram}" target="_blank" class="social-link"><i class="bi bi-instagram"></i> INSTAGRAM</a>`;
+      }
+      if (socials.twitter) {
+        html += `<a href="${socials.twitter}" target="_blank" class="social-link"><i class="bi bi-twitter-x"></i> TWITTER</a>`;
+      }
+      if (socials.youtube) {
+        html += `<a href="${socials.youtube}" target="_blank" class="social-link"><i class="bi bi-youtube"></i> YOUTUBE</a>`;
+      }
+
+      if (html) {
+        document.getElementById('social-section').style.display = 'block';
+        container.innerHTML = html;
+      }
+    }
+  </script>
+</body>
+</html>

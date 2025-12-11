@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon espace - Usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Dashboard specific styles */
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Welcome section */
+    .welcome-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .welcome-text h2 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      color: var(--pixel-yellow);
+      text-shadow: 2px 2px 0 var(--pixel-purple);
+      margin: 0 0 0.5rem;
+    }
+
+    .welcome-text p {
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .btn-back {
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      text-decoration: none;
+      transition: all 0.1s ease;
+    }
+
+    .btn-back:hover {
+      background: var(--pixel-blue);
+      transform: translate(-2px, -2px);
+      box-shadow: 3px 3px 0 var(--pixel-purple);
+    }
+
+    /* Alert */
+    .adhesion-alert {
+      background: rgba(255, 71, 87, 0.2);
+      border: 3px solid var(--pixel-red);
+      padding: 1rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .adhesion-alert.hidden {
+      display: none;
+    }
+
+    .adhesion-alert i {
+      font-size: 1.5rem;
+      color: var(--pixel-yellow);
+      animation: blink 1s step-start infinite;
+    }
+
+    .adhesion-alert strong {
+      color: var(--pixel-red);
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      transition: all 0.1s ease;
+    }
+
+    .stat-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--pixel-purple);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border: 3px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .stat-icon.primary { border-color: var(--pixel-cyan); color: var(--pixel-cyan); }
+    .stat-icon.danger { border-color: var(--pixel-red); color: var(--pixel-red); }
+    .stat-icon.warning { border-color: var(--pixel-yellow); color: var(--pixel-yellow); }
+    .stat-icon.success { border-color: var(--pixel-mint); color: var(--pixel-mint); }
+
+    .stat-value {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1rem;
+      color: var(--pixel-yellow);
+    }
+
+    .stat-label {
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Emprunts section */
+    .emprunts-section {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-pink);
+      position: relative;
+    }
+
+    .emprunts-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--pixel-purple);
+      z-index: -1;
+      transform: translate(6px, 6px);
+    }
+
+    .section-header {
+      padding: 1rem 1.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 4px solid var(--pixel-pink);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.65rem;
+      color: var(--pixel-cyan);
+      margin: 0;
+    }
+
+    .btn-see-all {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      border: 2px solid var(--pixel-cyan);
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      text-decoration: none;
+      transition: all 0.1s ease;
+    }
+
+    .btn-see-all:hover {
+      background: var(--pixel-cyan);
+      color: var(--bg-dark);
+    }
+
+    .section-body {
+      padding: 1.5rem;
+    }
+
+    /* Emprunt cards */
+    .emprunt-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 3px solid var(--pixel-blue);
+      margin-bottom: 1rem;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.1s ease;
+    }
+
+    .emprunt-card:hover {
+      border-color: var(--pixel-cyan);
+    }
+
+    .item-image-placeholder {
+      width: 60px;
+      height: 60px;
+      border: 3px solid;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .item-image-placeholder.jeu { border-color: #6f42c1; color: #6f42c1; }
+    .item-image-placeholder.livre { border-color: #20c997; color: #20c997; }
+    .item-image-placeholder.film { border-color: #fd7e14; color: #fd7e14; }
+    .item-image-placeholder.disque { border-color: #e83e8c; color: #e83e8c; }
+
+    .item-image {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border: 3px solid var(--pixel-blue);
+    }
+
+    .emprunt-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .emprunt-title {
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      color: var(--text-primary);
+      margin: 0 0 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge-type {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      padding: 0.25rem 0.5rem;
+      border: 2px solid;
+    }
+
+    .badge-type.jeu { border-color: #6f42c1; color: #6f42c1; }
+    .badge-type.livre { border-color: #20c997; color: #20c997; }
+    .badge-type.film { border-color: #fd7e14; color: #fd7e14; }
+    .badge-type.disque { border-color: #e83e8c; color: #e83e8c; }
+
+    .emprunt-date {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .badge-prolongation {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      padding: 0.2rem 0.4rem;
+      background: var(--pixel-purple);
+      border: 2px solid var(--pixel-purple);
+      color: white;
+      margin-left: 0.5rem;
+    }
+
+    /* Status badges */
+    .badge-status {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      padding: 0.5rem 0.75rem;
+      border: 3px solid;
+      white-space: nowrap;
+    }
+
+    .badge-status.retard {
+      border-color: var(--pixel-red);
+      color: var(--pixel-red);
+      background: rgba(255, 71, 87, 0.2);
+    }
+
+    .badge-status.warning {
+      border-color: var(--pixel-yellow);
+      color: var(--pixel-yellow);
+      background: rgba(255, 235, 59, 0.2);
+    }
+
+    .badge-status.ok {
+      border-color: var(--pixel-mint);
+      color: var(--pixel-mint);
+      background: rgba(123, 255, 160, 0.2);
+    }
+
+    /* Buttons */
+    .btn-prolonger {
+      padding: 0.5rem 0.75rem;
+      background: transparent;
+      border: 2px solid var(--pixel-cyan);
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.35rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .btn-prolonger:hover:not(:disabled) {
+      background: var(--pixel-cyan);
+      color: var(--bg-dark);
+    }
+
+    .btn-prolonger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .emprunt-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--pixel-purple);
+      opacity: 0.5;
+    }
+
+    .empty-state h4 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--text-secondary);
+      margin: 1rem 0 0.5rem;
+    }
+
+    .empty-state p {
+      color: var(--text-secondary);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--pixel-cyan);
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .pixel-modal {
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-cyan);
+      width: 90%;
+      max-width: 450px;
+    }
+
+    .modal-header {
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 4px solid var(--pixel-cyan);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.55rem;
+      color: var(--pixel-yellow);
+      margin: 0;
+    }
+
+    .btn-close-modal {
+      background: none;
+      border: none;
+      color: var(--pixel-red);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-body p {
+      color: var(--text-secondary);
+      margin: 0 0 1rem;
+    }
+
+    .modal-body h4 {
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem;
+      color: var(--pixel-cyan);
+      margin: 0 0 1rem;
+    }
+
+    .modal-info {
+      background: rgba(0, 212, 255, 0.1);
+      border: 2px solid var(--pixel-cyan);
+      padding: 1rem;
+    }
+
+    .modal-info i {
+      color: var(--pixel-cyan);
+      margin-right: 0.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem;
+      border-top: 4px solid var(--pixel-cyan);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .btn-modal {
+      padding: 0.75rem 1rem;
+      border: none;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.45rem;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .btn-modal.secondary {
+      background: var(--pixel-purple);
+      color: white;
+    }
+
+    .btn-modal.primary {
+      background: var(--pixel-pink);
+      color: white;
+    }
+
+    .btn-modal:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* Alert success */
+    .success-alert {
+      background: rgba(123, 255, 160, 0.2);
+      border: 3px solid var(--pixel-mint);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      color: var(--pixel-mint);
+    }
+
+    .success-alert.hidden {
+      display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .emprunt-card {
+        flex-wrap: wrap;
+      }
+
+      .emprunt-actions {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="dashboard.html" class="logo">
+        <i class="bi bi-controller"></i>
+        <span id="siteName">MON ESPACE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="dashboard.html" class="active">ACCUEIL</a></li>
+          <li><a href="emprunts.html">EMPRUNTS</a></li>
+        </ul>
+      </nav>
+      <div class="nav-dropdown">
+        <button class="btn-login" id="userMenuBtn">
+          <i class="bi bi-person-circle"></i> <span id="userName">PLAYER</span>
+        </button>
+        <div class="dropdown-menu" id="userDropdown">
+          <a href="profil.html"><i class="bi bi-person"></i> PROFIL</a>
+          <a href="#" id="btnLogout" class="danger"><i class="bi bi-box-arrow-right"></i> LOGOUT</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-container">
+    <!-- Success alert -->
+    <div class="success-alert hidden" id="successAlert"></div>
+
+    <!-- Adhesion alert -->
+    <div class="adhesion-alert hidden" id="adhesionAlert">
+      <i class="bi bi-exclamation-triangle"></i>
+      <div>
+        <strong>GAME OVER!</strong> Votre adhesion a expire. Contactez l'association pour la renouveler.
+      </div>
+    </div>
+
+    <!-- Welcome -->
+    <div class="welcome-section">
+      <div class="welcome-text">
+        <h2>BONJOUR <span id="userPrenom">PLAYER 1</span>!</h2>
+        <p>Bienvenue dans votre espace personnel</p>
+      </div>
+      <a href="../index.html" class="btn-back">
+        <i class="bi bi-arrow-left"></i> RETOUR SITE
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon primary">
+          <i class="bi bi-book"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statEnCours">-</div>
+          <div class="stat-label">EN COURS</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statRetard">-</div>
+          <div class="stat-label">EN RETARD</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning">
+          <i class="bi bi-arrow-repeat"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statProlongations">-</div>
+          <div class="stat-label">PROLONGATIONS</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success">
+          <i class="bi bi-check-circle"></i>
+        </div>
+        <div>
+          <div class="stat-value" id="statTotal">-</div>
+          <div class="stat-label">TOTAL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emprunts -->
+    <div class="emprunts-section">
+      <div class="section-header">
+        <h3><i class="bi bi-collection"></i> MES EMPRUNTS EN COURS</h3>
+        <a href="emprunts.html" class="btn-see-all">VOIR TOUT &gt;&gt;</a>
+      </div>
+      <div class="section-body" id="empruntsContainer">
+        <div class="loading">LOADING</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prolongation Modal -->
+  <div class="modal-overlay hidden" id="prolongationModal">
+    <div class="pixel-modal">
+      <div class="modal-header">
+        <h3>DEMANDER PROLONGATION</h3>
+        <button class="btn-close-modal" onclick="closeProlongationModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Prolongation pour :</p>
+        <h4 id="prolongationItemTitle"></h4>
+        <div class="modal-info">
+          <i class="bi bi-info-circle"></i>
+          <span id="prolongationInfo"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal secondary" onclick="closeProlongationModal()">ANNULER</button>
+        <button class="btn-modal primary" id="btnConfirmProlongation">CONFIRMER</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+    let currentEmpruntId = null;
+
+    // Auth
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('usager_token')}`
+      };
+    }
+
+    // User info
+    function loadUserInfo() {
+      const userInfo = JSON.parse(localStorage.getItem('usager_info') || '{}');
+      document.getElementById('userName').textContent = (userInfo.prenom || 'PLAYER').toUpperCase();
+      document.getElementById('userPrenom').textContent = (userInfo.prenom || 'PLAYER 1').toUpperCase();
+    }
+
+    // Helpers
+    function getTypeBadge(type) {
+      const labels = { jeu: 'JEU', livre: 'LIVRE', film: 'FILM', disque: 'DISQUE' };
+      return `<span class="badge-type ${type}">${labels[type] || 'ITEM'}</span>`;
+    }
+
+    function getTypeIcon(type) {
+      const icons = { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-vinyl' };
+      return icons[type] || 'bi-box';
+    }
+
+    function renderItemImage(item, type) {
+      if (item?.image_url) {
+        return `<img src="${item.image_url}" alt="" class="item-image" onerror="this.outerHTML='<div class=\\'item-image-placeholder ${type}\\'><i class=\\'bi ${getTypeIcon(type)}\\'></i></div>'">`;
+      }
+      return `<div class="item-image-placeholder ${type}"><i class="bi ${getTypeIcon(type)}"></i></div>`;
+    }
+
+    // Load emprunts
+    async function loadEmprunts() {
+      const container = document.getElementById('empruntsContainer');
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/en-cours`, { headers: getHeaders() });
+
+        if (resp.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const data = await resp.json();
+        const emprunts = data.emprunts || [];
+
+        // Stats
+        const enCours = emprunts.filter(e => e.statut === 'en_cours').length;
+        const enRetard = emprunts.filter(e => e.statut === 'en_retard').length;
+        const prolongations = emprunts.reduce((sum, e) => sum + (e.nb_prolongations || 0), 0);
+
+        document.getElementById('statEnCours').textContent = enCours.toString().padStart(2, '0');
+        document.getElementById('statRetard').textContent = enRetard.toString().padStart(2, '0');
+        document.getElementById('statProlongations').textContent = prolongations.toString().padStart(2, '0');
+
+        if (emprunts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <h4>NO ITEMS</h4>
+              <p>Aucun emprunt en cours</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = emprunts.map(emprunt => {
+          const jours = emprunt.jours_restants;
+          let badgeClass, badgeText;
+
+          if (emprunt.statut === 'en_retard') {
+            badgeClass = 'retard';
+            badgeText = `${Math.abs(jours)}J RETARD`;
+          } else if (jours <= 3) {
+            badgeClass = 'warning';
+            badgeText = `${jours}J LEFT`;
+          } else {
+            badgeClass = 'ok';
+            badgeText = `${jours}J LEFT`;
+          }
+
+          const canProlong = emprunt.prolongation?.possible &&
+            (emprunt.prolongation.auto_restantes > 0 || emprunt.prolongation.manuelle_possible);
+
+          const prolongBtn = canProlong
+            ? `<button class="btn-prolonger" onclick="openProlongation(${emprunt.id}, '${emprunt.item?.titre?.replace(/'/g, "\\'")}', ${emprunt.prolongation.jours_accordes}, ${emprunt.prolongation.auto_restantes > 0})">
+                <i class="bi bi-arrow-repeat"></i> EXTEND
+               </button>`
+            : `<button class="btn-prolonger" disabled><i class="bi bi-lock"></i> MAX</button>`;
+
+          return `
+            <div class="emprunt-card">
+              ${renderItemImage(emprunt.item, emprunt.item_type)}
+              <div class="emprunt-info">
+                <h4 class="emprunt-title">
+                  ${emprunt.item?.titre || 'Article'}
+                  ${getTypeBadge(emprunt.item_type)}
+                </h4>
+                <div class="emprunt-date">
+                  <i class="bi bi-calendar"></i> Retour: ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
+                  ${emprunt.nb_prolongations > 0 ? `<span class="badge-prolongation">+${emprunt.nb_prolongations}</span>` : ''}
+                </div>
+              </div>
+              <div class="emprunt-actions">
+                <span class="badge-status ${badgeClass}">${badgeText}</span>
+                ${prolongBtn}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="empty-state"><p>Erreur de chargement</p></div>';
+      }
+    }
+
+    // Load total
+    async function loadTotalEmprunts() {
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts?limit=1`, { headers: getHeaders() });
+        const data = await resp.json();
+        const total = data.pagination?.total || 0;
+        document.getElementById('statTotal').textContent = total.toString().padStart(3, '0');
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    }
+
+    // Check adhesion
+    async function checkAdhesion() {
+      try {
+        const resp = await fetch(`${API_URL}/usager/auth/me`, { headers: getHeaders() });
+        const data = await resp.json();
+        if (data.adhesion_expiree) {
+          document.getElementById('adhesionAlert').classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+      }
+    }
+
+    // Prolongation
+    function openProlongation(empruntId, titre, jours, isAuto) {
+      currentEmpruntId = empruntId;
+      document.getElementById('prolongationItemTitle').textContent = titre;
+      document.getElementById('prolongationInfo').textContent = isAuto
+        ? `+${jours} jours (automatique)`
+        : `+${jours} jours (soumis a validation)`;
+      document.getElementById('prolongationModal').classList.remove('hidden');
+    }
+
+    function closeProlongationModal() {
+      document.getElementById('prolongationModal').classList.add('hidden');
+    }
+
+    document.getElementById('btnConfirmProlongation').addEventListener('click', async () => {
+      const btn = document.getElementById('btnConfirmProlongation');
+      btn.disabled = true;
+      btn.textContent = 'LOADING...';
+
+      try {
+        const resp = await fetch(`${API_URL}/usager/emprunts/${currentEmpruntId}/prolonger`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.message || 'Erreur');
+        }
+
+        closeProlongationModal();
+
+        const alert = document.getElementById('successAlert');
+        alert.innerHTML = `<i class="bi bi-check-circle"></i> ${data.message}`;
+        alert.classList.remove('hidden');
+        setTimeout(() => alert.classList.add('hidden'), 5000);
+
+        loadEmprunts();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'CONFIRMER';
+      }
+    });
+
+    // Dropdown menu
+    document.getElementById('userMenuBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('userDropdown').classList.toggle('active');
+    });
+
+    document.addEventListener('click', () => {
+      document.getElementById('userDropdown').classList.remove('active');
+    });
+
+    // Logout
+    document.getElementById('btnLogout').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    });
+
+    // Init
+    if (checkAuth()) {
+      loadUserInfo();
+      loadEmprunts();
+      loadTotalEmprunts();
+      checkAdhesion();
+    }
+  </script>
+</body>
+</html>

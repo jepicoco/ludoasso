@@ -51,9 +51,14 @@ npm run migrate-thematiques   # Unified thematiques tables
 # User Refactoring (Adherent → Utilisateur)
 npm run migrate-utilisateurs  # Rename adherents to utilisateurs
 
+# Feature Setup
+npm run setup-nouveautes      # Article novelty/new arrivals feature
+npm run setup-themes          # Site theme customization
+
 # Utility Scripts
 npm run generate-data         # Generate mass test data
 npm run seed-all              # Run all seed scripts
+npm run seed-themes           # Seed default themes only
 npm run job-email-reminders   # Manual email reminder job
 npm run check-triggers        # Diagnostic: check event triggers status
 ```
@@ -72,12 +77,14 @@ npm run check-triggers        # Diagnostic: check event triggers status
   - `emailService.js` - SMTP with AES-256 credential encryption
   - `eventTriggerService.js` - Automated notifications on events
   - `comptabiliteService.js` - Accounting entries generation
+  - `exportComptableService.js` - Multi-format accounting exports (FEC, Sage, EBP, etc.)
   - `pdfService.js` - PDF receipt/card generation
   - `codeBarreService.js` - Barcode generation (EAN-13)
   - `llmService.js` - LLM API integration for AI features
   - `thematiqueService.js` / `rechercheNaturelleService.js` - Natural language search
   - `bggService.js` - BoardGameGeek API integration
-  - `eanLookupService.js` - EAN barcode lookup service
+  - `eanLookupService.js` - EAN barcode lookup (UPCitemdb, BNF, OpenLibrary, TMDB, etc.)
+  - `joursFeriesService.js` / `vacancesScolairesService.js` - French holidays and school breaks
 - `middleware/`:
   - `auth.js` - JWT verification (`verifyToken`)
   - `checkRole.js` - Role-based access control
@@ -106,6 +113,8 @@ npm run check-triggers        # Diagnostic: check event triggers status
 
 8. **Barcode batch printing**: `/api/codes-barres-reserves`
 
+9. **EAN Lookup**: `/api/lookup` (external APIs for barcode data: UPCitemdb, BNF, OpenLibrary, TMDB, MusicBrainz)
+
 ### Frontend (frontend/)
 
 - `admin/` - Bootstrap 5 admin interface
@@ -124,6 +133,8 @@ MySQL with Sequelize ORM. Key model groups:
 - **AI/Thematiques**: `ConfigurationLLM`, `Thematique`, `ThematiqueAlias`, `ArticleThematique`, `EnrichissementQueue`
 - **Infrastructure**: `Site`, `CompteBancaire`, `HoraireOuverture`, `FermetureExceptionnelle`, `ModuleActif`, `IpAutorisee`
 - **Barcode Batches**: `ParametresCodesBarres`, `LotCodesBarres`, `CodeBarreUtilisateur`, `CodeBarreJeu`, `CodeBarreLivre`, `CodeBarreFilm`, `CodeBarreDisque`
+- **External APIs**: `ConfigurationAPI` (EAN lookup providers with encrypted credentials)
+- **Themes**: `ThemeSite` (CSS variable customization for site theming)
 
 **Terminology Note**: The codebase uses "utilisateur" internally for the user model. The API route `/api/adherents` is maintained as an alias for `/api/utilisateurs` for backward compatibility. Frontend labels use "usager" (member) for the public-facing portal.
 

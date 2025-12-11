@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Catalogue - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Catalogue Page - Frosted Window Style */
+    .page-header {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 2rem;
+      text-align: center;
+      border-bottom: var(--border-frost);
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      color: var(--snow-white);
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-secondary);
+    }
+
+    .catalogue-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .collection-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid var(--slate-medium);
+      color: var(--text-secondary);
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--frost-medium);
+      color: var(--frost-medium);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(135deg, var(--frost-blue), var(--frost-deep));
+      border-color: var(--frost-blue);
+      color: white;
+    }
+
+    .search-field {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      background: rgba(0, 0, 0, 0.2);
+      border: var(--border-frost);
+      border-radius: var(--border-radius-sm);
+      overflow: hidden;
+    }
+
+    .search-field input {
+      flex: 1;
+      padding: 0.6rem 1rem;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .search-field input::placeholder {
+      color: var(--slate-medium);
+    }
+
+    .search-field i {
+      padding: 0.6rem 1rem;
+      color: var(--frost-medium);
+    }
+
+    /* Results Info */
+    .results-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-glass);
+      border-radius: var(--border-radius-sm);
+      border: var(--border-frost);
+    }
+
+    .results-count {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .results-count strong {
+      color: var(--frost-medium);
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .view-btn {
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: var(--border-frost);
+      border-radius: var(--border-radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .view-btn:hover {
+      color: var(--frost-medium);
+      border-color: var(--frost-medium);
+    }
+
+    .view-btn.active {
+      background: var(--frost-blue);
+      border-color: var(--frost-blue);
+      color: white;
+    }
+
+    /* Items Grid */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .item-card {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .item-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-frost);
+      border-color: var(--frost-medium);
+    }
+
+    .item-image {
+      height: 180px;
+      background: rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .item-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .item-image .placeholder {
+      font-size: 3.5rem;
+      color: var(--slate-medium);
+    }
+
+    .item-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 500;
+    }
+
+    .item-badge.disponible {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+    }
+
+    .item-badge.emprunte {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+    }
+
+    .item-type {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .item-type.jeux { color: var(--warm-amber); }
+    .item-type.livres { color: var(--frost-medium); }
+    .item-type.films { color: var(--warm-orange); }
+    .item-type.disques { color: var(--color-success); }
+
+    .item-content {
+      padding: 1rem;
+      border-top: var(--border-frost);
+    }
+
+    .item-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .item-meta {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* List View */
+    .items-list {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .items-list.active {
+      display: flex;
+    }
+
+    .items-grid:not(.active) {
+      display: none;
+    }
+
+    .items-grid.active {
+      display: grid;
+    }
+
+    .list-item {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+
+    .list-item:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--frost-medium);
+      transform: translateX(4px);
+    }
+
+    .list-item .item-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      text-align: center;
+    }
+
+    .list-item.jeux .item-icon { color: var(--warm-amber); }
+    .list-item.livres .item-icon { color: var(--frost-medium); }
+    .list-item.films .item-icon { color: var(--warm-orange); }
+    .list-item.disques .item-icon { color: var(--color-success); }
+
+    .list-item .item-info {
+      flex: 1;
+    }
+
+    .list-item .item-title {
+      font-size: 1rem;
+      margin-bottom: 0;
+    }
+
+    .list-item .item-status {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 100px;
+    }
+
+    .list-item .item-status.disponible {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+    }
+
+    .list-item .item-status.emprunte {
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--bg-glass);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--slate-medium);
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+      color: var(--text-secondary);
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.25rem;
+      margin-top: 2rem;
+    }
+
+    .page-btn {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-glass);
+      border: var(--border-frost);
+      border-radius: var(--border-radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      border-color: var(--frost-medium);
+      color: var(--frost-medium);
+    }
+
+    .page-btn.active {
+      background: var(--frost-blue);
+      border-color: var(--frost-blue);
+      color: white;
+    }
+
+    .page-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .collection-buttons {
+        justify-content: center;
+      }
+
+      .items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      }
+
+      .item-image {
+        height: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-snow2 logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html" class="active">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1><i class="bi bi-collection"></i> Catalogue</h1>
+    <p>Parcourez notre collection et trouvez votre prochaine découverte</p>
+  </div>
+
+  <!-- Catalogue -->
+  <div class="catalogue-container">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="collection-buttons">
+        <button class="filter-btn active" data-collection="all">Tous</button>
+        <button class="filter-btn" data-collection="jeux">Jeux</button>
+        <button class="filter-btn" data-collection="livres">Livres</button>
+        <button class="filter-btn" data-collection="films">Films</button>
+        <button class="filter-btn" data-collection="disques">Disques</button>
+      </div>
+
+      <div class="search-field">
+        <i class="bi bi-search"></i>
+        <input type="text" id="search" placeholder="Rechercher...">
+      </div>
+    </div>
+
+    <!-- Results Info -->
+    <div class="results-info">
+      <span class="results-count"><strong id="count">0</strong> résultats</span>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid"><i class="bi bi-grid-3x3"></i></button>
+        <button class="view-btn" data-view="list"><i class="bi bi-list"></i></button>
+      </div>
+    </div>
+
+    <!-- Grid View -->
+    <div class="items-grid active" id="grid-view"></div>
+
+    <!-- List View -->
+    <div class="items-list" id="list-view"></div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty-state" style="display: none;">
+      <i class="bi bi-search"></i>
+      <h3>Aucun résultat</h3>
+      <p>Essayez d'autres termes de recherche</p>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <!-- Snowfall -->
+  <script src="/theme/js/snowfall.js"></script>
+
+  <script>
+    // State
+    let collection = 'all';
+    let search = '';
+    let view = 'grid';
+    let items = [];
+
+    // Elements
+    const searchInput = document.getElementById('search');
+    const gridView = document.getElementById('grid-view');
+    const listView = document.getElementById('list-view');
+    const emptyEl = document.getElementById('empty-state');
+    const countEl = document.getElementById('count');
+
+    // Events
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        collection = btn.dataset.collection;
+        loadItems();
+      });
+    });
+
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        view = btn.dataset.view;
+        toggleView();
+      });
+    });
+
+    searchInput.addEventListener('input', debounce(() => {
+      search = searchInput.value;
+      loadItems();
+    }, 300));
+
+    async function loadItems() {
+      try {
+        const params = new URLSearchParams();
+        if (collection !== 'all') params.append('type', collection);
+        if (search) params.append('search', search);
+        params.append('limit', '50');
+
+        const resp = await fetch(`/api/public/catalogue?${params}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          items = (data.items || []).map(item => ({
+            ...item,
+            collection: item.type + 's', // jeu -> jeux, livre -> livres, etc.
+            nom: item.titre,
+            statut: item.statut || 'disponible'
+          }));
+        } else {
+          items = [];
+        }
+      } catch (e) {
+        console.error('Erreur chargement:', e);
+        items = [];
+      }
+      render();
+    }
+
+    function render() {
+      countEl.textContent = items.length;
+
+      if (items.length === 0) {
+        gridView.style.display = 'none';
+        listView.style.display = 'none';
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      emptyEl.style.display = 'none';
+
+      // Grid
+      gridView.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="item-card">
+          <div class="item-image">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder"></i>`
+            }
+            <span class="item-type ${item.collection}">${item.collection}</span>
+            <span class="item-badge ${item.statut || 'disponible'}">
+              ${item.statut === 'disponible' ? 'Disponible' : 'Emprunté'}
+            </span>
+          </div>
+          <div class="item-content">
+            <h3 class="item-title">${item.nom || item.titre}</h3>
+            <p class="item-meta">${getMeta(item)}</p>
+          </div>
+        </a>
+      `).join('');
+
+      // List
+      listView.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="list-item ${item.collection}">
+          <span class="item-icon"><i class="bi bi-${getIcon(item.collection)}"></i></span>
+          <div class="item-info">
+            <h3 class="item-title">${item.nom || item.titre}</h3>
+            <p class="item-meta">${getMeta(item)}</p>
+          </div>
+          <span class="item-status ${item.statut || 'disponible'}">
+            ${item.statut === 'disponible' ? 'Disponible' : 'Emprunté'}
+          </span>
+        </a>
+      `).join('');
+
+      toggleView();
+    }
+
+    function toggleView() {
+      if (view === 'grid') {
+        gridView.classList.add('active');
+        listView.classList.remove('active');
+      } else {
+        gridView.classList.remove('active');
+        listView.classList.add('active');
+      }
+    }
+
+    function getIcon(c) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[c] || 'box';
+    }
+
+    function getMeta(item) {
+      if (item.collection === 'jeux') return `${item.joueurs_min || '?'}-${item.joueurs_max || '?'} joueurs`;
+      if (item.collection === 'livres') return item.auteur || '';
+      if (item.collection === 'films') return item.realisateur || '';
+      if (item.collection === 'disques') return item.artiste || '';
+      return '';
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+
+    // Init
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('collection')) {
+      collection = params.get('collection');
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.collection === collection);
+      });
+    }
+    if (params.get('q')) {
+      search = params.get('q');
+      searchInput.value = search;
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadItems();
+  </script>
+</body>
+</html>

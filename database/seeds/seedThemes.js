@@ -6,7 +6,7 @@
  * This script:
  * 1. Creates the themes_site table if it doesn't exist
  * 2. Adds theme_id column to parametres_front if missing
- * 3. Inserts 4 predefined themes (if not already present)
+ * 3. Inserts 6 predefined themes (if not already present)
  * 4. Sets the default theme as active
  */
 
@@ -135,6 +135,29 @@ const themesPredefinis = [
     shadow_style: 'strong',
     border_radius: '0px',
     ordre_affichage: 4,
+    actif: true
+  },
+  {
+    code: 'winter-wonder',
+    nom: 'Frost & Wonder',
+    description: 'Theme hivernal elegant avec effet de neige, tons bleu glace et accents dores',
+    type: 'system',
+    mode: 'dark',
+    couleur_primaire: '#0ea5e9',
+    couleur_secondaire: '#0369a1',
+    couleur_accent: '#f59e0b',
+    couleur_fond_principal: '#0c4a6e',
+    couleur_fond_secondaire: '#1e3a5f',
+    couleur_texte_principal: '#f1f5f9',
+    couleur_texte_secondaire: '#94a3b8',
+    couleur_success: '#10b981',
+    couleur_warning: '#f59e0b',
+    couleur_danger: '#ef4444',
+    couleur_info: '#3b82f6',
+    navbar_style: 'solid',
+    shadow_style: 'subtle',
+    border_radius: '16px',
+    ordre_affichage: 5,
     actif: true
   }
 ];

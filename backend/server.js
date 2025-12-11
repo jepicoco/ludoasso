@@ -141,6 +141,14 @@ app.get('/cgu.html', checkMaintenance, themeResolverMiddleware);
 app.get('/cgv.html', checkMaintenance, themeResolverMiddleware);
 app.get('/contact.html', checkMaintenance, themeResolverMiddleware);
 
+// Pages usager avec résolution de thème
+app.get('/usager/login.html', themeResolverMiddleware);
+app.get('/usager/dashboard.html', themeResolverMiddleware);
+app.get('/usager/emprunts.html', themeResolverMiddleware);
+app.get('/usager/profil.html', themeResolverMiddleware);
+app.get('/usager/forgot-password.html', themeResolverMiddleware);
+app.get('/usager/reset-password.html', themeResolverMiddleware);
+
 // Serve static files from frontend (pour les autres fichiers: JS, CSS, images, etc.)
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -198,6 +206,7 @@ app.use('/api/thematiques', require('./routes/thematiques'));
 app.use('/api/enrichissement', require('./routes/enrichissement'));
 app.use('/api/codes-barres-reserves', require('./routes/codesBarresReserves'));
 app.use('/api/lookup', require('./routes/eanLookup'));
+app.use('/api/leaderboard', require('./routes/leaderboard'));
 
 // Routes espace usager (adherents)
 app.use('/api/usager/auth', require('./routes/usagerAuth'));
