@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Catalogue - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-header {
+      background: var(--gradient-earth);
+      padding: 3rem 2rem;
+      text-align: center;
+      border-bottom: 2px solid rgba(230, 126, 34, 0.3);
+    }
+    .page-header h1 {
+      background: var(--gradient-harvest);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .catalogue-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .filters-bar {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      box-shadow: var(--soft-shadow);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      border: var(--border-warm);
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .filter-group label {
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+    }
+    .filter-group select, .filter-group input {
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--autumn-bark);
+      border-radius: var(--border-radius-sm);
+      font-size: 1rem;
+      background: var(--autumn-earth-dark);
+      color: var(--color-text);
+      outline: none;
+    }
+    .filter-group select:focus, .filter-group input:focus {
+      border-color: var(--autumn-orange);
+    }
+    .search-input { flex: 1; min-width: 250px; }
+    .collection-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--autumn-earth-dark);
+      padding: 0.5rem;
+      border-radius: 50px;
+      border: var(--border-warm);
+    }
+    .tab-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: transparent;
+      border-radius: 50px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-text-secondary);
+    }
+    .tab-btn.active {
+      background: var(--gradient-autumn);
+      color: white;
+    }
+    .tab-btn:hover:not(.active) {
+      background: rgba(230, 126, 34, 0.2);
+      color: var(--autumn-orange-light);
+    }
+    .results-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .results-count {
+      font-size: 1.1rem;
+      color: var(--color-text-secondary);
+    }
+    .view-toggle { display: flex; gap: 0.5rem; }
+    .view-btn {
+      padding: 0.5rem;
+      border: 2px solid rgba(230, 126, 34, 0.3);
+      background: var(--autumn-earth);
+      color: var(--color-text-secondary);
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .view-btn.active {
+      background: var(--autumn-orange);
+      color: white;
+      border-color: var(--autumn-orange);
+    }
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .item-card {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: var(--soft-shadow);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: var(--color-text);
+      border: var(--border-subtle);
+    }
+    .item-card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--ember-shadow);
+      border-color: rgba(230, 126, 34, 0.5);
+    }
+    .item-image {
+      height: 200px;
+      background: var(--autumn-earth-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .item-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .item-image .placeholder-icon {
+      font-size: 4rem;
+      color: var(--autumn-bark);
+    }
+    .item-badge {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .item-content {
+      padding: 1.25rem;
+    }
+    .item-collection {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--autumn-orange);
+      margin-bottom: 0.5rem;
+    }
+    .item-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+      color: var(--color-text);
+    }
+    .item-meta {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+    }
+    .items-list {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .items-list.active { display: flex; }
+    .items-grid.active { display: grid; }
+    .items-grid:not(.active) { display: none; }
+    .list-item {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      gap: 1.5rem;
+      text-decoration: none;
+      color: var(--color-text);
+      transition: all 0.3s ease;
+      border: var(--border-subtle);
+    }
+    .list-item:hover {
+      transform: translateX(8px);
+      box-shadow: var(--ember-shadow);
+      border-color: rgba(230, 126, 34, 0.5);
+    }
+    .list-item .item-image {
+      width: 120px;
+      height: 120px;
+      flex-shrink: 0;
+      border-radius: var(--border-radius-sm);
+    }
+    .list-item .item-content { padding: 0; flex: 1; }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      border: var(--border-subtle);
+    }
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--autumn-bark);
+      margin-bottom: 1rem;
+    }
+    .empty-state h3 { color: var(--color-text); margin-bottom: 0.5rem; }
+    .empty-state p { color: var(--color-text-secondary); }
+    @media (max-width: 768px) {
+      .filters-bar { flex-direction: column; }
+      .collection-tabs { width: 100%; overflow-x: auto; }
+      .items-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+      .list-item { flex-direction: column; }
+      .list-item .item-image { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tree"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html" class="active">Catalogue</a></li>
+          <li><a href="/infos.html">Informations</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Espace Usager
+      </a>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <h1>&#127810; Catalogue &#127810;</h1>
+    <p class="text-secondary">Explorez notre collection et trouvez votre prochaine decouverte d'automne</p>
+  </div>
+
+  <div class="catalogue-container">
+    <div class="filters-bar">
+      <div class="collection-tabs">
+        <button class="tab-btn active" data-collection="all">
+          <i class="bi bi-grid-3x3-gap"></i> Tout
+        </button>
+        <button class="tab-btn" data-collection="jeux">
+          <i class="bi bi-dice-6"></i> Jeux
+        </button>
+        <button class="tab-btn" data-collection="livres">
+          <i class="bi bi-book"></i> Livres
+        </button>
+        <button class="tab-btn" data-collection="films">
+          <i class="bi bi-film"></i> Films
+        </button>
+        <button class="tab-btn" data-collection="disques">
+          <i class="bi bi-vinyl"></i> Disques
+        </button>
+      </div>
+      <div class="filter-group search-input">
+        <input type="text" id="search" placeholder="&#128269; Rechercher par titre, auteur...">
+      </div>
+      <div class="filter-group">
+        <label>Statut:</label>
+        <select id="status-filter">
+          <option value="">Tous</option>
+          <option value="disponible">Disponibles</option>
+          <option value="emprunte">Empruntes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="results-info">
+      <span class="results-count"><span id="count">0</span> resultats</span>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="grid"><i class="bi bi-grid-3x3"></i></button>
+        <button class="view-btn" data-view="list"><i class="bi bi-list"></i></button>
+      </div>
+    </div>
+
+    <div class="items-grid active" id="items-grid"></div>
+    <div class="items-list" id="items-list"></div>
+    <div class="empty-state" id="empty-state" style="display: none;">
+      <i class="bi bi-search"></i>
+      <h3>Aucun resultat</h3>
+      <p>Essayez de modifier vos criteres de recherche</p>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions legales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">Nous contacter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulse par Assotheque.</p>
+    </div>
+  </footer>
+
+  <script>
+    let currentCollection = 'all';
+    let currentPage = 1;
+    let currentSearch = '';
+    let currentStatus = '';
+    let currentView = 'grid';
+    let items = [];
+    const itemsPerPage = 24;
+
+    const searchInput = document.getElementById('search');
+    const statusFilter = document.getElementById('status-filter');
+    const gridContainer = document.getElementById('items-grid');
+    const listContainer = document.getElementById('items-list');
+    const emptyState = document.getElementById('empty-state');
+    const countEl = document.getElementById('count');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCollection = btn.dataset.collection;
+        currentPage = 1;
+        loadItems();
+      });
+    });
+
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentView = btn.dataset.view;
+        renderItems();
+      });
+    });
+
+    searchInput.addEventListener('input', debounce(() => {
+      currentSearch = searchInput.value;
+      currentPage = 1;
+      loadItems();
+    }, 300));
+
+    statusFilter.addEventListener('change', () => {
+      currentStatus = statusFilter.value;
+      currentPage = 1;
+      loadItems();
+    });
+
+    async function loadItems() {
+      try {
+        const params = new URLSearchParams();
+        if (currentSearch) params.append('search', currentSearch);
+        if (currentStatus) params.append('statut', currentStatus);
+        params.append('page', currentPage);
+        params.append('limit', itemsPerPage);
+
+        let allItems = [];
+
+        if (currentCollection === 'all' || currentCollection === 'jeux') {
+          const resp = await fetch(`/api/public/jeux?${params}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            allItems = allItems.concat((data.items || data).map(i => ({ ...i, collection: 'jeux' })));
+          }
+        }
+        if (currentCollection === 'all' || currentCollection === 'livres') {
+          const resp = await fetch(`/api/public/livres?${params}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            allItems = allItems.concat((data.items || data).map(i => ({ ...i, collection: 'livres' })));
+          }
+        }
+        if (currentCollection === 'all' || currentCollection === 'films') {
+          const resp = await fetch(`/api/public/films?${params}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            allItems = allItems.concat((data.items || data).map(i => ({ ...i, collection: 'films' })));
+          }
+        }
+        if (currentCollection === 'all' || currentCollection === 'disques') {
+          const resp = await fetch(`/api/public/disques?${params}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            allItems = allItems.concat((data.items || data).map(i => ({ ...i, collection: 'disques' })));
+          }
+        }
+
+        items = allItems;
+        renderItems();
+      } catch (e) {
+        console.error('Erreur chargement:', e);
+      }
+    }
+
+    function renderItems() {
+      countEl.textContent = items.length;
+
+      if (items.length === 0) {
+        gridContainer.classList.remove('active');
+        listContainer.classList.remove('active');
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+
+      gridContainer.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="item-card">
+          <div class="item-image">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder-icon"></i>`
+            }
+            <span class="item-badge ${item.statut === 'disponible' ? 'badge-disponible' : 'badge-emprunte'}">
+              ${item.statut === 'disponible' ? 'Disponible' : 'Emprunte'}
+            </span>
+          </div>
+          <div class="item-content">
+            <div class="item-collection">${getCollectionLabel(item.collection)}</div>
+            <h3 class="item-title">${item.nom || item.titre}</h3>
+            <p class="item-meta">${getMetaInfo(item)}</p>
+          </div>
+        </a>
+      `).join('');
+
+      listContainer.innerHTML = items.map(item => `
+        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="list-item">
+          <div class="item-image">
+            ${item.image_url
+              ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
+              : `<i class="bi bi-${getIcon(item.collection)} placeholder-icon"></i>`
+            }
+          </div>
+          <div class="item-content">
+            <div class="item-collection">${getCollectionLabel(item.collection)}</div>
+            <h3 class="item-title">${item.nom || item.titre}</h3>
+            <p class="item-meta">${getMetaInfo(item)}</p>
+            <span class="item-badge ${item.statut === 'disponible' ? 'badge-disponible' : 'badge-emprunte'}">
+              ${item.statut === 'disponible' ? 'Disponible' : 'Emprunte'}
+            </span>
+          </div>
+        </a>
+      `).join('');
+
+      if (currentView === 'grid') {
+        gridContainer.classList.add('active');
+        listContainer.classList.remove('active');
+      } else {
+        gridContainer.classList.remove('active');
+        listContainer.classList.add('active');
+      }
+    }
+
+    function getIcon(collection) {
+      return { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' }[collection] || 'box';
+    }
+
+    function getCollectionLabel(collection) {
+      return { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' }[collection] || collection;
+    }
+
+    function getMetaInfo(item) {
+      if (item.collection === 'jeux') return `${item.joueurs_min || '?'}-${item.joueurs_max || '?'} joueurs`;
+      if (item.collection === 'livres') return item.auteur || '';
+      if (item.collection === 'films') return item.realisateur || '';
+      if (item.collection === 'disques') return item.artiste || '';
+      return '';
+    }
+
+    function debounce(fn, delay) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        document.getElementById('site-title').textContent = `Catalogue - ${data.nom || 'Assotheque'}`;
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+      } catch (e) {}
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('collection')) {
+      currentCollection = urlParams.get('collection');
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.collection === currentCollection);
+      });
+    }
+    if (urlParams.get('q')) {
+      currentSearch = urlParams.get('q');
+      searchInput.value = currentSearch;
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadConfig();
+    loadItems();
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .maintenance-container {
+      max-width: 600px;
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius-lg);
+      padding: 4rem 3rem;
+      box-shadow: var(--card-shadow);
+      border: var(--border-warm);
+      position: relative;
+      z-index: 1;
+    }
+    .maintenance-icon {
+      font-size: 6rem;
+      margin-bottom: 2rem;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    .maintenance-title {
+      background: var(--gradient-harvest);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .maintenance-text {
+      color: var(--color-text-secondary);
+      font-size: 1.2rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+    }
+    .maintenance-features {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-text-secondary);
+    }
+    .feature-item i {
+      font-size: 2rem;
+      color: var(--autumn-orange);
+    }
+    .progress-bar-container {
+      background: var(--autumn-earth-dark);
+      border-radius: 50px;
+      height: 12px;
+      overflow: hidden;
+      margin: 2rem 0;
+      border: var(--border-subtle);
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--gradient-autumn);
+      border-radius: 50px;
+      width: 65%;
+      animation: progress 2s ease-in-out infinite;
+    }
+    @keyframes progress {
+      0%, 100% { width: 60%; }
+      50% { width: 75%; }
+    }
+    .autumn-leaves {
+      position: absolute;
+      font-size: 3rem;
+      opacity: 0.2;
+    }
+    .leaf-1 { top: 10%; left: 10%; }
+    .leaf-2 { top: 20%; right: 15%; }
+    .leaf-3 { bottom: 15%; left: 15%; }
+    .leaf-4 { bottom: 10%; right: 10%; }
+    .contact-info {
+      background: var(--autumn-earth-dark);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-top: 2rem;
+      border: var(--border-subtle);
+    }
+    .contact-info p {
+      color: var(--color-text-secondary);
+      margin: 0.5rem 0;
+    }
+    .contact-info a {
+      color: var(--autumn-orange-light);
+    }
+  </style>
+</head>
+<body>
+  <div class="maintenance-container">
+    <span class="autumn-leaves leaf-1">&#127810;</span>
+    <span class="autumn-leaves leaf-2">&#127807;</span>
+    <span class="autumn-leaves leaf-3">&#127808;</span>
+    <span class="autumn-leaves leaf-4">&#127809;</span>
+
+    <div class="maintenance-icon">&#127875;</div>
+
+    <h1 class="maintenance-title">Recolte en cours...</h1>
+
+    <p class="maintenance-text">
+      Notre site se prepare pour une nouvelle saison !<br>
+      Nous effectuons quelques ameliorations pour mieux vous servir.
+    </p>
+
+    <div class="progress-bar-container">
+      <div class="progress-bar"></div>
+    </div>
+
+    <div class="maintenance-features">
+      <div class="feature-item">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span>Mise a jour</span>
+      </div>
+      <div class="feature-item">
+        <i class="bi bi-shield-check"></i>
+        <span>Securite</span>
+      </div>
+      <div class="feature-item">
+        <i class="bi bi-speedometer2"></i>
+        <span>Performance</span>
+      </div>
+    </div>
+
+    <div class="contact-info">
+      <p><strong>&#127968; Besoin d'aide urgente ?</strong></p>
+      <p><i class="bi bi-envelope me-2"></i>Contactez-nous par email</p>
+      <p><i class="bi bi-telephone me-2"></i>Ou par telephone aux heures d'ouverture</p>
+    </div>
+
+    <p class="text-secondary mt-4" style="font-size: 0.9rem;">
+      &#127810; Nous serons de retour tres bientot ! &#127810;
+    </p>
+  </div>
+</body>
+</html>

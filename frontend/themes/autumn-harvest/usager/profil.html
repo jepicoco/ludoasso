@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon profil - Espace Usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .usager-header {
+      background: var(--gradient-autumn);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .usager-header .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: white;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .usager-header .logo i { font-size: 1.5rem; }
+    .usager-nav {
+      display: flex;
+      gap: 1rem;
+    }
+    .usager-nav a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius-sm);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .usager-nav a:hover, .usager-nav a.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+    }
+    .user-menu {
+      position: relative;
+    }
+    .user-menu-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .user-menu-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--autumn-earth);
+      border: var(--border-warm);
+      border-radius: var(--border-radius);
+      min-width: 180px;
+      box-shadow: var(--card-shadow);
+      display: none;
+      z-index: 200;
+      margin-top: 0.5rem;
+    }
+    .user-menu-dropdown.show { display: block; }
+    .user-menu-dropdown a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: var(--color-text);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .user-menu-dropdown a:hover { background: var(--autumn-earth-dark); }
+    .user-menu-dropdown a.danger { color: var(--autumn-red); }
+    .user-menu-dropdown a.active { color: var(--autumn-orange); }
+    .user-menu-dropdown hr {
+      margin: 0;
+      border-color: rgba(230, 126, 34, 0.2);
+    }
+    .page-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 2rem;
+    }
+    .profile-sidebar {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius-lg);
+      border: var(--border-warm);
+      overflow: hidden;
+    }
+    .profile-header {
+      background: var(--gradient-harvest);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2.5rem;
+      color: var(--autumn-orange);
+      font-weight: 700;
+    }
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .profile-name {
+      color: white;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      -webkit-text-fill-color: white;
+    }
+    .profile-email {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.9rem;
+    }
+    .profile-body { padding: 1.5rem; }
+    .adhesion-card {
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .adhesion-card.active {
+      background: rgba(39, 174, 96, 0.15);
+      border: 1px solid rgba(39, 174, 96, 0.3);
+    }
+    .adhesion-card.expired {
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+    .adhesion-card.warning {
+      background: rgba(241, 196, 15, 0.15);
+      border: 1px solid rgba(241, 196, 15, 0.3);
+    }
+    .adhesion-card i { font-size: 1.5rem; }
+    .adhesion-card.active i { color: #27ae60; }
+    .adhesion-card.expired i { color: #e74c3c; }
+    .adhesion-card.warning i { color: #f1c40f; }
+    .adhesion-label { font-weight: 600; color: var(--color-text); }
+    .adhesion-date { font-size: 0.85rem; color: var(--color-text-secondary); }
+    .info-item {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(230, 126, 34, 0.15);
+    }
+    .info-item:last-child { border-bottom: none; }
+    .info-label {
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .info-label i { color: var(--autumn-orange); }
+    .info-value {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .profile-main { display: flex; flex-direction: column; gap: 2rem; }
+    .card-section {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius-lg);
+      border: var(--border-warm);
+      padding: 2rem;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--autumn-orange);
+    }
+    .section-title i { color: var(--autumn-orange); }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    .info-grid .info-item {
+      background: var(--autumn-earth-dark);
+      padding: 1rem;
+      border-radius: var(--border-radius-sm);
+      border: var(--border-subtle);
+    }
+    .info-grid .full-width { grid-column: 1 / -1; }
+    .alert-info {
+      background: rgba(230, 126, 34, 0.15);
+      border: 1px solid rgba(230, 126, 34, 0.3);
+      color: var(--autumn-orange-light);
+      padding: 1rem;
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--color-text);
+      margin-bottom: 0.5rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--autumn-earth-dark);
+      border: 2px solid var(--autumn-bark);
+      border-radius: var(--border-radius-sm);
+      color: var(--color-text);
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--autumn-orange);
+      box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.2);
+    }
+    .input-group {
+      display: flex;
+      gap: 0;
+    }
+    .input-group .form-control {
+      border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+    }
+    .input-group .btn-toggle {
+      background: var(--autumn-bark);
+      border: 2px solid var(--autumn-bark);
+      border-left: none;
+      color: var(--color-text-secondary);
+      padding: 0 1rem;
+      cursor: pointer;
+      border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+      transition: all 0.3s ease;
+    }
+    .input-group .btn-toggle:hover {
+      background: var(--autumn-orange);
+      border-color: var(--autumn-orange);
+      color: white;
+    }
+    .form-text {
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+      margin-top: 0.25rem;
+    }
+    .btn-submit {
+      background: var(--gradient-autumn);
+      border: none;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4);
+    }
+    .btn-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .form-actions { display: flex; justify-content: flex-end; }
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 2000;
+    }
+    .toast {
+      background: var(--autumn-earth);
+      border: var(--border-warm);
+      border-radius: var(--border-radius);
+      padding: 1rem 1.5rem;
+      box-shadow: var(--card-shadow);
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+    .toast.show { display: flex; align-items: center; gap: 1rem; }
+    .toast.success { border-left: 4px solid #27ae60; }
+    .toast.error { border-left: 4px solid #e74c3c; }
+    .toast.warning { border-left: 4px solid #f1c40f; }
+    .toast i { font-size: 1.25rem; }
+    .toast.success i { color: #27ae60; }
+    .toast.error i { color: #e74c3c; }
+    .toast.warning i { color: #f1c40f; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .spinner-border {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @media (max-width: 900px) {
+      .profile-grid { grid-template-columns: 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
+      .usager-header { flex-wrap: wrap; gap: 1rem; }
+      .usager-nav { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <header class="usager-header">
+    <a href="dashboard.html" class="logo">
+      <i class="bi bi-tree"></i>
+      <span id="siteName">Mon Espace</span>
+    </a>
+    <nav class="usager-nav">
+      <a href="dashboard.html"><i class="bi bi-house"></i> Accueil</a>
+      <a href="emprunts.html"><i class="bi bi-collection"></i> Mes emprunts</a>
+    </nav>
+    <div class="user-menu">
+      <button class="user-menu-btn" onclick="toggleUserMenu()">
+        <i class="bi bi-person-circle"></i>
+        <span id="headerUserName">Mon compte</span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="user-menu-dropdown" id="userMenuDropdown">
+        <a href="profil.html" class="active"><i class="bi bi-person"></i> Mon profil</a>
+        <hr>
+        <a href="#" class="danger" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Deconnexion</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <div class="profile-grid">
+      <!-- Sidebar -->
+      <div class="profile-sidebar">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profileAvatar">
+            <i class="bi bi-person"></i>
+          </div>
+          <div class="profile-name" id="profileName">Chargement...</div>
+          <div class="profile-email" id="profileEmail"></div>
+        </div>
+        <div class="profile-body">
+          <div class="adhesion-card" id="adhesionStatus">
+            <i class="bi bi-card-checklist"></i>
+            <div>
+              <div class="adhesion-label" id="adhesionLabel">Adhesion</div>
+              <div class="adhesion-date" id="adhesionDate"></div>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-upc-scan"></i> Code usager</div>
+            <div class="info-value" id="profileCodeBarre">-</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label"><i class="bi bi-calendar-event"></i> Membre depuis</div>
+            <div class="info-value" id="profileDateAdhesion">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="profile-main">
+        <!-- Informations personnelles -->
+        <div class="card-section">
+          <h2 class="section-title"><i class="bi bi-person-vcard"></i> Informations personnelles</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Prenom</div>
+              <div class="info-value" id="infoPrenom">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Nom</div>
+              <div class="info-value" id="infoNom">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Date de naissance</div>
+              <div class="info-value" id="infoDateNaissance">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Telephone</div>
+              <div class="info-value" id="infoTelephone">-</div>
+            </div>
+            <div class="info-item full-width">
+              <div class="info-label">Adresse</div>
+              <div class="info-value" id="infoAdresse">-</div>
+            </div>
+          </div>
+          <div class="alert-info">
+            <i class="bi bi-info-circle"></i>
+            Pour modifier vos informations personnelles, veuillez contacter l'association.
+          </div>
+        </div>
+
+        <!-- Securite -->
+        <div class="card-section">
+          <h2 class="section-title"><i class="bi bi-shield-lock"></i> Securite</h2>
+          <p style="color: var(--color-text-secondary); margin-bottom: 1.5rem;">
+            Modifiez votre mot de passe pour securiser votre compte.
+          </p>
+          <form id="passwordForm">
+            <div class="form-group">
+              <label class="form-label" for="currentPassword">Mot de passe actuel</label>
+              <div class="input-group">
+                <input type="password" class="form-control" id="currentPassword" required>
+                <button type="button" class="btn-toggle" onclick="togglePassword('currentPassword')">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="newPassword">Nouveau mot de passe</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="newPassword" required minlength="6">
+                  <button type="button" class="btn-toggle" onclick="togglePassword('newPassword')">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div class="form-text">Minimum 6 caracteres</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="confirmPassword">Confirmer le mot de passe</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="confirmPassword" required>
+                  <button type="button" class="btn-toggle" onclick="togglePassword('confirmPassword')">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn-submit" id="btnChangePassword">
+                <i class="bi bi-check-lg"></i> Modifier le mot de passe
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container">
+    <div class="toast" id="toast">
+      <i class="bi" id="toastIcon"></i>
+      <span id="toastMessage"></span>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+
+    const token = localStorage.getItem('usager_token');
+    if (!token) window.location.href = 'login.html';
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+    }
+
+    function toggleUserMenu() {
+      document.getElementById('userMenuDropdown').classList.toggle('show');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-menu')) {
+        document.getElementById('userMenuDropdown').classList.remove('show');
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    }
+
+    async function loadProfile() {
+      try {
+        const response = await fetch(`${API_URL}/usager/auth/me`, { headers: getHeaders() });
+        if (response.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+        const data = await response.json();
+
+        document.getElementById('headerUserName').textContent = data.prenom || 'Mon compte';
+        document.getElementById('profileName').textContent = `${data.prenom} ${data.nom}`;
+        document.getElementById('profileEmail').textContent = data.email;
+        document.getElementById('profileCodeBarre').textContent = data.code_barre || '-';
+
+        if (data.photo) {
+          document.getElementById('profileAvatar').innerHTML = `<img src="${data.photo}" alt="Photo">`;
+        } else {
+          document.getElementById('profileAvatar').innerHTML = `<span>${(data.prenom || 'U')[0].toUpperCase()}</span>`;
+        }
+
+        updateAdhesionStatus(data);
+
+        document.getElementById('infoPrenom').textContent = data.prenom || '-';
+        document.getElementById('infoNom').textContent = data.nom || '-';
+        document.getElementById('infoTelephone').textContent = data.telephone || '-';
+        document.getElementById('infoDateNaissance').textContent = data.date_naissance
+          ? new Date(data.date_naissance).toLocaleDateString('fr-FR')
+          : '-';
+        document.getElementById('profileDateAdhesion').textContent = data.date_adhesion
+          ? new Date(data.date_adhesion).toLocaleDateString('fr-FR')
+          : '-';
+
+        let adresse = [];
+        if (data.adresse) adresse.push(data.adresse);
+        if (data.code_postal || data.ville) {
+          adresse.push([data.code_postal, data.ville].filter(Boolean).join(' '));
+        }
+        document.getElementById('infoAdresse').textContent = adresse.length > 0 ? adresse.join(', ') : '-';
+      } catch (error) {
+        console.error('Erreur chargement profil:', error);
+        showToast('Erreur lors du chargement du profil', 'error');
+      }
+    }
+
+    function updateAdhesionStatus(data) {
+      const statusDiv = document.getElementById('adhesionStatus');
+      const labelDiv = document.getElementById('adhesionLabel');
+      const dateDiv = document.getElementById('adhesionDate');
+
+      statusDiv.classList.remove('active', 'expired', 'warning');
+
+      if (!data.date_fin_adhesion) {
+        statusDiv.classList.add('active');
+        labelDiv.textContent = 'Adhesion active';
+        dateDiv.textContent = 'Sans limite';
+        return;
+      }
+
+      const finAdhesion = new Date(data.date_fin_adhesion);
+      const today = new Date();
+      const daysRemaining = Math.ceil((finAdhesion - today) / (1000 * 60 * 60 * 24));
+
+      if (data.adhesion_expiree || daysRemaining < 0) {
+        statusDiv.classList.add('expired');
+        labelDiv.textContent = 'Adhesion expiree';
+        dateDiv.textContent = `Expiree le ${finAdhesion.toLocaleDateString('fr-FR')}`;
+      } else if (daysRemaining <= 30) {
+        statusDiv.classList.add('warning');
+        labelDiv.textContent = 'Adhesion bientot expiree';
+        dateDiv.textContent = `Expire le ${finAdhesion.toLocaleDateString('fr-FR')} (${daysRemaining} jours)`;
+      } else {
+        statusDiv.classList.add('active');
+        labelDiv.textContent = 'Adhesion active';
+        dateDiv.textContent = `Valide jusqu'au ${finAdhesion.toLocaleDateString('fr-FR')}`;
+      }
+    }
+
+    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (newPassword !== confirmPassword) {
+        showToast('Les mots de passe ne correspondent pas', 'warning');
+        return;
+      }
+      if (newPassword.length < 6) {
+        showToast('Le mot de passe doit contenir au moins 6 caracteres', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnChangePassword');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border"></span> Modification...';
+
+      try {
+        const response = await fetch(`${API_URL}/usager/auth/password`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erreur lors du changement');
+
+        showToast('Mot de passe modifie avec succes', 'success');
+        document.getElementById('passwordForm').reset();
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Modifier le mot de passe';
+      }
+    });
+
+    function togglePassword(inputId) {
+      const input = document.getElementById(inputId);
+      const icon = input.parentElement.querySelector('.btn-toggle i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('bi-eye', 'bi-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('bi-eye-slash', 'bi-eye');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      const toastIcon = document.getElementById('toastIcon');
+      const toastMessage = document.getElementById('toastMessage');
+
+      toast.className = `toast show ${type}`;
+      toastMessage.textContent = message;
+
+      const icons = {
+        success: 'bi-check-circle',
+        error: 'bi-exclamation-circle',
+        warning: 'bi-exclamation-triangle',
+        info: 'bi-info-circle'
+      };
+      toastIcon.className = `bi ${icons[type] || icons.info}`;
+
+      setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    loadProfile();
+  </script>
+</body>
+</html>

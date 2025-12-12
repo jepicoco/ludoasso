@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+</head>
+<body>
+  <!-- Autumn Fruit Decorations -->
+  <div class="autumn-decoration pumpkin-1">&#127875;</div>
+  <div class="autumn-decoration apple-1">&#127822;</div>
+  <div class="autumn-decoration chestnut-1">&#127792;</div>
+  <div class="autumn-decoration acorn-1">&#127794;</div>
+  <div class="autumn-decoration pumpkin-2">&#127875;</div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tree"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/catalogue.html"><i class="bi bi-grid-3x3-gap me-1"></i>Catalogue</a></li>
+          <li><a href="/infos.html"><i class="bi bi-info-circle me-1"></i>Informations</a></li>
+          <li><a href="/contact.html"><i class="bi bi-envelope me-1"></i>Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Espace Usager
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1 id="welcome-title">&#127810; Bienvenue a l'Assotheque &#127810;</h1>
+      <p id="welcome-subtitle">Comme les feuilles d'automne, nos tresors n'attendent qu'a etre <span class="highlight">decouverts</span>.<br>Explorez notre collection de jeux, livres, films et disques.</p>
+      <form class="search-bar" action="/catalogue.html" method="get">
+        <input type="text" name="q" placeholder="&#127808; Rechercher un jeu, un livre, un film...">
+        <button type="submit"><i class="bi bi-search"></i> Rechercher</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="stats-container">
+      <div class="stat-card" id="stat-jeux">
+        <i class="bi bi-dice-6"></i>
+        <div class="number" data-count="0">0</div>
+        <div class="label">&#127922; Jeux de societe</div>
+      </div>
+      <div class="stat-card" id="stat-livres">
+        <i class="bi bi-book"></i>
+        <div class="number" data-count="0">0</div>
+        <div class="label">&#128218; Livres</div>
+      </div>
+      <div class="stat-card" id="stat-films">
+        <i class="bi bi-film"></i>
+        <div class="number" data-count="0">0</div>
+        <div class="label">&#127916; Films</div>
+      </div>
+      <div class="stat-card" id="stat-disques">
+        <i class="bi bi-vinyl"></i>
+        <div class="number" data-count="0">0</div>
+        <div class="label">&#127926; Disques</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Collections Section -->
+  <section class="collections-section">
+    <h2 class="section-title">&#127807; Nos Collections &#127807;</h2>
+    <div class="collections-grid">
+      <a href="/catalogue.html?collection=jeux" class="collection-card jeux">
+        <div class="icon"><i class="bi bi-dice-6"></i></div>
+        <div class="content">
+          <h3>Ludotheque</h3>
+          <p class="count"><span id="count-jeux">0</span> jeux disponibles</p>
+        </div>
+      </a>
+      <a href="/catalogue.html?collection=livres" class="collection-card livres">
+        <div class="icon"><i class="bi bi-book"></i></div>
+        <div class="content">
+          <h3>Bibliotheque</h3>
+          <p class="count"><span id="count-livres">0</span> livres disponibles</p>
+        </div>
+      </a>
+      <a href="/catalogue.html?collection=films" class="collection-card films">
+        <div class="icon"><i class="bi bi-film"></i></div>
+        <div class="content">
+          <h3>Filmotheque</h3>
+          <p class="count"><span id="count-films">0</span> films disponibles</p>
+        </div>
+      </a>
+      <a href="/catalogue.html?collection=disques" class="collection-card disques">
+        <div class="icon"><i class="bi bi-vinyl"></i></div>
+        <div class="content">
+          <h3>Discotheque</h3>
+          <p class="count"><span id="count-disques">0</span> disques disponibles</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>&#127968; Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>&#128197; Horaires</h4>
+        <div id="footer-horaires"></div>
+      </div>
+      <div class="footer-section">
+        <h4>&#128279; Liens utiles</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions legales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">Nous contacter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&#127810; <span id="year"></span> <span id="footer-name"></span>. Propulse par Assotheque. &#127810;</p>
+    </div>
+  </footer>
+
+  <script>
+    // Charger les parametres du site
+    async function loadSiteConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        document.getElementById('site-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('welcome-title').innerHTML = `&#127810; Bienvenue ${data.nom ? 'a ' + data.nom : ''} &#127810;`;
+
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-address').textContent = data.adresse || '';
+        document.getElementById('footer-phone').textContent = data.telephone || '';
+        document.getElementById('footer-email').textContent = data.email || '';
+      } catch (e) {
+        console.error('Erreur chargement config:', e);
+      }
+    }
+
+    // Charger les statistiques
+    async function loadStats() {
+      try {
+        const resp = await fetch('/api/public/stats');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        animateCounter('stat-jeux', data.jeux || 0);
+        animateCounter('stat-livres', data.livres || 0);
+        animateCounter('stat-films', data.films || 0);
+        animateCounter('stat-disques', data.disques || 0);
+
+        document.getElementById('count-jeux').textContent = data.jeux || 0;
+        document.getElementById('count-livres').textContent = data.livres || 0;
+        document.getElementById('count-films').textContent = data.films || 0;
+        document.getElementById('count-disques').textContent = data.disques || 0;
+      } catch (e) {
+        console.error('Erreur chargement stats:', e);
+      }
+    }
+
+    function animateCounter(elementId, target) {
+      const el = document.querySelector(`#${elementId} .number`);
+      if (!el) return;
+
+      let current = 0;
+      const increment = Math.ceil(target / 50);
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        el.textContent = current.toLocaleString('fr-FR');
+      }, 30);
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    loadSiteConfig();
+    loadStats();
+  </script>
+</body>
+</html>

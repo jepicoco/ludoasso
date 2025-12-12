@@ -7,7 +7,22 @@
       "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\test-models.js\")",
       "Bash(tree:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add multi-article scanner, EAN lookup APIs, accounting exports, and theme system\n\nScanner multi-articles:\n- Queue system for articles scanned without member selected\n- Support for all collection types (Jeux, Livres, Films, Disques)\n- Auto-flush when member is selected\n- Silent error handling in history\n\nEAN Lookup - External APIs:\n- ConfigurationAPI model with encryption, rate limiting, statistics\n- Support for UPCitemdb, BGG, OpenLibrary, GoogleBooks, TMDB, MusicBrainz\n- Admin configuration routes in /api/parametres/apis-externes\n\nAccounting multi-format exports:\n- ConfigurationExportComptable model\n- Export service with strategy pattern\n- Formats: FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON\n- Configurable account and journal mapping per format\n- Routes: /api/export-comptable/formats, /api/export-comptable/export/:format\n\nTheme system:\n- ThemeSite model with 26+ color variables per theme\n- 7 predefined themes (light and dark modes)\n- CSS generation, import/export, duplication\n- Admin routes in /api/parametres/themes\n- Public routes in /api/public/theme(s)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add multi-article scanner, EAN lookup APIs, accounting exports, and theme system\n\nScanner multi-articles:\n- Queue system for articles scanned without member selected\n- Support for all collection types (Jeux, Livres, Films, Disques)\n- Auto-flush when member is selected\n- Silent error handling in history\n\nEAN Lookup - External APIs:\n- ConfigurationAPI model with encryption, rate limiting, statistics\n- Support for UPCitemdb, BGG, OpenLibrary, GoogleBooks, TMDB, MusicBrainz\n- Admin configuration routes in /api/parametres/apis-externes\n\nAccounting multi-format exports:\n- ConfigurationExportComptable model\n- Export service with strategy pattern\n- Formats: FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON\n- Configurable account and journal mapping per format\n- Routes: /api/export-comptable/formats, /api/export-comptable/export/:format\n\nTheme system:\n- ThemeSite model with 26+ color variables per theme\n- 7 predefined themes (light and dark modes)\n- CSS generation, import/export, duplication\n- Admin routes in /api/parametres/themes\n- Public routes in /api/public/theme(s)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push)",
+      "Bash(npm run db:migrate:*)",
+      "Bash(npm run db:migrate:status:*)",
+      "Bash(node database/migrations/addConfigurationsAPI.js:*)",
+      "Bash(node database/migrations/addConfigurationsExportComptable.js:*)",
+      "Bash(node database/migrations/addThemesSite.js:*)",
+      "Bash(npm run db:migrate:mark-all:*)",
+      "Bash(npm test:*)",
+      "Bash(git commit:*)",
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(npm run setup-nouveautes:*)",
+      "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\frontend\\themes\\pixel-geek\\images\\cat-spritesheet.png\")",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

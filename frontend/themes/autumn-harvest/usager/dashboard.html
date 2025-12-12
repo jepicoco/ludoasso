@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon espace - Usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .dashboard-navbar {
+      background: var(--gradient-autumn) !important;
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar-brand {
+      color: white !important;
+      font-size: 1.4rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+    .navbar-nav {
+      display: flex;
+      gap: 1rem;
+      list-style: none;
+      align-items: center;
+    }
+    .navbar-nav a {
+      color: rgba(255,255,255,0.9);
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius-sm);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .navbar-nav a:hover, .navbar-nav a.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    .user-dropdown {
+      position: relative;
+    }
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      box-shadow: var(--card-shadow);
+      min-width: 200px;
+      display: none;
+      border: var(--border-warm);
+      z-index: 1001;
+    }
+    .dropdown-menu.show { display: block; }
+    .dropdown-menu a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: var(--color-text);
+      transition: all 0.3s ease;
+    }
+    .dropdown-menu a:hover {
+      background: rgba(230, 126, 34, 0.2);
+      color: var(--autumn-orange-light);
+    }
+    .dropdown-menu hr {
+      border: none;
+      border-top: 1px solid rgba(230, 126, 34, 0.2);
+      margin: 0.5rem 0;
+    }
+    .text-danger { color: #f5b7b1 !important; }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .welcome-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .welcome-section h2 {
+      color: var(--color-text);
+      margin-bottom: 0.25rem;
+    }
+    .welcome-section p { color: var(--color-text-secondary); margin: 0; }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border: var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+    .stat-card:hover {
+      border-color: rgba(230, 126, 34, 0.5);
+      box-shadow: var(--ember-shadow);
+      transform: translateY(-3px);
+    }
+    .stat-icon {
+      width: 55px;
+      height: 55px;
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .stat-icon.primary { background: rgba(230, 126, 34, 0.2); color: var(--autumn-orange); }
+    .stat-icon.warning { background: rgba(241, 196, 15, 0.2); color: var(--autumn-yellow); }
+    .stat-icon.danger { background: rgba(192, 57, 43, 0.2); color: #e74c3c; }
+    .stat-icon.success { background: rgba(39, 174, 96, 0.2); color: #27ae60; }
+    .stat-info h3 { font-size: 1.75rem; margin: 0; color: var(--color-text); }
+    .stat-info span { color: var(--color-text-secondary); font-size: 0.9rem; }
+    .content-card {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius);
+      border: var(--border-subtle);
+      overflow: hidden;
+    }
+    .card-header {
+      background: var(--autumn-earth-dark);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(230, 126, 34, 0.2);
+    }
+    .card-header h3 {
+      margin: 0;
+      font-size: 1.15rem;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .card-body { padding: 1.5rem; }
+    .emprunt-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--autumn-earth-dark);
+      border-radius: var(--border-radius-sm);
+      margin-bottom: 1rem;
+      border: var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+    .emprunt-item:last-child { margin-bottom: 0; }
+    .emprunt-item:hover {
+      border-color: rgba(230, 126, 34, 0.5);
+      transform: translateX(5px);
+    }
+    .item-image {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--border-radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+      flex-shrink: 0;
+    }
+    .item-image.jeu { background: linear-gradient(135deg, var(--autumn-yellow), var(--autumn-orange)); }
+    .item-image.livre { background: linear-gradient(135deg, var(--autumn-orange), var(--autumn-orange-dark)); }
+    .item-image.film { background: linear-gradient(135deg, var(--autumn-rust), var(--autumn-red)); }
+    .item-image.disque { background: linear-gradient(135deg, var(--autumn-brown-light), var(--autumn-brown)); }
+    .item-info { flex: 1; }
+    .item-info h4 { margin: 0 0 0.25rem; color: var(--color-text); font-size: 1rem; }
+    .item-info span { color: var(--color-text-secondary); font-size: 0.85rem; }
+    .item-badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-ok { background: rgba(39, 174, 96, 0.2); color: #82e0aa; }
+    .badge-warning { background: rgba(241, 196, 15, 0.2); color: #f9e79f; }
+    .badge-danger { background: rgba(192, 57, 43, 0.2); color: #f5b7b1; }
+    .btn-prolonger {
+      background: rgba(230, 126, 34, 0.2);
+      border: 1px solid rgba(230, 126, 34, 0.4);
+      color: var(--autumn-orange-light);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+    .btn-prolonger:hover {
+      background: var(--autumn-orange);
+      color: white;
+    }
+    .btn-prolonger:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--color-text-secondary);
+    }
+    .empty-state i { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+    .adhesion-alert {
+      background: rgba(241, 196, 15, 0.15);
+      border: 1px solid rgba(241, 196, 15, 0.4);
+      color: #f9e79f;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 1.5rem;
+      display: none;
+    }
+    .adhesion-alert.show { display: flex; align-items: center; gap: 0.75rem; }
+    @media (max-width: 1024px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .navbar-container { flex-direction: column; gap: 1rem; }
+      .welcome-section { flex-direction: column; text-align: center; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="dashboard-navbar">
+    <div class="navbar-container">
+      <a href="dashboard.html" class="navbar-brand">
+        <i class="bi bi-tree"></i>
+        <span id="siteName">Mon Espace</span>
+      </a>
+      <ul class="navbar-nav">
+        <li><a href="dashboard.html" class="active"><i class="bi bi-house"></i> Accueil</a></li>
+        <li><a href="emprunts.html"><i class="bi bi-collection"></i> Mes emprunts</a></li>
+        <li class="user-dropdown">
+          <a href="#" id="userDropdownBtn"><i class="bi bi-person-circle"></i> <span id="userName">Mon compte</span></a>
+          <div class="dropdown-menu" id="userDropdown">
+            <a href="profil.html"><i class="bi bi-person"></i> Mon profil</a>
+            <hr>
+            <a href="#" class="text-danger" id="btnLogout"><i class="bi bi-box-arrow-right"></i> Deconnexion</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="dashboard-container">
+    <div class="adhesion-alert" id="adhesionAlert">
+      <i class="bi bi-exclamation-triangle"></i>
+      <span><strong>Votre adhesion a expire !</strong> Contactez l'association pour la renouveler.</span>
+    </div>
+
+    <div class="welcome-section">
+      <div>
+        <h2>&#127810; Bonjour <span id="userPrenom"></span> !</h2>
+        <p>Bienvenue dans votre espace personnel</p>
+      </div>
+      <a href="/" class="btn-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au site
+      </a>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon primary"><i class="bi bi-book"></i></div>
+        <div class="stat-info">
+          <h3 id="statEnCours">-</h3>
+          <span>En cours</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="stat-info">
+          <h3 id="statRetard">-</h3>
+          <span>En retard</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning"><i class="bi bi-arrow-repeat"></i></div>
+        <div class="stat-info">
+          <h3 id="statProlongations">-</h3>
+          <span>Prolongations</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success"><i class="bi bi-check-circle"></i></div>
+        <div class="stat-info">
+          <h3 id="statTotal">-</h3>
+          <span>Total emprunts</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="card-header">
+        <h3><i class="bi bi-collection"></i> Mes emprunts en cours</h3>
+        <a href="emprunts.html" class="btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">Voir tout</a>
+      </div>
+      <div class="card-body" id="empruntsContainer">
+        <div class="empty-state">
+          <div class="spinner-border" style="color: var(--autumn-orange);"></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      if (!token) { window.location.href = 'login.html'; return null; }
+      return token;
+    }
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('usager_token')}`
+      };
+    }
+
+    function loadUserInfo() {
+      const userInfo = JSON.parse(localStorage.getItem('usager_info') || '{}');
+      document.getElementById('userName').textContent = userInfo.prenom || 'Mon compte';
+      document.getElementById('userPrenom').textContent = userInfo.prenom || '';
+    }
+
+    function getTypeIcon(type) {
+      return { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-vinyl' }[type] || 'bi-box';
+    }
+
+    async function loadEmprunts() {
+      const container = document.getElementById('empruntsContainer');
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts/en-cours`, { headers: getHeaders() });
+        if (response.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+        const data = await response.json();
+        const emprunts = data.emprunts || [];
+
+        const enCours = emprunts.filter(e => e.statut === 'en_cours').length;
+        const enRetard = emprunts.filter(e => e.statut === 'en_retard').length;
+        const prolongations = emprunts.reduce((sum, e) => sum + (e.nb_prolongations || 0), 0);
+
+        document.getElementById('statEnCours').textContent = enCours;
+        document.getElementById('statRetard').textContent = enRetard;
+        document.getElementById('statProlongations').textContent = prolongations;
+
+        if (emprunts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <h4>Aucun emprunt en cours</h4>
+              <p>Vous n'avez pas d'emprunt en cours actuellement.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = emprunts.map(emprunt => {
+          const joursRestants = emprunt.jours_restants;
+          let badgeClass, badgeText;
+
+          if (emprunt.statut === 'en_retard') {
+            badgeClass = 'badge-danger';
+            badgeText = `${Math.abs(joursRestants)} jour(s) de retard`;
+          } else if (joursRestants <= 3) {
+            badgeClass = 'badge-warning';
+            badgeText = `${joursRestants} jour(s) restant(s)`;
+          } else {
+            badgeClass = 'badge-ok';
+            badgeText = `${joursRestants} jours restants`;
+          }
+
+          const prolongationDisabled = !emprunt.prolongation?.possible;
+
+          return `
+            <div class="emprunt-item">
+              <div class="item-image ${emprunt.item_type}">
+                <i class="bi ${getTypeIcon(emprunt.item_type)}"></i>
+              </div>
+              <div class="item-info">
+                <h4>${emprunt.item?.titre || 'Article'}</h4>
+                <span><i class="bi bi-calendar"></i> Retour prevu : ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</span>
+              </div>
+              <span class="item-badge ${badgeClass}">${badgeText}</span>
+              <button class="btn-prolonger" ${prolongationDisabled ? 'disabled' : ''} onclick="demanderProlongation(${emprunt.id})">
+                <i class="bi bi-arrow-repeat"></i> Prolonger
+              </button>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Erreur chargement emprunts:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement des emprunts</div>';
+      }
+    }
+
+    async function loadTotalEmprunts() {
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts?limit=1`, { headers: getHeaders() });
+        const data = await response.json();
+        document.getElementById('statTotal').textContent = data.pagination?.total || 0;
+      } catch (error) {
+        console.error('Erreur chargement total:', error);
+      }
+    }
+
+    async function checkAdhesion() {
+      try {
+        const response = await fetch(`${API_URL}/usager/auth/me`, { headers: getHeaders() });
+        const data = await response.json();
+        if (data.adhesion_expiree) {
+          document.getElementById('adhesionAlert').classList.add('show');
+        }
+      } catch (error) {
+        console.error('Erreur verification adhesion:', error);
+      }
+    }
+
+    async function demanderProlongation(empruntId) {
+      if (!confirm('Voulez-vous demander une prolongation pour cet emprunt ?')) return;
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts/${empruntId}/prolonger`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erreur lors de la prolongation');
+        alert(data.message);
+        loadEmprunts();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    // Dropdown
+    document.getElementById('userDropdownBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('userDropdown').classList.toggle('show');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.user-dropdown')) {
+        document.getElementById('userDropdown').classList.remove('show');
+      }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    });
+
+    if (checkAuth()) {
+      loadUserInfo();
+      loadEmprunts();
+      loadTotalEmprunts();
+      checkAdhesion();
+    }
+  </script>
+</body>
+</html>

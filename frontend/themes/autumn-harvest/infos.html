@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Informations - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-header {
+      background: var(--gradient-earth);
+      padding: 3rem 2rem;
+      text-align: center;
+      border-bottom: 2px solid rgba(230, 126, 34, 0.3);
+    }
+    .page-header h1 {
+      background: var(--gradient-harvest);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .infos-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .info-section {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius-lg);
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      border: var(--border-warm);
+      box-shadow: var(--soft-shadow);
+    }
+    .info-section h2 {
+      color: var(--autumn-orange-light);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .info-section h2 i { font-size: 1.5rem; }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+    .info-card {
+      background: var(--autumn-earth-dark);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      border: var(--border-subtle);
+      transition: all 0.3s ease;
+    }
+    .info-card:hover {
+      border-color: rgba(230, 126, 34, 0.5);
+      box-shadow: var(--ember-shadow);
+    }
+    .info-card h4 {
+      color: var(--autumn-orange-light);
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    .info-card p, .info-card li {
+      color: var(--color-text-secondary);
+      line-height: 1.8;
+    }
+    .horaires-list {
+      list-style: none;
+    }
+    .horaires-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .horaires-list li:last-child { border-bottom: none; }
+    .horaires-list .jour { color: var(--color-text); font-weight: 500; }
+    .horaires-list .heures { color: var(--autumn-orange-light); }
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      color: var(--color-text-secondary);
+    }
+    .contact-item i {
+      font-size: 1.5rem;
+      color: var(--autumn-orange);
+      width: 40px;
+      text-align: center;
+    }
+    .tarifs-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .tarifs-table th {
+      text-align: left;
+      padding: 1rem;
+      background: var(--autumn-earth-dark);
+      color: var(--autumn-orange-light);
+      border-bottom: 2px solid rgba(230, 126, 34, 0.3);
+    }
+    .tarifs-table td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--color-text);
+    }
+    .tarifs-table tr:hover td {
+      background: rgba(230, 126, 34, 0.1);
+    }
+    .map-container {
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      height: 300px;
+      background: var(--autumn-earth-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: var(--border-subtle);
+    }
+    .map-placeholder {
+      text-align: center;
+      color: var(--color-text-secondary);
+    }
+    .map-placeholder i { font-size: 3rem; margin-bottom: 1rem; color: var(--autumn-orange); }
+    @media (max-width: 768px) {
+      .info-section { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tree"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html" class="active">Informations</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Espace Usager
+      </a>
+    </div>
+  </header>
+
+  <div class="page-header">
+    <h1>&#127810; Informations &#127810;</h1>
+    <p class="text-secondary">Tout savoir sur notre association et nos services</p>
+  </div>
+
+  <div class="infos-container">
+    <section class="info-section">
+      <h2><i class="bi bi-building"></i> A propos de nous</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <h4>&#127810; Notre mission</h4>
+          <p id="mission">Notre association a pour vocation de partager la culture et le divertissement au travers de nos collections variees. Comme les feuilles d'automne qui se partagent au gre du vent, nous croyons au partage des savoirs et des plaisirs.</p>
+        </div>
+        <div class="info-card">
+          <h4>&#127807; Nos valeurs</h4>
+          <p>Convivialite, partage et decouverte sont les piliers de notre association. Venez profiter d'un moment chaleureux en famille ou entre amis.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <h2><i class="bi bi-clock"></i> Horaires d'ouverture</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <ul class="horaires-list" id="horaires-list">
+            <li><span class="jour">Lundi</span><span class="heures">Ferme</span></li>
+            <li><span class="jour">Mardi</span><span class="heures">14h - 18h</span></li>
+            <li><span class="jour">Mercredi</span><span class="heures">10h - 12h / 14h - 18h</span></li>
+            <li><span class="jour">Jeudi</span><span class="heures">14h - 18h</span></li>
+            <li><span class="jour">Vendredi</span><span class="heures">14h - 18h</span></li>
+            <li><span class="jour">Samedi</span><span class="heures">10h - 17h</span></li>
+            <li><span class="jour">Dimanche</span><span class="heures">Ferme</span></li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h4>&#127875; Periodes speciales</h4>
+          <p>Nous pouvons avoir des horaires modifies pendant les vacances scolaires et les jours feries. Consultez nos actualites ou contactez-nous pour plus d'informations.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <h2><i class="bi bi-currency-euro"></i> Tarifs et adhesion</h2>
+      <table class="tarifs-table" id="tarifs-table">
+        <thead>
+          <tr>
+            <th>Type d'adhesion</th>
+            <th>Tarif annuel</th>
+            <th>Avantages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>&#127810; Individuel</td>
+            <td>15&#8364;</td>
+            <td>Acces a toutes les collections</td>
+          </tr>
+          <tr>
+            <td>&#127875; Famille</td>
+            <td>25&#8364;</td>
+            <td>Pour 2 adultes et enfants du foyer</td>
+          </tr>
+          <tr>
+            <td>&#127794; Etudiant / Demandeur d'emploi</td>
+            <td>10&#8364;</td>
+            <td>Sur presentation d'un justificatif</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="info-section">
+      <h2><i class="bi bi-geo-alt"></i> Nous trouver</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="contact-item">
+            <i class="bi bi-geo-alt-fill"></i>
+            <div>
+              <strong>Adresse</strong>
+              <p id="contact-adresse">Chargement...</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-telephone-fill"></i>
+            <div>
+              <strong>Telephone</strong>
+              <p id="contact-telephone">Chargement...</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="bi bi-envelope-fill"></i>
+            <div>
+              <strong>Email</strong>
+              <p id="contact-email">Chargement...</p>
+            </div>
+          </div>
+        </div>
+        <div class="map-container">
+          <div class="map-placeholder">
+            <i class="bi bi-map"></i>
+            <p>Carte interactive bientot disponible</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions legales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">Nous contacter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulse par Assotheque.</p>
+    </div>
+  </footer>
+
+  <script>
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        document.getElementById('site-title').textContent = `Informations - ${data.nom || 'Assotheque'}`;
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+
+        document.getElementById('contact-adresse').textContent = data.adresse || 'Non renseigne';
+        document.getElementById('contact-telephone').textContent = data.telephone || 'Non renseigne';
+        document.getElementById('contact-email').textContent = data.email || 'Non renseigne';
+
+        document.getElementById('footer-address').textContent = data.adresse || '';
+        document.getElementById('footer-phone').textContent = data.telephone || '';
+        document.getElementById('footer-email').textContent = data.email || '';
+      } catch (e) {
+        console.error('Erreur chargement config:', e);
+      }
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+    loadConfig();
+  </script>
+</body>
+</html>

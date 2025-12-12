@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - Espace Usager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 450px;
+      position: relative;
+      z-index: 1;
+    }
+    .login-card {
+      background: var(--autumn-earth);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      border: var(--border-warm);
+    }
+    .login-header {
+      background: var(--gradient-autumn);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+    .login-header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: linear-gradient(to bottom right, transparent 49%, var(--autumn-earth) 50%);
+    }
+    .login-header h1 {
+      color: white;
+      font-size: 1.75rem;
+      margin: 0;
+      -webkit-text-fill-color: white;
+    }
+    .login-header .logo-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .login-body {
+      padding: 2.5rem 2rem;
+    }
+    .form-floating {
+      margin-bottom: 1.25rem;
+      position: relative;
+    }
+    .form-floating input {
+      width: 100%;
+      padding: 1.25rem 1rem 0.75rem 3rem;
+      border: 2px solid var(--autumn-bark);
+      border-radius: var(--border-radius-sm);
+      font-size: 1rem;
+      background: var(--autumn-earth-dark);
+      color: var(--color-text);
+      transition: all 0.3s ease;
+    }
+    .form-floating input:focus {
+      outline: none;
+      border-color: var(--autumn-orange);
+      box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.2);
+    }
+    .form-floating label {
+      position: absolute;
+      left: 3rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-light);
+      transition: all 0.2s ease;
+      pointer-events: none;
+      font-size: 0.95rem;
+    }
+    .form-floating input:focus + label,
+    .form-floating input:not(:placeholder-shown) + label {
+      top: 0.5rem;
+      transform: translateY(0);
+      font-size: 0.75rem;
+      color: var(--autumn-orange-light);
+    }
+    .form-floating .input-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--autumn-orange);
+      font-size: 1.25rem;
+    }
+    .btn-login {
+      width: 100%;
+      padding: 1rem;
+      background: var(--gradient-autumn);
+      border: none;
+      border-radius: var(--border-radius);
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(230, 126, 34, 0.4);
+    }
+    .btn-login:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .scan-btn {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(230, 126, 34, 0.2);
+      border: 1px solid rgba(230, 126, 34, 0.4);
+      color: var(--autumn-orange);
+      padding: 0.5rem;
+      border-radius: var(--border-radius-sm);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .scan-btn:hover {
+      background: var(--autumn-orange);
+      color: white;
+    }
+    .forgot-link {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    .forgot-link a {
+      color: var(--autumn-orange-light);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .forgot-link a:hover {
+      text-decoration: underline;
+      color: var(--autumn-yellow);
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(230, 126, 34, 0.2);
+    }
+    .back-link a {
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .back-link a:hover {
+      color: var(--autumn-orange-light);
+    }
+    .alert {
+      padding: 1rem 1.25rem;
+      border-radius: var(--border-radius-sm);
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .alert.show { display: flex; align-items: center; gap: 0.75rem; }
+    .autumn-decoration {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.3;
+      z-index: 0;
+    }
+    .deco-1 { top: 5%; left: 5%; }
+    .deco-2 { top: 15%; right: 10%; }
+    .deco-3 { bottom: 20%; left: 8%; }
+    .deco-4 { bottom: 10%; right: 5%; }
+    .spinner-border {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .scan-success {
+      animation: scanSuccess 0.3s ease;
+    }
+    @keyframes scanSuccess {
+      0%, 100% { background-color: var(--autumn-earth-dark); }
+      50% { background-color: rgba(39, 174, 96, 0.3); }
+    }
+  </style>
+</head>
+<body>
+  <span class="autumn-decoration deco-1">&#127810;</span>
+  <span class="autumn-decoration deco-2">&#127875;</span>
+  <span class="autumn-decoration deco-3">&#127807;</span>
+  <span class="autumn-decoration deco-4">&#127808;</span>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <span class="logo-icon">&#127810;</span>
+        <h1 id="siteName">Espace Usager</h1>
+      </div>
+      <div class="login-body">
+        <div class="alert alert-danger" id="errorAlert">
+          <i class="bi bi-exclamation-circle"></i>
+          <span id="errorText"></span>
+        </div>
+        <div class="alert alert-success" id="successAlert">
+          <i class="bi bi-check-circle"></i>
+          <span id="successText"></span>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-floating">
+            <i class="bi bi-person input-icon"></i>
+            <input type="text" id="identifiant" placeholder=" " required autofocus>
+            <label>Email ou code barre</label>
+            <button type="button" class="scan-btn" onclick="openScanner()" title="Scanner la carte">
+              <i class="bi bi-upc-scan"></i>
+            </button>
+          </div>
+
+          <div class="form-floating">
+            <i class="bi bi-lock input-icon"></i>
+            <input type="password" id="password" placeholder=" " required>
+            <label>Mot de passe</label>
+          </div>
+
+          <button type="submit" class="btn-login" id="btnLogin">
+            <i class="bi bi-box-arrow-in-right"></i>
+            Se connecter
+          </button>
+
+          <div class="forgot-link">
+            <a href="forgot-password.html">&#127808; Mot de passe oublie ?</a>
+          </div>
+
+          <div class="back-link">
+            <a href="/"><i class="bi bi-arrow-left"></i> Retour au site</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api';
+
+    async function loadConfig() {
+      try {
+        const response = await fetch(`${API_URL}/public/config`);
+        const config = await response.json();
+        document.getElementById('siteName').textContent = config.nom_site || 'Espace Usager';
+      } catch (error) {
+        console.error('Erreur chargement config:', error);
+      }
+    }
+
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      if (token) window.location.href = 'dashboard.html';
+    }
+
+    function showError(message) {
+      const alert = document.getElementById('errorAlert');
+      document.getElementById('errorText').textContent = message;
+      alert.classList.add('show');
+      document.getElementById('successAlert').classList.remove('show');
+    }
+
+    function showSuccess(message) {
+      const alert = document.getElementById('successAlert');
+      document.getElementById('successText').textContent = message;
+      alert.classList.add('show');
+      document.getElementById('errorAlert').classList.remove('show');
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const identifiant = document.getElementById('identifiant').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('btnLogin');
+
+      document.getElementById('errorAlert').classList.remove('show');
+      document.getElementById('successAlert').classList.remove('show');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border"></span> Connexion...';
+
+      try {
+        const response = await fetch(`${API_URL}/usager/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifiant, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || 'Erreur de connexion');
+
+        localStorage.setItem('usager_token', data.token);
+        localStorage.setItem('usager_info', JSON.stringify(data.usager));
+
+        showSuccess('Connexion reussie ! Redirection...');
+        setTimeout(() => window.location.href = 'dashboard.html', 500);
+      } catch (error) {
+        showError(error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Se connecter';
+      }
+    });
+
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('password_created') === 'true') {
+        showSuccess('Mot de passe cree avec succes ! Vous pouvez maintenant vous connecter.');
+      }
+      if (params.get('password_reset') === 'true') {
+        showSuccess('Mot de passe reinitialise ! Vous pouvez maintenant vous connecter.');
+      }
+    }
+
+    function openScanner() {
+      alert('Scanner de code-barres - Fonctionnalite disponible avec une douchette USB ou camera');
+    }
+
+    // USB Scanner Support
+    let barcodeBuffer = '';
+    let lastKeyTime = 0;
+    const BARCODE_TIMEOUT = 50;
+
+    document.addEventListener('keydown', (e) => {
+      const currentTime = Date.now();
+      const activeElement = document.activeElement;
+      const identifiantInput = document.getElementById('identifiant');
+
+      if (activeElement === document.getElementById('password')) return;
+
+      if (e.key === 'Enter' && barcodeBuffer.length >= 5) {
+        e.preventDefault();
+        identifiantInput.value = barcodeBuffer;
+        identifiantInput.classList.add('scan-success');
+        setTimeout(() => identifiantInput.classList.remove('scan-success'), 500);
+        document.getElementById('password').focus();
+        barcodeBuffer = '';
+        return;
+      }
+
+      if (currentTime - lastKeyTime > BARCODE_TIMEOUT) barcodeBuffer = '';
+
+      if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        barcodeBuffer += e.key;
+        lastKeyTime = currentTime;
+
+        if (barcodeBuffer.length > 3 && activeElement !== identifiantInput) {
+          identifiantInput.focus();
+          identifiantInput.value = barcodeBuffer;
+          e.preventDefault();
+        }
+      }
+    });
+
+    document.getElementById('identifiant').addEventListener('input', () => {
+      barcodeBuffer = '';
+    });
+
+    checkAuth();
+    loadConfig();
+    checkUrlParams();
+  </script>
+</body>
+</html>

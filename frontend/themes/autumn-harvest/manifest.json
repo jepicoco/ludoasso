@@ -1,32 +1,45 @@
 {
-  "name": "Récolte d'Automne",
-  "version": "1.0.0",
-  "description": "Theme automnal chaleureux avec des tons terre, feuilles mortes et ambiance cosy",
+  "name": "Recolte d'Automne",
+  "version": "2.0.0",
+  "description": "Theme automnal chaleureux avec des tons orange, jaune et marron, feuilles mortes et fruits d'automne",
   "author": "Assotheque",
   "mode": "dark",
   "favicon": "assets/favicon.ico",
   "colors": {
-    "primary": "#d97706",
-    "secondary": "#b45309",
-    "accent": "#dc2626",
-    "background": "#1c1917",
-    "backgroundSecondary": "#292524",
-    "text": "#fef3c7",
-    "textSecondary": "#d6d3d1",
-    "success": "#22c55e",
-    "warning": "#f59e0b",
-    "danger": "#dc2626",
-    "info": "#0ea5e9"
+    "primary": "#e67e22",
+    "secondary": "#d35400",
+    "accent": "#f39c12",
+    "background": "#1a120b",
+    "backgroundSecondary": "#2c1810",
+    "text": "#fef3e2",
+    "textSecondary": "#d4a574",
+    "success": "#27ae60",
+    "warning": "#f1c40f",
+    "danger": "#c0392b",
+    "info": "#3498db"
   },
   "style": {
-    "borderRadius": "8px",
+    "borderRadius": "12px",
     "shadowStyle": "strong",
     "navbarStyle": "solid"
   },
   "preview": null,
   "features": {
     "fallingLeaves": true,
-    "warmGlow": true
+    "warmGlow": true,
+    "autumnFruits": true
   },
-  "pages": []
+  "pages": [
+    "index.html",
+    "catalogue.html",
+    "fiche.html",
+    "infos.html",
+    "maintenance.html",
+    "usager/login.html",
+    "usager/dashboard.html",
+    "usager/emprunts.html",
+    "usager/profil.html",
+    "usager/forgot-password.html",
+    "usager/reset-password.html"
+  ]
 }
