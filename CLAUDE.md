@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Liberteko is a multi-collection library management system for associations, supporting board games (Jeux), books (Livres), films, and records (Disques). Built with Node.js/Express backend and vanilla JavaScript frontend.
+Liberteko is a multi-collection library management system for French associations, supporting board games (Jeux), books (Livres), films, and records (Disques). Built with Node.js/Express backend and vanilla JavaScript frontend. Features include loan management, membership fees, FEC-compliant accounting exports, automated communications, and AI-powered natural language search.
 
 ## Commands
 
@@ -55,6 +55,11 @@ npm run migrate-utilisateurs  # Rename adherents to utilisateurs
 npm run setup-nouveautes      # Article novelty/new arrivals feature
 npm run setup-themes          # Site theme customization
 
+# Additional Migrations (run as needed)
+npm run migrate-ip-autorisees     # Maintenance mode IP whitelist
+npm run migrate-modules-actifs    # Module activation system
+npm run migrate-horaires-vacances # Opening hours and school holidays
+
 # Utility Scripts
 npm run generate-data         # Generate mass test data
 npm run seed-all              # Run all seed scripts
@@ -79,12 +84,18 @@ npm run check-triggers        # Diagnostic: check event triggers status
   - `comptabiliteService.js` - Accounting entries generation
   - `exportComptableService.js` - Multi-format accounting exports (FEC, Sage, EBP, etc.)
   - `pdfService.js` - PDF receipt/card generation
+  - `factureService.js` - Invoice generation
   - `codeBarreService.js` - Barcode generation (EAN-13)
   - `llmService.js` - LLM API integration for AI features
   - `thematiqueService.js` / `rechercheNaturelleService.js` - Natural language search
+  - `enrichissementService.js` - Article metadata enrichment queue
   - `bggService.js` - BoardGameGeek API integration
   - `eanLookupService.js` - EAN barcode lookup (UPCitemdb, BNF, OpenLibrary, TMDB, etc.)
   - `joursFeriesService.js` / `vacancesScolairesService.js` - French holidays and school breaks
+  - `familleService.js` - Family relationship management
+  - `limiteEmpruntService.js` - Loan limits enforcement
+  - `caisseService.js` - Cash register operations
+  - `themeService.js` - Site theme CSS variable management
 - `middleware/`:
   - `auth.js` - JWT verification (`verifyToken`)
   - `checkRole.js` - Role-based access control
@@ -109,19 +120,25 @@ npm run check-triggers        # Diagnostic: check event triggers status
 
 6. **AI Features**: `/api/thematiques`, `/api/enrichissement`
 
-7. **Communications logs**: `/api/email-logs`, `/api/sms-logs`, `/api/configurations-sms`, `/api/event-triggers`
+7. **Family Management**: `/api/familles` - Family groupings and relationships
 
-8. **Barcode batch printing**: `/api/codes-barres-reserves`
+8. **Communications logs**: `/api/email-logs`, `/api/sms-logs`, `/api/configurations-sms`, `/api/event-triggers`
 
-9. **EAN Lookup**: `/api/lookup` (external APIs for barcode data: UPCitemdb, BNF, OpenLibrary, TMDB, MusicBrainz)
+9. **Barcode batch printing**: `/api/codes-barres-reserves`
+
+10. **EAN Lookup**: `/api/lookup` (external APIs for barcode data: UPCitemdb, BNF, OpenLibrary, TMDB, MusicBrainz)
 
 ### Frontend (frontend/)
 
 - `admin/` - Bootstrap 5 admin interface
   - `js/admin-template.js` - Navbar/sidebar generator
   - `js/api-admin.js` - API client with JWT handling
-- `usager/` - Member self-service portal (login, dashboard, loan extensions)
-- Public pages: `index.html`, `catalogue.html`, `fiche.html`
+- `themes/` - Public site themes (default, pixel-geek, ocean-blue, forest-green, etc.)
+  - Each theme contains: `index.html`, `catalogue.html`, `fiche.html`, `infos.html`, `plan.html`, `aide.html`
+  - Theme selection stored in `ParametresFront.theme_code`
+  - `manifest.json` defines theme metadata
+  - `usager/` subfolder for member portal pages
+- `usager/` - Fallback member self-service portal (when no theme selected)
 
 ### Database
 
@@ -135,6 +152,9 @@ MySQL with Sequelize ORM. Key model groups:
 - **Barcode Batches**: `ParametresCodesBarres`, `LotCodesBarres`, `CodeBarreUtilisateur`, `CodeBarreJeu`, `CodeBarreLivre`, `CodeBarreFilm`, `CodeBarreDisque`
 - **External APIs**: `ConfigurationAPI` (EAN lookup providers with encrypted credentials)
 - **Themes**: `ThemeSite` (CSS variable customization for site theming)
+- **Family**: `Famille`, `RelationFamiliale` - Family groupings for shared memberships
+- **Invoicing**: `Facture`, `LigneFacture` - Invoice generation
+- **Loan Limits**: `LimiteEmprunt` - Configurable loan limits per user type/status
 
 **Terminology Note**: The codebase uses "utilisateur" internally for the user model. The API route `/api/adherents` is maintained as an alias for `/api/utilisateurs` for backward compatibility. Frontend labels use "usager" (member) for the public-facing portal.
 
@@ -242,6 +262,32 @@ Jest configuration in `jest.config.js`:
 - Mocks are automatically cleared/reset between tests
 - Coverage excludes `server.js` and `models/index.js`
 
+## Migration System
+
+The project uses a custom migration runner (`database/migrate.js`) that tracks executed migrations in a `sequelize_migrations` table. Migrations are JavaScript files in `database/migrations/` that export `up()` and optionally `down()` functions.
+
+**Migration file pattern**:
+```javascript
+const { sequelize } = require('../../backend/models');
+
+async function up() {
+  const queryInterface = sequelize.getQueryInterface();
+  // Check if table/column exists before creating
+  const tables = await queryInterface.showAllTables();
+  if (!tables.includes('new_table')) {
+    await queryInterface.createTable('new_table', { /* columns */ });
+  }
+}
+
+async function down() {
+  // Rollback logic
+}
+
+module.exports = { up, down };
+```
+
+Migrations should be idempotent (check before creating) to allow re-running safely.
+
 ## Default Admin
 
-After initialization: `admin@ludotheque.local` / `admin123`
+After initialization: `admin@liberteko.local` / `admin123`

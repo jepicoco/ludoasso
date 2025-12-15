@@ -23,8 +23,8 @@ async function seedEmailConfig() {
       where: { libelle: 'Mailtrap (Test)' },
       defaults: {
         libelle: 'Mailtrap (Test)',
-        email_expediteur: 'noreply@ludotheque.test',
-        nom_expediteur: 'Ludothèque',
+        email_expediteur: 'noreply@liberteko.test',
+        nom_expediteur: 'Liberteko',
         smtp_host: 'sandbox.smtp.mailtrap.io',
         smtp_port: 2525,
         smtp_secure: false,

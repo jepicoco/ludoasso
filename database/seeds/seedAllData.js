@@ -41,7 +41,7 @@ const sites = [
     ville: 'Paris',
     pays: 'FR',
     telephone: '01 23 45 67 89',
-    email: 'contact@ludotheque.local',
+    email: 'contact@liberteko.local',
     couleur: '#0d6efd',
     icone: 'building',
     ordre_affichage: 1,
@@ -57,7 +57,7 @@ const sites = [
     ville: 'Paris',
     pays: 'FR',
     telephone: '01 98 76 54 32',
-    email: 'biblio@ludotheque.local',
+    email: 'biblio@liberteko.local',
     couleur: '#198754',
     icone: 'book',
     ordre_affichage: 2,
@@ -73,7 +73,7 @@ const sites = [
     ville: null,
     pays: 'FR',
     telephone: '06 11 22 33 44',
-    email: 'mobile@ludotheque.local',
+    email: 'mobile@liberteko.local',
     couleur: '#fd7e14',
     icone: 'truck',
     ordre_affichage: 3,
@@ -340,10 +340,10 @@ const emplacementsDisques = [
 
 // === ADHERENTS ===
 const adherents = [
-  { nom: 'Admin', prenom: 'Super', email: 'admin@ludotheque.local', telephone: '0600000000', statut: 'actif', role: 'administrateur', password: 'admin123', adhesion_association: true },
-  { nom: 'Gestionnaire', prenom: 'Marie', email: 'gestionnaire@ludotheque.local', telephone: '0600000001', statut: 'actif', role: 'gestionnaire', password: 'gestion123', adhesion_association: true },
-  { nom: 'Comptable', prenom: 'Jean', email: 'comptable@ludotheque.local', telephone: '0600000002', statut: 'actif', role: 'comptable', password: 'compta123', adhesion_association: true },
-  { nom: 'Benevole', prenom: 'Pierre', email: 'benevole@ludotheque.local', telephone: '0600000003', statut: 'actif', role: 'benevole', password: 'benev123', adhesion_association: true },
+  { nom: 'Admin', prenom: 'Super', email: 'admin@liberteko.local', telephone: '0600000000', statut: 'actif', role: 'administrateur', password: 'admin123', adhesion_association: true },
+  { nom: 'Gestionnaire', prenom: 'Marie', email: 'gestionnaire@liberteko.local', telephone: '0600000001', statut: 'actif', role: 'gestionnaire', password: 'gestion123', adhesion_association: true },
+  { nom: 'Comptable', prenom: 'Jean', email: 'comptable@liberteko.local', telephone: '0600000002', statut: 'actif', role: 'comptable', password: 'compta123', adhesion_association: true },
+  { nom: 'Benevole', prenom: 'Pierre', email: 'benevole@liberteko.local', telephone: '0600000003', statut: 'actif', role: 'benevole', password: 'benev123', adhesion_association: true },
   { nom: 'Dupont', prenom: 'Alice', email: 'alice.dupont@email.com', telephone: '0611111111', ville: 'Paris', code_postal: '75001', statut: 'actif', role: 'usager', password: 'usager123', adhesion_association: false },
   { nom: 'Martin', prenom: 'Lucas', email: 'lucas.martin@email.com', telephone: '0622222222', ville: 'Lyon', code_postal: '69001', statut: 'actif', role: 'usager', password: 'usager123', adhesion_association: false },
   { nom: 'Bernard', prenom: 'Sophie', email: 'sophie.bernard@email.com', telephone: '0633333333', ville: 'Marseille', code_postal: '13001', statut: 'actif', role: 'usager', password: 'usager123', adhesion_association: true },
@@ -425,7 +425,7 @@ const parametresFront = {
   module_discotheque: true,
   module_inscriptions: true,
   module_reservations: false,
-  email_contact: 'contact@ludotheque.local',
+  email_contact: 'contact@liberteko.local',
   telephone_contact: '01 23 45 67 89',
   couleur_primaire: '#0d6efd',
   couleur_secondaire: '#6c757d',
@@ -926,10 +926,10 @@ async function seedAll() {
     console.log(`  - Cotisations: ${counts[0].cotisations}`);
 
     console.log('\nComptes utilisateurs:');
-    console.log('  - admin@ludotheque.local / admin123 (administrateur)');
-    console.log('  - gestionnaire@ludotheque.local / gestion123 (gestionnaire)');
-    console.log('  - comptable@ludotheque.local / compta123 (comptable)');
-    console.log('  - benevole@ludotheque.local / benev123 (benevole)');
+    console.log('  - admin@liberteko.local / admin123 (administrateur)');
+    console.log('  - gestionnaire@liberteko.local / gestion123 (gestionnaire)');
+    console.log('  - comptable@liberteko.local / compta123 (comptable)');
+    console.log('  - benevole@liberteko.local / benev123 (benevole)');
     console.log('  - alice.dupont@email.com / usager123 (usager)');
     console.log('');
 

@@ -60,7 +60,12 @@
       "Bash(grep:*)",
       "Bash(tasklist:*)",
       "Bash(findstr:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(git remote:*)",
+      "Bash(dir /s /b *.md)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''frontend\\themes'' -Recurse -Include *.html,*.js | ForEach-Object { (Get-Content $_FullName -Raw) -replace ''ASSOTHEQUE'', ''LIBERTEKO'' | Set-Content $_FullName -NoNewline }\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"Set-Location ''C:\\Users\\jepic\\Documents\\Projets\\liberteko\\frontend\\themes''; Get-ChildItem -Recurse -Include *.html,*.js | ForEach-Object { $c = Get-Content $_FullName -Raw -Encoding UTF8; if ($c -match ''ASSOTHEQUE'') { $c -replace ''ASSOTHEQUE'', ''LIBERTEKO'' | Set-Content $_FullName -NoNewline -Encoding UTF8; Write-Host Updated: $_Name } }\")",
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\jepic\\Documents\\Projets\\liberteko\\replace-assotheque.ps1\")"
     ],
     "deny": [],
     "ask": []

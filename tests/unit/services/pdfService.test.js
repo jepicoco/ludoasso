@@ -40,7 +40,7 @@ describe('PDFService', () => {
         ville: 'Paris',
         siret: '12345678901234',
         telephone: '01 23 45 67 89',
-        email: 'contact@ludotheque-test.fr',
+        email: 'contact@liberteko-test.fr',
         mentions_legales: 'Association loi 1901'
       };
 

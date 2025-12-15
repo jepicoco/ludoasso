@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -322,7 +322,7 @@
     <div class="header-container">
       <a href="/" class="logo">
         <i class="bi bi-controller"></i>
-        <span id="header-title">ASSOTHEQUE</span>
+        <span id="header-title">LIBERTEKO</span>
       </a>
       <nav>
         <ul class="nav-menu">
@@ -604,7 +604,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>[ <span id="year"></span> ] <span id="footer-name">ASSOTHEQUE</span> - POWERED BY PIXEL MAGIC</p>
+      <p>[ <span id="year"></span> ] <span id="footer-name">LIBERTEKO</span> - POWERED BY PIXEL MAGIC</p>
     </div>
   </footer>
 
@@ -622,7 +622,7 @@
         const resp = await fetch('/api/public/config');
         const data = await resp.json();
 
-        const nom = (data.nom_site || 'ASSOTHEQUE').toUpperCase();
+        const nom = (data.nom_site || 'LIBERTEKO').toUpperCase();
         document.getElementById('site-title').textContent = `Aide - ${nom}`;
         document.getElementById('header-title').textContent = nom;
         document.getElementById('footer-name').textContent = nom;

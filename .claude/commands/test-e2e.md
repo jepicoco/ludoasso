@@ -69,7 +69,7 @@ test.describe('Authentification Admin', () => {
   test('should login with valid credentials', async ({ page }) => {
     await page.goto('/admin/login.html');
 
-    await page.fill('#email', 'admin@ludotheque.local');
+    await page.fill('#email', 'admin@liberteko.local');
     await page.fill('#password', 'admin123');
     await page.click('button[type="submit"]');
 
@@ -84,7 +84,7 @@ test.describe('Authentification Admin', () => {
   test('should show error with invalid credentials', async ({ page }) => {
     await page.goto('/admin/login.html');
 
-    await page.fill('#email', 'admin@ludotheque.local');
+    await page.fill('#email', 'admin@liberteko.local');
     await page.fill('#password', 'wrongpassword');
     await page.click('button[type="submit"]');
 
@@ -113,7 +113,7 @@ test.describe('Gestion des utilisateurs', () => {
   test.beforeEach(async ({ page }) => {
     // Login avant chaque test
     await page.goto('/admin/login.html');
-    await page.fill('#email', 'admin@ludotheque.local');
+    await page.fill('#email', 'admin@liberteko.local');
     await page.fill('#password', 'admin123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/.*dashboard/);
@@ -249,7 +249,7 @@ test.describe('Responsive Design', () => {
 
     // Login et aller au dashboard
     await page.goto('/admin/login.html');
-    await page.fill('#email', 'admin@ludotheque.local');
+    await page.fill('#email', 'admin@liberteko.local');
     await page.fill('#password', 'admin123');
     await page.click('button[type="submit"]');
     await page.waitForURL(/.*dashboard/);

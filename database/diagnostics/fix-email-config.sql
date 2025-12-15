@@ -33,8 +33,8 @@ INSERT INTO configurations_email (
     updated_at
 ) VALUES (
     'Test Local (Désactivé)',
-    'test@ludotheque.local',
-    'Ludothèque Test',
+    'test@liberteko.local',
+    'Liberteko Test',
     'localhost',
     1025,
     0,

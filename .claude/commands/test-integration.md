@@ -37,7 +37,7 @@ beforeAll(async () => {
   const res = await request(app)
     .post('/api/auth/login')
     .send({
-      email: 'admin@ludotheque.local',
+      email: 'admin@liberteko.local',
       password: 'admin123'
     });
   adminToken = res.body.token;
@@ -61,7 +61,7 @@ describe('API Utilisateurs', () => {
     const res = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'admin@ludotheque.local',
+        email: 'admin@liberteko.local',
         password: 'admin123'
       });
     token = res.body.token;
@@ -180,7 +180,7 @@ describe('API Auth', () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'admin@ludotheque.local',
+          email: 'admin@liberteko.local',
           password: 'admin123'
         });
 
@@ -193,7 +193,7 @@ describe('API Auth', () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({
-          email: 'admin@ludotheque.local',
+          email: 'admin@liberteko.local',
           password: 'wrongpassword'
         });
 

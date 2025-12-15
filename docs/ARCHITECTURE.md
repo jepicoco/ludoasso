@@ -368,7 +368,7 @@ npm run seed-event-triggers  # Déclencheurs événements
 
 ### Scripts Batch (`.bat` à la racine)
 
-- `git-init-ludoasso.bat` - Push initial GitHub
+- `git-init-liberteko.bat` - Push initial GitHub
 - `git-push.bat` - Push générique
 - `git-pull.bat` - Pull depuis GitHub
 - `start-server.bat` - Démarrage serveur
@@ -530,7 +530,7 @@ Anciennement dupliqué entre `services/` et `utils/`, maintenant un seul service
 ## Ressources
 
 - **Documentation**: README.md, CLAUDE.md
-- **GitHub**: https://github.com/jepicoco/ludoasso
+- **GitHub**: https://github.com/jepicoco/liberteko
 - **Licence**: GPL 3.0
 - **Version**: 1.0.0
 - **Dernière mise à jour**: Décembre 2025

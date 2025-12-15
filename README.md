@@ -88,8 +88,8 @@ Application complète de gestion de ludothèque (bibliothèque de jeux de socié
 
 1. Cloner le projet
 ```bash
-git clone https://github.com/jepicoco/ludoasso.git
-cd ludoasso
+git clone https://github.com/jepicoco/liberteko.git
+cd liberteko
 ```
 
 2. Installer les dépendances
@@ -154,7 +154,7 @@ Application accessible sur http://localhost:3000
 ## Connexion Admin
 
 Après l'initialisation :
-- Email : admin@ludotheque.local
+- Email : admin@liberteko.local
 - Mot de passe : admin123
 
 IMPORTANT : Changez ce mot de passe en production
