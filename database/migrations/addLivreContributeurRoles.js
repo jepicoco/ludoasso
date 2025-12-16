@@ -18,15 +18,11 @@
  * - directeur_collection: Directeur de collection
  */
 
-const { Sequelize } = require('sequelize');
-
-async function up(sequelize) {
-  const queryInterface = sequelize.getQueryInterface();
-
+async function up(connection) {
   console.log('Migration: Ajout des rôles aux contributeurs de livres...');
 
   // 1. Vérifier si la colonne 'role' existe déjà
-  const [columns] = await sequelize.query(`
+  const [columns] = await connection.query(`
     SELECT COLUMN_NAME
     FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE()
@@ -37,7 +33,7 @@ async function up(sequelize) {
   if (columns.length === 0) {
     // Ajouter la colonne role
     console.log('Ajout de la colonne role à livre_auteurs...');
-    await sequelize.query(`
+    await connection.query(`
       ALTER TABLE livre_auteurs
       ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'auteur'
       COMMENT 'Rôle: auteur, scenariste, dessinateur, coloriste, illustrateur, traducteur, adaptateur, prefacier'
@@ -47,7 +43,7 @@ async function up(sequelize) {
     // D'abord supprimer l'ancienne clé primaire
     console.log('Modification de la clé primaire...');
     try {
-      await sequelize.query(`
+      await connection.query(`
         ALTER TABLE livre_auteurs DROP PRIMARY KEY
       `);
     } catch (e) {
@@ -55,7 +51,7 @@ async function up(sequelize) {
     }
 
     // Recréer avec role inclus
-    await sequelize.query(`
+    await connection.query(`
       ALTER TABLE livre_auteurs
       ADD PRIMARY KEY (livre_id, auteur_id, role)
     `);
@@ -64,23 +60,23 @@ async function up(sequelize) {
     // vers livre_auteurs avec role='illustrateur'
     console.log('Migration des illustrateurs existants...');
     try {
-      const [illustrateurs] = await sequelize.query(`
+      const [illustrateurs] = await connection.query(`
         SELECT livre_id, illustrateur_id FROM livre_illustrateurs
       `);
 
       for (const row of illustrateurs) {
         // Vérifier que l'illustrateur existe dans auteurs
-        const [auteur] = await sequelize.query(`
+        const [auteur] = await connection.query(`
           SELECT a.id FROM auteurs a
           INNER JOIN illustrateurs i ON i.nom = a.nom
           WHERE i.id = ?
-        `, { replacements: [row.illustrateur_id] });
+        `, [row.illustrateur_id]);
 
         if (auteur.length > 0) {
-          await sequelize.query(`
+          await connection.query(`
             INSERT IGNORE INTO livre_auteurs (livre_id, auteur_id, role)
             VALUES (?, ?, 'illustrateur')
-          `, { replacements: [row.livre_id, auteur[0].id] });
+          `, [row.livre_id, auteur[0].id]);
         }
       }
     } catch (e) {
@@ -91,7 +87,7 @@ async function up(sequelize) {
   }
 
   // 2. Créer la table de référence des rôles de contributeurs (optionnel mais utile)
-  const [rolesTable] = await sequelize.query(`
+  const [rolesTable] = await connection.query(`
     SELECT TABLE_NAME
     FROM INFORMATION_SCHEMA.TABLES
     WHERE TABLE_SCHEMA = DATABASE()
@@ -100,7 +96,7 @@ async function up(sequelize) {
 
   if (rolesTable.length === 0) {
     console.log('Création de la table roles_contributeur_livre...');
-    await sequelize.query(`
+    await connection.query(`
       CREATE TABLE roles_contributeur_livre (
         code VARCHAR(50) PRIMARY KEY,
         libelle VARCHAR(100) NOT NULL,
@@ -110,7 +106,7 @@ async function up(sequelize) {
     `);
 
     // Insérer les rôles par défaut
-    await sequelize.query(`
+    await connection.query(`
       INSERT INTO roles_contributeur_livre (code, libelle, ordre) VALUES
       ('auteur', 'Auteur', 1),
       ('scenariste', 'Scénariste', 2),
@@ -127,42 +123,22 @@ async function up(sequelize) {
   console.log('Migration terminée avec succès!');
 }
 
-async function down(sequelize) {
+async function down(connection) {
   console.log('Rollback: Suppression des rôles contributeurs livres...');
 
   // Supprimer la table de référence des rôles
-  await sequelize.query('DROP TABLE IF EXISTS roles_contributeur_livre');
+  await connection.query('DROP TABLE IF EXISTS roles_contributeur_livre');
 
   // Remettre la clé primaire originale (sans role)
   try {
-    await sequelize.query('ALTER TABLE livre_auteurs DROP PRIMARY KEY');
-    await sequelize.query('ALTER TABLE livre_auteurs DROP COLUMN role');
-    await sequelize.query('ALTER TABLE livre_auteurs ADD PRIMARY KEY (livre_id, auteur_id)');
+    await connection.query('ALTER TABLE livre_auteurs DROP PRIMARY KEY');
+    await connection.query('ALTER TABLE livre_auteurs DROP COLUMN role');
+    await connection.query('ALTER TABLE livre_auteurs ADD PRIMARY KEY (livre_id, auteur_id)');
   } catch (e) {
     console.log('Erreur lors du rollback:', e.message);
   }
 
   console.log('Rollback terminé');
-}
-
-// Exécution directe
-if (require.main === module) {
-  const path = require('path');
-  require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-  const config = require('../../backend/config/database');
-  const env = process.env.NODE_ENV || 'development';
-  const dbConfig = config[env];
-  const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, dbConfig);
-
-  up(sequelize)
-    .then(() => {
-      console.log('Migration exécutée avec succès');
-      process.exit(0);
-    })
-    .catch(err => {
-      console.error('Erreur migration:', err);
-      process.exit(1);
-    });
 }
 
 module.exports = { up, down };
