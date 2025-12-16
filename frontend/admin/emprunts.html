@@ -3,343 +3,1261 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion des Emprunts - Ludothèque Admin</title>
+  <title>Gestion des Emprunts - Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --color-ludotheque: #6f42c1;
+      --color-bibliotheque: #20c997;
+      --color-filmotheque: #fd7e14;
+      --color-discotheque: #e83e8c;
+      --textcolor-ludotheque: #ffffff;
+      --textcolor-bibliotheque: #ffffff;
+      --textcolor-filmotheque: #ffffff;
+      --textcolor-discotheque: #ffffff;
+    }
+
+    .module-tab {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .module-tab .module-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+    .module-tab.general .module-icon { background: #6c757d20; color: #6c757d; }
+    .module-tab.ludotheque .module-icon { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .module-tab.bibliotheque .module-icon { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .module-tab.filmotheque .module-icon { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .module-tab.discotheque .module-icon { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+
+    .nav-tabs .nav-link.active .module-icon {
+      background: currentColor;
+      color: white !important;
+    }
+    .nav-tabs .nav-link.active.general .module-icon { background: #6c757d; color: #ffffff !important; }
+    .nav-tabs .nav-link.active.ludotheque .module-icon { background: var(--color-ludotheque); color: var(--textcolor-ludotheque) !important; }
+    .nav-tabs .nav-link.active.bibliotheque .module-icon { background: var(--color-bibliotheque); color: var(--textcolor-bibliotheque) !important; }
+    .nav-tabs .nav-link.active.filmotheque .module-icon { background: var(--color-filmotheque); color: var(--textcolor-filmotheque) !important; }
+    .nav-tabs .nav-link.active.discotheque .module-icon { background: var(--color-discotheque); color: var(--textcolor-discotheque) !important; }
+
+    .search-results-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 1050;
+      max-height: 300px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 0.375rem 0.375rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .search-result-item {
+      padding: 0.75rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .search-result-item:hover {
+      background: #f8f9fa;
+    }
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+    .search-result-item .type-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+    .type-badge.jeu { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .type-badge.livre { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .type-badge.film { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .type-badge.disque { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+    .type-badge.adherent { background: #0d6efd20; color: #0d6efd; }
+
+    .quick-loan-card {
+      border-left: 4px solid #6c757d;
+    }
+    .quick-loan-card.ludotheque { border-left-color: var(--color-ludotheque); }
+    .quick-loan-card.bibliotheque { border-left-color: var(--color-bibliotheque); }
+    .quick-loan-card.filmotheque { border-left-color: var(--color-filmotheque); }
+    .quick-loan-card.discotheque { border-left-color: var(--color-discotheque); }
+
+    .selected-item {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-radius: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .selected-item .btn-clear {
+      margin-left: auto;
+      padding: 0;
+      color: #dc3545;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+    }
+  </style>
 </head>
 <body>
-  <!-- Navigation (généré par JS) -->
   <nav id="admin-navbar"></nav>
 
   <div class="container-fluid mt-4">
     <div class="row">
-      <!-- Sidebar (généré par JS) -->
       <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
-      <!-- Main Content -->
       <div class="col-md-10">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2><i class="bi bi-arrow-left-right"></i> Gestion des Emprunts</h2>
+          <h2><i class="bi bi-arrow-left-right me-2"></i>Gestion des Emprunts</h2>
         </div>
 
-        <!-- Quick Loan Section -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5 class="card-title mb-0"><i class="bi bi-lightning-charge"></i> Emprunt rapide</h5>
-          </div>
-          <div class="card-body">
-            <div class="row g-3">
-              <!-- Usager Selection -->
-              <div class="col-md-4">
-                <label class="form-label"><strong>1. Usager</strong></label>
-                <div class="input-group">
-                  <input
-                    type="text"
-                    id="quickAdherentCode"
-                    class="form-control"
-                    placeholder="Scanner ou saisir code..."
-                  >
-                  <button class="btn btn-outline-secondary" onclick="scanAdherent()">
-                    <i class="bi bi-camera"></i>
-                  </button>
-                </div>
-                <div id="quickAdherentInfo" class="mt-2 p-2 bg-light rounded" style="min-height: 60px;">
-                  <small class="text-muted">En attente...</small>
-                </div>
-              </div>
+        <!-- Onglets modules -->
+        <ul class="nav nav-tabs mb-3" id="moduleTabs" role="tablist">
+          <!-- Generated by JS based on user permissions -->
+        </ul>
 
-              <!-- Jeu Selection -->
-              <div class="col-md-4">
-                <label class="form-label"><strong>2. Jeu</strong></label>
-                <div class="input-group">
-                  <input
-                    type="text"
-                    id="quickJeuCode"
-                    class="form-control"
-                    placeholder="Scanner ou saisir code..."
-                  >
-                  <button class="btn btn-outline-secondary" onclick="scanJeu()">
-                    <i class="bi bi-camera"></i>
-                  </button>
-                </div>
-                <div id="quickJeuInfo" class="mt-2 p-2 bg-light rounded" style="min-height: 60px;">
-                  <small class="text-muted">En attente...</small>
-                </div>
-              </div>
-
-              <!-- Action -->
-              <div class="col-md-4">
-                <label class="form-label"><strong>3. Action</strong></label>
-                <button
-                  class="btn btn-primary w-100"
-                  onclick="createQuickLoan()"
-                  style="height: 44px; font-size: 16px;"
-                  id="quickLoanBtn"
-                  disabled
-                >
-                  <i class="bi bi-check-circle"></i> Créer l'emprunt
-                </button>
-                <div class="mt-2">
-                  <small class="text-muted">
-                    <i class="bi bi-calendar"></i> Durée: 14 jours
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filters -->
-        <div class="card mb-3">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="btn-group">
-                <button class="btn btn-primary" onclick="openCreateModal()">
-                  <i class="bi bi-plus-circle"></i> Nouvel emprunt
-                </button>
-                <button class="btn btn-secondary" onclick="loadEmprunts()">
-                  <i class="bi bi-arrow-clockwise"></i> Actualiser
-                </button>
-                <button class="btn btn-danger" onclick="loadOverdue()">
-                  <i class="bi bi-exclamation-triangle"></i> En retard
-                </button>
-              </div>
-              <div>
-                <select id="statutFilter" class="form-select" onchange="loadEmprunts()" style="width: 200px;">
-                  <option value="">Tous les statuts</option>
-                  <option value="en_cours" selected>En cours</option>
-                  <option value="retourne">Retourné</option>
-                  <option value="en_retard">En retard</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Emprunts List -->
-        <div class="card">
-          <div class="card-body">
-            <div id="empruntsList">
-              <div class="text-center p-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Chargement...</span>
-                </div>
-                <p class="mt-2">Chargement des emprunts...</p>
-              </div>
-            </div>
-          </div>
+        <!-- Contenu des onglets -->
+        <div class="tab-content" id="moduleTabsContent">
+          <!-- Generated by JS -->
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Create/Edit Modal -->
-  <div class="modal fade" id="empruntModal" tabindex="-1">
+  <!-- Modal Confirmation emprunt avec reservations -->
+  <div class="modal fade" id="confirmLoanModal" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTitle">Nouvel emprunt</h5>
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Article reserve</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form id="empruntForm">
-            <input type="hidden" id="empruntId">
-
-            <div class="mb-3">
-              <label for="adherent_id" class="form-label">Usager *</label>
-              <select id="adherent_id" class="form-select" required>
-                <option value="">Selectionner un usager...</option>
-              </select>
+          <div class="alert alert-warning mb-3">
+            <strong id="confirmLoanArticleTitle">Cet article</strong> est reserve par
+            <strong id="confirmLoanReservationCount">0</strong> personne(s).
+          </div>
+          <p>Etes-vous sur de vouloir valider cet emprunt ?</p>
+          <div class="card">
+            <div class="card-header py-2">
+              <small class="fw-bold">Reservataires</small>
             </div>
-
-            <div class="mb-3">
-              <label for="jeu_id" class="form-label">Jeu *</label>
-              <select id="jeu_id" class="form-select" required>
-                <option value="">Sélectionner un jeu...</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="date_retour_prevue" class="form-label">Date de retour prévue</label>
-              <input type="date" id="date_retour_prevue" class="form-control">
-              <small class="text-muted">Par défaut: 14 jours</small>
-            </div>
-
-            <div class="mb-3">
-              <label for="commentaire" class="form-label">Commentaire</label>
-              <textarea id="commentaire" class="form-control" rows="3"></textarea>
-            </div>
-          </form>
+            <ul class="list-group list-group-flush" id="confirmLoanReservataires">
+              <!-- Liste des reservataires -->
+            </ul>
+          </div>
+          <input type="hidden" id="confirmLoanModuleCode">
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitEmpruntForm()">Enregistrer</button>
+          <button type="button" class="btn btn-warning" onclick="executeQuickLoan()">
+            <i class="bi bi-check-lg me-1"></i>Confirmer l'emprunt
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Reservation en attente -->
+  <div class="modal fade" id="reservationModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title"><i class="bi bi-bookmark-check me-2"></i>Reservation en attente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="reservationEmpruntId">
+          <div class="alert alert-info mb-3">
+            <i class="bi bi-info-circle me-2"></i>
+            Cet article a une reservation en attente pour :
+          </div>
+          <div class="card mb-3">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">Reservataire</h6>
+              <p class="card-text mb-1" id="reservationUsagerNom"><strong>-</strong></p>
+              <small class="text-muted" id="reservationUsagerEmail">-</small>
+            </div>
+          </div>
+          <p class="mb-2"><strong>Article :</strong> <span id="reservationArticleTitre">-</span></p>
+          <hr>
+          <p class="text-center mb-0">Que souhaitez-vous faire ?</p>
+        </div>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-outline-secondary" onclick="traiterReservation('rayon')">
+            <i class="bi bi-inbox me-1"></i>Remettre en rayon
+          </button>
+          <button type="button" class="btn btn-success" onclick="traiterReservation('cote')">
+            <i class="bi bi-bookmark-check me-1"></i>Mettre de cote
+          </button>
         </div>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
   <script>
-    let emprunts = [];
-    let quickAdherent = null;
-    let quickJeu = null;
-    let empruntModalInstance = null;
+    // ==================== CONFIGURATION ====================
+    const MODULES_CONFIG = {
+      general: {
+        code: 'general',
+        label: 'General',
+        icon: 'bi-grid-3x3-gap',
+        color: '#6c757d',
+        searchAll: true
+      },
+      ludotheque: {
+        code: 'ludotheque',
+        label: 'Ludotheque',
+        icon: 'bi-dice-5',
+        color: '#6f42c1',
+        articleType: 'jeu',
+        articleLabel: 'Jeu',
+        api: 'jeuxAPI',
+        idField: 'jeu_id'
+      },
+      bibliotheque: {
+        code: 'bibliotheque',
+        label: 'Bibliotheque',
+        icon: 'bi-book',
+        color: '#20c997',
+        articleType: 'livre',
+        articleLabel: 'Livre',
+        api: 'livresAPI',
+        idField: 'livre_id'
+      },
+      filmotheque: {
+        code: 'filmotheque',
+        label: 'Filmotheque',
+        icon: 'bi-film',
+        color: '#fd7e14',
+        articleType: 'film',
+        articleLabel: 'Film',
+        api: 'filmsAPI',
+        idField: 'film_id'
+      },
+      discotheque: {
+        code: 'discotheque',
+        label: 'Discotheque',
+        icon: 'bi-disc',
+        color: '#e83e8c',
+        articleType: 'disque',
+        articleLabel: 'Disque',
+        api: 'disquesAPI',
+        idField: 'disque_id'
+      }
+    };
 
-    // Quick loan functions
-    document.getElementById('quickAdherentCode').addEventListener('change', async (e) => {
-      const code = e.target.value.trim();
-      if (!code) return;
+    // State
+    let userModules = [];
+    let hasAllModules = false;
+    let currentModule = null;
+    let moduleStates = {};
+    let searchTimeouts = {};
+
+    // ==================== TOAST ====================
+    function showToast(message, type = 'info') {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+      Toast.fire({
+        icon: type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info',
+        title: message
+      });
+    }
+
+    // ==================== PERMISSIONS ====================
+    function getUserAllowedModules() {
+      const stored = localStorage.getItem('userModulesAutorises');
+      const user = getCurrentUser();
+
+      // Admin ou pas de restriction = acces a tout
+      if (!stored || user?.role === 'administrateur') {
+        return null; // null = tous les modules
+      }
 
       try {
+        const modules = JSON.parse(stored);
+        return modules && modules.length > 0 ? modules : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function initializeModules() {
+      const allowedModules = getUserAllowedModules();
+
+      if (allowedModules === null) {
+        // Acces a tous les modules
+        hasAllModules = true;
+        userModules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
+      } else {
+        hasAllModules = false;
+        userModules = allowedModules;
+      }
+
+      // Initialiser les states pour chaque module
+      const modulesToInit = hasAllModules ? ['general', ...userModules] : userModules;
+      modulesToInit.forEach(mod => {
+        moduleStates[mod] = {
+          selectedUsager: null,
+          selectedArticle: null,
+          emprunts: [],
+          filters: { statut: 'en_cours' }
+        };
+      });
+
+      renderTabs();
+    }
+
+    // ==================== TABS ====================
+    function renderTabs() {
+      const tabsContainer = document.getElementById('moduleTabs');
+      const contentContainer = document.getElementById('moduleTabsContent');
+
+      let tabsHtml = '';
+      let contentHtml = '';
+      let isFirst = true;
+
+      // Onglet General (si acces a tous)
+      if (hasAllModules) {
+        const config = MODULES_CONFIG.general;
+        tabsHtml += createTabHtml('general', config, isFirst);
+        contentHtml += createTabContentHtml('general', config, isFirst);
+        isFirst = false;
+      }
+
+      // Onglets des modules accessibles
+      userModules.forEach(mod => {
+        const config = MODULES_CONFIG[mod];
+        if (config) {
+          tabsHtml += createTabHtml(mod, config, isFirst);
+          contentHtml += createTabContentHtml(mod, config, isFirst);
+          isFirst = false;
+        }
+      });
+
+      tabsContainer.innerHTML = tabsHtml;
+      contentContainer.innerHTML = contentHtml;
+
+      // Definir le module courant
+      currentModule = hasAllModules ? 'general' : userModules[0];
+
+      // Initialiser les event listeners
+      initializeEventListeners();
+
+      // Charger les emprunts du premier onglet
+      loadEmprunts(currentModule);
+    }
+
+    function createTabHtml(moduleCode, config, isActive) {
+      return `
+        <li class="nav-item" role="presentation">
+          <button class="nav-link ${isActive ? 'active' : ''} module-tab ${moduleCode}"
+                  id="tab-${moduleCode}"
+                  data-bs-toggle="tab"
+                  data-bs-target="#content-${moduleCode}"
+                  type="button"
+                  role="tab"
+                  onclick="switchModule('${moduleCode}')">
+            <span class="module-icon"><i class="bi ${config.icon}"></i></span>
+            <span class="d-none d-md-inline">${config.label}</span>
+          </button>
+        </li>
+      `;
+    }
+
+    function createTabContentHtml(moduleCode, config, isActive) {
+      const isGeneral = moduleCode === 'general';
+      const articleLabel = isGeneral ? 'Article' : config.articleLabel;
+      const searchPlaceholder = isGeneral
+        ? 'Rechercher un article (tous types)...'
+        : `Rechercher un ${articleLabel.toLowerCase()}...`;
+
+      return `
+        <div class="tab-pane fade ${isActive ? 'show active' : ''}"
+             id="content-${moduleCode}"
+             role="tabpanel">
+
+          <!-- Quick Loan Section -->
+          <div class="card mb-3 quick-loan-card ${moduleCode}">
+            <div class="card-header">
+              <h5 class="card-title mb-0">
+                <i class="bi bi-lightning-charge me-2"></i>Emprunt rapide
+                ${!isGeneral ? `<span class="badge" style="background:${config.color}">${config.label}</span>` : ''}
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <!-- Usager -->
+                <div class="col-md-4">
+                  <label class="form-label"><strong>1. Usager</strong></label>
+                  <div class="search-input-wrapper">
+                    <div class="input-group">
+                      <input type="text"
+                             id="searchUsager-${moduleCode}"
+                             class="form-control"
+                             placeholder="Code-barre, nom ou prenom..."
+                             oninput="debounceSearchUsager('${moduleCode}')">
+                      <button class="btn btn-outline-secondary" type="button" onclick="clearUsagerSearch('${moduleCode}')">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                    <div id="usagerResults-${moduleCode}" class="search-results-dropdown" style="display:none;"></div>
+                  </div>
+                  <div id="selectedUsager-${moduleCode}" class="mt-2" style="min-height:50px;">
+                    <small class="text-muted">Tapez au moins 3 caracteres...</small>
+                  </div>
+                  <div id="usagerReservations-${moduleCode}" class="mt-2"></div>
+                </div>
+
+                <!-- Article -->
+                <div class="col-md-4">
+                  <label class="form-label"><strong>2. ${articleLabel}</strong></label>
+                  <div class="search-input-wrapper">
+                    <div class="input-group">
+                      <input type="text"
+                             id="searchArticle-${moduleCode}"
+                             class="form-control"
+                             placeholder="${searchPlaceholder}"
+                             oninput="debounceSearchArticle('${moduleCode}')">
+                      <button class="btn btn-outline-secondary" type="button" onclick="clearArticleSearch('${moduleCode}')">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+                    <div id="articleResults-${moduleCode}" class="search-results-dropdown" style="display:none;"></div>
+                  </div>
+                  <div id="selectedArticle-${moduleCode}" class="mt-2" style="min-height:50px;">
+                    <small class="text-muted">Tapez au moins 3 caracteres...</small>
+                  </div>
+                  <div id="articleReservations-${moduleCode}" class="mt-2"></div>
+                </div>
+
+                <!-- Action -->
+                <div class="col-md-4">
+                  <label class="form-label"><strong>3. Action</strong></label>
+                  <button class="btn btn-primary w-100"
+                          id="btnCreateLoan-${moduleCode}"
+                          onclick="createQuickLoan('${moduleCode}')"
+                          style="height:44px;"
+                          disabled>
+                    <i class="bi bi-check-circle me-1"></i>Creer l'emprunt
+                  </button>
+                  <div class="mt-2">
+                    <small class="text-muted"><i class="bi bi-calendar me-1"></i>Duree: 14 jours</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="btn-group">
+                  <button class="btn btn-secondary" onclick="loadEmprunts('${moduleCode}')">
+                    <i class="bi bi-arrow-clockwise"></i> Actualiser
+                  </button>
+                  <button class="btn btn-danger" onclick="loadOverdue('${moduleCode}')">
+                    <i class="bi bi-exclamation-triangle"></i> En retard
+                  </button>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <select id="statutFilter-${moduleCode}" class="form-select" style="width:180px;"
+                          onchange="loadEmprunts('${moduleCode}')">
+                    <option value="">Tous les statuts</option>
+                    <option value="en_cours" selected>En cours</option>
+                    <option value="retourne">Retourne</option>
+                    <option value="en_retard">En retard</option>
+                  </select>
+                  <span class="badge bg-secondary" id="empruntCount-${moduleCode}">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emprunts List -->
+          <div class="card">
+            <div class="card-body">
+              <div id="empruntsList-${moduleCode}">
+                <div class="text-center p-5">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <p class="mt-2">Chargement...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== EVENT LISTENERS ====================
+    function initializeEventListeners() {
+      // Scanner code-barre via douchette (global)
+      document.addEventListener('keydown', handleBarcodeScanner);
+
+      // Fermer les dropdowns quand on clique ailleurs
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-input-wrapper')) {
+          document.querySelectorAll('.search-results-dropdown').forEach(el => {
+            el.style.display = 'none';
+          });
+        }
+      });
+    }
+
+    // ==================== BARCODE SCANNER ====================
+    let barcodeBuffer = '';
+    let barcodeTimeout = null;
+
+    function handleBarcodeScanner(e) {
+      const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+
+      if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+        e.preventDefault();
+        const code = barcodeBuffer.trim().toUpperCase();
+        barcodeBuffer = '';
+        clearTimeout(barcodeTimeout);
+        processBarcode(code);
+        return;
+      }
+
+      if (e.key.length === 1 && /[a-zA-Z0-9\-]/.test(e.key)) {
+        if (!isInputField) e.preventDefault();
+        barcodeBuffer += e.key;
+        clearTimeout(barcodeTimeout);
+        barcodeTimeout = setTimeout(() => { barcodeBuffer = ''; }, 100);
+      }
+    }
+
+    async function processBarcode(code) {
+      try {
         const data = await barcodesAPI.scan(code);
+        const state = moduleStates[currentModule];
+
         if (data.type === 'adherent') {
-          quickAdherent = data.adherent;
-          document.getElementById('quickAdherentInfo').innerHTML = `
-            <strong>${quickAdherent.prenom} ${quickAdherent.nom}</strong><br>
-            <small>${quickAdherent.email}</small><br>
-            <span class="badge bg-${quickAdherent.statut === 'actif' ? 'success' : 'danger'}">${quickAdherent.statut}</span>
-          `;
-          checkQuickLoan();
+          selectUsager(currentModule, data.adherent);
+        } else if (['jeu', 'livre', 'film', 'disque'].includes(data.type)) {
+          const article = data[data.type];
+          article._type = data.type;
+          selectArticle(currentModule, article);
         } else {
-          alert('Ce code ne correspond pas a un usager');
+          showToast('Code-barre non reconnu', 'warning');
         }
       } catch (error) {
-        alert('Code-barre invalide: ' + error.message);
-        quickAdherent = null;
-        document.getElementById('quickAdherentInfo').innerHTML = '<small class="text-danger">Invalide</small>';
-        checkQuickLoan();
+        showToast('Code-barre invalide', 'error');
       }
-    });
+    }
 
-    document.getElementById('quickJeuCode').addEventListener('change', async (e) => {
-      const code = e.target.value.trim();
-      if (!code) return;
+    // ==================== SEARCH USAGER ====================
+    function debounceSearchUsager(moduleCode) {
+      if (searchTimeouts[`usager-${moduleCode}`]) {
+        clearTimeout(searchTimeouts[`usager-${moduleCode}`]);
+      }
+
+      const query = document.getElementById(`searchUsager-${moduleCode}`).value.trim();
+
+      if (query.length < 3) {
+        document.getElementById(`usagerResults-${moduleCode}`).style.display = 'none';
+        return;
+      }
+
+      searchTimeouts[`usager-${moduleCode}`] = setTimeout(() => searchUsagers(moduleCode, query), 300);
+    }
+
+    async function searchUsagers(moduleCode, query) {
+      const resultsDiv = document.getElementById(`usagerResults-${moduleCode}`);
+      resultsDiv.innerHTML = '<div class="p-3 text-center"><i class="bi bi-hourglass-split"></i> Recherche...</div>';
+      resultsDiv.style.display = 'block';
 
       try {
-        const data = await barcodesAPI.scan(code);
-        if (data.type === 'jeu') {
-          quickJeu = data.jeu;
-          document.getElementById('quickJeuInfo').innerHTML = `
-            <strong>${quickJeu.titre}</strong><br>
-            <small>${quickJeu.editeur || 'N/A'}</small><br>
-            <span class="badge bg-${quickJeu.statut === 'disponible' ? 'success' : 'warning'}">${quickJeu.statut}</span>
-          `;
-          checkQuickLoan();
+        const data = await adherentsAPI.getAll({ search: query, limit: 10, statut: 'actif' });
+        const usagers = data.adherents || [];
+
+        if (usagers.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-3 text-center text-muted">Aucun resultat</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = usagers.map(u => `
+          <div class="search-result-item" onclick='selectUsager("${moduleCode}", ${JSON.stringify(u).replace(/'/g, "&#39;")})'>
+            <span class="type-badge adherent"><i class="bi bi-person"></i></span>
+            <div>
+              <strong>${u.prenom} ${u.nom}</strong>
+              <small class="d-block text-muted">${u.code_barre || u.email}</small>
+            </div>
+            <span class="badge bg-${u.statut === 'actif' ? 'success' : 'secondary'} ms-auto">${u.statut}</span>
+          </div>
+        `).join('');
+      } catch (error) {
+        resultsDiv.innerHTML = '<div class="p-3 text-center text-danger">Erreur de recherche</div>';
+      }
+    }
+
+    async function selectUsager(moduleCode, usager) {
+      moduleStates[moduleCode].selectedUsager = usager;
+      document.getElementById(`usagerResults-${moduleCode}`).style.display = 'none';
+      document.getElementById(`searchUsager-${moduleCode}`).value = '';
+
+      document.getElementById(`selectedUsager-${moduleCode}`).innerHTML = `
+        <div class="selected-item">
+          <span class="type-badge adherent"><i class="bi bi-person"></i></span>
+          <div>
+            <strong>${usager.prenom} ${usager.nom}</strong>
+            <small class="d-block text-muted">${usager.code_barre || ''}</small>
+          </div>
+          <button class="btn btn-link btn-clear" onclick="clearSelectedUsager('${moduleCode}')">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      `;
+
+      checkLoanButton(moduleCode);
+
+      // Charger les reservations en attente de l'usager
+      await loadUsagerReservations(moduleCode, usager.id);
+
+      // Si un article est deja selectionne, rafraichir l'affichage des reservations de l'article
+      if (moduleStates[moduleCode].selectedArticle) {
+        await loadArticleReservations(moduleCode, moduleStates[moduleCode].selectedArticle);
+      }
+    }
+
+    async function loadUsagerReservations(moduleCode, usagerId) {
+      const container = document.getElementById(`usagerReservations-${moduleCode}`);
+      container.innerHTML = '';
+
+      try {
+        const data = await reservationsAPI.getByUtilisateur(usagerId);
+        const reservations = (data.reservations || []).filter(r =>
+          r.statut === 'en_attente' || r.statut === 'prete'
+        );
+
+        if (reservations.length === 0) return;
+
+        const config = MODULES_CONFIG[moduleCode];
+        const isGeneral = config.searchAll;
+
+        // Filtrer par module si pas general
+        let filteredReservations = reservations;
+        if (!isGeneral) {
+          const idField = config.idField;
+          filteredReservations = reservations.filter(r => r[idField] != null);
+        }
+
+        if (filteredReservations.length === 0) return;
+
+        const icons = { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-disc' };
+        const colors = { jeu: '#6f42c1', livre: '#20c997', film: '#fd7e14', disque: '#e83e8c' };
+        const labels = { jeu: 'Jeu', livre: 'Livre', film: 'Film', disque: 'Disque' };
+
+        // Stocker les reservations pour pouvoir les selectionner
+        moduleStates[moduleCode].usagerReservations = filteredReservations;
+
+        container.innerHTML = `
+          <div class="card border-warning mb-0">
+            <div class="card-header bg-warning bg-opacity-25 py-2">
+              <strong><i class="bi bi-bookmark-star me-1"></i>${filteredReservations.length} reservation(s) en attente</strong>
+              <small class="d-block text-muted">Cliquez pour selectionner l'article</small>
+            </div>
+            <div class="card-body py-2">
+              ${filteredReservations.map((r, index) => {
+                let type = null, titre = '', article = null;
+                if (r.jeu_id && r.jeu) { type = 'jeu'; titre = r.jeu.titre; article = r.jeu; }
+                else if (r.livre_id && r.livre) { type = 'livre'; titre = r.livre.titre; article = r.livre; }
+                else if (r.film_id && r.film) { type = 'film'; titre = r.film.titre; article = r.film; }
+                else if (r.disque_id && r.disque) { type = 'disque'; titre = r.disque.titre; article = r.disque; }
+
+                const statusBadge = r.statut === 'prete'
+                  ? '<span class="badge bg-success">Pret</span>'
+                  : '<span class="badge bg-secondary">File</span>';
+
+                const positionBadge = r.position_queue
+                  ? `<span class="badge bg-dark">#${r.position_queue}</span>`
+                  : '';
+
+                return `
+                  <div class="d-flex align-items-center gap-2 py-2 reservation-item ${index > 0 ? 'border-top' : ''}"
+                       style="cursor:pointer; transition:background 0.15s;"
+                       onmouseover="this.style.background='#f8f9fa'"
+                       onmouseout="this.style.background='transparent'"
+                       onclick="selectReservedArticle('${moduleCode}', ${index})">
+                    <span class="type-badge ${type}" style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;">
+                      <i class="bi ${icons[type]}"></i>
+                    </span>
+                    <div style="flex:1;">
+                      <strong class="text-primary" style="font-size:0.95rem;">${titre || 'Article'}</strong>
+                      ${isGeneral ? `<small class="d-block text-muted">${labels[type]}</small>` : ''}
+                    </div>
+                    <div class="d-flex gap-1 align-items-center">
+                      ${positionBadge}
+                      ${statusBadge}
+                      <i class="bi bi-arrow-right-circle text-primary"></i>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Erreur chargement reservations:', error);
+      }
+    }
+
+    function clearUsagerSearch(moduleCode) {
+      document.getElementById(`searchUsager-${moduleCode}`).value = '';
+      document.getElementById(`usagerResults-${moduleCode}`).style.display = 'none';
+    }
+
+    function clearSelectedUsager(moduleCode) {
+      moduleStates[moduleCode].selectedUsager = null;
+      moduleStates[moduleCode].usagerReservations = [];
+      document.getElementById(`selectedUsager-${moduleCode}`).innerHTML = '<small class="text-muted">Tapez au moins 3 caracteres...</small>';
+      document.getElementById(`usagerReservations-${moduleCode}`).innerHTML = '';
+      checkLoanButton(moduleCode);
+    }
+
+    // Selectionner un article depuis les reservations de l'usager
+    async function selectReservedArticle(moduleCode, reservationIndex) {
+      const state = moduleStates[moduleCode];
+      const reservations = state.usagerReservations || [];
+      const reservation = reservations[reservationIndex];
+
+      if (!reservation) return;
+
+      // Determiner le type et l'article
+      let type = null, article = null;
+      const icons = { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-disc' };
+      const labels = { jeu: 'Jeu', livre: 'Livre', film: 'Film', disque: 'Disque' };
+
+      if (reservation.jeu_id && reservation.jeu) {
+        type = 'jeu'; article = { ...reservation.jeu };
+      } else if (reservation.livre_id && reservation.livre) {
+        type = 'livre'; article = { ...reservation.livre };
+      } else if (reservation.film_id && reservation.film) {
+        type = 'film'; article = { ...reservation.film };
+      } else if (reservation.disque_id && reservation.disque) {
+        type = 'disque'; article = { ...reservation.disque };
+      }
+
+      if (!article || !type) return;
+
+      // Ajouter les metadonnees necessaires
+      article._type = type;
+      article._icon = icons[type];
+      article._label = labels[type];
+
+      // L'article est reserve, forcer le statut si pas deja correct
+      if (article.statut === 'disponible') {
+        article.statut = 'reserve';
+      }
+
+      // Stocker la position de la reservation de l'usager
+      article._userReservationPosition = reservation.position_queue;
+
+      // Selectionner l'article
+      await selectArticle(moduleCode, article);
+
+      showToast('Article selectionne depuis vos reservations', 'info');
+    }
+
+    // ==================== SEARCH ARTICLE ====================
+    function debounceSearchArticle(moduleCode) {
+      if (searchTimeouts[`article-${moduleCode}`]) {
+        clearTimeout(searchTimeouts[`article-${moduleCode}`]);
+      }
+
+      const query = document.getElementById(`searchArticle-${moduleCode}`).value.trim();
+
+      if (query.length < 3) {
+        document.getElementById(`articleResults-${moduleCode}`).style.display = 'none';
+        return;
+      }
+
+      searchTimeouts[`article-${moduleCode}`] = setTimeout(() => searchArticles(moduleCode, query), 300);
+    }
+
+    async function searchArticles(moduleCode, query) {
+      const resultsDiv = document.getElementById(`articleResults-${moduleCode}`);
+      resultsDiv.innerHTML = '<div class="p-3 text-center"><i class="bi bi-hourglass-split"></i> Recherche...</div>';
+      resultsDiv.style.display = 'block';
+
+      const config = MODULES_CONFIG[moduleCode];
+      let results = [];
+
+      try {
+        if (config.searchAll) {
+          // Recherche generale dans tous les modules
+          const [jeuxData, livresData, filmsData, disquesData] = await Promise.all([
+            jeuxAPI.getAll({ search: query, limit: 5 }).catch(() => ({ jeux: [] })),
+            livresAPI.getAll({ search: query, limit: 5 }).catch(() => ({ livres: [] })),
+            filmsAPI.getAll({ search: query, limit: 5 }).catch(() => ({ films: [] })),
+            disquesAPI.getAll({ search: query, limit: 5 }).catch(() => ({ disques: [] }))
+          ]);
+
+          results = [
+            ...(jeuxData.jeux || []).map(j => ({ ...j, _type: 'jeu', _icon: 'bi-dice-5', _label: 'Jeu' })),
+            ...(livresData.livres || []).map(l => ({ ...l, _type: 'livre', _icon: 'bi-book', _label: 'Livre' })),
+            ...(filmsData.films || []).map(f => ({ ...f, _type: 'film', _icon: 'bi-film', _label: 'Film' })),
+            ...(disquesData.disques || []).map(d => ({ ...d, _type: 'disque', _icon: 'bi-disc', _label: 'Disque' }))
+          ];
         } else {
-          alert('Ce code ne correspond pas à un jeu');
+          // Recherche specifique au module
+          const apiName = config.api;
+          const api = window[apiName];
+          if (api) {
+            const data = await api.getAll({ search: query, limit: 15 });
+            const items = data[config.articleType + 's'] || data[config.articleType] || [];
+            results = items.map(item => ({
+              ...item,
+              _type: config.articleType,
+              _icon: config.icon,
+              _label: config.articleLabel
+            }));
+          }
+        }
+
+        if (results.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-3 text-center text-muted">Aucun resultat</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = results.slice(0, 15).map(article => {
+          const statutClass = article.statut === 'disponible' ? 'success' : article.statut === 'emprunte' ? 'warning' : 'secondary';
+          return `
+            <div class="search-result-item" onclick='selectArticle("${moduleCode}", ${JSON.stringify(article).replace(/'/g, "&#39;")})'>
+              <span class="type-badge ${article._type}"><i class="bi ${article._icon}"></i></span>
+              <div style="flex:1;">
+                <strong>${article.titre || article.nom}</strong>
+                <small class="d-block text-muted">${article.code_barre || ''} ${config.searchAll ? '- ' + article._label : ''}</small>
+              </div>
+              <span class="badge bg-${statutClass}">${article.statut}</span>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        resultsDiv.innerHTML = '<div class="p-3 text-center text-danger">Erreur de recherche</div>';
+      }
+    }
+
+    async function selectArticle(moduleCode, article) {
+      moduleStates[moduleCode].selectedArticle = article;
+      moduleStates[moduleCode].articleReservations = []; // Reset
+      document.getElementById(`articleResults-${moduleCode}`).style.display = 'none';
+      document.getElementById(`searchArticle-${moduleCode}`).value = '';
+
+      const config = MODULES_CONFIG[moduleCode];
+
+      // Determiner la couleur du badge de statut
+      const statutColors = {
+        'disponible': 'success',
+        'reserve': 'warning',
+        'emprunte': 'danger',
+        'indisponible': 'secondary'
+      };
+      const statutColor = statutColors[article.statut] || 'secondary';
+
+      // Afficher la position si l'usager a une reservation
+      const positionInfo = article._userReservationPosition
+        ? `<span class="badge bg-dark ms-1">#${article._userReservationPosition}</span>`
+        : '';
+
+      document.getElementById(`selectedArticle-${moduleCode}`).innerHTML = `
+        <div class="selected-item">
+          <span class="type-badge ${article._type}"><i class="bi ${article._icon || config.icon}"></i></span>
+          <div>
+            <strong>${article.titre || article.nom}</strong>
+            <small class="d-block">
+              ${article._label || config.articleLabel} -
+              <span class="badge bg-${statutColor}">${article.statut}</span>
+              ${positionInfo}
+            </small>
+          </div>
+          <button class="btn btn-link btn-clear" onclick="clearSelectedArticle('${moduleCode}')">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      `;
+
+      checkLoanButton(moduleCode);
+
+      // Charger les reservations de l'article
+      await loadArticleReservations(moduleCode, article);
+    }
+
+    async function loadArticleReservations(moduleCode, article) {
+      const container = document.getElementById(`articleReservations-${moduleCode}`);
+      container.innerHTML = '';
+
+      try {
+        const moduleMap = { jeu: 'ludotheque', livre: 'bibliotheque', film: 'filmotheque', disque: 'discotheque' };
+        const articleModule = moduleMap[article._type];
+
+        const data = await reservationsAPI.getForArticle(articleModule, article.id);
+        const reservations = (data.reservations || []).filter(r =>
+          r.statut === 'en_attente' || r.statut === 'prete'
+        );
+
+        moduleStates[moduleCode].articleReservations = reservations;
+
+        if (reservations.length === 0) return;
+
+        // Verifier si l'usager selectionne est dans les reservataires
+        const state = moduleStates[moduleCode];
+        const usagerIsReservataire = state.selectedUsager &&
+          reservations.some(r => r.utilisateur_id === state.selectedUsager.id);
+
+        container.innerHTML = `
+          <div class="card border-warning mb-0">
+            <div class="card-header ${usagerIsReservataire ? 'bg-success' : 'bg-warning'} bg-opacity-25 py-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <strong><i class="bi bi-bookmark-fill me-1"></i>${reservations.length} reservation(s)</strong>
+                ${usagerIsReservataire ? '<span class="badge bg-success">Usager dans la file</span>' : ''}
+              </div>
+            </div>
+            <ul class="list-group list-group-flush">
+              ${reservations.map((r, index) => {
+                const isSelectedUser = state.selectedUsager && r.utilisateur_id === state.selectedUsager.id;
+                const userName = r.utilisateur ? r.utilisateur.prenom + ' ' + r.utilisateur.nom : 'Inconnu';
+                const statusBadge = r.statut === 'prete'
+                  ? '<span class="badge bg-success">Pret</span>'
+                  : '<span class="badge bg-secondary">En attente</span>';
+                const positionBadge = `<span class="badge bg-dark me-2">#${r.position_queue || index + 1}</span>`;
+
+                return `
+                  <li class="list-group-item py-2 ${isSelectedUser ? 'bg-primary bg-opacity-10 border-primary' : ''}">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center">
+                        ${positionBadge}
+                        <div>
+                          <strong class="${isSelectedUser ? 'text-primary' : ''}">${userName}</strong>
+                          ${isSelectedUser ? '<i class="bi bi-check-circle-fill text-primary ms-1"></i>' : ''}
+                        </div>
+                      </div>
+                      <div class="d-flex align-items-center gap-2">
+                        ${statusBadge}
+                        <button class="btn btn-outline-danger btn-sm py-0 px-1"
+                                onclick="deleteArticleReservation('${moduleCode}', ${r.id})"
+                                title="Supprimer la reservation">
+                          <i class="bi bi-trash" style="font-size:0.75rem;"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                `;
+              }).join('')}
+            </ul>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Erreur chargement reservations article:', error);
+      }
+    }
+
+    async function deleteArticleReservation(moduleCode, reservationId) {
+      if (!confirm('Supprimer cette reservation ?')) return;
+
+      try {
+        await reservationsAPI.cancel(reservationId);
+        showToast('Reservation supprimee', 'success');
+
+        // Recharger les reservations de l'article
+        const state = moduleStates[moduleCode];
+        if (state.selectedArticle) {
+          await loadArticleReservations(moduleCode, state.selectedArticle);
+
+          // Si plus de reservations, mettre a jour le statut affiche
+          if ((state.articleReservations || []).length === 0) {
+            state.selectedArticle.statut = 'disponible';
+            await selectArticle(moduleCode, state.selectedArticle);
+          }
+        }
+
+        // Recharger aussi les reservations de l'usager si selectionne
+        if (state.selectedUsager) {
+          await loadUsagerReservations(moduleCode, state.selectedUsager.id);
         }
       } catch (error) {
-        alert('Code-barre invalide: ' + error.message);
-        quickJeu = null;
-        document.getElementById('quickJeuInfo').innerHTML = '<small class="text-danger">Invalide</small>';
-        checkQuickLoan();
-      }
-    });
-
-    function checkQuickLoan() {
-      const btn = document.getElementById('quickLoanBtn');
-      btn.disabled = !(quickAdherent && quickJeu);
-    }
-
-    function scanAdherent() {
-      const code = prompt('Scanner ou saisir le code-barre de l\'usager:');
-      if (code) {
-        document.getElementById('quickAdherentCode').value = code;
-        document.getElementById('quickAdherentCode').dispatchEvent(new Event('change'));
+        showToast('Erreur: ' + error.message, 'error');
       }
     }
 
-    function scanJeu() {
-      const code = prompt('Scanner ou saisir le code-barre du jeu:');
-      if (code) {
-        document.getElementById('quickJeuCode').value = code;
-        document.getElementById('quickJeuCode').dispatchEvent(new Event('change'));
-      }
+    function clearArticleSearch(moduleCode) {
+      document.getElementById(`searchArticle-${moduleCode}`).value = '';
+      document.getElementById(`articleResults-${moduleCode}`).style.display = 'none';
     }
 
-    async function createQuickLoan() {
-      if (!quickAdherent || !quickJeu) {
-        alert('Veuillez scanner un usager et un jeu');
+    function clearSelectedArticle(moduleCode) {
+      moduleStates[moduleCode].selectedArticle = null;
+      moduleStates[moduleCode].articleReservations = [];
+      document.getElementById(`selectedArticle-${moduleCode}`).innerHTML = '<small class="text-muted">Tapez au moins 3 caracteres...</small>';
+      document.getElementById(`articleReservations-${moduleCode}`).innerHTML = '';
+      checkLoanButton(moduleCode);
+    }
+
+    // ==================== CREATE LOAN ====================
+    function checkLoanButton(moduleCode) {
+      const state = moduleStates[moduleCode];
+      const btn = document.getElementById(`btnCreateLoan-${moduleCode}`);
+
+      // Bouton actif si usager et article selectionnes
+      // et article pas emprunte ou indisponible
+      const articleOk = state.selectedArticle &&
+        state.selectedArticle.statut !== 'emprunte' &&
+        state.selectedArticle.statut !== 'indisponible';
+
+      btn.disabled = !(state.selectedUsager && articleOk);
+    }
+
+    async function createQuickLoan(moduleCode) {
+      const state = moduleStates[moduleCode];
+
+      if (!state.selectedUsager || !state.selectedArticle) {
+        showToast('Selectionnez un usager et un article', 'warning');
         return;
       }
 
-      if (quickAdherent.statut !== 'actif') {
-        alert('Cet usager n\'est pas actif');
+      if (state.selectedUsager.statut !== 'actif') {
+        showToast('Cet usager n\'est pas actif', 'error');
         return;
       }
 
-      if (quickJeu.statut !== 'disponible') {
-        alert('Ce jeu n\'est pas disponible');
+      // Verifier les reservations de l'article
+      const reservations = state.articleReservations || [];
+      const userReservation = reservations.find(r => r.utilisateur_id === state.selectedUsager.id);
+      const otherReservations = reservations.filter(r => r.utilisateur_id !== state.selectedUsager.id);
+
+      // Si l'article est emprunte ou indisponible, bloquer
+      if (state.selectedArticle.statut === 'emprunte') {
+        showToast('Cet article est deja emprunte', 'error');
         return;
       }
+
+      if (state.selectedArticle.statut === 'indisponible') {
+        showToast('Cet article est indisponible', 'error');
+        return;
+      }
+
+      // Si l'article est reserve mais l'usager n'est pas reservataire et pas en position 1
+      if (state.selectedArticle.statut === 'reserve' && !userReservation && otherReservations.length > 0) {
+        // Afficher le modal de confirmation
+        showConfirmLoanModal(moduleCode, state.selectedArticle, otherReservations);
+        return;
+      }
+
+      // Si l'usager est reservataire mais pas en premiere position et d'autres attendent
+      if (userReservation && userReservation.position_queue > 1 && otherReservations.some(r => r.position_queue < userReservation.position_queue)) {
+        const ahead = otherReservations.filter(r => r.position_queue < userReservation.position_queue);
+        showConfirmLoanModal(moduleCode, state.selectedArticle, ahead);
+        return;
+      }
+
+      // Pas de reservation ou usager est le reservataire en premiere position -> executer directement
+      await executeQuickLoan(moduleCode);
+    }
+
+    function showConfirmLoanModal(moduleCode, article, reservations) {
+      document.getElementById('confirmLoanModuleCode').value = moduleCode;
+      document.getElementById('confirmLoanArticleTitle').textContent = article.titre || article.nom;
+      document.getElementById('confirmLoanReservationCount').textContent = reservations.length;
+
+      const listContainer = document.getElementById('confirmLoanReservataires');
+      listContainer.innerHTML = reservations.map(r => {
+        const user = r.utilisateur;
+        const statusBadge = r.statut === 'prete'
+          ? '<span class="badge bg-success">Pret</span>'
+          : '<span class="badge bg-warning text-dark">En attente</span>';
+
+        return `
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <div>
+              <strong>${user ? user.prenom + ' ' + user.nom : 'Inconnu'}</strong>
+              <small class="d-block text-muted">${user ? user.email : ''}</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              ${statusBadge}
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteReservationFromModal(${r.id})" title="Supprimer la reservation">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      new bootstrap.Modal(document.getElementById('confirmLoanModal')).show();
+    }
+
+    async function deleteReservationFromModal(reservationId) {
+      if (!confirm('Supprimer cette reservation ?')) return;
 
       try {
-        await empruntsAPI.create({
-          adherent_id: quickAdherent.id,
-          jeu_id: quickJeu.id
-        });
+        await reservationsAPI.cancel(reservationId);
+        showToast('Reservation supprimee', 'success');
 
-        alert('✅ Emprunt créé avec succès !');
+        // Recharger les reservations de l'article
+        const moduleCode = document.getElementById('confirmLoanModuleCode').value;
+        const state = moduleStates[moduleCode];
+
+        if (state.selectedArticle) {
+          await loadArticleReservations(moduleCode, state.selectedArticle);
+        }
+
+        // Mettre a jour la liste dans le modal
+        const newReservations = (state.articleReservations || [])
+          .filter(r => r.utilisateur_id !== state.selectedUsager?.id);
+
+        if (newReservations.length === 0) {
+          bootstrap.Modal.getInstance(document.getElementById('confirmLoanModal')).hide();
+          showToast('Plus de reservations, vous pouvez creer l\'emprunt', 'info');
+        } else {
+          document.getElementById('confirmLoanReservationCount').textContent = newReservations.length;
+          // Re-render la liste
+          showConfirmLoanModal(moduleCode, state.selectedArticle, newReservations);
+        }
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    async function executeQuickLoan(moduleCodeParam) {
+      const moduleCode = moduleCodeParam || document.getElementById('confirmLoanModuleCode').value;
+      const state = moduleStates[moduleCode];
+
+      if (!state.selectedUsager || !state.selectedArticle) {
+        showToast('Selection invalide', 'error');
+        return;
+      }
+
+      const articleType = state.selectedArticle._type;
+      const idFieldMap = {
+        jeu: 'jeu_id',
+        livre: 'livre_id',
+        film: 'film_id',
+        disque: 'disque_id'
+      };
+
+      const empruntData = {
+        adherent_id: state.selectedUsager.id,
+        [idFieldMap[articleType]]: state.selectedArticle.id
+      };
+
+      try {
+        // Fermer le modal si ouvert
+        const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmLoanModal'));
+        if (confirmModal) confirmModal.hide();
+
+        await empruntsAPI.create(empruntData);
+        showToast('Emprunt cree avec succes !', 'success');
 
         // Reset
-        document.getElementById('quickAdherentCode').value = '';
-        document.getElementById('quickJeuCode').value = '';
-        quickAdherent = null;
-        quickJeu = null;
-        document.getElementById('quickAdherentInfo').innerHTML = '<small class="text-muted">En attente...</small>';
-        document.getElementById('quickJeuInfo').innerHTML = '<small class="text-muted">En attente...</small>';
-        checkQuickLoan();
+        clearSelectedUsager(moduleCode);
+        clearSelectedArticle(moduleCode);
 
-        loadEmprunts();
+        loadEmprunts(moduleCode);
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error');
       }
     }
 
-    // Load emprunts
-    async function loadEmprunts() {
+    // ==================== LOAD EMPRUNTS ====================
+    function switchModule(moduleCode) {
+      currentModule = moduleCode;
+      loadEmprunts(moduleCode);
+    }
+
+    async function loadEmprunts(moduleCode) {
+      const container = document.getElementById(`empruntsList-${moduleCode}`);
+      container.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+
       try {
-        const statut = document.getElementById('statutFilter').value;
+        const statut = document.getElementById(`statutFilter-${moduleCode}`).value;
         const params = {};
         if (statut) params.statut = statut;
 
+        // Pour les modules specifiques, filtrer par type
+        const config = MODULES_CONFIG[moduleCode];
+        if (config && !config.searchAll) {
+          params.module = moduleCode;
+        }
+
         const data = await empruntsAPI.getAll(params);
-        emprunts = data.emprunts;
-        renderEmprunts(emprunts);
+        let emprunts = data.emprunts || [];
+
+        // Filtrer cote client si necessaire pour le module specifique
+        if (config && !config.searchAll) {
+          const idField = config.idField;
+          emprunts = emprunts.filter(e => e[idField] != null);
+        }
+
+        moduleStates[moduleCode].emprunts = emprunts;
+        document.getElementById(`empruntCount-${moduleCode}`).textContent = emprunts.length;
+        renderEmprunts(moduleCode, emprunts);
       } catch (error) {
-        console.error('Error loading emprunts:', error);
-        document.getElementById('empruntsList').innerHTML = `
-          <div class="alert alert-danger">
-            Erreur lors du chargement des emprunts: ${error.message}
-          </div>
-        `;
+        container.innerHTML = `<div class="alert alert-danger">Erreur: ${error.message}</div>`;
       }
     }
 
-    async function loadOverdue() {
+    async function loadOverdue(moduleCode) {
+      const container = document.getElementById(`empruntsList-${moduleCode}`);
+      container.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+
       try {
         const data = await empruntsAPI.getOverdue();
-        renderEmprunts(data.emprunts);
+        let emprunts = data.emprunts || [];
+
+        // Filtrer par module si pas general
+        const config = MODULES_CONFIG[moduleCode];
+        if (config && !config.searchAll) {
+          const idField = config.idField;
+          emprunts = emprunts.filter(e => e[idField] != null);
+        }
+
+        document.getElementById(`empruntCount-${moduleCode}`).textContent = emprunts.length;
+        renderEmprunts(moduleCode, emprunts);
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        container.innerHTML = `<div class="alert alert-danger">Erreur: ${error.message}</div>`;
       }
     }
 
-    function renderEmprunts(list) {
-      const container = document.getElementById('empruntsList');
+    function renderEmprunts(moduleCode, emprunts) {
+      const container = document.getElementById(`empruntsList-${moduleCode}`);
+      const config = MODULES_CONFIG[moduleCode];
+      const isGeneral = config.searchAll;
 
-      if (!list || list.length === 0) {
-        container.innerHTML = `
-          <p class="text-center text-muted py-5">
-            Aucun emprunt trouvé
-          </p>
-        `;
+      if (!emprunts || emprunts.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted py-5">Aucun emprunt trouve</p>';
         return;
       }
 
@@ -349,50 +1267,74 @@
             <thead>
               <tr>
                 <th>Usager</th>
-                <th>Jeu</th>
+                <th>Article</th>
                 <th>Date emprunt</th>
-                <th>Retour prévu</th>
+                <th>Retour prevu</th>
                 <th>Statut</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${list.map(emprunt => {
+              ${emprunts.map(emprunt => {
+                // Determiner le type d'article
+                let articleType = null;
+                let article = null;
+                let typeIcon = '';
+                let typeLabel = '';
+
+                if (emprunt.jeu_id && emprunt.jeu) {
+                  articleType = 'jeu'; article = emprunt.jeu;
+                  typeIcon = 'bi-dice-5'; typeLabel = 'Jeu';
+                } else if (emprunt.livre_id && emprunt.livre) {
+                  articleType = 'livre'; article = emprunt.livre;
+                  typeIcon = 'bi-book'; typeLabel = 'Livre';
+                } else if (emprunt.film_id && emprunt.film) {
+                  articleType = 'film'; article = emprunt.film;
+                  typeIcon = 'bi-film'; typeLabel = 'Film';
+                } else if (emprunt.disque_id && emprunt.disque) {
+                  articleType = 'disque'; article = emprunt.disque;
+                  typeIcon = 'bi-disc'; typeLabel = 'Disque';
+                }
+
                 const isLate = new Date(emprunt.date_retour_prevue) < new Date() && emprunt.statut !== 'retourne';
                 const daysLate = isLate
-                  ? Math.floor((new Date() - new Date(emprunt.date_retour_prevue)) / (1000 * 60 * 60 * 24))
+                  ? Math.floor((new Date() - new Date(emprunt.date_retour_prevue)) / (1000*60*60*24))
                   : 0;
 
                 return `
-                <tr>
-                  <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
-                  <td><strong>${emprunt.jeu?.titre || 'N/A'}</strong></td>
-                  <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
-                  <td>
-                    ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
-                    ${isLate ? `<br><span class="badge bg-danger">${daysLate} jours de retard</span>` : ''}
-                  </td>
-                  <td>
-                    ${emprunt.statut === 'retourne'
-                      ? '<span class="badge bg-success">Retourné</span>'
-                      : isLate
-                      ? '<span class="badge bg-danger">En retard</span>'
-                      : '<span class="badge bg-info">En cours</span>'}
-                  </td>
-                  <td>
-                    <div class="btn-group btn-group-sm">
-                      ${emprunt.statut !== 'retourne'
-                        ? `<button class="btn btn-outline-success" onclick="returnEmprunt(${emprunt.id})" title="Retour">
-                            <i class="bi bi-arrow-return-left"></i>
-                          </button>`
-                        : ''}
-                      <button class="btn btn-outline-danger" onclick="deleteEmprunt(${emprunt.id})" title="Supprimer">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              `;
+                  <tr>
+                    <td>${emprunt.adherent?.prenom || ''} ${emprunt.adherent?.nom || 'N/A'}</td>
+                    <td>
+                      ${isGeneral ? `<span class="type-badge ${articleType} me-2" style="display:inline-flex;width:24px;height:24px;"><i class="bi ${typeIcon}"></i></span>` : ''}
+                      <strong>${article?.titre || article?.nom || 'N/A'}</strong>
+                      ${isGeneral ? `<small class="text-muted d-block">${typeLabel}</small>` : ''}
+                    </td>
+                    <td>${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</td>
+                    <td>
+                      ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
+                      ${isLate ? `<br><span class="badge bg-danger">${daysLate}j retard</span>` : ''}
+                    </td>
+                    <td>
+                      ${emprunt.statut === 'retourne'
+                        ? '<span class="badge bg-success">Retourne</span>'
+                        : isLate
+                          ? '<span class="badge bg-danger">En retard</span>'
+                          : '<span class="badge bg-info">En cours</span>'}
+                    </td>
+                    <td>
+                      <div class="btn-group btn-group-sm">
+                        ${emprunt.statut !== 'retourne'
+                          ? `<button class="btn btn-outline-success" onclick="returnEmprunt(${emprunt.id}, '${moduleCode}')" title="Retour">
+                              <i class="bi bi-arrow-return-left"></i>
+                            </button>`
+                          : ''}
+                        <button class="btn btn-outline-danger" onclick="deleteEmprunt(${emprunt.id}, '${moduleCode}')" title="Supprimer">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
               }).join('')}
             </tbody>
           </table>
@@ -400,109 +1342,92 @@
       `;
     }
 
-    async function returnEmprunt(id) {
-      if (!confirm('Confirmer le retour de ce jeu ?')) {
-        return;
-      }
+    // ==================== ACTIONS ====================
+    async function returnEmprunt(id, moduleCode) {
+      if (!confirm('Confirmer le retour de cet article ?')) return;
 
       try {
-        await empruntsAPI.return(id);
-        alert('✅ Jeu retourné avec succès !');
-        loadEmprunts();
+        const result = await empruntsAPI.return(id);
+
+        if (result.hasReservation && result.reservation) {
+          document.getElementById('reservationEmpruntId').value = id;
+          document.getElementById('reservationEmpruntId').dataset.module = moduleCode;
+          const res = result.reservation;
+          document.getElementById('reservationUsagerNom').innerHTML =
+            `<strong>${res.utilisateur ? res.utilisateur.prenom + ' ' + res.utilisateur.nom : 'Inconnu'}</strong>`;
+          document.getElementById('reservationUsagerEmail').textContent =
+            res.utilisateur ? res.utilisateur.email : '-';
+          document.getElementById('reservationArticleTitre').textContent = result.articleTitre || 'Article';
+          new bootstrap.Modal(document.getElementById('reservationModal')).show();
+        } else {
+          showToast('Article retourne !', 'success');
+          loadEmprunts(moduleCode);
+        }
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error');
       }
     }
 
-    async function deleteEmprunt(id) {
-      if (!confirm('Êtes-vous sûr de vouloir supprimer cet emprunt ?')) {
-        return;
+    async function traiterReservation(action) {
+      const empruntId = document.getElementById('reservationEmpruntId').value;
+      const moduleCode = document.getElementById('reservationEmpruntId').dataset.module || currentModule;
+
+      try {
+        await empruntsAPI.traiterReservation(empruntId, action);
+        bootstrap.Modal.getInstance(document.getElementById('reservationModal')).hide();
+
+        if (action === 'cote') {
+          showToast('Article mis de cote pour le reservataire', 'success');
+        } else {
+          showToast('Article remis en rayon', 'success');
+        }
+
+        loadEmprunts(moduleCode);
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'error');
       }
+    }
+
+    async function deleteEmprunt(id, moduleCode) {
+      if (!confirm('Supprimer cet emprunt ?')) return;
 
       try {
         await empruntsAPI.delete(id);
-        alert('Emprunt supprimé avec succès');
-        loadEmprunts();
+        showToast('Emprunt supprime', 'success');
+        loadEmprunts(moduleCode);
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error');
       }
     }
 
-    // Modal functions
-    async function openCreateModal() {
-      document.getElementById('modalTitle').textContent = 'Nouvel emprunt';
-      document.getElementById('empruntForm').reset();
-      document.getElementById('empruntId').value = '';
+    // ==================== COULEURS MODULES ====================
+    function applyModuleColors() {
+      const root = document.documentElement;
 
-      // Load adherents and jeux
-      try {
-        const [adherentsData, jeuxData] = await Promise.all([
-          adherentsAPI.getAll({ statut: 'actif' }),
-          jeuxAPI.getAll({ statut: 'disponible' })
-        ]);
+      // Appliquer les couleurs de fond
+      if (typeof getModuleColors === 'function') {
+        const colors = getModuleColors();
+        if (colors.ludotheque) root.style.setProperty('--color-ludotheque', colors.ludotheque);
+        if (colors.bibliotheque) root.style.setProperty('--color-bibliotheque', colors.bibliotheque);
+        if (colors.filmotheque) root.style.setProperty('--color-filmotheque', colors.filmotheque);
+        if (colors.discotheque) root.style.setProperty('--color-discotheque', colors.discotheque);
+      }
 
-        const adherentSelect = document.getElementById('adherent_id');
-        adherentSelect.innerHTML = '<option value="">Selectionner un usager...</option>';
-        adherentsData.adherents.forEach(a => {
-          const option = document.createElement('option');
-          option.value = a.id;
-          option.textContent = `${a.prenom} ${a.nom} (${a.email})`;
-          adherentSelect.appendChild(option);
-        });
-
-        const jeuSelect = document.getElementById('jeu_id');
-        jeuSelect.innerHTML = '<option value="">Sélectionner un jeu...</option>';
-        jeuxData.jeux.forEach(j => {
-          const option = document.createElement('option');
-          option.value = j.id;
-          option.textContent = `${j.titre} - ${j.editeur || 'N/A'}`;
-          jeuSelect.appendChild(option);
-        });
-
-        empruntModalInstance = new bootstrap.Modal(document.getElementById('empruntModal'));
-        empruntModalInstance.show();
-      } catch (error) {
-        alert('Erreur lors du chargement des données: ' + error.message);
+      // Appliquer les couleurs de texte
+      if (typeof getModuleTextColors === 'function') {
+        const textColors = getModuleTextColors();
+        if (textColors.ludotheque) root.style.setProperty('--textcolor-ludotheque', textColors.ludotheque);
+        if (textColors.bibliotheque) root.style.setProperty('--textcolor-bibliotheque', textColors.bibliotheque);
+        if (textColors.filmotheque) root.style.setProperty('--textcolor-filmotheque', textColors.filmotheque);
+        if (textColors.discotheque) root.style.setProperty('--textcolor-discotheque', textColors.discotheque);
       }
     }
 
-    // Form submission
-    async function submitEmpruntForm() {
-      const form = document.getElementById('empruntForm');
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Enregistrement...';
-
-      try {
-        const formData = {
-          adherent_id: parseInt(document.getElementById('adherent_id').value),
-          jeu_id: parseInt(document.getElementById('jeu_id').value),
-          date_retour_prevue: document.getElementById('date_retour_prevue').value || null,
-          commentaire: document.getElementById('commentaire').value || null
-        };
-
-        await empruntsAPI.create(formData);
-        alert('Emprunt créé avec succès !');
-
-        empruntModalInstance.hide();
-        loadEmprunts();
-      } catch (error) {
-        alert('Erreur: ' + error.message);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Enregistrer';
-      }
-    }
-
-    // Load on page load
+    // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', () => {
+      applyModuleColors();
       initTemplate('emprunts');
-      loadEmprunts();
+      initializeModules();
     });
   </script>
 </body>

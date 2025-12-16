@@ -76,6 +76,9 @@ router.patch('/modules-actifs/:code/toggle', verifyToken, isAdmin(), modulesActi
 // Mettre à jour plusieurs modules (admin seulement)
 router.put('/modules-actifs', verifyToken, isAdmin(), modulesActifsController.updateAll);
 
+// Mettre à jour la couleur d'un module (admin seulement)
+router.patch('/modules-actifs/:code/couleur', verifyToken, isAdmin(), modulesActifsController.updateCouleur);
+
 // ============================================
 // Routes pour les paramètres de la structure
 // ============================================

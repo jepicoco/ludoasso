@@ -32,6 +32,11 @@ async function viewAdherent(id) {
       loadFamilleInfo(id);
     }
 
+    // Charger les reservations
+    if (typeof loadReservationsInfo === 'function') {
+      loadReservationsInfo(id);
+    }
+
     // Afficher la modal
     if (!viewModalInstance) {
       viewModalInstance = new bootstrap.Modal(document.getElementById('viewAdherentModal'));

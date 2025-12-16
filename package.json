@@ -65,7 +65,10 @@
     "migrate-thematiques": "node database/migrations/addThematiquesUnifiees.js up",
     "migrate-utilisateurs": "node database/migrations/refactorAdherentToUtilisateur.js",
     "migrate-fk": "node database/migrations/addMissingForeignKeys.js up",
-    "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up"
+    "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up",
+    "setup-reservations-communications": "node database/seeds/seedReservationCommunications.js",
+    "job-reservation-expirations": "node backend/jobs/reservationExpirations.js",
+    "job-reservation-rappels": "node backend/jobs/reservationRappels.js"
   },
   "keywords": [
     "liberteko",

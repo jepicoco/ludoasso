@@ -1,4 +1,4 @@
-const { Emprunt, Utilisateur, Jeu, Livre, Film, Disque, sequelize } = require('../models');
+const { Emprunt, Utilisateur, Jeu, Livre, Film, Disque, Reservation, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -331,10 +331,11 @@ const createEmprunt = async (req, res) => {
 };
 
 /**
- * Return a game (complete emprunt)
+ * Return an item (complete emprunt)
  * POST /api/emprunts/:id/retour
  *
  * Utilise une transaction avec verrouillage pour eviter les retours doubles.
+ * Verifie s'il y a une reservation en attente pour l'article retourne.
  */
 const retourEmprunt = async (req, res) => {
   const transaction = await sequelize.transaction({
@@ -344,11 +345,14 @@ const retourEmprunt = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Charger l'emprunt avec verrou pessimiste
+    // Charger l'emprunt avec verrou pessimiste et toutes les associations d'articles
     const emprunt = await Emprunt.findByPk(id, {
       include: [
         { model: Utilisateur, as: 'utilisateur' },
-        { model: Jeu, as: 'jeu' }
+        { model: Jeu, as: 'jeu' },
+        { model: Livre, as: 'livre' },
+        { model: Film, as: 'film' },
+        { model: Disque, as: 'disque' }
       ],
       transaction,
       lock: Transaction.LOCK.UPDATE
@@ -366,8 +370,31 @@ const retourEmprunt = async (req, res) => {
       await transaction.rollback();
       return res.status(400).json({
         error: 'Already returned',
-        message: 'This game has already been returned'
+        message: 'Cet article a deja ete retourne'
       });
+    }
+
+    // Determiner le type d'article et l'article
+    let itemType = null;
+    let item = null;
+    let foreignKey = null;
+
+    if (emprunt.jeu_id && emprunt.jeu) {
+      itemType = 'jeu';
+      item = emprunt.jeu;
+      foreignKey = 'jeu_id';
+    } else if (emprunt.livre_id && emprunt.livre) {
+      itemType = 'livre';
+      item = emprunt.livre;
+      foreignKey = 'livre_id';
+    } else if (emprunt.film_id && emprunt.film) {
+      itemType = 'film';
+      item = emprunt.film;
+      foreignKey = 'film_id';
+    } else if (emprunt.disque_id && emprunt.disque) {
+      itemType = 'disque';
+      item = emprunt.disque;
+      foreignKey = 'cd_id'; // Note: foreign key for disques is cd_id in reservations
     }
 
     // Mettre a jour l'emprunt
@@ -375,26 +402,34 @@ const retourEmprunt = async (req, res) => {
     emprunt.statut = 'retourne';
     await emprunt.save({ transaction });
 
-    // Mettre a jour le statut du jeu si present
-    if (emprunt.jeu) {
-      emprunt.jeu.statut = 'disponible';
-      await emprunt.jeu.save({ transaction });
+    // Verifier s'il y a une reservation en attente pour cet article
+    let nextReservation = null;
+    if (itemType && item) {
+      nextReservation = await Reservation.getNextInQueue(itemType, item.id);
+    }
+
+    // Mettre a jour le statut de l'article si present
+    // Si reservation en attente, garder en "reserve", sinon "disponible"
+    if (item) {
+      item.statut = nextReservation ? 'reserve' : 'disponible';
+      await item.save({ transaction });
     }
 
     // Commit la transaction
     await transaction.commit();
 
     // Reload pour avoir les donnees a jour (hors transaction)
-    await emprunt.reload({
-      include: [
-        { model: Utilisateur, as: 'utilisateur' },
-        { model: Jeu, as: 'jeu' }
-      ]
-    });
+    const includes = [{ model: Utilisateur, as: 'utilisateur' }];
+    if (itemType === 'jeu') includes.push({ model: Jeu, as: 'jeu' });
+    else if (itemType === 'livre') includes.push({ model: Livre, as: 'livre' });
+    else if (itemType === 'film') includes.push({ model: Film, as: 'film' });
+    else if (itemType === 'disque') includes.push({ model: Disque, as: 'disque' });
+
+    await emprunt.reload({ include: includes });
 
     // Déclencher l'événement de retour d'emprunt (hors transaction)
     try {
-      await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.utilisateur, emprunt.jeu);
+      await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.utilisateur, item);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer le retour si l'événement échoue
@@ -404,13 +439,232 @@ const retourEmprunt = async (req, res) => {
     const data = emprunt.toJSON();
     data.adherent = data.utilisateur;
 
-    res.json({
-      message: 'Game returned successfully',
+    // Construire la reponse
+    const response = {
+      message: 'Article retourne avec succes',
       emprunt: data
-    });
+    };
+
+    // Si une reservation est en attente, l'inclure dans la reponse
+    if (nextReservation) {
+      response.hasReservation = true;
+      response.reservation = {
+        id: nextReservation.id,
+        utilisateur_id: nextReservation.utilisateur_id,
+        utilisateur: nextReservation.utilisateur ? {
+          id: nextReservation.utilisateur.id,
+          nom: nextReservation.utilisateur.nom,
+          prenom: nextReservation.utilisateur.prenom,
+          email: nextReservation.utilisateur.email
+        } : null,
+        position_queue: nextReservation.position_queue,
+        date_creation: nextReservation.date_creation
+      };
+      response.articleType = itemType;
+      response.articleId = item.id;
+      response.articleTitre = item.titre || item.nom || 'Article';
+    } else {
+      response.hasReservation = false;
+    }
+
+    res.json(response);
   } catch (error) {
     await transaction.rollback();
     console.error('Retour emprunt error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Traiter le retour d'un emprunt avec reservation en attente
+ * POST /api/emprunts/:id/traiter-reservation
+ *
+ * Body: { action: 'rayon' | 'cote' }
+ * - rayon: L'article est remis en rayon (disponible)
+ * - cote: L'article est mis de cote pour le reservataire suivant
+ */
+const traiterRetourAvecReservation = async (req, res) => {
+  const transaction = await sequelize.transaction({
+    isolationLevel: Transaction.ISOLATION_LEVELS.READ_COMMITTED
+  });
+
+  try {
+    const { id } = req.params;
+    const { action } = req.body;
+
+    if (!action || !['rayon', 'cote'].includes(action)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Action requise: "rayon" ou "cote"'
+      });
+    }
+
+    // Charger l'emprunt
+    const emprunt = await Emprunt.findByPk(id, {
+      include: [
+        { model: Utilisateur, as: 'utilisateur' },
+        { model: Jeu, as: 'jeu' },
+        { model: Livre, as: 'livre' },
+        { model: Film, as: 'film' },
+        { model: Disque, as: 'disque' }
+      ],
+      transaction
+    });
+
+    if (!emprunt) {
+      await transaction.rollback();
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Emprunt not found'
+      });
+    }
+
+    if (emprunt.statut !== 'retourne') {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Invalid state',
+        message: 'L\'emprunt doit etre retourne avant de traiter la reservation'
+      });
+    }
+
+    // Determiner le type d'article et l'article
+    let itemType = null;
+    let item = null;
+    let ItemModel = null;
+
+    if (emprunt.jeu_id && emprunt.jeu) {
+      itemType = 'jeu';
+      item = emprunt.jeu;
+      ItemModel = Jeu;
+    } else if (emprunt.livre_id && emprunt.livre) {
+      itemType = 'livre';
+      item = emprunt.livre;
+      ItemModel = Livre;
+    } else if (emprunt.film_id && emprunt.film) {
+      itemType = 'film';
+      item = emprunt.film;
+      ItemModel = Film;
+    } else if (emprunt.disque_id && emprunt.disque) {
+      itemType = 'disque';
+      item = emprunt.disque;
+      ItemModel = Disque;
+    }
+
+    if (!item) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Invalid state',
+        message: 'Aucun article associe a cet emprunt'
+      });
+    }
+
+    // Recuperer la prochaine reservation en attente avec verrou
+    const nextReservation = await Reservation.findOne({
+      where: {
+        [`${itemType}_id`]: item.id,
+        statut: 'en_attente'
+      },
+      order: [['position_queue', 'ASC'], ['date_creation', 'ASC']],
+      include: [{ model: Utilisateur, as: 'utilisateur' }],
+      transaction,
+      lock: Transaction.LOCK.UPDATE
+    });
+
+    if (action === 'rayon') {
+      // Remettre l'article en rayon - il reste disponible
+      // Le verrou sur l'article
+      const lockedItem = await ItemModel.findByPk(item.id, {
+        transaction,
+        lock: Transaction.LOCK.UPDATE
+      });
+      lockedItem.statut = 'disponible';
+      await lockedItem.save({ transaction });
+
+      await transaction.commit();
+
+      res.json({
+        message: 'Article remis en rayon',
+        articleStatut: 'disponible',
+        reservationTraitee: false
+      });
+    } else if (action === 'cote') {
+      if (!nextReservation) {
+        // Pas de reservation en attente, remettre en rayon
+        const lockedItem = await ItemModel.findByPk(item.id, {
+          transaction,
+          lock: Transaction.LOCK.UPDATE
+        });
+        lockedItem.statut = 'disponible';
+        await lockedItem.save({ transaction });
+
+        await transaction.commit();
+
+        return res.json({
+          message: 'Aucune reservation en attente, article remis en rayon',
+          articleStatut: 'disponible',
+          reservationTraitee: false
+        });
+      }
+
+      // Mettre l'article de cote (statut reserve)
+      const lockedItem = await ItemModel.findByPk(item.id, {
+        transaction,
+        lock: Transaction.LOCK.UPDATE
+      });
+      lockedItem.statut = 'reserve';
+      await lockedItem.save({ transaction });
+
+      // Marquer la reservation comme prete
+      const { ParametresFront } = require('../models');
+      const params = await ParametresFront.getParametres();
+
+      // Determiner le module pour les parametres d'expiration
+      const moduleMap = { jeu: 'ludotheque', livre: 'bibliotheque', film: 'filmotheque', disque: 'discotheque' };
+      const moduleName = moduleMap[itemType];
+      const joursExpiration = params[`reservation_expiration_jours_${moduleName}`] || 15;
+
+      const maintenant = new Date();
+      nextReservation.statut = 'prete';
+      nextReservation.date_notification = maintenant;
+      nextReservation.date_expiration = new Date(maintenant.getTime() + joursExpiration * 24 * 60 * 60 * 1000);
+      await nextReservation.save({ transaction });
+
+      await transaction.commit();
+
+      // Déclencher l'événement RESERVATION_PRETE (hors transaction)
+      try {
+        await eventTriggerService.triggerReservationPrete(
+          nextReservation,
+          nextReservation.utilisateur,
+          lockedItem
+        );
+      } catch (eventError) {
+        console.error('Erreur déclenchement événement RESERVATION_PRETE:', eventError);
+      }
+
+      res.json({
+        message: 'Article mis de cote pour le reservataire',
+        articleStatut: 'reserve',
+        reservationTraitee: true,
+        reservation: {
+          id: nextReservation.id,
+          utilisateur: nextReservation.utilisateur ? {
+            id: nextReservation.utilisateur.id,
+            nom: nextReservation.utilisateur.nom,
+            prenom: nextReservation.utilisateur.prenom,
+            email: nextReservation.utilisateur.email
+          } : null,
+          date_expiration: nextReservation.date_expiration
+        }
+      });
+    }
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Traiter retour avec reservation error:', error);
     res.status(500).json({
       error: 'Server error',
       message: error.message
@@ -673,6 +927,7 @@ module.exports = {
   getEmpruntById,
   createEmprunt,
   retourEmprunt,
+  traiterRetourAvecReservation,
   updateEmprunt,
   deleteEmprunt,
   getOverdueEmprunts,

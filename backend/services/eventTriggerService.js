@@ -322,6 +322,51 @@ class EventTriggerService {
       variables.tarif_libelle = data.tarif.libelle;
     }
 
+    // ============================================
+    // Variables réservation
+    // ============================================
+    // Article (pour réservations multi-collections)
+    if (data.article) {
+      variables.article_titre = data.article.titre || data.article.nom;
+      variables.article_type = data.article_type || 'article';
+    }
+    if (data.article_titre) {
+      variables.article_titre = data.article_titre;
+    }
+
+    // Dates de réservation
+    if (data.date_creation) {
+      variables.date_reservation = new Date(data.date_creation).toLocaleDateString('fr-FR');
+    }
+    if (data.date_notification) {
+      variables.date_notification = new Date(data.date_notification).toLocaleDateString('fr-FR');
+    }
+    if (data.date_expiration) {
+      variables.date_expiration = new Date(data.date_expiration).toLocaleDateString('fr-FR');
+      // Calculer les jours restants avant expiration
+      const dateExpiration = new Date(data.date_expiration);
+      const aujourdhui = new Date();
+      const diffTime = dateExpiration - aujourdhui;
+      const joursRestants = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      variables.jours_restants = joursRestants > 0 ? joursRestants : 0;
+    }
+    if (data.jours_restants !== undefined) {
+      variables.jours_restants = data.jours_restants;
+    }
+    if (data.nouvelle_date_expiration) {
+      variables.nouvelle_date_expiration = new Date(data.nouvelle_date_expiration).toLocaleDateString('fr-FR');
+    }
+
+    // Position dans la file d'attente
+    if (data.position_queue) {
+      variables.position_queue = data.position_queue;
+    }
+
+    // Raison d'annulation
+    if (data.raison_annulation) {
+      variables.raison_annulation = data.raison_annulation;
+    }
+
     // Copier toutes les autres propriétés non-objets
     Object.keys(data).forEach(key => {
       if (!variables[key] && typeof data[key] !== 'object') {
@@ -559,6 +604,134 @@ class EventTriggerService {
       email: adherent.email
     }, {
       cotisationId: cotisation.id
+    });
+  }
+
+  // ============================================
+  // Triggers pour les réservations
+  // ============================================
+
+  /**
+   * Déclenche l'événement de réservation prête (article disponible pour récupération)
+   * @param {Object} reservation - Instance de réservation
+   * @param {Object} utilisateur - Instance d'utilisateur
+   * @param {Object} article - Instance de l'article (jeu, livre, film, disque)
+   */
+  async triggerReservationPrete(reservation, utilisateur, article) {
+    const reservationData = typeof reservation.toJSON === 'function' ? reservation.toJSON() : reservation;
+    const utilisateurData = typeof utilisateur.toJSON === 'function' ? utilisateur.toJSON() : utilisateur;
+    const articleData = typeof article.toJSON === 'function' ? article.toJSON() : article;
+
+    return await this.triggerEvent('RESERVATION_PRETE', {
+      ...reservationData,
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      article: articleData,
+      article_titre: articleData.titre || articleData.nom,
+      email: utilisateurData.email,
+      date_expiration: reservationData.date_expiration
+    }, {
+      reservationId: reservationData.id
+    });
+  }
+
+  /**
+   * Déclenche l'événement de rappel avant expiration de réservation
+   * @param {Object} reservation - Instance de réservation
+   * @param {Object} utilisateur - Instance d'utilisateur
+   * @param {Object} article - Instance de l'article
+   * @param {number} joursRestants - Nombre de jours avant expiration
+   */
+  async triggerReservationRappelExpiration(reservation, utilisateur, article, joursRestants) {
+    const reservationData = typeof reservation.toJSON === 'function' ? reservation.toJSON() : reservation;
+    const utilisateurData = typeof utilisateur.toJSON === 'function' ? utilisateur.toJSON() : utilisateur;
+    const articleData = typeof article.toJSON === 'function' ? article.toJSON() : article;
+
+    return await this.triggerEvent('RESERVATION_RAPPEL_EXPIRATION', {
+      ...reservationData,
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      article: articleData,
+      article_titre: articleData.titre || articleData.nom,
+      email: utilisateurData.email,
+      date_expiration: reservationData.date_expiration,
+      jours_restants: joursRestants
+    }, {
+      reservationId: reservationData.id
+    });
+  }
+
+  /**
+   * Déclenche l'événement d'annulation de réservation
+   * @param {Object} reservation - Instance de réservation
+   * @param {Object} utilisateur - Instance d'utilisateur
+   * @param {Object} article - Instance de l'article
+   * @param {string} raison - Raison de l'annulation (optionnel)
+   */
+  async triggerReservationAnnulee(reservation, utilisateur, article, raison = null) {
+    const reservationData = typeof reservation.toJSON === 'function' ? reservation.toJSON() : reservation;
+    const utilisateurData = typeof utilisateur.toJSON === 'function' ? utilisateur.toJSON() : utilisateur;
+    const articleData = typeof article.toJSON === 'function' ? article.toJSON() : article;
+
+    return await this.triggerEvent('RESERVATION_ANNULEE', {
+      ...reservationData,
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      article: articleData,
+      article_titre: articleData.titre || articleData.nom,
+      email: utilisateurData.email,
+      raison_annulation: raison
+    }, {
+      reservationId: reservationData.id
+    });
+  }
+
+  /**
+   * Déclenche l'événement de prolongation de réservation
+   * @param {Object} reservation - Instance de réservation
+   * @param {Object} utilisateur - Instance d'utilisateur
+   * @param {Object} article - Instance de l'article
+   */
+  async triggerReservationProlongee(reservation, utilisateur, article) {
+    const reservationData = typeof reservation.toJSON === 'function' ? reservation.toJSON() : reservation;
+    const utilisateurData = typeof utilisateur.toJSON === 'function' ? utilisateur.toJSON() : utilisateur;
+    const articleData = typeof article.toJSON === 'function' ? article.toJSON() : article;
+
+    return await this.triggerEvent('RESERVATION_PROLONGEE', {
+      ...reservationData,
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      article: articleData,
+      article_titre: articleData.titre || articleData.nom,
+      email: utilisateurData.email,
+      date_expiration: reservationData.date_expiration,
+      nouvelle_date_expiration: reservationData.date_expiration
+    }, {
+      reservationId: reservationData.id
+    });
+  }
+
+  /**
+   * Déclenche l'événement de création de réservation
+   * @param {Object} reservation - Instance de réservation
+   * @param {Object} utilisateur - Instance d'utilisateur
+   * @param {Object} article - Instance de l'article
+   */
+  async triggerReservationCreated(reservation, utilisateur, article) {
+    const reservationData = typeof reservation.toJSON === 'function' ? reservation.toJSON() : reservation;
+    const utilisateurData = typeof utilisateur.toJSON === 'function' ? utilisateur.toJSON() : utilisateur;
+    const articleData = typeof article.toJSON === 'function' ? article.toJSON() : article;
+
+    return await this.triggerEvent('RESERVATION_CREATED', {
+      ...reservationData,
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      article: articleData,
+      article_titre: articleData.titre || articleData.nom,
+      email: utilisateurData.email,
+      position_queue: reservationData.position_queue
+    }, {
+      reservationId: reservationData.id
     });
   }
 }

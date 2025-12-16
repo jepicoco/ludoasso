@@ -177,11 +177,6 @@
                 </button>
               </li>
               <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-coords-btn" data-bs-toggle="tab" data-bs-target="#tab-coords" type="button">
-                  <i class="bi bi-geo-alt"></i> Coordonnées
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-adhesion-btn" data-bs-toggle="tab" data-bs-target="#tab-adhesion" type="button">
                   <i class="bi bi-calendar-check"></i> Adhésion
                 </button>
@@ -197,24 +192,40 @@
             <div class="tab-content">
               <!-- Onglet: Informations personnelles -->
               <div class="tab-pane fade show active" id="tab-infos">
+                <!-- Alerte champs obligatoires pour facturation -->
+                <div class="alert alert-info py-2 mb-3">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <small>Les champs marques * sont obligatoires pour la facturation.</small>
+                </div>
+
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label for="nom" class="form-label">Nom *</label>
                     <input type="text" id="nom" class="form-control" required>
                   </div>
                   <div class="col-md-6">
-                    <label for="prenom" class="form-label">Prénom *</label>
+                    <label for="prenom" class="form-label">Prenom *</label>
                     <input type="text" id="prenom" class="form-control" required>
                   </div>
                 </div>
 
-                <div class="mb-3">
-                  <label for="email" class="form-label">Email *</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                    <input type="email" id="email" class="form-control" required>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="email" class="form-label">Email *</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                      <input type="email" id="email" class="form-control" required>
+                    </div>
+                    <small class="text-muted">Un email de bienvenue sera envoye automatiquement</small>
                   </div>
-                  <small class="text-muted">Un email de bienvenue sera envoyé automatiquement</small>
+                  <div class="col-md-6">
+                    <label for="telephone" class="form-label">Telephone</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                      <input type="tel" id="telephone" class="form-control" placeholder="+33 6 12 34 56 78">
+                    </div>
+                    <small class="text-muted">Format: +33 6 12 34 56 78 ou 06 12 34 56 78</small>
+                  </div>
                 </div>
 
                 <div class="mb-3" id="passwordGroup">
@@ -224,8 +235,8 @@
                     <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-outline-primary" type="button" id="generatePassword" title="Générer un mot de passe sécurisé">
-                      <i class="bi bi-key"></i> Générer
+                    <button class="btn btn-outline-primary" type="button" id="generatePassword" title="Generer un mot de passe securise">
+                      <i class="bi bi-key"></i> Generer
                     </button>
                   </div>
                   <div class="mt-2">
@@ -235,6 +246,28 @@
                     <small id="passwordStrengthLabel" class="text-muted"></small>
                   </div>
                 </div>
+
+                <hr class="my-3">
+                <h6 class="text-muted mb-3"><i class="bi bi-geo-alt me-1"></i>Adresse postale (pour la facturation)</h6>
+
+                <div class="mb-3">
+                  <label for="adresse" class="form-label">Adresse *</label>
+                  <textarea id="adresse" class="form-control" rows="2" placeholder="Numero et rue" required></textarea>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label for="code_postal" class="form-label">Code postal *</label>
+                    <input type="text" id="code_postal" class="form-control" placeholder="75001" maxlength="5" required>
+                  </div>
+                  <div class="col-md-8">
+                    <label for="ville" class="form-label">Ville *</label>
+                    <input type="text" id="ville" class="form-control" placeholder="Paris" required>
+                  </div>
+                </div>
+
+                <hr class="my-3">
+                <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-1"></i>Informations complementaires</h6>
 
                 <div class="row mb-3">
                   <div class="col-md-6">
@@ -249,39 +282,11 @@
                   </div>
                 </div>
 
-                <!-- Prévisualisation photo -->
+                <!-- Previsualisation photo -->
                 <div class="mb-3" id="photoPreview" style="display: none;">
-                  <label class="form-label">Prévisualisation</label>
+                  <label class="form-label">Previsualisation</label>
                   <div>
                     <img id="photoPreviewImg" src="" alt="Photo" class="img-thumbnail" style="max-width: 150px;">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Onglet: Coordonnées -->
-              <div class="tab-pane fade" id="tab-coords">
-                <div class="mb-3">
-                  <label for="telephone" class="form-label">Téléphone</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                    <input type="tel" id="telephone" class="form-control" placeholder="+33 6 12 34 56 78">
-                  </div>
-                  <small class="text-muted">Format: +33 6 12 34 56 78 ou 06 12 34 56 78</small>
-                </div>
-
-                <div class="mb-3">
-                  <label for="adresse" class="form-label">Adresse</label>
-                  <textarea id="adresse" class="form-control" rows="2" placeholder="Numéro et rue"></textarea>
-                </div>
-
-                <div class="row mb-3">
-                  <div class="col-md-4">
-                    <label for="code_postal" class="form-label">Code postal</label>
-                    <input type="text" id="code_postal" class="form-control" placeholder="75001" maxlength="5">
-                  </div>
-                  <div class="col-md-8">
-                    <label for="ville" class="form-label">Ville</label>
-                    <input type="text" id="ville" class="form-control" placeholder="Paris">
                   </div>
                 </div>
               </div>
@@ -618,6 +623,11 @@
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                  <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-reservations" type="button" id="view-tab-reservations-btn">
+                    <i class="bi bi-bookmark"></i> Reservations <span class="badge bg-warning text-dark" id="view_reservations_badge" style="display: none;">0</span>
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
                   <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-actions" type="button">
                     <i class="bi bi-lightning"></i> Actions
                   </button>
@@ -780,6 +790,50 @@
                       <div id="view_sms_list" style="max-height: 200px; overflow-y: auto;">
                         <p class="text-muted small">Aucun SMS</p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Onglet Reservations -->
+                <div class="tab-pane fade" id="view-tab-reservations">
+                  <div id="view_reservations_loading" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <span class="ms-2">Chargement des reservations...</span>
+                  </div>
+                  <div id="view_reservations_content" style="display: none;">
+                    <!-- Stats rapides -->
+                    <div class="row text-center mb-3">
+                      <div class="col-4">
+                        <div class="card border-warning">
+                          <div class="card-body py-2">
+                            <h5 class="text-warning mb-0" id="view_stat_reservations_attente">0</h5>
+                            <small class="text-muted">En attente</small>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="card border-success">
+                          <div class="card-body py-2">
+                            <h5 class="text-success mb-0" id="view_stat_reservations_prete">0</h5>
+                            <small class="text-muted">Pretes</small>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="card border-secondary">
+                          <div class="card-body py-2">
+                            <h5 class="text-secondary mb-0" id="view_stat_reservations_total">0</h5>
+                            <small class="text-muted">Total actives</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Liste des reservations -->
+                    <div id="view_reservations_list" style="max-height: 300px; overflow-y: auto;">
+                      <p class="text-muted small">Aucune reservation</p>
                     </div>
                   </div>
                 </div>
@@ -1073,6 +1127,119 @@
         loadFamilleInfo(currentViewAdherentId);
       } catch (error) {
         console.error('Erreur retrait:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // GESTION RESERVATIONS
+    // ============================================
+    async function loadReservationsInfo(adherentId) {
+      const loadingEl = document.getElementById('view_reservations_loading');
+      const contentEl = document.getElementById('view_reservations_content');
+      const tabBtn = document.getElementById('view-tab-reservations-btn');
+      const badge = document.getElementById('view_reservations_badge');
+
+      // Afficher chargement
+      loadingEl.style.display = '';
+      contentEl.style.display = 'none';
+
+      try {
+        // Verifier si le module reservations est actif
+        const modules = await publicAPI.getModulesActifs();
+        if (!modules.reservations) {
+          // Masquer l'onglet si module inactif
+          tabBtn.parentElement.style.display = 'none';
+          return;
+        }
+        tabBtn.parentElement.style.display = '';
+
+        // Charger les reservations de l'usager
+        const data = await reservationsAPI.getByUtilisateur(adherentId);
+        const reservations = data.reservations || [];
+
+        // Filtrer les reservations actives (en_attente, prete)
+        const reservationsActives = reservations.filter(r =>
+          ['en_attente', 'prete'].includes(r.statut)
+        );
+        const enAttente = reservationsActives.filter(r => r.statut === 'en_attente');
+        const pretes = reservationsActives.filter(r => r.statut === 'prete');
+
+        // Mettre a jour les stats
+        document.getElementById('view_stat_reservations_attente').textContent = enAttente.length;
+        document.getElementById('view_stat_reservations_prete').textContent = pretes.length;
+        document.getElementById('view_stat_reservations_total').textContent = reservationsActives.length;
+
+        // Badge sur l'onglet
+        if (pretes.length > 0) {
+          badge.textContent = pretes.length;
+          badge.style.display = '';
+          badge.className = 'badge bg-success ms-1'; // Vert pour pretes
+        } else if (reservationsActives.length > 0) {
+          badge.textContent = reservationsActives.length;
+          badge.style.display = '';
+          badge.className = 'badge bg-secondary ms-1';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        // Afficher la liste
+        const listContainer = document.getElementById('view_reservations_list');
+        if (reservationsActives.length === 0) {
+          listContainer.innerHTML = '<p class="text-muted text-center">Aucune reservation en cours</p>';
+        } else {
+          listContainer.innerHTML = reservationsActives.map(r => {
+            const article = r.jeu || r.livre || r.film || r.disque;
+            const articleType = r.jeu_id ? 'jeu' : r.livre_id ? 'livre' : r.film_id ? 'film' : 'disque';
+            const typeIcon = {jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-disc'}[articleType];
+            const statutBadge = r.statut === 'prete'
+              ? '<span class="badge bg-success">Prete a recuperer</span>'
+              : `<span class="badge bg-warning text-dark">En attente (pos. ${r.position_queue})</span>`;
+            const dateExpiration = r.date_expiration
+              ? `<small class="text-muted">Expire le ${formatDate(r.date_expiration)}</small>`
+              : '';
+
+            return `
+              <div class="card mb-2 ${r.statut === 'prete' ? 'border-success' : ''}">
+                <div class="card-body py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <i class="bi ${typeIcon} text-muted me-1"></i>
+                      <strong>${article?.titre || 'Article inconnu'}</strong>
+                      <div class="mt-1">
+                        ${statutBadge}
+                        ${dateExpiration}
+                      </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="cancelReservationFromView(${r.id})" title="Annuler">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        loadingEl.style.display = 'none';
+        contentEl.style.display = '';
+
+      } catch (error) {
+        console.error('Erreur chargement reservations:', error);
+        loadingEl.innerHTML = '<p class="text-danger">Erreur de chargement</p>';
+      }
+    }
+
+    async function cancelReservationFromView(reservationId) {
+      if (!confirm('Annuler cette reservation ?')) return;
+
+      try {
+        await reservationsAPI.cancel(reservationId);
+        showToast('Reservation annulee', 'success');
+        // Recharger les reservations
+        loadReservationsInfo(currentViewAdherentId);
+      } catch (error) {
+        console.error('Erreur annulation:', error);
         showToast('Erreur: ' + error.message, 'error');
       }
     }

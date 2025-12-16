@@ -348,8 +348,27 @@ function renderSidebar(activePage) {
                 return '<div class="sidebar-separator"></div>';
             }
             const isActive = item.id === activePage ? 'active' : '';
-            const colorStyle = item.color ? `style="background-color: ${item.color}; border-left: 4px solid ${item.color};"` : '';
-            const activeStyle = item.color && isActive ? `style="background-color: ${item.color}; border-left: 4px solid #333; font-weight: bold;"` : colorStyle;
+
+            // Couleur dynamique ou statique
+            let itemColor = item.color;
+            let itemTextColor = null;
+            if (item.dynamicColor && item.module) {
+                itemColor = getModuleColor(item.module);
+                itemTextColor = getModuleTextColor(item.module);
+            }
+
+            // Calculer le style avec la couleur
+            let colorStyle = '';
+            let activeStyle = '';
+            if (itemColor) {
+                // Créer une version pastel de la couleur pour le fond
+                const pastelBg = `${itemColor}30`; // 30 = 18.75% opacity en hex
+                colorStyle = `style="background-color: ${pastelBg}; border-left: 4px solid ${itemColor}; color: ${itemColor};"`;
+                // Pour l'état actif, utiliser la couleur de fond pleine et la couleur de texte
+                const activeTextColor = itemTextColor || '#ffffff';
+                activeStyle = `style="background-color: ${itemColor}; border-left: 4px solid ${itemColor}; font-weight: bold; color: ${activeTextColor};"`;
+            }
+
             return `
                 <a href="${item.href}" class="list-group-item list-group-item-action ${isActive}" ${isActive ? activeStyle : colorStyle}>
                     <i class="bi bi-${item.icon}"></i> ${item.label}

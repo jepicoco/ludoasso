@@ -288,11 +288,57 @@ async function handleArticleScan(response) {
   } else if (article.statut === 'emprunte') {
     // Effectuer un retour
     await processRetour(article, articleType);
+  } else if (article.statut === 'reserve') {
+    // Article reserve - verifier si l'adherent courant a une reservation prete
+    await handleReservedArticle(article, articleType, response.code);
   } else {
     playSound('error');
     flashZone('error');
     updateStatus(`${getArticleTypeLabel(articleType)} en ${article.statut}`, 'error');
     addToHistory('error', `${getArticleTypeLabel(articleType)} non disponible`, `${titre} - Statut: ${article.statut}`, response.code);
+  }
+}
+
+/**
+ * Gere un article en statut 'reserve'
+ * Si l'adherent courant a une reservation prete, la convertir en emprunt
+ */
+async function handleReservedArticle(article, articleType, code) {
+  if (!currentAdherent) {
+    playSound('error');
+    updateStatus(`Article reserve - Selectionnez un adherent`, 'error');
+    return;
+  }
+
+  try {
+    // Verifier si l'adherent courant a une reservation prete pour cet article
+    const reservations = await reservationsAPI.getForArticle(articleType, article.id);
+    const reservationPrete = reservations.find(r =>
+      r.statut === 'prete' && r.utilisateur_id === currentAdherent.id
+    );
+
+    if (reservationPrete) {
+      // Convertir la reservation en emprunt
+      const result = await reservationsAPI.convertToEmprunt(reservationPrete.id);
+
+      const typeLabel = getArticleTypeLabel(articleType);
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Reservation convertie en emprunt: ${article.titre}`, 'success');
+      addToHistory('success', 'Reservation → Emprunt', `${typeLabel}: ${article.titre} → ${currentAdherent.prenom} ${currentAdherent.nom}`, code);
+    } else {
+      // L'article est reserve mais pas pour cet adherent
+      playSound('error');
+      flashZone('error');
+      updateStatus(`Article reserve pour un autre usager`, 'error');
+      addToHistory('error', 'Article reserve', `${article.titre} - Reserve pour un autre usager`, code);
+    }
+  } catch (error) {
+    console.error('Erreur traitement reservation:', error);
+    playSound('error');
+    flashZone('error');
+    updateStatus('Erreur: ' + (error.message || 'Erreur inconnue'), 'error');
+    addToHistory('error', 'Erreur reservation', error.message || 'Erreur inconnue', code);
   }
 }
 
@@ -475,10 +521,19 @@ async function processRetourSilent(article, articleType = 'jeu') {
   const emprunt = emprunts.emprunts[0];
   const adherentNom = emprunt.adherent ? `${emprunt.adherent.prenom} ${emprunt.adherent.nom}` : 'Inconnu';
 
-  await empruntsAPI.return(emprunt.id);
+  const response = await empruntsAPI.return(emprunt.id);
 
   const typeLabel = getArticleTypeLabel(articleType);
-  addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+
+  // Si reservation en attente (traitement silencieux = on laisse en rayon par defaut)
+  if (response.hasReservation) {
+    const reservataire = response.reservation?.utilisateur
+      ? `${response.reservation.utilisateur.prenom} ${response.reservation.utilisateur.nom}`
+      : 'Un usager';
+    addToHistory('info', 'Retour + Reservation', `${typeLabel}: ${article.titre} (${adherentNom}) - Reserve par ${reservataire}`, article.code_barre);
+  } else {
+    addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+  }
 }
 
 /**
@@ -607,13 +662,20 @@ async function processRetour(article, articleType = 'jeu') {
     const adherentNom = emprunt.adherent ? `${emprunt.adherent.prenom} ${emprunt.adherent.nom}` : 'Inconnu';
 
     // Effectuer le retour
-    await empruntsAPI.return(emprunt.id);
+    const response = await empruntsAPI.return(emprunt.id);
 
     const typeLabel = getArticleTypeLabel(articleType);
-    playSound('success');
-    flashZone('success');
-    updateStatus(`Retour: ${article.titre}`, 'success');
-    addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+
+    // Verifier s'il y a une reservation en attente
+    if (response.hasReservation) {
+      // Afficher la modal de choix reservation
+      showReservationChoiceModal(emprunt.id, article, articleType, response.reservation, adherentNom);
+    } else {
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Retour: ${article.titre}`, 'success');
+      addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+    }
 
   } catch (error) {
     console.error('Erreur retour:', error);
@@ -622,6 +684,115 @@ async function processRetour(article, articleType = 'jeu') {
     updateStatus('Erreur retour: ' + (error.message || 'Erreur inconnue'), 'error');
     addToHistory('error', 'Erreur retour', error.message || 'Erreur inconnue', article.code_barre);
   }
+}
+
+// Variables pour la modal de reservation
+let pendingReservationChoice = null;
+
+/**
+ * Affiche la modal pour choisir quoi faire avec une reservation en attente
+ */
+function showReservationChoiceModal(empruntId, article, articleType, reservation, ancienEmprunteur) {
+  pendingReservationChoice = { empruntId, article, articleType, reservation, ancienEmprunteur };
+
+  const reservataire = reservation.utilisateur
+    ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}`
+    : 'Reservataire';
+
+  // Creer ou recuperer la modal
+  let modal = document.getElementById('reservationChoiceModal');
+  if (!modal) {
+    // Creer la modal dynamiquement
+    const modalHtml = `
+      <div class="modal fade" id="reservationChoiceModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-warning">
+              <h5 class="modal-title"><i class="bi bi-bookmark-star"></i> Reservation en attente</h5>
+            </div>
+            <div class="modal-body" id="reservationChoiceBody">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" onclick="handleReservationChoice('rayon')">
+                <i class="bi bi-box-arrow-in-down"></i> Remettre en rayon
+              </button>
+              <button type="button" class="btn btn-primary" onclick="handleReservationChoice('cote')">
+                <i class="bi bi-bookmark-check"></i> Mettre de cote
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    modal = document.getElementById('reservationChoiceModal');
+  }
+
+  // Mettre a jour le contenu
+  document.getElementById('reservationChoiceBody').innerHTML = `
+    <div class="alert alert-info mb-3">
+      <strong>${article.titre}</strong> vient d'etre retourne par ${ancienEmprunteur}.
+    </div>
+    <p>Cet article est reserve par <strong>${reservataire}</strong>.</p>
+    <p>Que souhaitez-vous faire ?</p>
+    <ul class="list-unstyled mt-3">
+      <li class="mb-2">
+        <i class="bi bi-box-arrow-in-down text-secondary"></i>
+        <strong>Remettre en rayon</strong> - L'article sera disponible pour tous
+      </li>
+      <li>
+        <i class="bi bi-bookmark-check text-primary"></i>
+        <strong>Mettre de cote</strong> - Notifier ${reservataire} pour recuperation
+      </li>
+    </ul>
+  `;
+
+  // Afficher la modal
+  const bsModal = new bootstrap.Modal(modal);
+  bsModal.show();
+}
+
+/**
+ * Traite le choix de l'utilisateur pour la reservation
+ * @param {string} action - 'rayon' ou 'cote'
+ */
+async function handleReservationChoice(action) {
+  if (!pendingReservationChoice) return;
+
+  const { empruntId, article, articleType, reservation, ancienEmprunteur } = pendingReservationChoice;
+  const typeLabel = getArticleTypeLabel(articleType);
+
+  // Fermer la modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('reservationChoiceModal'));
+  if (modal) modal.hide();
+
+  try {
+    // Appeler l'API pour traiter la reservation
+    await empruntsAPI.traiterReservation(empruntId, action);
+
+    if (action === 'cote') {
+      const reservataire = reservation.utilisateur
+        ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}`
+        : 'Reservataire';
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Retour + Reservation notifiee`, 'success');
+      addToHistory('success', 'Retour + Reservation', `${typeLabel}: ${article.titre} mis de cote pour ${reservataire}`, article.code_barre);
+    } else {
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Retour: ${article.titre}`, 'success');
+      addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} remis en rayon (${ancienEmprunteur})`, article.code_barre);
+    }
+  } catch (error) {
+    console.error('Erreur traitement reservation:', error);
+    playSound('error');
+    flashZone('error');
+    updateStatus('Erreur: ' + (error.message || 'Erreur inconnue'), 'error');
+    addToHistory('error', 'Erreur traitement', error.message || 'Erreur inconnue', article.code_barre);
+  }
+
+  pendingReservationChoice = null;
 }
 
 // ==================== UI FUNCTIONS ====================

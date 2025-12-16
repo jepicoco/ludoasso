@@ -261,6 +261,77 @@ const empruntsAPI = {
     return await apiRequest(`/emprunts/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  async traiterReservation(id, action) {
+    return await apiRequest(`/emprunts/${id}/traiter-reservation`, {
+      method: 'POST',
+      body: JSON.stringify({ action })
+    });
+  }
+};
+
+// ============ RESERVATIONS API ============
+
+const reservationsAPI = {
+  async getAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/reservations${query ? '?' + query : ''}`);
+  },
+
+  async getById(id) {
+    return await apiRequest(`/reservations/${id}`);
+  },
+
+  async getByUtilisateur(utilisateurId) {
+    return await apiRequest(`/reservations/utilisateur/${utilisateurId}`);
+  },
+
+  async getForArticle(module, itemId) {
+    return await apiRequest(`/reservations/article/${module}/${itemId}`);
+  },
+
+  async create(data) {
+    return await apiRequest('/reservations', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async cancel(id) {
+    return await apiRequest(`/reservations/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async convertToEmprunt(id) {
+    return await apiRequest(`/reservations/${id}/convertir`, {
+      method: 'POST'
+    });
+  },
+
+  async prolonger(id, jours = 15) {
+    return await apiRequest(`/reservations/${id}/prolonger`, {
+      method: 'POST',
+      body: JSON.stringify({ jours })
+    });
+  },
+
+  async marquerPrete(id) {
+    return await apiRequest(`/reservations/${id}/marquer-prete`, {
+      method: 'POST'
+    });
+  },
+
+  async validerLimites(data) {
+    return await apiRequest('/reservations/valider-limites', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async getLimitesSummary(utilisateurId, module) {
+    return await apiRequest(`/reservations/limites/${utilisateurId}/${module}`);
   }
 };
 

@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reservations - Parametres - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .module-card {
+      border: 2px solid #dee2e6;
+      border-radius: 0.75rem;
+      transition: all 0.2s;
+      height: 100%;
+    }
+    .module-card.active {
+      border-color: #198754;
+    }
+    .module-card.inactive {
+      opacity: 0.5;
+      border-color: #dee2e6;
+    }
+    .module-card.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .module-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    .module-icon.ludotheque { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+    .module-icon.bibliotheque { background: rgba(32, 201, 151, 0.1); color: #20c997; }
+    .module-icon.filmotheque { background: rgba(253, 126, 20, 0.1); color: #fd7e14; }
+    .module-icon.discotheque { background: rgba(232, 62, 140, 0.1); color: #e83e8c; }
+    .form-range-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .form-range-container .form-range {
+      flex: 1;
+    }
+    .form-range-value {
+      min-width: 55px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      z-index: 1050;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .save-indicator.saving {
+      display: flex;
+      background: #fff3cd;
+      color: #856404;
+    }
+    .save-indicator.saved {
+      display: flex;
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+    .save-indicator.error {
+      display: flex;
+      background: #f8d7da;
+      color: #842029;
+    }
+    .module-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .module-title {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .config-section {
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+    }
+    .genre-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: #e9ecef;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      margin: 0.25rem;
+    }
+    .genre-badge .genre-limit {
+      background: #6c757d;
+      color: white;
+      padding: 0.1rem 0.4rem;
+      border-radius: 1rem;
+      font-size: 0.75rem;
+    }
+    .genre-badge .btn-remove {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #dc3545;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .genre-badge .btn-remove:hover {
+      color: #bb2d3b;
+    }
+    .limites-genres-section {
+      border-top: 1px solid #dee2e6;
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+    .global-toggle-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .global-toggle-section .form-check-input:checked {
+      background-color: #fff;
+      border-color: #fff;
+    }
+    .global-toggle-section .form-check-input:checked::before {
+      background-color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item active">Reservations</li>
+              </ol>
+            </nav>
+            <h1 class="h3 mb-0"><i class="bi bi-bookmark me-2"></i>Limites de reservations</h1>
+          </div>
+        </div>
+
+        <!-- Module global toggle -->
+        <div class="global-toggle-section">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 class="mb-1"><i class="bi bi-power me-2"></i>Module Reservations</h5>
+              <p class="mb-0 opacity-75">Activer ou desactiver globalement le systeme de reservations</p>
+            </div>
+            <div class="form-check form-switch form-switch-lg">
+              <input class="form-check-input" type="checkbox" id="globalModuleActive" style="width: 3rem; height: 1.5rem;"
+                     onchange="scheduleAutoSave()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Explication -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Hierarchie des limites :</strong>
+          <ol class="mb-0 mt-2">
+            <li><strong>Limite generale</strong> - Nombre maximum de reservations actives par module</li>
+            <li><strong>Limite par categorie/genre</strong> - Limite specifique pour certains genres (ex: max 1 BD)</li>
+            <li><strong>Limite de nouveautes</strong> - Nombre maximum de nouveautes reservables (0 = nouveautes non reservables)</li>
+          </ol>
+          <hr class="my-2">
+          <small>
+            <i class="bi bi-clock me-1"></i>
+            <strong>Delai d'expiration :</strong> Apres notification, l'usager dispose de ce delai pour recuperer l'article reserve.
+          </small>
+        </div>
+
+        <!-- Modules -->
+        <div class="row g-4" id="modulesContainer">
+          <!-- Genere par JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de sauvegarde -->
+  <div class="save-indicator" id="saveIndicator">
+    <span class="spinner-border spinner-border-sm" id="saveSpinner"></span>
+    <i class="bi bi-check-circle d-none" id="saveCheck"></i>
+    <i class="bi bi-exclamation-circle d-none" id="saveError"></i>
+    <span id="saveText">Enregistrement...</span>
+  </div>
+
+  <!-- Modal ajout genre -->
+  <div class="modal fade" id="addGenreModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ajouter une limite par genre</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modal-module">
+          <div class="mb-3">
+            <label class="form-label">Genre / Categorie</label>
+            <select class="form-select" id="modal-genre">
+              <option value="">Chargement...</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Limite maximum</label>
+            <input type="number" class="form-control" id="modal-limite" value="1" min="0" max="99">
+            <small class="text-muted">Nombre maximum de reservations simultanes pour ce genre (0 = non reservable)</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveGenreLimite()">
+            <i class="bi bi-plus-lg me-1"></i>Ajouter
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    const API_URL = '/api';
+    let saveTimeout = null;
+    let currentParams = {};
+    let limitesGenre = {};
+    let moduleReservationsActif = false;
+
+    const MODULES = [
+      { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', genreLabel: 'Categories' },
+      { id: 'bibliotheque', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', genreLabel: 'Genres litteraires' },
+      { id: 'filmotheque', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', genreLabel: 'Genres de films' },
+      { id: 'discotheque', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', genreLabel: 'Genres musicaux' }
+    ];
+
+    // Init template et navigation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSubNav('emprunts', 'reservations');
+
+      // Verifier si le module reservations est actif dans le holodeck
+      await loadActiveModules();
+      if (!isModuleActive('reservations')) {
+        document.querySelector('.col-md-10').innerHTML = `
+          <div id="sub-nav-container"></div>
+          <div class="alert alert-warning mt-4">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Module desactive</h5>
+            <p class="mb-0">
+              Le module <strong>Reservations</strong> est desactive dans le Holodeck.
+              <br>Pour activer les reservations, rendez-vous dans
+              <a href="parametres-holodeck.html" class="alert-link">Parametres > Holodeck</a>
+              et activez le module "Reservations".
+            </p>
+          </div>
+        `;
+        renderSubNav('emprunts', 'reservations');
+        return;
+      }
+
+      renderModules();
+      loadConfig();
+    });
+
+    // Auth
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      };
+    }
+
+    // Render modules cards
+    function renderModules() {
+      const container = document.getElementById('modulesContainer');
+      container.innerHTML = MODULES.map(mod => `
+        <div class="col-lg-6">
+          <div class="module-card p-3" id="card-${mod.id}">
+            <div class="module-header">
+              <div class="module-title">
+                <div class="module-icon ${mod.id}">
+                  <i class="bi ${mod.icon}"></i>
+                </div>
+                <div>
+                  <h5 class="mb-0">${mod.label}</h5>
+                  <small class="text-muted">${mod.sublabel}</small>
+                </div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="actif-${mod.id}"
+                       onchange="scheduleAutoSave()">
+                <label class="form-check-label small" for="actif-${mod.id}">Actif</label>
+              </div>
+            </div>
+
+            <div class="config-section" id="config-${mod.id}">
+              <!-- Limite generale -->
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label small text-muted mb-1">
+                    <i class="bi bi-stack me-1"></i>Limite generale de reservations actives
+                  </label>
+                  <div class="form-range-container">
+                    <input type="range" class="form-range" min="1" max="10" value="2"
+                           id="limite-${mod.id}" onchange="scheduleAutoSave()">
+                    <span class="form-range-value badge bg-primary" id="limite-${mod.id}-value">2</span>
+                  </div>
+                </div>
+
+                <!-- Limite nouveautes -->
+                <div class="col-12">
+                  <label class="form-label small text-muted mb-1">
+                    <i class="bi bi-star me-1"></i>Limite de nouveautes
+                  </label>
+                  <div class="form-range-container">
+                    <input type="range" class="form-range" min="0" max="5" value="0"
+                           id="nouveaute-${mod.id}" onchange="scheduleAutoSave()">
+                    <span class="form-range-value badge bg-warning text-dark" id="nouveaute-${mod.id}-value">0</span>
+                  </div>
+                  <small class="text-muted">0 = nouveautes non reservables</small>
+                </div>
+
+                <!-- Delai expiration -->
+                <div class="col-12">
+                  <label class="form-label small text-muted mb-1">
+                    <i class="bi bi-clock me-1"></i>Delai de recuperation (jours)
+                  </label>
+                  <div class="form-range-container">
+                    <input type="range" class="form-range" min="3" max="30" value="15"
+                           id="expiration-${mod.id}" onchange="scheduleAutoSave()">
+                    <span class="form-range-value badge bg-info text-dark" id="expiration-${mod.id}-value">15j</span>
+                  </div>
+                  <small class="text-muted">Delai pour recuperer l'article apres notification de disponibilite</small>
+                </div>
+              </div>
+
+              <!-- Limites par genre -->
+              <div class="limites-genres-section">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label small text-muted mb-0">
+                    <i class="bi bi-tag me-1"></i>Limites par ${mod.genreLabel.toLowerCase()}
+                  </label>
+                  <button class="btn btn-sm btn-outline-primary" onclick="openAddGenreModal('${mod.id}')">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                  </button>
+                </div>
+                <div id="genres-${mod.id}" class="d-flex flex-wrap">
+                  <span class="text-muted small">Aucune limite par genre configuree</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Bind range input events
+      MODULES.forEach(mod => {
+        document.getElementById(`limite-${mod.id}`).addEventListener('input', (e) => {
+          document.getElementById(`limite-${mod.id}-value`).textContent = e.target.value;
+        });
+        document.getElementById(`nouveaute-${mod.id}`).addEventListener('input', (e) => {
+          document.getElementById(`nouveaute-${mod.id}-value`).textContent = e.target.value;
+        });
+        document.getElementById(`expiration-${mod.id}`).addEventListener('input', (e) => {
+          document.getElementById(`expiration-${mod.id}-value`).textContent = e.target.value + 'j';
+        });
+      });
+    }
+
+    // Load config
+    async function loadConfig() {
+      try {
+        const response = await fetch(`${API_URL}/parametres/limites-reservation`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        const data = await response.json();
+        currentParams = data.limitesGenerales || {};
+        moduleReservationsActif = data.moduleReservationsActif !== false;
+        limitesGenre = {};
+
+        // Organiser les limites par module
+        (data.limitesGenre || []).forEach(l => {
+          if (!limitesGenre[l.module]) limitesGenre[l.module] = [];
+          limitesGenre[l.module].push(l);
+        });
+
+        // Global module toggle
+        document.getElementById('globalModuleActive').checked = moduleReservationsActif;
+
+        // Charger aussi les parametres front pour savoir quels modules sont actifs
+        const frontResponse = await fetch(`${API_URL}/parametres/front`, {
+          headers: getHeaders()
+        });
+        const frontParams = await frontResponse.json();
+
+        MODULES.forEach(mod => {
+          const moduleActif = frontParams[`module_${mod.id}`];
+          const card = document.getElementById(`card-${mod.id}`);
+
+          // Module actif/inactif dans le systeme
+          if (!moduleActif) {
+            card.classList.add('disabled');
+            return;
+          }
+
+          card.classList.remove('disabled');
+
+          // Valeurs
+          const limites = currentParams[mod.id] || {};
+          document.getElementById(`limite-${mod.id}`).value = limites.limite || 2;
+          document.getElementById(`limite-${mod.id}-value`).textContent = limites.limite || 2;
+          document.getElementById(`nouveaute-${mod.id}`).value = limites.limiteNouveaute || 0;
+          document.getElementById(`nouveaute-${mod.id}-value`).textContent = limites.limiteNouveaute || 0;
+          document.getElementById(`expiration-${mod.id}`).value = limites.joursExpiration || 15;
+          document.getElementById(`expiration-${mod.id}-value`).textContent = (limites.joursExpiration || 15) + 'j';
+          document.getElementById(`actif-${mod.id}`).checked = limites.actif !== false;
+
+          // Limites par genre
+          renderGenresForModule(mod.id);
+        });
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', 'Erreur de chargement');
+      }
+    }
+
+    // Render genres badges for a module
+    function renderGenresForModule(modId) {
+      const container = document.getElementById(`genres-${modId}`);
+      const genres = limitesGenre[modId] || [];
+
+      if (genres.length === 0) {
+        container.innerHTML = '<span class="text-muted small">Aucune limite par genre configuree</span>';
+        return;
+      }
+
+      container.innerHTML = genres.map(g => `
+        <span class="genre-badge ${g.actif ? '' : 'opacity-50'}">
+          ${g.genre_nom}
+          <span class="genre-limit">${g.limite_max}</span>
+          <button class="btn-remove" onclick="deleteGenreLimite(${g.id}, '${modId}')" title="Supprimer">
+            <i class="bi bi-x"></i>
+          </button>
+        </span>
+      `).join('');
+    }
+
+    // Open modal to add genre limit
+    async function openAddGenreModal(modId) {
+      document.getElementById('modal-module').value = modId;
+      document.getElementById('modal-limite').value = 1;
+
+      const select = document.getElementById('modal-genre');
+      select.innerHTML = '<option value="">Chargement...</option>';
+
+      new bootstrap.Modal(document.getElementById('addGenreModal')).show();
+
+      // Charger les genres disponibles
+      try {
+        const response = await fetch(`${API_URL}/parametres/limites-reservation/genres-disponibles/${modId}`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        const data = await response.json();
+
+        if (data.genres.length === 0) {
+          select.innerHTML = '<option value="">Tous les genres sont deja configures</option>';
+        } else {
+          select.innerHTML = '<option value="">-- Selectionnez --</option>' +
+            data.genres.map(g => `<option value="${g.id}">${g.nom}</option>`).join('');
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        select.innerHTML = '<option value="">Erreur de chargement</option>';
+      }
+    }
+
+    // Save genre limite
+    async function saveGenreLimite() {
+      const module = document.getElementById('modal-module').value;
+      const genreId = document.getElementById('modal-genre').value;
+      const limiteMax = parseInt(document.getElementById('modal-limite').value);
+
+      if (!genreId) {
+        alert('Veuillez selectionner un genre');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/parametres/limites-reservation/genres`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            module,
+            genre_id: parseInt(genreId),
+            limite_max: limiteMax
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('addGenreModal')).hide();
+        showSaveIndicator('saved', 'Limite ajoutee');
+        loadConfig(); // Recharger
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', error.message);
+      }
+    }
+
+    // Delete genre limite
+    async function deleteGenreLimite(id, modId) {
+      if (!confirm('Supprimer cette limite par genre ?')) return;
+
+      try {
+        const response = await fetch(`${API_URL}/parametres/limites-reservation/genres/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showSaveIndicator('saved', 'Limite supprimee');
+
+        // Retirer de la liste locale et re-render
+        limitesGenre[modId] = (limitesGenre[modId] || []).filter(g => g.id !== id);
+        renderGenresForModule(modId);
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', 'Erreur de suppression');
+      }
+    }
+
+    // Schedule auto save (debounce 800ms)
+    function scheduleAutoSave() {
+      if (saveTimeout) clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(saveConfig, 800);
+    }
+
+    // Save config
+    async function saveConfig() {
+      showSaveIndicator('saving');
+
+      const limitesGenerales = {};
+
+      MODULES.forEach(mod => {
+        const card = document.getElementById(`card-${mod.id}`);
+        if (card.classList.contains('disabled')) return;
+
+        limitesGenerales[mod.id] = {
+          limite: parseInt(document.getElementById(`limite-${mod.id}`).value),
+          limiteNouveaute: parseInt(document.getElementById(`nouveaute-${mod.id}`).value),
+          joursExpiration: parseInt(document.getElementById(`expiration-${mod.id}`).value),
+          actif: document.getElementById(`actif-${mod.id}`).checked
+        };
+      });
+
+      try {
+        const response = await fetch(`${API_URL}/parametres/limites-reservation`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            limitesGenerales,
+            moduleReservationsActif: document.getElementById('globalModuleActive').checked
+          })
+        });
+
+        if (!response.ok) throw new Error('Erreur sauvegarde');
+
+        showSaveIndicator('saved');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', 'Erreur de sauvegarde');
+      }
+    }
+
+    // Show save indicator
+    function showSaveIndicator(state, customMessage = null) {
+      const indicator = document.getElementById('saveIndicator');
+      const spinner = document.getElementById('saveSpinner');
+      const check = document.getElementById('saveCheck');
+      const errorIcon = document.getElementById('saveError');
+      const text = document.getElementById('saveText');
+
+      indicator.className = 'save-indicator ' + state;
+      spinner.classList.toggle('d-none', state !== 'saving');
+      check.classList.toggle('d-none', state !== 'saved');
+      errorIcon.classList.toggle('d-none', state !== 'error');
+
+      if (state === 'saving') {
+        text.textContent = 'Enregistrement...';
+      } else if (state === 'saved') {
+        text.textContent = customMessage || 'Enregistre';
+        setTimeout(() => {
+          indicator.className = 'save-indicator';
+        }, 2000);
+      } else if (state === 'error') {
+        text.textContent = customMessage || 'Erreur';
+        setTimeout(() => {
+          indicator.className = 'save-indicator';
+        }, 4000);
+      }
+    }
+  </script>
+</body>
+</html>

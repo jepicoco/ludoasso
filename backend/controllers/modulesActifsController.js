@@ -157,3 +157,63 @@ exports.checkModule = async (req, res) => {
     });
   }
 };
+
+/**
+ * Mettre a jour la couleur d'un module (fond et/ou texte)
+ */
+exports.updateCouleur = async (req, res) => {
+  try {
+    const { code } = req.params;
+    const { couleur, couleur_texte } = req.body;
+
+    // Au moins une couleur doit etre fournie
+    if (!couleur && !couleur_texte) {
+      return res.status(400).json({
+        error: 'Au moins une couleur (couleur ou couleur_texte) est requise'
+      });
+    }
+
+    // Valider le format des couleurs (hex)
+    const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+
+    if (couleur && !hexPattern.test(couleur)) {
+      return res.status(400).json({
+        error: 'Format de couleur invalide. Utilisez le format hexadecimal (#RRGGBB)'
+      });
+    }
+
+    if (couleur_texte && !hexPattern.test(couleur_texte)) {
+      return res.status(400).json({
+        error: 'Format de couleur_texte invalide. Utilisez le format hexadecimal (#RRGGBB)'
+      });
+    }
+
+    const module = await ModuleActif.findOne({ where: { code } });
+    if (!module) {
+      return res.status(404).json({
+        error: `Module ${code} introuvable`
+      });
+    }
+
+    // Mettre a jour les couleurs fournies
+    if (couleur) module.couleur = couleur;
+    if (couleur_texte) module.couleur_texte = couleur_texte;
+
+    await module.save();
+
+    // Invalider le cache des modules
+    invalidateModulesCache();
+
+    res.json({
+      success: true,
+      message: `Couleurs du module ${module.libelle} mises a jour`,
+      module
+    });
+  } catch (error) {
+    console.error('Erreur mise a jour couleur module:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la mise a jour de la couleur',
+      message: error.message
+    });
+  }
+};

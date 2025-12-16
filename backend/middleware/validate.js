@@ -69,9 +69,9 @@ const common = {
     .withMessage('Email invalide')
     .normalizeEmail(),
 
-  // Telephone
+  // Telephone (nullable: true permet null, checkFalsy permet les chaines vides)
   telephone: body('telephone')
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .matches(/^[0-9+\s.-]{10,20}$/)
     .withMessage('Numero de telephone invalide'),
 
@@ -81,7 +81,7 @@ const common = {
     .withMessage(`${field} doit etre une date valide (ISO 8601)`),
 
   dateOptional: (field) => body(field)
-    .optional()
+    .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage(`${field} doit etre une date valide (ISO 8601)`),
 
@@ -193,12 +193,16 @@ const schemas = {
       common.email,
       common.telephone,
       body('date_naissance')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isISO8601()
         .withMessage('Date de naissance invalide'),
-      common.textOptional('adresse', 255),
-      common.textOptional('code_postal', 10),
-      common.textOptional('ville', 100)
+      // Champs obligatoires pour la facturation
+      common.text('adresse', 1, 255),
+      body('code_postal')
+        .trim()
+        .isLength({ min: 1, max: 10 })
+        .withMessage('Code postal requis'),
+      common.text('ville', 1, 100)
     ],
     update: [
       common.idParam,

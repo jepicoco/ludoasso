@@ -148,6 +148,10 @@ const LeaderboardScoreModel = require('./LeaderboardScore');
 // Import LimiteEmpruntGenre (limites emprunts par genre)
 const LimiteEmpruntGenreModel = require('./LimiteEmpruntGenre');
 
+// Import Reservation (reservations d'articles)
+const ReservationModel = require('./Reservation');
+const LimiteReservationGenreModel = require('./LimiteReservationGenre');
+
 // Import Caisse (gestion des règlements)
 const CaisseModel = require('./Caisse');
 const SessionCaisseModel = require('./SessionCaisse');
@@ -317,6 +321,10 @@ const LeaderboardScore = LeaderboardScoreModel(sequelize);
 
 // Initialize LimiteEmpruntGenre (limites emprunts par genre)
 const LimiteEmpruntGenre = LimiteEmpruntGenreModel(sequelize);
+
+// Initialize Reservation (reservations d'articles)
+const Reservation = ReservationModel(sequelize);
+const LimiteReservationGenre = LimiteReservationGenreModel(sequelize);
 
 // Initialize Caisse (gestion des règlements)
 const Caisse = CaisseModel(sequelize);
@@ -1034,6 +1042,76 @@ Prolongation.belongsTo(Utilisateur, {
 Prolongation.belongsTo(Utilisateur, {
   foreignKey: 'traite_par',
   as: 'traitePar'
+});
+
+// ========================================
+// Associations pour les reservations
+// ========================================
+
+// Utilisateur <-> Reservation (One-to-Many)
+Utilisateur.hasMany(Reservation, {
+  foreignKey: 'utilisateur_id',
+  as: 'reservations'
+});
+
+Reservation.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+// Jeu <-> Reservation (One-to-Many)
+Jeu.hasMany(Reservation, {
+  foreignKey: 'jeu_id',
+  as: 'reservations'
+});
+
+Reservation.belongsTo(Jeu, {
+  foreignKey: 'jeu_id',
+  as: 'jeu'
+});
+
+// Livre <-> Reservation (One-to-Many)
+Livre.hasMany(Reservation, {
+  foreignKey: 'livre_id',
+  as: 'reservations'
+});
+
+Reservation.belongsTo(Livre, {
+  foreignKey: 'livre_id',
+  as: 'livre'
+});
+
+// Film <-> Reservation (One-to-Many)
+Film.hasMany(Reservation, {
+  foreignKey: 'film_id',
+  as: 'reservations'
+});
+
+Reservation.belongsTo(Film, {
+  foreignKey: 'film_id',
+  as: 'film'
+});
+
+// Disque <-> Reservation (One-to-Many)
+Disque.hasMany(Reservation, {
+  foreignKey: 'cd_id',
+  as: 'reservations'
+});
+
+Reservation.belongsTo(Disque, {
+  foreignKey: 'cd_id',
+  as: 'disque'
+});
+
+// Emprunt <-> Reservation (One-to-One) - apres conversion
+Reservation.belongsTo(Emprunt, {
+  foreignKey: 'emprunt_id',
+  as: 'emprunt'
+});
+
+Emprunt.hasOne(Reservation, {
+  foreignKey: 'emprunt_id',
+  as: 'reservationOrigine'
 });
 
 // ========================================
@@ -1786,6 +1864,9 @@ module.exports = {
   LeaderboardScore,
   // Limites emprunts par genre
   LimiteEmpruntGenre,
+  // Reservations d'articles
+  Reservation,
+  LimiteReservationGenre,
   // Caisse (gestion des règlements)
   Caisse,
   SessionCaisse,

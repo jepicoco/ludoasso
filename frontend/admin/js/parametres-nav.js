@@ -52,7 +52,8 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-arrow-repeat',
     pages: [
       { id: 'prolongations', label: 'Prolongations', href: 'parametres-emprunts.html', icon: 'bi-clock-history' },
-      { id: 'limites', label: 'Limites', href: 'parametres-limites-emprunts.html', icon: 'bi-speedometer2' }
+      { id: 'limites', label: 'Limites', href: 'parametres-limites-emprunts.html', icon: 'bi-speedometer2' },
+      { id: 'reservations', label: 'Reservations', href: 'parametres-reservations.html', icon: 'bi-bookmark' }
     ]
   },
   catalogue: {

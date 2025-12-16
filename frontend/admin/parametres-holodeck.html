@@ -39,6 +39,36 @@
     .module-toggle {
       transform: scale(1.4);
     }
+    .color-picker-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    .color-picker-wrapper input[type="color"] {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 2px solid #dee2e6;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+    .color-picker-wrapper input[type="color"]::-webkit-color-swatch {
+      border-radius: 4px;
+    }
+    .color-preview {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.2);
+      vertical-align: middle;
+    }
     .section-title {
       font-size: 1.1rem;
       font-weight: 600;
@@ -59,6 +89,7 @@
 
     /* Couleurs pour les autres modules */
     .module-scanner .card-header { background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724; }
+    .module-reservations .card-header { background: linear-gradient(135deg, #e8daef, #d7bde2); color: #6c3483; }
     .module-comptabilite .card-header { background: linear-gradient(135deg, #fff3cd, #ffe8a1); color: #856404; }
     .module-communications .card-header { background: linear-gradient(135deg, #cce5ff, #b8daff); color: #004085; }
     .module-outils .card-header { background: linear-gradient(135deg, #e2e3e5, #d6d8db); color: #383d41; }
@@ -355,7 +386,7 @@
     // Categories de modules
     const MODULE_CATEGORIES = {
       collections: ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'],
-      fonctionnalites: ['scanner', 'communications', 'recherche_ia', 'plans'],
+      fonctionnalites: ['scanner', 'reservations', 'communications', 'recherche_ia', 'plans'],
       parametres: ['comptabilite', 'outils']
     };
 
@@ -430,6 +461,29 @@
       renderModuleCategory('parametres', 'modules-parametres');
     }
 
+    // Utilise DEFAULT_MODULE_COLORS et DEFAULT_MODULE_TEXT_COLORS de admin-navigation.js
+    // Fonction locale pour obtenir la couleur d'un module (prend l'objet module)
+    function getModuleColorFromObj(module) {
+      // Utiliser la couleur de la BDD ou la couleur par defaut de admin-navigation.js
+      if (module.couleur && module.couleur.startsWith('#')) {
+        return module.couleur;
+      }
+      // Utiliser la fonction globale de admin-navigation.js
+      return typeof getModuleColor === 'function'
+        ? getModuleColor(module.code)
+        : (DEFAULT_MODULE_COLORS[module.code] || '#6c757d');
+    }
+
+    // Fonction locale pour obtenir la couleur de texte d'un module
+    function getModuleTextColorFromObj(module) {
+      if (module.couleur_texte && module.couleur_texte.startsWith('#')) {
+        return module.couleur_texte;
+      }
+      return typeof getModuleTextColor === 'function'
+        ? getModuleTextColor(module.code)
+        : (DEFAULT_MODULE_TEXT_COLORS[module.code] || '#ffffff');
+    }
+
     function renderModuleCategory(category, containerId) {
       const container = document.getElementById(containerId);
       const moduleCodes = MODULE_CATEGORIES[category];
@@ -440,33 +494,146 @@
         return;
       }
 
-      container.innerHTML = categoryModules.map(module => `
-        <div class="col-md-6 col-lg-3 mb-4">
-          <div class="card module-card module-${module.code} ${module.actif ? '' : 'disabled'}">
-            <div class="card-header">
-              <i class="bi bi-${module.icone || 'box'}"></i>
-              ${module.libelle}
-            </div>
-            <div class="card-body">
-              <p class="module-description">${module.description || 'Aucune description'}</p>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="badge ${module.actif ? 'bg-success' : 'bg-secondary'}">
-                  ${module.actif ? 'Actif' : 'Desactive'}
-                </span>
-                <div class="form-check form-switch">
-                  <input
-                    class="form-check-input module-toggle"
-                    type="checkbox"
-                    id="toggle-${module.code}"
-                    ${module.actif ? 'checked' : ''}
-                    onchange="toggleModule('${module.code}')"
-                  >
+      const isCollections = category === 'collections';
+
+      container.innerHTML = categoryModules.map(module => {
+        const color = getModuleColorFromObj(module);
+        const textColor = getModuleTextColorFromObj(module);
+        const headerStyle = isCollections
+          ? `background: ${color}; color: ${textColor};`
+          : '';
+
+        return `
+          <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card module-card ${module.actif ? '' : 'disabled'}" id="card-${module.code}">
+              <div class="card-header" style="${headerStyle}">
+                <i class="bi bi-${module.icone || 'box'}"></i>
+                ${module.libelle}
+              </div>
+              <div class="card-body">
+                <p class="module-description">${module.description || 'Aucune description'}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge ${module.actif ? 'bg-success' : 'bg-secondary'}">
+                    ${module.actif ? 'Actif' : 'Desactive'}
+                  </span>
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input module-toggle"
+                      type="checkbox"
+                      id="toggle-${module.code}"
+                      ${module.actif ? 'checked' : ''}
+                      onchange="toggleModule('${module.code}')"
+                    >
+                  </div>
                 </div>
+                ${isCollections ? `
+                  <div class="color-picker-wrapper">
+                    <div class="d-flex align-items-center gap-2">
+                      <label class="small text-muted mb-0" title="Couleur de fond">Fond:</label>
+                      <input type="color" id="color-${module.code}" value="${color}"
+                             onchange="updateModuleBgColor('${module.code}', this.value)">
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <label class="small text-muted mb-0" title="Couleur du texte">Texte:</label>
+                      <input type="color" id="textcolor-${module.code}" value="${textColor}"
+                             onchange="updateModuleTextColor('${module.code}', this.value)">
+                    </div>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+    }
+
+    // Mettre a jour la couleur de fond
+    async function updateModuleBgColor(code, color) {
+      try {
+        const token = getAuthToken();
+        if (!token) throw new Error('Session expiree');
+
+        const response = await fetch(`/api/parametres/modules-actifs/${code}/couleur`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ couleur: color })
+        });
+
+        if (!response.ok) throw new Error('Erreur sauvegarde');
+
+        // Mettre a jour localement
+        const module = modules.find(m => m.code === code);
+        if (module) module.couleur = color;
+
+        // Mettre a jour le header de la carte
+        const card = document.getElementById(`card-${code}`);
+        const header = card.querySelector('.card-header');
+        const textColor = getModuleTextColorFromObj(module);
+        header.style.background = color;
+        header.style.color = textColor;
+
+        // Sauvegarder les couleurs en cache pour les autres pages
+        saveModuleColorsToCache();
+
+        showToast('Couleur de fond mise a jour', 'success');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Mettre a jour la couleur de texte
+    async function updateModuleTextColor(code, textColor) {
+      try {
+        const token = getAuthToken();
+        if (!token) throw new Error('Session expiree');
+
+        const response = await fetch(`/api/parametres/modules-actifs/${code}/couleur`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ couleur_texte: textColor })
+        });
+
+        if (!response.ok) throw new Error('Erreur sauvegarde');
+
+        // Mettre a jour localement
+        const module = modules.find(m => m.code === code);
+        if (module) module.couleur_texte = textColor;
+
+        // Mettre a jour le header de la carte
+        const card = document.getElementById(`card-${code}`);
+        const header = card.querySelector('.card-header');
+        header.style.color = textColor;
+
+        // Sauvegarder les couleurs en cache pour les autres pages
+        saveModuleColorsToCache();
+
+        showToast('Couleur de texte mise a jour', 'success');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    function saveModuleColorsToCache() {
+      const colors = {};
+      const textColors = {};
+      modules.forEach(m => {
+        // Verifier si c'est un module collection avec DEFAULT_MODULE_COLORS de admin-navigation.js
+        if (typeof DEFAULT_MODULE_COLORS !== 'undefined' && DEFAULT_MODULE_COLORS[m.code]) {
+          colors[m.code] = getModuleColorFromObj(m);
+          textColors[m.code] = getModuleTextColorFromObj(m);
+        }
+      });
+      localStorage.setItem('moduleColors', JSON.stringify(colors));
+      localStorage.setItem('moduleTextColors', JSON.stringify(textColors));
+      localStorage.setItem('moduleColorsTimestamp', Date.now().toString());
     }
 
     async function toggleModule(code) {

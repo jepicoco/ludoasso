@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Reservations - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --color-ludotheque: #6f42c1;
+      --color-bibliotheque: #20c997;
+      --color-filmotheque: #fd7e14;
+      --color-discotheque: #e83e8c;
+      --textcolor-ludotheque: #ffffff;
+      --textcolor-bibliotheque: #ffffff;
+      --textcolor-filmotheque: #ffffff;
+      --textcolor-discotheque: #ffffff;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+    }
+    .status-en_attente { background-color: #0dcaf0; color: #000; }
+    .status-prete { background-color: #198754; color: #fff; }
+    .status-empruntee { background-color: #6c757d; color: #fff; }
+    .status-expiree { background-color: #dc3545; color: #fff; }
+    .status-annulee { background-color: #ffc107; color: #000; }
+    .queue-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #6c757d;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .queue-badge.first {
+      background-color: #198754;
+    }
+    .article-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      margin-right: 0.5rem;
+    }
+    .article-icon.jeu { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .article-icon.livre { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .article-icon.film { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .article-icon.disque { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+    .expiration-warning {
+      color: #dc3545;
+      font-weight: 500;
+    }
+    .expiration-soon {
+      color: #fd7e14;
+    }
+    .table td { vertical-align: middle; }
+
+    /* Bouton Marquer Prete - bien visible */
+    .btn-marquer-prete {
+      background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+      border: none;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(25, 135, 84, 0.3);
+    }
+    .btn-marquer-prete:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(25, 135, 84, 0.4);
+      color: white;
+    }
+    .btn-marquer-prete:disabled {
+      background: #dee2e6;
+      box-shadow: none;
+      transform: none;
+      cursor: not-allowed;
+    }
+    .btn-marquer-prete .position-badge {
+      background: rgba(255,255,255,0.3);
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+    }
+
+    /* Queue position arrows */
+    .queue-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .queue-controls .btn {
+      padding: 0.1rem 0.3rem;
+      font-size: 0.7rem;
+      line-height: 1;
+    }
+
+    /* Status filter buttons */
+    .status-filter-btn {
+      border: 2px solid #dee2e6;
+      background: #f8f9fa;
+      color: #495057;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 2rem;
+      transition: all 0.2s;
+    }
+    .status-filter-btn:hover {
+      border-color: #adb5bd;
+      background: #e9ecef;
+    }
+    .status-filter-btn.active {
+      border-color: #0d6efd;
+      background: #0d6efd;
+      color: white;
+    }
+    .status-filter-btn.active .badge {
+      background: white !important;
+      color: #0d6efd !important;
+    }
+    .status-filter-btn[data-statut="en_attente"].active {
+      border-color: #0dcaf0;
+      background: #0dcaf0;
+      color: #000;
+    }
+    .status-filter-btn[data-statut="en_attente"].active .badge {
+      color: #0dcaf0 !important;
+    }
+    .status-filter-btn[data-statut="prete"].active {
+      border-color: #198754;
+      background: #198754;
+      color: white;
+    }
+    .status-filter-btn[data-statut="prete"].active .badge {
+      color: #198754 !important;
+    }
+    .status-filter-btn[data-statut="expiree"].active {
+      border-color: #dc3545;
+      background: #dc3545;
+      color: white;
+    }
+    .status-filter-btn[data-statut="expiree"].active .badge {
+      color: #dc3545 !important;
+    }
+    .status-filter-btn[data-statut="empruntee"].active {
+      border-color: #6c757d;
+      background: #6c757d;
+      color: white;
+    }
+    .status-filter-btn[data-statut="empruntee"].active .badge {
+      color: #6c757d !important;
+    }
+    .status-filter-btn .badge {
+      font-size: 0.75rem;
+      min-width: 1.5rem;
+    }
+
+    /* Styles pour la modal d'ajout de reservation */
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .step-indicator .step {
+      display: flex;
+      align-items: center;
+      color: #6c757d;
+    }
+    .step-indicator .step.active {
+      color: #0d6efd;
+      font-weight: 600;
+    }
+    .step-indicator .step.completed {
+      color: #198754;
+    }
+    .step-indicator .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .step-indicator .step.completed .step-number {
+      background-color: #198754;
+      border-color: #198754;
+      color: white;
+    }
+    .step-indicator .step-separator {
+      width: 40px;
+      height: 2px;
+      background-color: #dee2e6;
+      margin: 0 0.75rem;
+    }
+    .step-indicator .step.completed + .step-separator {
+      background-color: #198754;
+    }
+    .scan-section {
+      text-align: center;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .scan-section i.bi-upc-scan {
+      font-size: 2.5rem;
+      color: #6c757d;
+    }
+    .search-input-group {
+      position: relative;
+    }
+    .search-results-dropdown {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-top: none;
+      border-radius: 0 0 0.375rem 0.375rem;
+      background: white;
+    }
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background-color 0.15s;
+    }
+    .search-result-item:hover {
+      background-color: #f8f9fa;
+    }
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+    .search-result-item .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      margin-right: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .search-result-item .info {
+      flex: 1;
+    }
+    .search-result-item .info .name {
+      font-weight: 500;
+      margin-bottom: 0;
+    }
+    .search-result-item .info .details {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-bottom: 0;
+    }
+    .selected-item-card {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-radius: 0.5rem;
+    }
+    .selected-item-card .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      margin-right: 0.75rem;
+    }
+    .selected-item-card .info {
+      flex: 1;
+    }
+    .selected-item-card .btn-clear {
+      color: #dc3545;
+    }
+    #cameraPreview {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .camera-controls {
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-bookmark me-2"></i>Gestion des Reservations</h2>
+          <div>
+            <button class="btn btn-primary me-2" onclick="openAddReservationModal()">
+              <i class="bi bi-plus-lg me-1"></i>Ajouter une reservation
+            </button>
+            <a href="parametres-reservations.html" class="btn btn-outline-secondary">
+              <i class="bi bi-gear me-1"></i>Parametres
+            </a>
+          </div>
+        </div>
+
+        <!-- Filtres par statut (badges cliquables) -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <!-- Ligne 1: Filtres statut -->
+            <div class="d-flex flex-wrap gap-2 mb-3" id="statusFilters">
+              <button type="button" class="btn status-filter-btn active" data-statut="" onclick="setStatusFilter('')">
+                <i class="bi bi-grid-3x3-gap me-1"></i>Tous
+                <span class="badge bg-dark ms-1" id="countAll">0</span>
+              </button>
+              <button type="button" class="btn status-filter-btn" data-statut="en_attente" onclick="setStatusFilter('en_attente')">
+                <i class="bi bi-hourglass-split me-1"></i>En attente
+                <span class="badge bg-white text-info ms-1" id="countEnAttente">0</span>
+              </button>
+              <button type="button" class="btn status-filter-btn" data-statut="prete" onclick="setStatusFilter('prete')">
+                <i class="bi bi-check-circle me-1"></i>Pretes
+                <span class="badge bg-white text-success ms-1" id="countPrete">0</span>
+              </button>
+              <button type="button" class="btn status-filter-btn" data-statut="expiree" onclick="setStatusFilter('expiree')">
+                <i class="bi bi-exclamation-triangle me-1"></i>Expirees
+                <span class="badge bg-white text-danger ms-1" id="countExpiree">0</span>
+              </button>
+              <button type="button" class="btn status-filter-btn" data-statut="empruntee" onclick="setStatusFilter('empruntee')">
+                <i class="bi bi-box-arrow-right me-1"></i>Empruntees
+                <span class="badge bg-white text-secondary ms-1" id="countEmpruntee">0</span>
+              </button>
+            </div>
+            <!-- Ligne 2: Autres filtres -->
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <select id="filterModule" class="form-select form-select-sm" style="width: auto;" onchange="loadReservations()">
+                <option value="">Tous modules</option>
+                <option value="ludotheque">Ludotheque</option>
+                <option value="bibliotheque">Bibliotheque</option>
+                <option value="filmotheque">Filmotheque</option>
+                <option value="discotheque">Discotheque</option>
+              </select>
+              <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" id="filterSearch" class="form-control" placeholder="Rechercher..."
+                       onkeyup="debounceSearch()">
+              </div>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadReservations()" title="Rafraichir">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+              <span class="text-muted ms-auto" id="resultCount"></span>
+            </div>
+          </div>
+        </div>
+        <input type="hidden" id="filterStatut" value="">
+
+        <!-- Liste des reservations -->
+        <div class="card">
+          <div class="card-body">
+            <div id="reservationsList">
+              <div class="text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des reservations...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+  <!-- Modal ajout reservation -->
+  <div class="modal fade" id="addReservationModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bookmark-plus me-2"></i>Nouvelle reservation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" onclick="closeAddReservationModal()"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Indicateur d'etapes -->
+          <div class="step-indicator">
+            <div class="step active" id="step1Indicator">
+              <span class="step-number">1</span>
+              <span>Usager</span>
+            </div>
+            <div class="step-separator"></div>
+            <div class="step" id="step2Indicator">
+              <span class="step-number">2</span>
+              <span>Article</span>
+            </div>
+          </div>
+
+          <!-- Etape 1: Selection usager -->
+          <div id="step1Content">
+            <!-- Zone scan -->
+            <div class="scan-section">
+              <i class="bi bi-upc-scan d-block mb-2"></i>
+              <p class="mb-2">Scannez le code-barre de l'usager avec une douchette</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="openCameraUsager()">
+                  <i class="bi bi-camera me-1"></i>Utiliser la camera
+                </button>
+              </div>
+              <div id="cameraUsagerContainer" class="mt-3" style="display: none;">
+                <div id="cameraUsagerPreview"></div>
+                <div class="camera-controls">
+                  <button class="btn btn-sm btn-secondary" onclick="closeCameraUsager()">
+                    <i class="bi bi-x-lg me-1"></i>Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ou recherche manuelle -->
+            <div class="text-center text-muted mb-3">
+              <span class="px-2 bg-white">ou recherche manuelle</span>
+            </div>
+
+            <!-- Recherche usager -->
+            <div class="search-input-group">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchUsagerInput"
+                       placeholder="Code-barre, nom ou prenom (min. 3 caracteres)"
+                       oninput="debounceSearchUsager()">
+              </div>
+              <div id="searchUsagerResults" class="search-results-dropdown" style="display: none;"></div>
+            </div>
+
+            <!-- Usager selectionne -->
+            <div id="selectedUsagerCard" class="selected-item-card mt-3" style="display: none;">
+              <div class="avatar" id="selectedUsagerAvatar">--</div>
+              <div class="info">
+                <p class="name" id="selectedUsagerName">-</p>
+                <p class="details" id="selectedUsagerDetails">-</p>
+              </div>
+              <button type="button" class="btn btn-link btn-clear" onclick="clearSelectedUsager()">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Etape 2: Selection article -->
+          <div id="step2Content" style="display: none;">
+            <!-- Recap usager -->
+            <div class="alert alert-info mb-3">
+              <i class="bi bi-person-check me-2"></i>
+              <span id="step2UsagerInfo">Usager selectionne</span>
+              <button class="btn btn-sm btn-link float-end p-0" onclick="goToStep1()">
+                <i class="bi bi-pencil"></i> Modifier
+              </button>
+            </div>
+
+            <!-- Zone scan article -->
+            <div class="scan-section">
+              <i class="bi bi-upc-scan d-block mb-2"></i>
+              <p class="mb-2">Scannez le code-barre de l'article a reserver</p>
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="openCameraArticle()">
+                  <i class="bi bi-camera me-1"></i>Utiliser la camera
+                </button>
+              </div>
+              <div id="cameraArticleContainer" class="mt-3" style="display: none;">
+                <div id="cameraArticlePreview"></div>
+                <div class="camera-controls">
+                  <button class="btn btn-sm btn-secondary" onclick="closeCameraArticle()">
+                    <i class="bi bi-x-lg me-1"></i>Fermer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recherche article -->
+            <div class="text-center text-muted mb-3">
+              <span class="px-2 bg-white">ou recherche manuelle</span>
+            </div>
+
+            <div class="search-input-group">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" id="searchArticleInput"
+                       placeholder="Code-barre ou titre (min. 3 caracteres)"
+                       oninput="debounceSearchArticle()">
+              </div>
+              <div id="searchArticleResults" class="search-results-dropdown" style="display: none;"></div>
+            </div>
+
+            <!-- Article selectionne -->
+            <div id="selectedArticleCard" class="selected-item-card mt-3" style="display: none;">
+              <div class="avatar" id="selectedArticleIcon" style="border-radius: 8px;">
+                <i class="bi bi-box"></i>
+              </div>
+              <div class="info">
+                <p class="name" id="selectedArticleName">-</p>
+                <p class="details" id="selectedArticleDetails">-</p>
+              </div>
+              <button type="button" class="btn btn-link btn-clear" onclick="clearSelectedArticle()">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeAddReservationModal()">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btnNextStep" onclick="goToStep2()" style="display: none;">
+            Suivant <i class="bi bi-arrow-right ms-1"></i>
+          </button>
+          <button type="button" class="btn btn-success" id="btnConfirmReservation" onclick="confirmReservation()" style="display: none;">
+            <i class="bi bi-check-lg me-1"></i>Confirmer la reservation
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    const API_URL = '/api';
+    let reservations = [];
+    let searchTimeout = null;
+
+    // Appliquer les couleurs des modules aux variables CSS
+    function applyModuleColors() {
+      const root = document.documentElement;
+
+      // Appliquer les couleurs de fond
+      if (typeof getModuleColors === 'function') {
+        const colors = getModuleColors();
+        if (colors.ludotheque) root.style.setProperty('--color-ludotheque', colors.ludotheque);
+        if (colors.bibliotheque) root.style.setProperty('--color-bibliotheque', colors.bibliotheque);
+        if (colors.filmotheque) root.style.setProperty('--color-filmotheque', colors.filmotheque);
+        if (colors.discotheque) root.style.setProperty('--color-discotheque', colors.discotheque);
+      }
+
+      // Appliquer les couleurs de texte
+      if (typeof getModuleTextColors === 'function') {
+        const textColors = getModuleTextColors();
+        if (textColors.ludotheque) root.style.setProperty('--textcolor-ludotheque', textColors.ludotheque);
+        if (textColors.bibliotheque) root.style.setProperty('--textcolor-bibliotheque', textColors.bibliotheque);
+        if (textColors.filmotheque) root.style.setProperty('--textcolor-filmotheque', textColors.filmotheque);
+        if (textColors.discotheque) root.style.setProperty('--textcolor-discotheque', textColors.discotheque);
+      }
+    }
+
+    applyModuleColors();
+    initTemplate('reservations');
+
+    // Verifier si le module est actif au chargement
+    // Gestion des droits par modules
+    let userModules = [];
+    let hasAllModules = false;
+
+    // Fonction pour obtenir les couleurs dynamiques des modules (fond)
+    function getModuleConfigColors() {
+      if (typeof getModuleColors === 'function') {
+        const colors = getModuleColors();
+        return {
+          ludotheque: colors.ludotheque || '#6f42c1',
+          bibliotheque: colors.bibliotheque || '#20c997',
+          filmotheque: colors.filmotheque || '#fd7e14',
+          discotheque: colors.discotheque || '#e83e8c'
+        };
+      }
+      return {
+        ludotheque: '#6f42c1',
+        bibliotheque: '#20c997',
+        filmotheque: '#fd7e14',
+        discotheque: '#e83e8c'
+      };
+    }
+
+    // Fonction pour obtenir les couleurs de texte dynamiques des modules
+    function getModuleConfigTextColors() {
+      if (typeof getModuleTextColors === 'function') {
+        const textColors = getModuleTextColors();
+        return {
+          ludotheque: textColors.ludotheque || '#ffffff',
+          bibliotheque: textColors.bibliotheque || '#ffffff',
+          filmotheque: textColors.filmotheque || '#ffffff',
+          discotheque: textColors.discotheque || '#ffffff'
+        };
+      }
+      return {
+        ludotheque: '#ffffff',
+        bibliotheque: '#ffffff',
+        filmotheque: '#ffffff',
+        discotheque: '#ffffff'
+      };
+    }
+
+    function getModuleConfig() {
+      const colors = getModuleConfigColors();
+      return {
+        ludotheque: { label: 'Ludotheque', type: 'jeu', icon: 'bi-dice-5', color: colors.ludotheque },
+        bibliotheque: { label: 'Bibliotheque', type: 'livre', icon: 'bi-book', color: colors.bibliotheque },
+        filmotheque: { label: 'Filmotheque', type: 'film', icon: 'bi-film', color: colors.filmotheque },
+        discotheque: { label: 'Discotheque', type: 'disque', icon: 'bi-disc', color: colors.discotheque }
+      };
+    }
+
+    // Pour compatibilite avec le code existant
+    const MODULE_CONFIG = getModuleConfig();
+
+    function initModuleAccess() {
+      const stored = localStorage.getItem('userModulesAutorises');
+      const user = getCurrentUser();
+
+      // Admin ou pas de restriction = acces a tout
+      const isAdmin = user && (user.role === 'administrateur' || user.role === 'gestionnaire');
+      let allowedModules = [];
+
+      if (stored) {
+        try {
+          allowedModules = JSON.parse(stored);
+        } catch (e) {
+          allowedModules = [];
+        }
+      }
+
+      if (isAdmin || !stored || allowedModules.length === 0) {
+        hasAllModules = true;
+        userModules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
+      } else {
+        hasAllModules = false;
+        userModules = allowedModules;
+      }
+
+      // Filtrer le select des modules
+      const moduleSelect = document.getElementById('filterModule');
+      const options = moduleSelect.querySelectorAll('option');
+      options.forEach(opt => {
+        if (opt.value && !userModules.includes(opt.value)) {
+          opt.remove();
+        }
+      });
+
+      // Si un seul module, le selectionner par defaut
+      if (userModules.length === 1) {
+        moduleSelect.value = userModules[0];
+      }
+    }
+
+    function hasModuleAccess(module) {
+      return hasAllModules || userModules.includes(module);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadActiveModules();
+      if (!isModuleActive('reservations')) {
+        document.querySelector('.col-md-10').innerHTML = `
+          <div class="alert alert-warning mt-4">
+            <h5><i class="bi bi-exclamation-triangle me-2"></i>Module desactive</h5>
+            <p class="mb-0">
+              Le module <strong>Reservations</strong> est desactive dans le Holodeck.
+              <br>Pour activer les reservations, rendez-vous dans
+              <a href="parametres-holodeck.html" class="alert-link">Parametres > Holodeck</a>
+              et activez le module "Reservations".
+            </p>
+          </div>
+        `;
+        return;
+      }
+      initModuleAccess();
+      loadReservations();
+    });
+
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      };
+    }
+
+    // Charger les reservations
+    async function loadReservations() {
+      const container = document.getElementById('reservationsList');
+      container.innerHTML = `
+        <div class="text-center p-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="mt-2">Chargement...</p>
+        </div>
+      `;
+
+      try {
+        const params = new URLSearchParams();
+        const statut = document.getElementById('filterStatut').value;
+        const module = document.getElementById('filterModule').value;
+        const search = document.getElementById('filterSearch').value;
+
+        if (statut) params.append('statut', statut);
+        if (module) params.append('module', module);
+        if (search) params.append('search', search);
+
+        const response = await fetch(`${API_URL}/reservations?${params.toString()}`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        const data = await response.json();
+        reservations = data.reservations || [];
+
+        updateStats(data.stats);
+        renderReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>Erreur de chargement
+          </div>
+        `;
+      }
+    }
+
+    // Mise a jour des stats (badges)
+    function updateStats(stats) {
+      if (!stats) return;
+
+      // Mettre a jour les compteurs dans les badges (sans les annulees)
+      const total = (stats.en_attente || 0) + (stats.prete || 0) + (stats.expiree || 0) + (stats.empruntee || 0);
+      document.getElementById('countAll').textContent = total;
+      document.getElementById('countEnAttente').textContent = stats.en_attente || 0;
+      document.getElementById('countPrete').textContent = stats.prete || 0;
+      document.getElementById('countExpiree').textContent = stats.expiree || 0;
+      document.getElementById('countEmpruntee').textContent = stats.empruntee || 0;
+
+      document.getElementById('resultCount').textContent = `${reservations.length} reservation(s)`;
+    }
+
+    // Changer le filtre de statut
+    function setStatusFilter(statut) {
+      // Mettre a jour le champ cache
+      document.getElementById('filterStatut').value = statut;
+
+      // Mettre a jour l'apparence des boutons
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.statut === statut) {
+          btn.classList.add('active');
+        }
+      });
+
+      // Recharger les reservations
+      loadReservations();
+    }
+
+    // Rendu de la liste
+    function renderReservations() {
+      const container = document.getElementById('reservationsList');
+
+      if (reservations.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-muted p-5">
+            <i class="bi bi-inbox display-4"></i>
+            <p class="mt-2">Aucune reservation trouvee</p>
+          </div>
+        `;
+        return;
+      }
+
+      const moduleIcons = {
+        jeu: { icon: 'bi-dice-5', class: 'jeu' },
+        livre: { icon: 'bi-book', class: 'livre' },
+        film: { icon: 'bi-film', class: 'film' },
+        disque: { icon: 'bi-disc', class: 'disque' }
+      };
+
+      container.innerHTML = `
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width: 60px">Position</th>
+              <th>Article</th>
+              <th>Usager</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th>Expiration</th>
+              <th style="width: 180px" class="text-center bg-success bg-opacity-10">Action rapide</th>
+              <th style="width: 160px">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reservations.map(r => {
+              const itemType = r.jeu_id ? 'jeu' : r.livre_id ? 'livre' : r.film_id ? 'film' : 'disque';
+              const item = r.jeu || r.livre || r.film || r.disque || {};
+              const mod = moduleIcons[itemType] || { icon: 'bi-box', class: 'jeu' };
+              const articleStatut = item.statut || 'inconnu';
+
+              let expirationHtml = '-';
+              if (r.date_expiration) {
+                const exp = new Date(r.date_expiration);
+                const now = new Date();
+                const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                  expirationHtml = `<span class="expiration-warning">Expire depuis ${Math.abs(diffDays)}j</span>`;
+                } else if (diffDays <= 3) {
+                  expirationHtml = `<span class="expiration-soon">${exp.toLocaleDateString('fr-FR')} (${diffDays}j)</span>`;
+                } else {
+                  expirationHtml = `${exp.toLocaleDateString('fr-FR')} (${diffDays}j)`;
+                }
+              }
+
+              // Determiner si on peut marquer comme prete
+              const canMarkReady = r.statut === 'en_attente' && r.position_queue === 1 && articleStatut !== 'emprunte';
+              const isWaitingNotFirst = r.statut === 'en_attente' && r.position_queue > 1;
+
+              // Compter le nombre de reservations en attente pour cet article (pour les fleches)
+              const maxPosition = reservations.filter(res => {
+                const resItemType = res.jeu_id ? 'jeu' : res.livre_id ? 'livre' : res.film_id ? 'film' : 'disque';
+                const resItemId = res.jeu_id || res.livre_id || res.film_id || res.disque_id;
+                const currentItemId = r.jeu_id || r.livre_id || r.film_id || r.disque_id;
+                return resItemType === itemType && resItemId === currentItemId && res.statut === 'en_attente';
+              }).length;
+
+              return `
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-1">
+                      <span class="queue-badge ${r.position_queue === 1 ? 'first' : ''}"
+                            title="Position dans la file">
+                        ${r.position_queue || '-'}
+                      </span>
+                      ${r.statut === 'en_attente' ? `
+                        <div class="queue-controls">
+                          <button class="btn btn-outline-secondary"
+                                  onclick="moveInQueue(${r.id}, 'up')"
+                                  title="Monter dans la file"
+                                  ${r.position_queue <= 1 ? 'disabled' : ''}>
+                            <i class="bi bi-chevron-up"></i>
+                          </button>
+                          <button class="btn btn-outline-secondary"
+                                  onclick="moveInQueue(${r.id}, 'down')"
+                                  title="Descendre dans la file"
+                                  ${r.position_queue >= maxPosition ? 'disabled' : ''}>
+                            <i class="bi bi-chevron-down"></i>
+                          </button>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <span class="article-icon ${mod.class}">
+                        <i class="bi ${mod.icon}"></i>
+                      </span>
+                      <div>
+                        <strong>${item.titre || item.nom || 'Article inconnu'}</strong>
+                        <br><small class="text-muted">${articleStatut}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    ${r.utilisateur ? `${r.utilisateur.prenom} ${r.utilisateur.nom}` : 'Usager inconnu'}
+                    ${r.utilisateur?.code_barre ? `<br><small class="text-muted">${r.utilisateur.code_barre}</small>` : ''}
+                  </td>
+                  <td><span class="badge status-badge status-${r.statut}">${formatStatut(r.statut)}</span></td>
+                  <td><small>${new Date(r.date_creation).toLocaleDateString('fr-FR')}</small></td>
+                  <td>${expirationHtml}</td>
+                  <td class="text-center bg-success bg-opacity-10">
+                    ${canMarkReady ? `
+                      <button class="btn-marquer-prete" onclick="marquerPrete(${r.id})">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Marquer prete
+                      </button>
+                    ` : r.statut === 'prete' ? `
+                      <button class="btn btn-success" onclick="convertirEnEmprunt(${r.id})">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Valider emprunt
+                      </button>
+                    ` : r.statut === 'en_attente' && articleStatut === 'emprunte' ? `
+                      <span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Article emprunte</span>
+                    ` : isWaitingNotFirst ? `
+                      <span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Position ${r.position_queue}</span>
+                    ` : `
+                      <span class="text-muted">-</span>
+                    `}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      ${r.statut === 'prete' ? `
+                        <button class="btn btn-outline-info" onclick="notifierUsager(${r.id})" title="Renvoyer notification">
+                          <i class="bi bi-bell"></i>
+                        </button>
+                      ` : ''}
+                      ${['prete', 'expiree'].includes(r.statut) ? `
+                        <button class="btn btn-outline-primary" onclick="openProlongerModal(${r.id})" title="Prolonger">
+                          <i class="bi bi-clock-history"></i>
+                        </button>
+                      ` : ''}
+                      <button class="btn btn-outline-secondary" onclick="voirFileAttente(${r.id})" title="Voir la file d'attente">
+                        <i class="bi bi-people"></i>
+                      </button>
+                      ${['en_attente', 'prete', 'expiree'].includes(r.statut) ? `
+                        <button class="btn btn-outline-danger" onclick="annulerReservation(${r.id})" title="Annuler">
+                          <i class="bi bi-x-lg"></i>
+                        </button>
+                      ` : ''}
+                      <button class="btn btn-outline-secondary" onclick="showDetails(${r.id})" title="Details">
+                        <i class="bi bi-info-circle"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Formater le statut
+    function formatStatut(statut) {
+      const labels = {
+        en_attente: 'En attente',
+        prete: 'Prete',
+        empruntee: 'Empruntee',
+        expiree: 'Expiree',
+        annulee: 'Annulee'
+      };
+      return labels[statut] || statut;
+    }
+
+    // Convertir en emprunt
+    async function convertirEnEmprunt(id) {
+      const reservation = reservations.find(r => r.id === id);
+      const item = reservation?.jeu || reservation?.livre || reservation?.film || reservation?.disque || {};
+      const userName = reservation?.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'l\'usager';
+
+      const result = await Swal.fire({
+        title: 'Valider l\'emprunt ?',
+        html: `
+          <div class="text-start">
+            <p><strong>${item.titre || 'Article'}</strong></p>
+            <p class="text-muted mb-0">Sera emprunte par <strong>${userName}</strong></p>
+          </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-check-lg me-1"></i>Valider l\'emprunt',
+        cancelButtonText: 'Annuler'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}/convertir`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        showToast('Reservation convertie en emprunt', 'success');
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Annuler reservation
+    async function annulerReservation(id) {
+      const reservation = reservations.find(r => r.id === id);
+      const item = reservation?.jeu || reservation?.livre || reservation?.film || reservation?.disque || {};
+      const userName = reservation?.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'l\'usager';
+
+      const result = await Swal.fire({
+        title: 'Annuler la reservation ?',
+        html: `
+          <div class="text-start">
+            <p><strong>${item.titre || 'Article'}</strong></p>
+            <p class="text-muted mb-0">Reserve par <strong>${userName}</strong></p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-x-lg me-1"></i>Annuler la reservation',
+        cancelButtonText: 'Retour'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        showToast('Reservation annulee', 'success');
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Modal prolonger avec SweetAlert2
+    async function openProlongerModal(id) {
+      const reservation = reservations.find(r => r.id === id);
+      const item = reservation?.jeu || reservation?.livre || reservation?.film || reservation?.disque || {};
+      const userName = reservation?.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'l\'usager';
+      const currentExpiration = reservation?.date_expiration
+        ? new Date(reservation.date_expiration).toLocaleDateString('fr-FR')
+        : 'Non definie';
+
+      const result = await Swal.fire({
+        title: 'Prolonger la reservation',
+        html: `
+          <div class="text-start">
+            <div class="mb-3">
+              <p class="mb-1"><strong>${item.titre || 'Article'}</strong></p>
+              <p class="text-muted mb-0">Reserve par ${userName}</p>
+            </div>
+            <div class="alert alert-secondary py-2 mb-3">
+              <small><i class="bi bi-calendar me-1"></i>Expiration actuelle : <strong>${currentExpiration}</strong></small>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Nombre de jours a ajouter</label>
+              <div class="input-group">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('swalProlongerJours').stepDown()">
+                  <i class="bi bi-dash"></i>
+                </button>
+                <input type="number" id="swalProlongerJours" class="form-control text-center" value="15" min="1" max="60">
+                <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('swalProlongerJours').stepUp()">
+                  <i class="bi bi-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="d-flex gap-2 mt-2">
+              <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="document.getElementById('swalProlongerJours').value=7">7j</button>
+              <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="document.getElementById('swalProlongerJours').value=15">15j</button>
+              <button type="button" class="btn btn-sm btn-outline-primary flex-fill" onclick="document.getElementById('swalProlongerJours').value=30">30j</button>
+            </div>
+          </div>
+        `,
+        icon: null,
+        showCancelButton: true,
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-clock-history me-1"></i>Prolonger',
+        cancelButtonText: 'Annuler',
+        preConfirm: () => {
+          const jours = parseInt(document.getElementById('swalProlongerJours').value);
+          if (!jours || jours < 1) {
+            Swal.showValidationMessage('Veuillez entrer un nombre de jours valide');
+            return false;
+          }
+          return jours;
+        }
+      });
+
+      if (!result.isConfirmed) return;
+
+      const jours = result.value;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}/prolonger`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ jours })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        const data = await response.json();
+        const newExpiration = data.reservation?.date_expiration
+          ? new Date(data.reservation.date_expiration).toLocaleDateString('fr-FR')
+          : '';
+
+        Swal.fire({
+          title: 'Reservation prolongee !',
+          html: `<p>Nouvelle date d'expiration : <strong>${newExpiration}</strong></p>`,
+          icon: 'success',
+          timer: 2500,
+          showConfirmButton: false
+        });
+
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Afficher details
+    async function showDetails(id) {
+      const reservation = reservations.find(r => r.id === id);
+      if (!reservation) return;
+
+      const itemType = reservation.jeu_id ? 'jeu' : reservation.livre_id ? 'livre' : reservation.film_id ? 'film' : 'disque';
+      const item = reservation.jeu || reservation.livre || reservation.film || reservation.disque || {};
+      const userName = reservation.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'Inconnu';
+
+      const modColors = getModuleConfigColors();
+      const moduleIcons = {
+        jeu: { icon: 'bi-dice-5', color: modColors.ludotheque, label: 'Jeu' },
+        livre: { icon: 'bi-book', color: modColors.bibliotheque, label: 'Livre' },
+        film: { icon: 'bi-film', color: modColors.filmotheque, label: 'Film' },
+        disque: { icon: 'bi-disc', color: modColors.discotheque, label: 'Disque' }
+      };
+      const mod = moduleIcons[itemType] || { icon: 'bi-box', color: '#6c757d', label: 'Article' };
+
+      const statusColors = {
+        en_attente: { bg: '#0dcaf0', text: '#000' },
+        prete: { bg: '#198754', text: '#fff' },
+        empruntee: { bg: '#6c757d', text: '#fff' },
+        expiree: { bg: '#dc3545', text: '#fff' },
+        annulee: { bg: '#ffc107', text: '#000' }
+      };
+      const statusStyle = statusColors[reservation.statut] || { bg: '#6c757d', text: '#fff' };
+
+      Swal.fire({
+        title: null,
+        html: `
+          <div class="text-start">
+            <!-- Header avec article -->
+            <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+              <div class="rounded-3 p-3 me-3" style="background: ${mod.color}20;">
+                <i class="bi ${mod.icon}" style="font-size: 2rem; color: ${mod.color};"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h5 class="mb-1">${item.titre || item.nom || 'Article'}</h5>
+                <span class="badge" style="background: ${mod.color};">${mod.label}</span>
+                <span class="badge" style="background: ${statusStyle.bg}; color: ${statusStyle.text};">${formatStatut(reservation.statut)}</span>
+              </div>
+            </div>
+
+            <!-- Infos usager -->
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                <i class="bi bi-person-fill text-primary" style="font-size: 1.5rem;"></i>
+              </div>
+              <div>
+                <strong>${userName}</strong>
+                ${reservation.utilisateur?.email ? `<br><small class="text-muted">${reservation.utilisateur.email}</small>` : ''}
+                ${reservation.utilisateur?.code_barre ? `<br><small class="text-muted"><i class="bi bi-upc me-1"></i>${reservation.utilisateur.code_barre}</small>` : ''}
+              </div>
+            </div>
+
+            <!-- Dates et infos -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div class="bg-light rounded p-2">
+                  <small class="text-muted d-block">Position</small>
+                  <strong class="fs-5">#${reservation.position_queue || '-'}</strong>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="bg-light rounded p-2">
+                  <small class="text-muted d-block">Prolongations</small>
+                  <strong class="fs-5">${reservation.prolongations || 0}</strong>
+                </div>
+              </div>
+            </div>
+
+            <table class="table table-sm mb-0">
+              <tr>
+                <td class="text-muted"><i class="bi bi-calendar-plus me-2"></i>Creee le</td>
+                <td class="text-end">${new Date(reservation.date_creation).toLocaleString('fr-FR')}</td>
+              </tr>
+              ${reservation.date_notification ? `
+              <tr>
+                <td class="text-muted"><i class="bi bi-bell me-2"></i>Notifie le</td>
+                <td class="text-end">${new Date(reservation.date_notification).toLocaleString('fr-FR')}</td>
+              </tr>
+              ` : ''}
+              ${reservation.date_expiration ? `
+              <tr>
+                <td class="text-muted"><i class="bi bi-calendar-x me-2"></i>Expire le</td>
+                <td class="text-end">${new Date(reservation.date_expiration).toLocaleString('fr-FR')}</td>
+              </tr>
+              ` : ''}
+            </table>
+
+            ${reservation.commentaire ? `
+              <div class="alert alert-secondary mt-3 mb-0">
+                <small><i class="bi bi-chat-left-text me-2"></i>${reservation.commentaire}</small>
+              </div>
+            ` : ''}
+          </div>
+        `,
+        width: 500,
+        showCloseButton: true,
+        showConfirmButton: false,
+        customClass: {
+          popup: 'text-start'
+        }
+      });
+    }
+
+    // Marquer une reservation comme prete
+    async function marquerPrete(id) {
+      const reservation = reservations.find(r => r.id === id);
+      const item = reservation?.jeu || reservation?.livre || reservation?.film || reservation?.disque || {};
+      const userName = reservation?.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'l\'usager';
+
+      const result = await Swal.fire({
+        title: 'Marquer comme prete ?',
+        html: `
+          <div class="text-start">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+              </div>
+              <div>
+                <h5 class="mb-1">${item.titre || 'Article'}</h5>
+                <p class="text-muted mb-0">Pour <strong>${userName}</strong></p>
+              </div>
+            </div>
+            <div class="alert alert-info mb-0">
+              <i class="bi bi-bell me-2"></i>
+              L'usager recevra une notification pour venir retirer l'article.
+            </div>
+          </div>
+        `,
+        icon: null,
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Marquer prete',
+        cancelButtonText: 'Annuler'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}/marquer-prete`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        Swal.fire({
+          title: 'Article pret !',
+          html: `<p>L'usager <strong>${userName}</strong> a ete notifie.</p>`,
+          icon: 'success',
+          timer: 2500,
+          showConfirmButton: false
+        });
+
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Notifier l'usager (rappel)
+    async function notifierUsager(id) {
+      const reservation = reservations.find(r => r.id === id);
+      const item = reservation?.jeu || reservation?.livre || reservation?.film || reservation?.disque || {};
+      const userName = reservation?.utilisateur ? `${reservation.utilisateur.prenom} ${reservation.utilisateur.nom}` : 'l\'usager';
+      const userEmail = reservation?.utilisateur?.email || '';
+
+      const result = await Swal.fire({
+        title: 'Envoyer un rappel ?',
+        html: `
+          <div class="text-start">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                <i class="bi bi-bell-fill text-info" style="font-size: 2rem;"></i>
+              </div>
+              <div>
+                <h5 class="mb-1">${userName}</h5>
+                <p class="text-muted mb-0">${userEmail}</p>
+              </div>
+            </div>
+            <p class="mb-2"><strong>Article :</strong> ${item.titre || 'Article'}</p>
+            <div class="alert alert-warning mb-0">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Un rappel sera envoye pour recuperer l'article.
+            </div>
+          </div>
+        `,
+        icon: null,
+        showCancelButton: true,
+        confirmButtonColor: '#0dcaf0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-bell me-1"></i>Envoyer le rappel',
+        cancelButtonText: 'Annuler'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}/notifier`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        Swal.fire({
+          title: 'Rappel envoye !',
+          html: `<p>Une notification a ete envoyee a <strong>${userName}</strong>.</p>`,
+          icon: 'success',
+          timer: 2500,
+          showConfirmButton: false
+        });
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Deplacer dans la file d'attente
+    async function moveInQueue(id, direction) {
+      try {
+        const response = await fetch(`${API_URL}/reservations/${id}/deplacer`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ direction })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur');
+        }
+
+        const result = await response.json();
+        showToast(`Position mise a jour: ${result.newPosition}`, 'success');
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    // Voir la file d'attente pour un article
+    async function voirFileAttente(reservationId) {
+      const reservation = reservations.find(r => r.id === reservationId);
+      if (!reservation) return;
+
+      const itemType = reservation.jeu_id ? 'jeu' : reservation.livre_id ? 'livre' : reservation.film_id ? 'film' : 'disque';
+      const itemId = reservation.jeu_id || reservation.livre_id || reservation.film_id || reservation.disque_id;
+      const item = reservation.jeu || reservation.livre || reservation.film || reservation.disque || {};
+
+      const modColors = getModuleConfigColors();
+      const moduleIcons = {
+        jeu: { icon: 'bi-dice-5', color: modColors.ludotheque, label: 'Jeu' },
+        livre: { icon: 'bi-book', color: modColors.bibliotheque, label: 'Livre' },
+        film: { icon: 'bi-film', color: modColors.filmotheque, label: 'Film' },
+        disque: { icon: 'bi-disc', color: modColors.discotheque, label: 'Disque' }
+      };
+      const mod = moduleIcons[itemType] || { icon: 'bi-box', color: '#6c757d', label: 'Article' };
+
+      // Afficher loading
+      Swal.fire({
+        title: null,
+        html: `
+          <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 mb-0">Chargement de la file d'attente...</p>
+          </div>
+        `,
+        showConfirmButton: false,
+        allowOutsideClick: false
+      });
+
+      try {
+        const response = await fetch(`${API_URL}/reservations/article/${itemType}/${itemId}`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        const data = await response.json();
+        const queueReservations = data.reservations || [];
+
+        let queueHtml = '';
+        if (queueReservations.length === 0) {
+          queueHtml = `
+            <div class="text-center text-muted py-4">
+              <i class="bi bi-inbox display-4"></i>
+              <p class="mt-2">Aucune reservation pour cet article</p>
+            </div>
+          `;
+        } else {
+          queueHtml = `
+            <div class="list-group">
+              ${queueReservations.map((r, index) => {
+                const isFirst = r.position_queue === 1;
+                const statusBg = r.statut === 'prete' ? '#198754' : '#6c757d';
+                const statusLabel = r.statut === 'prete' ? 'Pret a retirer' : 'En attente';
+                const userName = r.utilisateur ? r.utilisateur.prenom + ' ' + r.utilisateur.nom : 'Inconnu';
+
+                return `
+                  <div class="list-group-item ${isFirst ? 'border-success border-2' : ''}">
+                    <div class="d-flex align-items-center">
+                      <div class="rounded-circle d-flex align-items-center justify-content-center me-3"
+                           style="width: 40px; height: 40px; background: ${isFirst ? '#198754' : '#6c757d'}; color: white; font-weight: bold;">
+                        ${r.position_queue}
+                      </div>
+                      <div class="flex-grow-1">
+                        <strong>${userName}</strong>
+                        <br><small class="text-muted">Reserve le ${new Date(r.date_creation).toLocaleDateString('fr-FR')}</small>
+                      </div>
+                      <span class="badge" style="background: ${statusBg};">${statusLabel}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <div class="text-center text-muted mt-3">
+              <small>${queueReservations.length} personne(s) dans la file</small>
+            </div>
+          `;
+        }
+
+        Swal.fire({
+          title: null,
+          html: `
+            <div class="text-start">
+              <!-- Header -->
+              <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                <div class="rounded-3 p-3 me-3" style="background: ${mod.color}20;">
+                  <i class="bi ${mod.icon}" style="font-size: 2rem; color: ${mod.color};"></i>
+                </div>
+                <div>
+                  <h5 class="mb-1">${item.titre || item.nom || 'Article'}</h5>
+                  <span class="badge" style="background: ${mod.color};">${mod.label}</span>
+                </div>
+              </div>
+
+              <h6 class="mb-3"><i class="bi bi-people me-2"></i>File d'attente</h6>
+              ${queueHtml}
+            </div>
+          `,
+          width: 500,
+          showCloseButton: true,
+          showConfirmButton: false
+        });
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        Swal.fire({
+          title: 'Erreur',
+          text: 'Impossible de charger la file d\'attente',
+          icon: 'error'
+        });
+      }
+    }
+
+    // Debounce recherche
+    function debounceSearch() {
+      if (searchTimeout) clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadReservations, 400);
+    }
+
+    // ==================== TOAST ====================
+    function showToast(message, type = 'info') {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+      Toast.fire({
+        icon: type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info',
+        title: message
+      });
+    }
+
+    // ==================== AJOUT RESERVATION ====================
+
+    // State pour la creation de reservation
+    let selectedUsager = null;
+    let selectedArticle = null;
+    let currentStep = 1;
+    let searchUsagerTimeout = null;
+    let searchArticleTimeout = null;
+
+    // Scanner camera
+    let html5QrCodeUsager = null;
+    let html5QrCodeArticle = null;
+
+    // Douchette USB - Buffer
+    let barcodeBuffer = '';
+    let barcodeTimeout = null;
+    const BARCODE_SCANNER_TIMEOUT = 100;
+    let addReservationModalOpen = false;
+
+    // Ouvrir la modal
+    function openAddReservationModal() {
+      resetReservationModal();
+      addReservationModalOpen = true;
+      new bootstrap.Modal(document.getElementById('addReservationModal')).show();
+      // Focus sur le champ de recherche apres ouverture
+      setTimeout(() => {
+        document.getElementById('searchUsagerInput').focus();
+      }, 300);
+    }
+
+    // Fermer la modal
+    function closeAddReservationModal() {
+      addReservationModalOpen = false;
+      closeCameraUsager();
+      closeCameraArticle();
+    }
+
+    // Reset modal
+    function resetReservationModal() {
+      selectedUsager = null;
+      selectedArticle = null;
+      currentStep = 1;
+
+      // Reset UI
+      document.getElementById('step1Content').style.display = 'block';
+      document.getElementById('step2Content').style.display = 'none';
+      document.getElementById('step1Indicator').className = 'step active';
+      document.getElementById('step2Indicator').className = 'step';
+      document.getElementById('btnNextStep').style.display = 'none';
+      document.getElementById('btnConfirmReservation').style.display = 'none';
+
+      document.getElementById('searchUsagerInput').value = '';
+      document.getElementById('searchUsagerResults').style.display = 'none';
+      document.getElementById('selectedUsagerCard').style.display = 'none';
+
+      document.getElementById('searchArticleInput').value = '';
+      document.getElementById('searchArticleResults').style.display = 'none';
+      document.getElementById('selectedArticleCard').style.display = 'none';
+    }
+
+    // ==================== ETAPES ====================
+
+    function goToStep2() {
+      if (!selectedUsager) return;
+
+      currentStep = 2;
+      document.getElementById('step1Content').style.display = 'none';
+      document.getElementById('step2Content').style.display = 'block';
+      document.getElementById('step1Indicator').className = 'step completed';
+      document.getElementById('step2Indicator').className = 'step active';
+      document.getElementById('btnNextStep').style.display = 'none';
+
+      // Afficher le recap usager
+      document.getElementById('step2UsagerInfo').innerHTML =
+        `<strong>${selectedUsager.prenom} ${selectedUsager.nom}</strong> (${selectedUsager.code_barre || 'Sans code'})`;
+
+      setTimeout(() => {
+        document.getElementById('searchArticleInput').focus();
+      }, 100);
+    }
+
+    function goToStep1() {
+      currentStep = 1;
+      document.getElementById('step1Content').style.display = 'block';
+      document.getElementById('step2Content').style.display = 'none';
+      document.getElementById('step1Indicator').className = 'step active';
+      document.getElementById('step2Indicator').className = 'step';
+      document.getElementById('btnNextStep').style.display = selectedUsager ? 'inline-block' : 'none';
+      document.getElementById('btnConfirmReservation').style.display = 'none';
+      closeCameraArticle();
+    }
+
+    // ==================== RECHERCHE USAGER ====================
+
+    function debounceSearchUsager() {
+      if (searchUsagerTimeout) clearTimeout(searchUsagerTimeout);
+      const query = document.getElementById('searchUsagerInput').value.trim();
+
+      if (query.length < 3) {
+        document.getElementById('searchUsagerResults').style.display = 'none';
+        return;
+      }
+
+      searchUsagerTimeout = setTimeout(() => searchUsagers(query), 300);
+    }
+
+    async function searchUsagers(query) {
+      const resultsDiv = document.getElementById('searchUsagerResults');
+      resultsDiv.innerHTML = '<div class="p-3 text-center text-muted"><i class="bi bi-hourglass-split"></i> Recherche...</div>';
+      resultsDiv.style.display = 'block';
+
+      try {
+        const data = await adherentsAPI.getAll({ search: query, limit: 10, statut: 'actif' });
+        const usagers = data.adherents || [];
+
+        if (usagers.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-3 text-center text-muted">Aucun usager trouve</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = usagers.map(u => {
+          const initials = ((u.prenom || '?')[0] + (u.nom || '?')[0]).toUpperCase();
+          return `
+            <div class="search-result-item" onclick='selectUsager(${JSON.stringify(u).replace(/'/g, "&#39;")})'>
+              <div class="avatar">${initials}</div>
+              <div class="info">
+                <p class="name">${u.prenom} ${u.nom}</p>
+                <p class="details">${u.code_barre || 'Sans code-barre'}</p>
+              </div>
+              <span class="badge bg-success">Actif</span>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Erreur recherche usagers:', error);
+        resultsDiv.innerHTML = '<div class="p-3 text-center text-danger">Erreur de recherche</div>';
+      }
+    }
+
+    function selectUsager(usager) {
+      selectedUsager = usager;
+      const initials = ((usager.prenom || '?')[0] + (usager.nom || '?')[0]).toUpperCase();
+
+      document.getElementById('selectedUsagerAvatar').textContent = initials;
+      document.getElementById('selectedUsagerName').textContent = `${usager.prenom} ${usager.nom}`;
+      document.getElementById('selectedUsagerDetails').textContent = usager.code_barre || 'Sans code-barre';
+      document.getElementById('selectedUsagerCard').style.display = 'flex';
+      document.getElementById('searchUsagerResults').style.display = 'none';
+      document.getElementById('searchUsagerInput').value = '';
+      document.getElementById('btnNextStep').style.display = 'inline-block';
+
+      closeCameraUsager();
+    }
+
+    function clearSelectedUsager() {
+      selectedUsager = null;
+      document.getElementById('selectedUsagerCard').style.display = 'none';
+      document.getElementById('btnNextStep').style.display = 'none';
+    }
+
+    // ==================== RECHERCHE ARTICLE ====================
+
+    function debounceSearchArticle() {
+      if (searchArticleTimeout) clearTimeout(searchArticleTimeout);
+      const query = document.getElementById('searchArticleInput').value.trim();
+
+      if (query.length < 3) {
+        document.getElementById('searchArticleResults').style.display = 'none';
+        return;
+      }
+
+      searchArticleTimeout = setTimeout(() => searchArticles(query), 300);
+    }
+
+    async function searchArticles(query) {
+      const resultsDiv = document.getElementById('searchArticleResults');
+      resultsDiv.innerHTML = '<div class="p-3 text-center text-muted"><i class="bi bi-hourglass-split"></i> Recherche...</div>';
+      resultsDiv.style.display = 'block';
+
+      try {
+        // Rechercher uniquement dans les modules autorises
+        const promises = [];
+        const moduleTypes = [];
+
+        if (hasModuleAccess('ludotheque')) {
+          promises.push(jeuxAPI.getAll({ search: query, limit: 5 }).catch(() => ({ jeux: [] })));
+          moduleTypes.push('jeu');
+        }
+        if (hasModuleAccess('bibliotheque')) {
+          promises.push(livresAPI.getAll({ search: query, limit: 5 }).catch(() => ({ livres: [] })));
+          moduleTypes.push('livre');
+        }
+        if (hasModuleAccess('filmotheque')) {
+          promises.push(filmsAPI.getAll({ search: query, limit: 5 }).catch(() => ({ films: [] })));
+          moduleTypes.push('film');
+        }
+        if (hasModuleAccess('discotheque')) {
+          promises.push(disquesAPI.getAll({ search: query, limit: 5 }).catch(() => ({ disques: [] })));
+          moduleTypes.push('disque');
+        }
+
+        const responses = await Promise.all(promises);
+
+        let results = [];
+        responses.forEach((data, index) => {
+          const type = moduleTypes[index];
+          const config = MODULE_CONFIG[Object.keys(MODULE_CONFIG).find(k => MODULE_CONFIG[k].type === type)];
+          const items = data.jeux || data.livres || data.films || data.disques || [];
+          results = results.concat(items.map(item => ({
+            ...item,
+            type,
+            icon: config?.icon || 'bi-box',
+            color: config?.color || '#6c757d'
+          })));
+        });
+
+        if (results.length === 0) {
+          resultsDiv.innerHTML = '<div class="p-3 text-center text-muted">Aucun article trouve</div>';
+          return;
+        }
+
+        resultsDiv.innerHTML = results.slice(0, 15).map(article => {
+          const statutBadge = article.statut === 'disponible'
+            ? '<span class="badge bg-success">Disponible</span>'
+            : article.statut === 'emprunte'
+              ? '<span class="badge bg-warning text-dark">Emprunte</span>'
+              : `<span class="badge bg-secondary">${article.statut}</span>`;
+
+          return `
+            <div class="search-result-item" onclick='selectArticle(${JSON.stringify(article).replace(/'/g, "&#39;")})'>
+              <div class="avatar" style="border-radius: 8px; background: ${article.color}20; color: ${article.color};">
+                <i class="bi ${article.icon}"></i>
+              </div>
+              <div class="info">
+                <p class="name">${article.titre || article.nom}</p>
+                <p class="details">${article.code_barre || 'Sans code'} - ${article.type}</p>
+              </div>
+              ${statutBadge}
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Erreur recherche articles:', error);
+        resultsDiv.innerHTML = '<div class="p-3 text-center text-danger">Erreur de recherche</div>';
+      }
+    }
+
+    function selectArticle(article) {
+      selectedArticle = article;
+      const icons = { jeu: 'bi-dice-5', livre: 'bi-book', film: 'bi-film', disque: 'bi-disc' };
+      const modColors = getModuleConfigColors();
+      const colors = {
+        jeu: modColors.ludotheque,
+        livre: modColors.bibliotheque,
+        film: modColors.filmotheque,
+        disque: modColors.discotheque
+      };
+
+      document.getElementById('selectedArticleIcon').innerHTML = `<i class="bi ${icons[article.type] || 'bi-box'}"></i>`;
+      document.getElementById('selectedArticleIcon').style.background = `${colors[article.type] || '#6c757d'}20`;
+      document.getElementById('selectedArticleIcon').style.color = colors[article.type] || '#6c757d';
+      document.getElementById('selectedArticleName').textContent = article.titre || article.nom;
+      document.getElementById('selectedArticleDetails').textContent =
+        `${article.type.charAt(0).toUpperCase() + article.type.slice(1)} - ${article.code_barre || 'Sans code'}`;
+      document.getElementById('selectedArticleCard').style.display = 'flex';
+      document.getElementById('searchArticleResults').style.display = 'none';
+      document.getElementById('searchArticleInput').value = '';
+      document.getElementById('btnConfirmReservation').style.display = 'inline-block';
+
+      closeCameraArticle();
+    }
+
+    function clearSelectedArticle() {
+      selectedArticle = null;
+      document.getElementById('selectedArticleCard').style.display = 'none';
+      document.getElementById('btnConfirmReservation').style.display = 'none';
+    }
+
+    // ==================== CAMERA ====================
+
+    async function openCameraUsager() {
+      const container = document.getElementById('cameraUsagerContainer');
+      const preview = document.getElementById('cameraUsagerPreview');
+      container.style.display = 'block';
+
+      if (!html5QrCodeUsager) {
+        html5QrCodeUsager = new Html5Qrcode('cameraUsagerPreview');
+      }
+
+      try {
+        await html5QrCodeUsager.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 100 } },
+          async (decodedText) => {
+            await processUsagerBarcode(decodedText);
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error('Erreur camera:', err);
+        showToast('Impossible d\'activer la camera', 'error');
+        container.style.display = 'none';
+      }
+    }
+
+    async function closeCameraUsager() {
+      const container = document.getElementById('cameraUsagerContainer');
+      if (html5QrCodeUsager) {
+        try {
+          await html5QrCodeUsager.stop();
+        } catch (e) {}
+      }
+      container.style.display = 'none';
+    }
+
+    async function openCameraArticle() {
+      const container = document.getElementById('cameraArticleContainer');
+      container.style.display = 'block';
+
+      if (!html5QrCodeArticle) {
+        html5QrCodeArticle = new Html5Qrcode('cameraArticlePreview');
+      }
+
+      try {
+        await html5QrCodeArticle.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 100 } },
+          async (decodedText) => {
+            await processArticleBarcode(decodedText);
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error('Erreur camera:', err);
+        showToast('Impossible d\'activer la camera', 'error');
+        container.style.display = 'none';
+      }
+    }
+
+    async function closeCameraArticle() {
+      const container = document.getElementById('cameraArticleContainer');
+      if (html5QrCodeArticle) {
+        try {
+          await html5QrCodeArticle.stop();
+        } catch (e) {}
+      }
+      container.style.display = 'none';
+    }
+
+    // ==================== TRAITEMENT CODE-BARRE ====================
+
+    async function processUsagerBarcode(code) {
+      code = code.trim().toUpperCase();
+      console.log('Code usager scanne:', code);
+
+      try {
+        // Appeler l'API barcode pour identifier
+        const response = await barcodesAPI.scan(code);
+
+        if (response.type === 'adherent') {
+          if (response.adherent.statut !== 'actif') {
+            showToast(`Usager ${response.adherent.statut}`, 'warning');
+            return;
+          }
+          selectUsager(response.adherent);
+        } else {
+          showToast('Ce code-barre n\'est pas celui d\'un usager', 'warning');
+        }
+      } catch (error) {
+        console.error('Erreur scan usager:', error);
+        showToast('Code-barre non reconnu', 'error');
+      }
+    }
+
+    async function processArticleBarcode(code) {
+      code = code.trim().toUpperCase();
+      console.log('Code article scanne:', code);
+
+      try {
+        const response = await barcodesAPI.scan(code);
+
+        if (['jeu', 'livre', 'film', 'disque'].includes(response.type)) {
+          const article = response[response.type];
+          article.type = response.type;
+          selectArticle(article);
+        } else {
+          showToast('Ce code-barre n\'est pas celui d\'un article', 'warning');
+        }
+      } catch (error) {
+        console.error('Erreur scan article:', error);
+        showToast('Code-barre non reconnu', 'error');
+      }
+    }
+
+    // ==================== DOUCHETTE USB ====================
+
+    document.addEventListener('keydown', handleBarcodeKeydown);
+
+    function handleBarcodeKeydown(e) {
+      // Seulement si la modal est ouverte
+      if (!addReservationModalOpen) return;
+
+      // Ignorer si on est dans un champ de saisie (sauf Enter)
+      const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+      if (isInputField && e.key !== 'Enter') return;
+
+      // Si c'est Enter et qu'on a un buffer
+      if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+        e.preventDefault();
+        const code = barcodeBuffer.trim().toUpperCase();
+        barcodeBuffer = '';
+        clearTimeout(barcodeTimeout);
+
+        console.log('[Douchette Reservation] Code recu:', code);
+
+        // Traiter selon l'etape
+        if (currentStep === 1) {
+          processUsagerBarcode(code);
+        } else {
+          processArticleBarcode(code);
+        }
+        return;
+      }
+
+      // Caracteres valides
+      if (e.key.length === 1 && /[a-zA-Z0-9\-]/.test(e.key)) {
+        if (!isInputField) {
+          e.preventDefault();
+        }
+
+        barcodeBuffer += e.key;
+
+        clearTimeout(barcodeTimeout);
+        barcodeTimeout = setTimeout(() => {
+          if (barcodeBuffer.length > 0) {
+            barcodeBuffer = '';
+          }
+        }, BARCODE_SCANNER_TIMEOUT);
+      }
+    }
+
+    // ==================== CONFIRMATION ====================
+
+    async function confirmReservation() {
+      if (!selectedUsager || !selectedArticle) {
+        showToast('Veuillez selectionner un usager et un article', 'warning');
+        return;
+      }
+
+      // Construire les donnees de reservation
+      const data = {
+        utilisateur_id: selectedUsager.id
+      };
+
+      // Ajouter l'ID de l'article selon son type
+      const typeIdMap = {
+        jeu: 'jeu_id',
+        livre: 'livre_id',
+        film: 'film_id',
+        disque: 'disque_id'
+      };
+      data[typeIdMap[selectedArticle.type]] = selectedArticle.id;
+
+      try {
+        const response = await fetch(`${API_URL}/reservations`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.message || 'Erreur lors de la creation');
+        }
+
+        const result = await response.json();
+
+        // Fermer la modal
+        bootstrap.Modal.getInstance(document.getElementById('addReservationModal')).hide();
+        closeAddReservationModal();
+
+        showToast(`Reservation creee ! Position: ${result.reservation?.position_queue || 1}`, 'success');
+        loadReservations();
+      } catch (error) {
+        console.error('Erreur creation reservation:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

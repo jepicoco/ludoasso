@@ -60,6 +60,14 @@ router.post('/', verifyToken, isAgent(), validate(schemas.emprunt.create), empru
 router.post('/:id/retour', verifyToken, isAgent(), validate(schemas.emprunt.getById), empruntController.retourEmprunt);
 
 /**
+ * @route   POST /api/emprunts/:id/traiter-reservation
+ * @desc    Traiter un retour avec réservation en attente
+ * @access  Private (agent+ - module vérifié dans le contrôleur selon l'item)
+ * @body    { action: 'rayon' | 'cote' }
+ */
+router.post('/:id/traiter-reservation', verifyToken, isAgent(), validate(schemas.emprunt.getById), empruntController.traiterRetourAvecReservation);
+
+/**
  * @route   PUT /api/emprunts/:id
  * @desc    Update emprunt
  * @access  Private (agent+ - module vérifié dans le contrôleur selon l'item)

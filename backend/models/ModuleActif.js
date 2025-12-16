@@ -35,6 +35,12 @@ module.exports = (sequelize) => {
       defaultValue: 'secondary',
       comment: 'Couleur Bootstrap ou code hex'
     },
+    couleur_texte: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Couleur du texte (hex). Si null, calcule automatiquement'
+    },
     actif: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

@@ -67,7 +67,9 @@
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -Command \"Set-Location ''C:\\Users\\jepic\\Documents\\Projets\\liberteko\\frontend\\themes''; Get-ChildItem -Recurse -Include *.html,*.js | ForEach-Object { $c = Get-Content $_FullName -Raw -Encoding UTF8; if ($c -match ''ASSOTHEQUE'') { $c -replace ''ASSOTHEQUE'', ''LIBERTEKO'' | Set-Content $_FullName -NoNewline -Encoding UTF8; Write-Host Updated: $_Name } }\")",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\Users\\jepic\\Documents\\Projets\\liberteko\\replace-assotheque.ps1\")",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add clean URLs, contact page, and unified footers for pixel-geek theme\n\nClean URLs:\n- Add parameterized routes in Express (/catalogue/:collection, /fiche/:collection/:slug, /plan/:emplacement/:type)\n- Create slugUtils.js for URL slug generation (id-titre format)\n- Update themeResolver middleware to support req.targetPage\n- Update all frontend pages to parse pathname instead of query params\n- Generate SEO-friendly slugs for item links (e.g., /fiche/jeux/123-catan)\n\nContact page:\n- Create contact.html for pixel-geek theme with structure info and contact form\n- Add placeholder image for missing item images\n\nFooter uniformization:\n- Standardize footer across all pixel-geek theme pages\n- Three sections: NAVIGATION, LEGAL, CONTACT\n- Update all links to use clean URLs\n\nOther fixes:\n- Fix jeux validation (titre field, nullable options)\n- Fix plan.html rectangle rendering and data structure\n- Add plan.html and aide.html to OVERRIDABLE_PAGES\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(xargs basename:*)",
+      "Bash(git config --global --add safe.directory '%(prefix)///SRV-AD/www/ludo/liberteko')"
     ],
     "deny": [],
     "ask": []

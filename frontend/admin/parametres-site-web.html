@@ -421,15 +421,16 @@
                         <p class="mb-0 mt-2 text-muted small">Inscriptions en ligne des usagers</p>
                       </div>
                     </div>
-                    <div class="col-md-4">
-                      <div class="card module-card p-3" id="card-module-reservations">
+                    <!-- Reservations - visible uniquement si module reservations actif dans holodeck -->
+                    <div class="col-md-4" id="card-module-reservations-container" style="display: none;">
+                      <div class="card module-card p-3" id="card-module-reservations" style="border-left: 4px solid #6c3483; background-color: rgba(108,52,131,0.05);">
                         <div class="form-check form-switch">
                           <input class="form-check-input" type="checkbox" id="module_reservations" onchange="updateModuleCard('reservations')">
                           <label class="form-check-label" for="module_reservations">
-                            <strong><i class="bi bi-calendar-check"></i> Reservations</strong>
+                            <strong><i class="bi bi-bookmark"></i> Reservations</strong>
                           </label>
                         </div>
-                        <p class="mb-0 mt-2 text-muted small">Reservation de jeux en ligne</p>
+                        <p class="mb-0 mt-2 text-muted small">Reservation d'articles en ligne</p>
                       </div>
                     </div>
                     <div class="col-md-4">
@@ -697,6 +698,11 @@
       initEditors();
       loadParametres();
       loadCurrentIp();
+
+      // Afficher la carte Reservations si le module est actif dans le holodeck
+      if (isModuleActive('reservations')) {
+        document.getElementById('card-module-reservations-container').style.display = 'block';
+      }
 
       // Afficher la carte Recherche IA si le module est actif dans le holodeck
       if (isModuleActive('recherche_ia')) {
