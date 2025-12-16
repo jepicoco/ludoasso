@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#6f42c1">
+    <title>Configuration - Frequentation</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/tablet.css">
+</head>
+<body>
+    <div class="setup-container" id="setupMain">
+        <div class="setup-logo">
+            &#128202;
+        </div>
+
+        <h1 class="setup-title">Configuration de la tablette</h1>
+
+        <p class="setup-description">
+            Scannez le QR code genere depuis l'interface d'administration pour configurer cette tablette.
+        </p>
+
+        <button class="setup-btn" onclick="startQRScan()">
+            &#128247; Scanner le QR code
+        </button>
+
+        <div class="setup-manual">
+            <a href="#" class="setup-manual-link" onclick="showManualSetup(); return false;">
+                Configuration manuelle
+            </a>
+        </div>
+    </div>
+
+    <!-- Configuration manuelle -->
+    <div class="setup-container" id="setupManual" style="display: none;">
+        <div class="setup-logo">
+            &#9881;
+        </div>
+
+        <h1 class="setup-title">Configuration manuelle</h1>
+
+        <div class="manual-setup">
+            <input type="text"
+                   id="apiUrlInput"
+                   placeholder="URL du serveur (ex: https://ludo.fr)">
+
+            <input type="text"
+                   id="apiKeyInput"
+                   placeholder="Cle API (ask_...)">
+
+            <input type="number"
+                   id="questionnaireIdInput"
+                   placeholder="ID du questionnaire">
+
+            <button class="setup-btn" onclick="submitManualConfig()">
+                Configurer
+            </button>
+
+            <div style="margin-top: 1rem;">
+                <a href="#" class="setup-manual-link" onclick="showQRSetup(); return false;">
+                    &larr; Retour au scan QR
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validation en cours -->
+    <div class="setup-container" id="setupValidating" style="display: none;">
+        <div class="spinner" style="width: 64px; height: 64px; border-width: 4px; margin-bottom: 2rem;"></div>
+        <h1 class="setup-title">Validation en cours...</h1>
+        <p class="setup-description">Connexion au serveur et verification de la configuration.</p>
+    </div>
+
+    <!-- Erreur -->
+    <div class="setup-container" id="setupError" style="display: none;">
+        <div class="setup-logo" style="background: #dc3545;">
+            &#10060;
+        </div>
+        <h1 class="setup-title">Erreur de configuration</h1>
+        <p class="setup-description" id="errorMessage">Une erreur est survenue.</p>
+        <button class="setup-btn" onclick="showQRSetup()">
+            Reessayer
+        </button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+
+    <script>
+        // Verifier si deja configure
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Storage.initDB();
+            const configured = await API.initAPI();
+            if (configured) {
+                // Deja configure, rediriger
+                window.location.href = 'index.html';
+            }
+        });
+
+        function showManualSetup() {
+            document.getElementById('setupMain').style.display = 'none';
+            document.getElementById('setupManual').style.display = 'flex';
+        }
+
+        function showQRSetup() {
+            document.getElementById('setupMain').style.display = 'flex';
+            document.getElementById('setupManual').style.display = 'none';
+            document.getElementById('setupValidating').style.display = 'none';
+            document.getElementById('setupError').style.display = 'none';
+        }
+
+        function showValidating() {
+            document.getElementById('setupMain').style.display = 'none';
+            document.getElementById('setupManual').style.display = 'none';
+            document.getElementById('setupValidating').style.display = 'flex';
+            document.getElementById('setupError').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('setupMain').style.display = 'none';
+            document.getElementById('setupManual').style.display = 'none';
+            document.getElementById('setupValidating').style.display = 'none';
+            document.getElementById('setupError').style.display = 'flex';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        async function startQRScan() {
+            // Utiliser BarcodeDetector si disponible
+            if ('BarcodeDetector' in window) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    });
+
+                    // Creer un element video temporaire
+                    const video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true);
+                    await video.play();
+
+                    // Creer une overlay pour le scan
+                    const overlay = document.createElement('div');
+                    overlay.style.cssText = `
+                        position: fixed;
+                        top: 0; left: 0; right: 0; bottom: 0;
+                        background: black;
+                        z-index: 1000;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                    `;
+
+                    video.style.cssText = 'max-width: 100%; max-height: 70vh;';
+                    overlay.appendChild(video);
+
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.textContent = 'Annuler';
+                    cancelBtn.className = 'setup-btn';
+                    cancelBtn.style.marginTop = '1rem';
+                    cancelBtn.onclick = () => {
+                        stream.getTracks().forEach(t => t.stop());
+                        overlay.remove();
+                    };
+                    overlay.appendChild(cancelBtn);
+
+                    document.body.appendChild(overlay);
+
+                    // Scanner
+                    const detector = new BarcodeDetector({ formats: ['qr_code'] });
+
+                    const scan = async () => {
+                        try {
+                            const barcodes = await detector.detect(video);
+                            if (barcodes.length > 0) {
+                                const data = barcodes[0].rawValue;
+                                stream.getTracks().forEach(t => t.stop());
+                                overlay.remove();
+                                processQRData(data);
+                                return;
+                            }
+                        } catch (e) {
+                            console.error('Scan error:', e);
+                        }
+                        requestAnimationFrame(scan);
+                    };
+
+                    scan();
+
+                } catch (err) {
+                    console.error('Camera error:', err);
+                    alert('Impossible d\'acceder a la camera. Utilisez la configuration manuelle.');
+                    showManualSetup();
+                }
+            } else {
+                // BarcodeDetector non supporte
+                alert('Le scan QR n\'est pas supporte sur cet appareil. Utilisez la configuration manuelle.');
+                showManualSetup();
+            }
+        }
+
+        function processQRData(data) {
+            try {
+                const config = JSON.parse(data);
+
+                if (!config.apiKey || !config.apiUrl) {
+                    throw new Error('QR code invalide');
+                }
+
+                validateAndConfigure(config);
+
+            } catch (e) {
+                console.error('QR parse error:', e);
+                showError('QR code invalide. Verifiez et reessayez.');
+            }
+        }
+
+        async function submitManualConfig() {
+            const apiUrl = document.getElementById('apiUrlInput').value.trim();
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const questionnaireId = document.getElementById('questionnaireIdInput').value.trim();
+
+            if (!apiUrl || !apiKey) {
+                alert('Veuillez remplir l\'URL et la cle API');
+                return;
+            }
+
+            const config = {
+                apiUrl: apiUrl.replace(/\/$/, ''), // Supprimer le slash final
+                apiKey,
+                questionnaireId: questionnaireId ? parseInt(questionnaireId) : null
+            };
+
+            validateAndConfigure(config);
+        }
+
+        async function validateAndConfigure(config) {
+            showValidating();
+
+            try {
+                // Sauvegarder la config
+                await API.configure(config);
+
+                // Valider en appelant l'API
+                const tabletConfig = await API.getTabletConfig();
+
+                if (!tabletConfig || !tabletConfig.questionnaire) {
+                    throw new Error('Configuration invalide ou tablette non autorisee');
+                }
+
+                // Configuration reussie, rediriger
+                console.log('[Setup] Configuration reussie:', tabletConfig);
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                console.error('[Setup] Erreur:', error);
+                await API.clearConfig();
+                showError(error.message || 'Erreur de connexion au serveur');
+            }
+        }
+    </script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('[SW] Enregistre:', reg.scope))
+                    .catch(err => console.error('[SW] Erreur:', err));
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques Frequentation - Administration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="css/admin-common.css">
+    <style>
+        .stat-card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+        .chart-card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .export-btn-group .btn {
+            border-radius: 8px;
+        }
+        .commune-rank {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .commune-rank:last-child {
+            border-bottom: none;
+        }
+        .commune-rank-position {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-right: 0.75rem;
+        }
+        .commune-rank-position.top-3 {
+            background: #ffc107;
+            color: #000;
+        }
+        .commune-rank-bar {
+            flex: 1;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 0.75rem;
+        }
+        .commune-rank-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6f42c1, #0d6efd);
+            border-radius: 4px;
+        }
+        .no-data-message {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        .no-data-message i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="admin-navbar"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div id="admin-sidebar"></div>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="bi bi-graph-up me-2"></i>Statistiques de Frequentation
+                    </h1>
+                    <div class="btn-toolbar export-btn-group">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-outline-success" onclick="exportData('csv')">
+                                <i class="bi bi-filetype-csv me-1"></i>CSV
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportData('excel')">
+                                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="exportData('pdf')">
+                                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtres -->
+                <div class="filter-section">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Periode</label>
+                            <input type="text" class="form-control" id="filterPeriode" placeholder="Selectionner une periode">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Questionnaire</label>
+                            <select class="form-select" id="filterQuestionnaire">
+                                <option value="">Tous les questionnaires</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Site</label>
+                            <select class="form-select" id="filterSite">
+                                <option value="">Tous les sites</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="loadStatistiques()">
+                                <i class="bi bi-funnel me-1"></i>Filtrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cartes KPI -->
+                <div class="row mb-4" id="kpiCards">
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body text-center">
+                                <div class="stat-value text-primary" id="kpiTotalVisiteurs">-</div>
+                                <div class="stat-label mt-2">Total visiteurs</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body text-center">
+                                <div class="stat-value text-success" id="kpiAdultes">-</div>
+                                <div class="stat-label mt-2">Adultes</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body text-center">
+                                <div class="stat-value text-info" id="kpiEnfants">-</div>
+                                <div class="stat-label mt-2">Enfants</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card h-100">
+                            <div class="card-body text-center">
+                                <div class="stat-value text-warning" id="kpiMoyenneJour">-</div>
+                                <div class="stat-label mt-2">Moyenne / jour</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphiques -->
+                <div class="row mb-4">
+                    <!-- Evolution temporelle -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card chart-card h-100">
+                            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-bar-chart me-2"></i>Evolution de la frequentation
+                                </h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <input type="radio" class="btn-check" name="groupement" id="groupJour" value="jour" checked>
+                                    <label class="btn btn-outline-primary" for="groupJour">Jour</label>
+                                    <input type="radio" class="btn-check" name="groupement" id="groupSemaine" value="semaine">
+                                    <label class="btn btn-outline-primary" for="groupSemaine">Semaine</label>
+                                    <input type="radio" class="btn-check" name="groupement" id="groupMois" value="mois">
+                                    <label class="btn btn-outline-primary" for="groupMois">Mois</label>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chartEvolution"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Repartition adultes/enfants -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card chart-card h-100">
+                            <div class="card-header bg-white border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-pie-chart me-2"></i>Repartition
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chartRepartition"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top communes -->
+                <div class="row">
+                    <div class="col-lg-6 mb-4">
+                        <div class="card chart-card h-100">
+                            <div class="card-header bg-white border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-geo-alt me-2"></i>Top 10 communes
+                                </h5>
+                            </div>
+                            <div class="card-body" id="topCommunesContainer">
+                                <div class="no-data-message">
+                                    <i class="bi bi-inbox"></i>
+                                    <p>Aucune donnee disponible</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Graphique communes -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="card chart-card h-100">
+                            <div class="card-header bg-white border-0">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-bar-chart-steps me-2"></i>Visiteurs par commune
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chartCommunes"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+    <script src="js/admin-template.js"></script>
+    <script src="js/api-admin.js"></script>
+    <script>
+        // Variables globales
+        let chartEvolution = null;
+        let chartRepartition = null;
+        let chartCommunes = null;
+        let currentStats = null;
+        let flatpickrInstance = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verifier l'authentification
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Initialiser la navigation
+            if (typeof initAdminTemplate === 'function') {
+                await initAdminTemplate('frequentation');
+            }
+
+            // Initialiser le datepicker
+            initDatePicker();
+
+            // Charger les filtres
+            await loadFiltres();
+
+            // Charger les statistiques initiales
+            await loadStatistiques();
+
+            // Ecouter les changements de groupement
+            document.querySelectorAll('input[name="groupement"]').forEach(radio => {
+                radio.addEventListener('change', () => loadStatistiques());
+            });
+        });
+
+        function initDatePicker() {
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            flatpickrInstance = flatpickr('#filterPeriode', {
+                mode: 'range',
+                dateFormat: 'd/m/Y',
+                locale: 'fr',
+                defaultDate: [firstDayOfMonth, today],
+                maxDate: today
+            });
+        }
+
+        async function loadFiltres() {
+            try {
+                // Charger les questionnaires
+                const questionnaires = await apiRequest('/api/frequentation/questionnaires');
+                const selectQuestionnaire = document.getElementById('filterQuestionnaire');
+                questionnaires.forEach(q => {
+                    const option = document.createElement('option');
+                    option.value = q.id;
+                    option.textContent = q.nom;
+                    selectQuestionnaire.appendChild(option);
+                });
+
+                // Charger les sites
+                const sites = await apiRequest('/api/sites');
+                const selectSite = document.getElementById('filterSite');
+                sites.forEach(s => {
+                    const option = document.createElement('option');
+                    option.value = s.id;
+                    option.textContent = s.nom;
+                    selectSite.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erreur chargement filtres:', error);
+            }
+        }
+
+        async function loadStatistiques() {
+            try {
+                // Construire les parametres
+                const params = new URLSearchParams();
+
+                // Periode
+                const dates = flatpickrInstance.selectedDates;
+                if (dates.length >= 1) {
+                    params.append('date_debut', dates[0].toISOString().split('T')[0]);
+                }
+                if (dates.length >= 2) {
+                    params.append('date_fin', dates[1].toISOString().split('T')[0]);
+                }
+
+                // Questionnaire
+                const questionnaireId = document.getElementById('filterQuestionnaire').value;
+                if (questionnaireId) {
+                    params.append('questionnaire_id', questionnaireId);
+                }
+
+                // Site
+                const siteId = document.getElementById('filterSite').value;
+                if (siteId) {
+                    params.append('site_id', siteId);
+                }
+
+                // Groupement
+                const groupement = document.querySelector('input[name="groupement"]:checked').value;
+                params.append('groupement', groupement);
+
+                // Charger les stats
+                const stats = await apiRequest(`/api/frequentation/statistiques?${params.toString()}`);
+                currentStats = stats;
+
+                // Mettre a jour les KPI
+                updateKPIs(stats);
+
+                // Mettre a jour les graphiques
+                updateCharts(stats, groupement);
+
+                // Mettre a jour le top communes
+                updateTopCommunes(stats.parCommune || []);
+
+            } catch (error) {
+                console.error('Erreur chargement statistiques:', error);
+                showAlert('Erreur lors du chargement des statistiques', 'danger');
+            }
+        }
+
+        function updateKPIs(stats) {
+            const global = stats.global || {};
+
+            document.getElementById('kpiTotalVisiteurs').textContent =
+                formatNumber(global.total_visiteurs || 0);
+            document.getElementById('kpiAdultes').textContent =
+                formatNumber(global.total_adultes || 0);
+            document.getElementById('kpiEnfants').textContent =
+                formatNumber(global.total_enfants || 0);
+            document.getElementById('kpiMoyenneJour').textContent =
+                formatNumber(Math.round(global.moyenne_par_jour || 0));
+        }
+
+        function updateCharts(stats, groupement) {
+            // Graphique evolution
+            updateEvolutionChart(stats.parPeriode || [], groupement);
+
+            // Graphique repartition
+            updateRepartitionChart(stats.global || {});
+
+            // Graphique communes
+            updateCommunesChart(stats.parCommune || []);
+        }
+
+        function updateEvolutionChart(data, groupement) {
+            const ctx = document.getElementById('chartEvolution').getContext('2d');
+
+            if (chartEvolution) {
+                chartEvolution.destroy();
+            }
+
+            const labels = data.map(d => formatPeriodeLabel(d.periode, groupement));
+            const adultesData = data.map(d => d.adultes || 0);
+            const enfantsData = data.map(d => d.enfants || 0);
+
+            chartEvolution = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Adultes',
+                            data: adultesData,
+                            backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                            borderColor: 'rgba(40, 167, 69, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Enfants',
+                            data: enfantsData,
+                            backgroundColor: 'rgba(23, 162, 184, 0.8)',
+                            borderColor: 'rgba(23, 162, 184, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRepartitionChart(global) {
+            const ctx = document.getElementById('chartRepartition').getContext('2d');
+
+            if (chartRepartition) {
+                chartRepartition.destroy();
+            }
+
+            const adultes = global.total_adultes || 0;
+            const enfants = global.total_enfants || 0;
+
+            if (adultes === 0 && enfants === 0) {
+                chartRepartition = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Aucune donnee'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e9ecef']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            chartRepartition = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Adultes', 'Enfants'],
+                    datasets: [{
+                        data: [adultes, enfants],
+                        backgroundColor: [
+                            'rgba(40, 167, 69, 0.8)',
+                            'rgba(23, 162, 184, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(40, 167, 69, 1)',
+                            'rgba(23, 162, 184, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = adultes + enfants;
+                                    const percentage = Math.round((context.raw / total) * 100);
+                                    return `${context.label}: ${context.raw} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCommunesChart(communes) {
+            const ctx = document.getElementById('chartCommunes').getContext('2d');
+
+            if (chartCommunes) {
+                chartCommunes.destroy();
+            }
+
+            const top10 = communes.slice(0, 10);
+
+            if (top10.length === 0) {
+                chartCommunes = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Aucune donnee'],
+                        datasets: [{
+                            data: [0],
+                            backgroundColor: ['#e9ecef']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y'
+                    }
+                });
+                return;
+            }
+
+            chartCommunes = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top10.map(c => c.commune_nom || 'Non renseigne'),
+                    datasets: [{
+                        label: 'Visiteurs',
+                        data: top10.map(c => c.total || 0),
+                        backgroundColor: 'rgba(111, 66, 193, 0.8)',
+                        borderColor: 'rgba(111, 66, 193, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopCommunes(communes) {
+            const container = document.getElementById('topCommunesContainer');
+            const top10 = communes.slice(0, 10);
+
+            if (top10.length === 0) {
+                container.innerHTML = `
+                    <div class="no-data-message">
+                        <i class="bi bi-inbox"></i>
+                        <p>Aucune donnee disponible</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const maxTotal = top10[0].total || 1;
+
+            container.innerHTML = top10.map((c, index) => {
+                const percentage = Math.round((c.total / maxTotal) * 100);
+                const isTop3 = index < 3;
+
+                return `
+                    <div class="commune-rank">
+                        <div class="commune-rank-position ${isTop3 ? 'top-3' : ''}">${index + 1}</div>
+                        <div style="min-width: 120px; font-weight: 500;">${c.commune_nom || 'Non renseigne'}</div>
+                        <div class="commune-rank-bar">
+                            <div class="commune-rank-bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <div style="min-width: 60px; text-align: right; font-weight: 600;">${formatNumber(c.total)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function exportData(format) {
+            try {
+                // Construire les parametres
+                const params = new URLSearchParams();
+
+                // Periode
+                const dates = flatpickrInstance.selectedDates;
+                if (dates.length >= 1) {
+                    params.append('date_debut', dates[0].toISOString().split('T')[0]);
+                }
+                if (dates.length >= 2) {
+                    params.append('date_fin', dates[1].toISOString().split('T')[0]);
+                }
+
+                // Questionnaire
+                const questionnaireId = document.getElementById('filterQuestionnaire').value;
+                if (questionnaireId) {
+                    params.append('questionnaire_id', questionnaireId);
+                }
+
+                // Site
+                const siteId = document.getElementById('filterSite').value;
+                if (siteId) {
+                    params.append('site_id', siteId);
+                }
+
+                // Telecharger le fichier
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`/api/frequentation/statistiques/export/${format}?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de l\'export');
+                }
+
+                // Recuperer le nom du fichier depuis les headers
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `frequentation-export.${format === 'excel' ? 'xlsx' : format}`;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (match) {
+                        filename = match[1];
+                    }
+                }
+
+                // Telecharger
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+                showAlert('Export telecharge avec succes', 'success');
+            } catch (error) {
+                console.error('Erreur export:', error);
+                showAlert('Erreur lors de l\'export', 'danger');
+            }
+        }
+
+        // Utilitaires
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        }
+
+        function formatPeriodeLabel(periode, groupement) {
+            if (!periode) return '';
+
+            switch (groupement) {
+                case 'jour':
+                    const date = new Date(periode);
+                    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                case 'semaine':
+                    return `Sem. ${periode}`;
+                case 'mois':
+                    const [year, month] = periode.split('-');
+                    const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sept', 'Oct', 'Nov', 'Dec'];
+                    return `${monthNames[parseInt(month) - 1]} ${year}`;
+                default:
+                    return periode;
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed"
+                     style="top: 80px; right: 20px; z-index: 9999; min-width: 300px;"
+                     role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+            setTimeout(() => {
+                const alert = document.querySelector('.alert');
+                if (alert) alert.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

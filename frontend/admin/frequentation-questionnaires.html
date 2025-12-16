@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequentation - Questionnaires</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/admin.css" rel="stylesheet">
+    <style>
+        .questionnaire-card {
+            border-left: 4px solid #17a2b8;
+            transition: all 0.2s ease;
+        }
+        .questionnaire-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .questionnaire-card.inactive {
+            opacity: 0.6;
+            border-left-color: #6c757d;
+        }
+        .badge-actif { background-color: #28a745; }
+        .badge-planifie { background-color: #ffc107; color: #212529; }
+        .badge-termine { background-color: #6c757d; }
+        .badge-inactif { background-color: #dc3545; }
+        .commune-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: #e9ecef;
+            border-radius: 20px;
+            margin: 2px;
+            font-size: 0.85rem;
+        }
+        .commune-chip.epingle {
+            background: #d4edda;
+            border: 1px solid #28a745;
+        }
+        .commune-chip .bi-pin-fill {
+            color: #28a745;
+        }
+        .qr-preview {
+            max-width: 200px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div id="admin-navbar"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 sidebar" id="admin-sidebar"></div>
+
+            <!-- Contenu principal -->
+            <main class="col-md-9 col-lg-10 ms-sm-auto px-4 py-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 mb-0"><i class="bi bi-people-fill me-2"></i>Frequentation</h1>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="dashboard.html">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Questionnaires</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="btn-group">
+                        <a href="frequentation-statistiques.html" class="btn btn-outline-secondary">
+                            <i class="bi bi-graph-up me-1"></i>Statistiques
+                        </a>
+                        <button class="btn btn-primary" onclick="openCreateModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Nouveau questionnaire
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Alerte import communes -->
+                <div id="alert-communes" class="alert alert-info d-none">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Referentiel communes vide.</strong>
+                    <button class="btn btn-sm btn-info ms-2" onclick="importCommunes()">
+                        Importer les communes
+                    </button>
+                </div>
+
+                <!-- Liste des questionnaires -->
+                <div id="questionnaires-list" class="row g-3">
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Chargement...</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Creation/Edition -->
+    <div class="modal fade" id="questionnaireModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modal-title">Nouveau questionnaire</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="questionnaire-form">
+                        <input type="hidden" id="questionnaire-id">
+
+                        <div class="mb-3">
+                            <label for="nom" class="form-label">Nom du questionnaire *</label>
+                            <input type="text" class="form-control" id="nom" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" rows="2"></textarea>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date_debut" class="form-label">Date de debut</label>
+                                <input type="date" class="form-control" id="date_debut">
+                                <small class="text-muted">Laisser vide = actif immediatement</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="date_fin" class="form-label">Date de fin</label>
+                                <input type="date" class="form-control" id="date_fin">
+                                <small class="text-muted">Laisser vide = permanent</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="multi_site">
+                                <label class="form-check-label" for="multi_site">Multi-site</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="site-select-container">
+                            <label for="site_id" class="form-label">Site</label>
+                            <select class="form-select" id="site_id">
+                                <option value="">Chargement...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="actif" checked>
+                                <label class="form-check-label" for="actif">Actif</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" onclick="saveQuestionnaire()">
+                        <i class="bi bi-check-lg me-1"></i>Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Communes -->
+    <div class="modal fade" id="communesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Communes favorites</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="communes-questionnaire-id">
+
+                    <div class="mb-3">
+                        <label class="form-label">Rechercher une commune</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="commune-search" placeholder="Nom ou code postal...">
+                            <button class="btn btn-outline-primary" onclick="searchCommunes()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div id="commune-search-results" class="mt-2"></div>
+                    </div>
+
+                    <hr>
+
+                    <h6>Communes epinglees (affichees sur la tablette)</h6>
+                    <div id="communes-epinglees" class="mb-3">
+                        <em class="text-muted">Aucune commune epinglee</em>
+                    </div>
+
+                    <h6>Autres communes frequentes</h6>
+                    <div id="communes-frequentes">
+                        <em class="text-muted">Les communes frequemment utilisees apparaitront ici</em>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tablettes -->
+    <div class="modal fade" id="tablettesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tablettes liees</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="tablettes-questionnaire-id">
+
+                    <div class="mb-3">
+                        <h6>Ajouter une tablette</h6>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <select class="form-select" id="new-tablet-apikey">
+                                    <option value="">Selectionner une cle API...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <select class="form-select" id="new-tablet-site">
+                                    <option value="">Selectionner un site...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary w-100" onclick="linkTablet()">
+                                    <i class="bi bi-link"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6>Tablettes configurees</h6>
+                    <div id="tablettes-list">
+                        <em class="text-muted">Aucune tablette configuree</em>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal QR Code -->
+    <div class="modal fade" id="qrcodeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">QR Code de configuration</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="qrcode-image" class="qr-preview mb-3" alt="QR Code">
+                    <p class="text-muted small">
+                        Scannez ce QR code avec la tablette pour la configurer automatiquement.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/api-admin.js"></script>
+    <script src="js/admin-navigation.js"></script>
+    <script src="js/admin-template.js"></script>
+    <script>
+        let questionnaires = [];
+        let sites = [];
+        let apiKeys = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initTemplate('frequentation');
+            await loadData();
+        });
+
+        async function loadData() {
+            try {
+                // Charger questionnaires, sites, et verifier communes
+                const [questsRes, sitesRes, communesStats] = await Promise.all([
+                    apiAdmin.get('/frequentation/questionnaires'),
+                    apiAdmin.get('/sites'),
+                    apiAdmin.get('/communes/stats').catch(() => ({ total: 0 }))
+                ]);
+
+                questionnaires = questsRes;
+                sites = sitesRes;
+
+                // Alerter si pas de communes
+                if (communesStats.total === 0) {
+                    document.getElementById('alert-communes').classList.remove('d-none');
+                }
+
+                renderQuestionnaires();
+                populateSiteSelect();
+            } catch (error) {
+                console.error('Erreur chargement:', error);
+                showError('Erreur de chargement des donnees');
+            }
+        }
+
+        function renderQuestionnaires() {
+            const container = document.getElementById('questionnaires-list');
+
+            if (questionnaires.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-clipboard-x display-1 text-muted"></i>
+                        <p class="text-muted mt-3">Aucun questionnaire</p>
+                        <button class="btn btn-primary" onclick="openCreateModal()">
+                            <i class="bi bi-plus-lg me-1"></i>Creer un questionnaire
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = questionnaires.map(q => {
+                const statut = getStatut(q);
+                const badgeClass = getBadgeClass(statut);
+
+                return `
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card questionnaire-card ${q.actif ? '' : 'inactive'}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">${escapeHtml(q.nom)}</h5>
+                                    <span class="badge ${badgeClass}">${statut}</span>
+                                </div>
+                                ${q.description ? `<p class="card-text text-muted small">${escapeHtml(q.description)}</p>` : ''}
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    ${q.multi_site ? 'Multi-site' : (q.site?.nom || 'Non defini')}
+                                </div>
+                                ${q.date_debut || q.date_fin ? `
+                                    <div class="small text-muted mb-2">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        ${q.date_debut || '...'} - ${q.date_fin || '...'}
+                                    </div>
+                                ` : ''}
+                                <div class="d-flex flex-wrap gap-1 mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editQuestionnaire(${q.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info" onclick="openCommunesModal(${q.id})" title="Communes">
+                                        <i class="bi bi-geo"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="openTablettesModal(${q.id})" title="Tablettes">
+                                        <i class="bi bi-tablet"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteQuestionnaire(${q.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStatut(q) {
+            if (!q.actif) return 'Inactif';
+            const today = new Date().toISOString().split('T')[0];
+            if (q.date_debut && q.date_debut > today) return 'Planifie';
+            if (q.date_fin && q.date_fin < today) return 'Termine';
+            return 'Actif';
+        }
+
+        function getBadgeClass(statut) {
+            const classes = {
+                'Actif': 'badge-actif',
+                'Planifie': 'badge-planifie',
+                'Termine': 'badge-termine',
+                'Inactif': 'badge-inactif'
+            };
+            return classes[statut] || 'bg-secondary';
+        }
+
+        function populateSiteSelect() {
+            const select = document.getElementById('site_id');
+            select.innerHTML = '<option value="">-- Selectionner un site --</option>' +
+                sites.map(s => `<option value="${s.id}">${escapeHtml(s.nom)}</option>`).join('');
+        }
+
+        function openCreateModal() {
+            document.getElementById('modal-title').textContent = 'Nouveau questionnaire';
+            document.getElementById('questionnaire-form').reset();
+            document.getElementById('questionnaire-id').value = '';
+            document.getElementById('actif').checked = true;
+            document.getElementById('site-select-container').style.display = 'block';
+            new bootstrap.Modal(document.getElementById('questionnaireModal')).show();
+        }
+
+        async function editQuestionnaire(id) {
+            const q = questionnaires.find(x => x.id === id);
+            if (!q) return;
+
+            document.getElementById('modal-title').textContent = 'Modifier le questionnaire';
+            document.getElementById('questionnaire-id').value = q.id;
+            document.getElementById('nom').value = q.nom;
+            document.getElementById('description').value = q.description || '';
+            document.getElementById('date_debut').value = q.date_debut || '';
+            document.getElementById('date_fin').value = q.date_fin || '';
+            document.getElementById('multi_site').checked = q.multi_site;
+            document.getElementById('site_id').value = q.site_id || '';
+            document.getElementById('actif').checked = q.actif;
+            document.getElementById('site-select-container').style.display = q.multi_site ? 'none' : 'block';
+
+            new bootstrap.Modal(document.getElementById('questionnaireModal')).show();
+        }
+
+        async function saveQuestionnaire() {
+            const id = document.getElementById('questionnaire-id').value;
+            const data = {
+                nom: document.getElementById('nom').value,
+                description: document.getElementById('description').value,
+                date_debut: document.getElementById('date_debut').value || null,
+                date_fin: document.getElementById('date_fin').value || null,
+                multi_site: document.getElementById('multi_site').checked,
+                site_id: document.getElementById('multi_site').checked ? null : document.getElementById('site_id').value,
+                actif: document.getElementById('actif').checked
+            };
+
+            try {
+                if (id) {
+                    await apiAdmin.put(`/frequentation/questionnaires/${id}`, data);
+                    showSuccess('Questionnaire modifie');
+                } else {
+                    await apiAdmin.post('/frequentation/questionnaires', data);
+                    showSuccess('Questionnaire cree');
+                }
+                bootstrap.Modal.getInstance(document.getElementById('questionnaireModal')).hide();
+                await loadData();
+            } catch (error) {
+                showError('Erreur: ' + error.message);
+            }
+        }
+
+        async function deleteQuestionnaire(id) {
+            const result = await Swal.fire({
+                title: 'Confirmer la suppression?',
+                text: 'Cette action est irreversible. Tous les enregistrements seront supprimes.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Supprimer',
+                cancelButtonText: 'Annuler'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    await apiAdmin.delete(`/frequentation/questionnaires/${id}`);
+                    showSuccess('Questionnaire supprime');
+                    await loadData();
+                } catch (error) {
+                    showError('Erreur: ' + error.message);
+                }
+            }
+        }
+
+        // Communes
+        async function openCommunesModal(questionnaireId) {
+            document.getElementById('communes-questionnaire-id').value = questionnaireId;
+            await loadCommunesFavorites(questionnaireId);
+            new bootstrap.Modal(document.getElementById('communesModal')).show();
+        }
+
+        async function loadCommunesFavorites(questionnaireId) {
+            try {
+                const favorites = await apiAdmin.get(`/frequentation/questionnaires/${questionnaireId}/communes`);
+
+                const epinglees = favorites.filter(f => f.epingle);
+                const frequentes = favorites.filter(f => !f.epingle && parseFloat(f.pourcentage_usage) >= 5);
+
+                document.getElementById('communes-epinglees').innerHTML = epinglees.length > 0
+                    ? epinglees.map(f => `
+                        <span class="commune-chip epingle">
+                            <i class="bi bi-pin-fill"></i>
+                            ${escapeHtml(f.commune.nom)} (${f.commune.code_postal})
+                            <button class="btn btn-sm p-0 ms-1" onclick="togglePin(${f.questionnaire_id}, ${f.commune_id}, false)">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </span>
+                    `).join('')
+                    : '<em class="text-muted">Aucune commune epinglee</em>';
+
+                document.getElementById('communes-frequentes').innerHTML = frequentes.length > 0
+                    ? frequentes.map(f => `
+                        <span class="commune-chip">
+                            ${escapeHtml(f.commune.nom)} (${parseFloat(f.pourcentage_usage).toFixed(1)}%)
+                            <button class="btn btn-sm p-0 ms-1" onclick="togglePin(${f.questionnaire_id}, ${f.commune_id}, true)" title="Epingler">
+                                <i class="bi bi-pin"></i>
+                            </button>
+                        </span>
+                    `).join('')
+                    : '<em class="text-muted">Les communes frequemment utilisees apparaitront ici</em>';
+            } catch (error) {
+                console.error('Erreur chargement communes:', error);
+            }
+        }
+
+        async function searchCommunes() {
+            const query = document.getElementById('commune-search').value;
+            if (query.length < 2) return;
+
+            try {
+                const communes = await apiAdmin.get(`/communes?q=${encodeURIComponent(query)}&limit=10`);
+                const questionnaireId = document.getElementById('communes-questionnaire-id').value;
+
+                document.getElementById('commune-search-results').innerHTML = communes.length > 0
+                    ? communes.map(c => `
+                        <button class="btn btn-sm btn-outline-secondary m-1" onclick="togglePin(${questionnaireId}, ${c.id}, true)">
+                            <i class="bi bi-plus"></i> ${escapeHtml(c.nom)} (${c.code_postal})
+                        </button>
+                    `).join('')
+                    : '<em class="text-muted">Aucune commune trouvee</em>';
+            } catch (error) {
+                console.error('Erreur recherche:', error);
+            }
+        }
+
+        async function togglePin(questionnaireId, communeId, epingle) {
+            try {
+                await apiAdmin.post(`/frequentation/questionnaires/${questionnaireId}/communes/pin`, {
+                    commune_id: communeId,
+                    epingle
+                });
+                await loadCommunesFavorites(questionnaireId);
+            } catch (error) {
+                showError('Erreur: ' + error.message);
+            }
+        }
+
+        // Tablettes
+        async function openTablettesModal(questionnaireId) {
+            document.getElementById('tablettes-questionnaire-id').value = questionnaireId;
+            await loadApiKeys();
+            await loadTablettes(questionnaireId);
+            populateTabletSiteSelect();
+            new bootstrap.Modal(document.getElementById('tablettesModal')).show();
+        }
+
+        async function loadApiKeys() {
+            try {
+                apiKeys = await apiAdmin.get('/api-keys');
+                document.getElementById('new-tablet-apikey').innerHTML =
+                    '<option value="">Selectionner une cle API...</option>' +
+                    apiKeys.filter(k => k.actif).map(k =>
+                        `<option value="${k.id}">${escapeHtml(k.nom)} (${k.key_prefix})</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Erreur chargement API keys:', error);
+            }
+        }
+
+        function populateTabletSiteSelect() {
+            document.getElementById('new-tablet-site').innerHTML =
+                '<option value="">Selectionner un site...</option>' +
+                sites.map(s => `<option value="${s.id}">${escapeHtml(s.nom)}</option>`).join('');
+        }
+
+        async function loadTablettes(questionnaireId) {
+            try {
+                const tablettes = await apiAdmin.get(`/frequentation/questionnaires/${questionnaireId}/tablets`);
+
+                document.getElementById('tablettes-list').innerHTML = tablettes.length > 0
+                    ? `<div class="list-group">
+                        ${tablettes.map(t => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${escapeHtml(t.apiKey?.nom || 'Cle inconnue')}</strong>
+                                    <br><small class="text-muted">Site: ${escapeHtml(t.site?.nom || '-')}</small>
+                                    ${t.apiKey?.derniere_utilisation ? `<br><small class="text-muted">Derniere activite: ${new Date(t.apiKey.derniere_utilisation).toLocaleString('fr-FR')}</small>` : ''}
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="showQRCode(${questionnaireId}, ${t.api_key_id})" title="QR Code">
+                                        <i class="bi bi-qr-code"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="unlinkTablet(${questionnaireId}, ${t.api_key_id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>`
+                    : '<em class="text-muted">Aucune tablette configuree</em>';
+            } catch (error) {
+                console.error('Erreur chargement tablettes:', error);
+            }
+        }
+
+        async function linkTablet() {
+            const questionnaireId = document.getElementById('tablettes-questionnaire-id').value;
+            const apiKeyId = document.getElementById('new-tablet-apikey').value;
+            const siteId = document.getElementById('new-tablet-site').value;
+
+            if (!apiKeyId || !siteId) {
+                showError('Veuillez selectionner une cle API et un site');
+                return;
+            }
+
+            try {
+                await apiAdmin.post(`/frequentation/questionnaires/${questionnaireId}/tablets`, {
+                    api_key_id: apiKeyId,
+                    site_id: siteId
+                });
+                showSuccess('Tablette liee');
+                await loadTablettes(questionnaireId);
+            } catch (error) {
+                showError('Erreur: ' + error.message);
+            }
+        }
+
+        async function unlinkTablet(questionnaireId, apiKeyId) {
+            if (!confirm('Delier cette tablette?')) return;
+
+            try {
+                await apiAdmin.delete(`/frequentation/questionnaires/${questionnaireId}/tablets/${apiKeyId}`);
+                showSuccess('Tablette deliee');
+                await loadTablettes(questionnaireId);
+            } catch (error) {
+                showError('Erreur: ' + error.message);
+            }
+        }
+
+        async function showQRCode(questionnaireId, apiKeyId) {
+            try {
+                const result = await apiAdmin.get(`/frequentation/questionnaires/${questionnaireId}/qrcode?api_key_id=${apiKeyId}`);
+                document.getElementById('qrcode-image').src = result.qrCode;
+                new bootstrap.Modal(document.getElementById('qrcodeModal')).show();
+            } catch (error) {
+                showError('Erreur generation QR code: ' + error.message);
+            }
+        }
+
+        // Import communes
+        async function importCommunes() {
+            const result = await Swal.fire({
+                title: 'Importer les communes',
+                html: `
+                    <p>Importer les communes depuis data.gouv.fr</p>
+                    <div class="mb-3">
+                        <label class="form-label">Departements (laisser vide pour tous)</label>
+                        <input type="text" id="swal-departements" class="form-control" placeholder="74, 73, 01...">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Importer',
+                cancelButtonText: 'Annuler',
+                showLoaderOnConfirm: true,
+                preConfirm: async () => {
+                    const depInput = document.getElementById('swal-departements').value;
+                    const departements = depInput ? depInput.split(',').map(d => d.trim()) : null;
+
+                    try {
+                        const result = await apiAdmin.post('/communes/import/datagouv', { departements });
+                        return result;
+                    } catch (error) {
+                        Swal.showValidationMessage('Erreur: ' + error.message);
+                    }
+                }
+            });
+
+            if (result.isConfirmed) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Import termine',
+                    html: `${result.value.results.created} communes creees<br>${result.value.results.updated} mises a jour`
+                });
+                document.getElementById('alert-communes').classList.add('d-none');
+            }
+        }
+
+        // Utilitaires
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showSuccess(message) {
+            Swal.fire({ icon: 'success', title: message, timer: 2000, showConfirmButton: false });
+        }
+
+        function showError(message) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: message });
+        }
+
+        // Toggle multi-site
+        document.getElementById('multi_site').addEventListener('change', function() {
+            document.getElementById('site-select-container').style.display = this.checked ? 'none' : 'block';
+        });
+    </script>
+</body>
+</html>

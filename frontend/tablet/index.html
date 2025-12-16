@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#6f42c1">
+    <title>Frequentation</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/tablet.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <h1 id="siteLabel">Frequentation</h1>
+        <div class="status-indicator">
+            <span class="status-dot"></span>
+            <span class="status-text">En ligne</span>
+            <button class="settings-btn" onclick="openSettings()" title="Parametres">&#9881;</button>
+        </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <div class="app-container">
+        <!-- Compteurs -->
+        <div class="card">
+            <div class="card-header">Nombre de visiteurs</div>
+            <div class="card-body">
+                <div class="counter-section">
+                    <!-- Adultes -->
+                    <div class="counter-row">
+                        <span class="counter-label">Adultes</span>
+                        <div class="counter-controls">
+                            <button class="counter-btn minus" onclick="decrementCounter('adultes')">-</button>
+                            <span class="counter-value" id="adultesCount">0</span>
+                            <button class="counter-btn plus" onclick="incrementCounter('adultes')">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Enfants -->
+                    <div class="counter-row">
+                        <span class="counter-label">Enfants</span>
+                        <div class="counter-controls">
+                            <button class="counter-btn minus" onclick="decrementCounter('enfants')">-</button>
+                            <span class="counter-value" id="enfantsCount">0</span>
+                            <button class="counter-btn plus" onclick="incrementCounter('enfants')">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="total-display">
+                        <div class="total-value">Total: <span id="totalCount">0</span> personne(s)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Communes -->
+        <div class="card">
+            <div class="card-header">Commune d'origine</div>
+            <div class="card-body">
+                <div class="communes-grid" id="communesGrid">
+                    <!-- Genere dynamiquement -->
+                </div>
+
+                <div class="commune-selection" id="communeSelection">
+                    <div class="commune-selection-icon empty">?</div>
+                    <div class="commune-selection-text">Aucune commune selectionnee</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bouton validation -->
+        <button class="validate-btn" id="validateBtn" onclick="validateRecord()" disabled>
+            &#10003; VALIDER
+        </button>
+
+        <!-- Dernier enregistrement -->
+        <div id="lastRecord"></div>
+    </div>
+
+    <!-- Badge enregistrements en attente -->
+    <div class="pending-badge">0 en attente</div>
+
+    <!-- Modal recherche commune -->
+    <div class="modal-overlay" id="communeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeCommuneModal()">&times;</button>
+                <div class="modal-search">
+                    <input type="text"
+                           id="communeSearch"
+                           placeholder="Rechercher une commune..."
+                           oninput="searchCommunes()"
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-body" id="communeResults">
+                <!-- Resultats de recherche -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/app.js"></script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('[SW] Enregistre:', reg.scope))
+                    .catch(err => console.error('[SW] Erreur:', err));
+            });
+        }
+    </script>
+</body>
+</html>

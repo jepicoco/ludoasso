@@ -179,6 +179,14 @@ const MENU_ITEMS = [
         href: 'historique-communications.html',
         module: 'communications'
     },
+    {
+        id: 'frequentation',
+        label: 'Frequentation',
+        icon: 'people-fill',
+        href: 'frequentation-questionnaires.html',
+        module: 'frequentation',
+        minRole: 'gestionnaire'
+    },
     // === Séparation 2 ===
     { separator: true },
     // === Section 3: Les 4 modules/collections ===

@@ -175,6 +175,13 @@ const EtageModel = require('./Etage');
 const ElementPlanModel = require('./ElementPlan');
 const ElementEmplacementModel = require('./ElementEmplacement');
 
+// Import Frequentation (comptage visiteurs)
+const CommuneModel = require('./Commune');
+const QuestionnaireFrequentationModel = require('./QuestionnaireFrequentation');
+const QuestionnaireCommuneFavoriteModel = require('./QuestionnaireCommuneFavorite');
+const EnregistrementFrequentationModel = require('./EnregistrementFrequentation');
+const ApiKeyQuestionnaireModel = require('./ApiKeyQuestionnaire');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -346,6 +353,13 @@ const Plan = PlanModel(sequelize);
 const Etage = EtageModel(sequelize);
 const ElementPlan = ElementPlanModel(sequelize);
 const ElementEmplacement = ElementEmplacementModel(sequelize);
+
+// Initialize Frequentation (comptage visiteurs)
+const Commune = CommuneModel(sequelize);
+const QuestionnaireFrequentation = QuestionnaireFrequentationModel(sequelize);
+const QuestionnaireCommuneFavorite = QuestionnaireCommuneFavoriteModel(sequelize);
+const EnregistrementFrequentation = EnregistrementFrequentationModel(sequelize);
+const ApiKeyQuestionnaire = ApiKeyQuestionnaireModel(sequelize);
 
 // Define associations
 
@@ -1738,6 +1752,131 @@ EmplacementDisque.hasMany(ElementEmplacement, {
   as: 'elementsPlan'
 });
 
+// ============================================
+// Frequentation (Comptage visiteurs)
+// ============================================
+
+// QuestionnaireFrequentation <-> Site (Many-to-One, site unique)
+QuestionnaireFrequentation.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+Site.hasMany(QuestionnaireFrequentation, {
+  foreignKey: 'site_id',
+  as: 'questionnairesFrequentation'
+});
+
+// QuestionnaireFrequentation <-> Utilisateur (createur)
+QuestionnaireFrequentation.belongsTo(Utilisateur, {
+  foreignKey: 'cree_par',
+  as: 'createur'
+});
+
+Utilisateur.hasMany(QuestionnaireFrequentation, {
+  foreignKey: 'cree_par',
+  as: 'questionnairesCreees'
+});
+
+// QuestionnaireCommuneFavorite <-> QuestionnaireFrequentation
+QuestionnaireCommuneFavorite.belongsTo(QuestionnaireFrequentation, {
+  foreignKey: 'questionnaire_id',
+  as: 'questionnaire'
+});
+
+QuestionnaireFrequentation.hasMany(QuestionnaireCommuneFavorite, {
+  foreignKey: 'questionnaire_id',
+  as: 'communesFavorites'
+});
+
+// QuestionnaireCommuneFavorite <-> Commune
+QuestionnaireCommuneFavorite.belongsTo(Commune, {
+  foreignKey: 'commune_id',
+  as: 'commune'
+});
+
+Commune.hasMany(QuestionnaireCommuneFavorite, {
+  foreignKey: 'commune_id',
+  as: 'favoritesDans'
+});
+
+// EnregistrementFrequentation <-> QuestionnaireFrequentation
+EnregistrementFrequentation.belongsTo(QuestionnaireFrequentation, {
+  foreignKey: 'questionnaire_id',
+  as: 'questionnaire'
+});
+
+QuestionnaireFrequentation.hasMany(EnregistrementFrequentation, {
+  foreignKey: 'questionnaire_id',
+  as: 'enregistrements'
+});
+
+// EnregistrementFrequentation <-> Site
+EnregistrementFrequentation.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+Site.hasMany(EnregistrementFrequentation, {
+  foreignKey: 'site_id',
+  as: 'enregistrementsFrequentation'
+});
+
+// EnregistrementFrequentation <-> ApiKey (tablette)
+EnregistrementFrequentation.belongsTo(ApiKey, {
+  foreignKey: 'api_key_id',
+  as: 'tablette'
+});
+
+ApiKey.hasMany(EnregistrementFrequentation, {
+  foreignKey: 'api_key_id',
+  as: 'enregistrementsFrequentation'
+});
+
+// EnregistrementFrequentation <-> Commune
+EnregistrementFrequentation.belongsTo(Commune, {
+  foreignKey: 'commune_id',
+  as: 'commune'
+});
+
+Commune.hasMany(EnregistrementFrequentation, {
+  foreignKey: 'commune_id',
+  as: 'enregistrements'
+});
+
+// ApiKeyQuestionnaire <-> ApiKey
+ApiKeyQuestionnaire.belongsTo(ApiKey, {
+  foreignKey: 'api_key_id',
+  as: 'apiKey'
+});
+
+ApiKey.hasMany(ApiKeyQuestionnaire, {
+  foreignKey: 'api_key_id',
+  as: 'questionnairesLies'
+});
+
+// ApiKeyQuestionnaire <-> QuestionnaireFrequentation
+ApiKeyQuestionnaire.belongsTo(QuestionnaireFrequentation, {
+  foreignKey: 'questionnaire_id',
+  as: 'questionnaire'
+});
+
+QuestionnaireFrequentation.hasMany(ApiKeyQuestionnaire, {
+  foreignKey: 'questionnaire_id',
+  as: 'tablettesLiees'
+});
+
+// ApiKeyQuestionnaire <-> Site
+ApiKeyQuestionnaire.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+Site.hasMany(ApiKeyQuestionnaire, {
+  foreignKey: 'site_id',
+  as: 'tablettesFrequentation'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -1884,5 +2023,11 @@ module.exports = {
   Plan,
   Etage,
   ElementPlan,
-  ElementEmplacement
+  ElementEmplacement,
+  // Frequentation (comptage visiteurs)
+  Commune,
+  QuestionnaireFrequentation,
+  QuestionnaireCommuneFavorite,
+  EnregistrementFrequentation,
+  ApiKeyQuestionnaire
 };

@@ -240,7 +240,9 @@ module.exports = (sequelize) => {
       { id: 'disques:read', label: 'Lecture des disques', groupe: 'Disques' },
       { id: 'disques:create', label: 'Creation de disques', groupe: 'Disques' },
       { id: 'disques:update', label: 'Modification de disques', groupe: 'Disques' },
-      { id: 'images:upload', label: 'Upload d\'images', groupe: 'Medias' }
+      { id: 'images:upload', label: 'Upload d\'images', groupe: 'Medias' },
+      { id: 'frequentation:read', label: 'Lecture frequentation', groupe: 'Frequentation' },
+      { id: 'frequentation:create', label: 'Enregistrement frequentation', groupe: 'Frequentation' }
     ];
   };
 
