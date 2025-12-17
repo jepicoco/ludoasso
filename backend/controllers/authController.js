@@ -70,6 +70,23 @@ const login = async (req, res) => {
       });
     }
 
+    // Check if user has admin role (not just 'usager')
+    const adminRoles = ['benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
+    if (!adminRoles.includes(user.role)) {
+      auditLogger.login({
+        userId: user.id,
+        email,
+        ip: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('user-agent'),
+        success: false
+      });
+
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Vous n\'avez pas accès à l\'interface d\'administration. Utilisez l\'espace usager.'
+      });
+    }
+
     // Generate token
     const token = user.generateAuthToken();
 
