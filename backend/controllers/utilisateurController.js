@@ -217,11 +217,14 @@ const updateUtilisateur = async (req, res) => {
     if (nom) utilisateur.nom = nom;
     if (prenom) utilisateur.prenom = prenom;
     if (email) utilisateur.email = email;
+    // Flag pour savoir si on a hashé manuellement
+    let passwordHashed = false;
     if (password) {
       // Hasher le mot de passe directement
       const bcrypt = require('bcryptjs');
       const salt = await bcrypt.genSalt(10);
       utilisateur.password = await bcrypt.hash(password, salt);
+      passwordHashed = true;
     }
     if (telephone !== undefined) utilisateur.telephone = telephone;
     if (adresse !== undefined) utilisateur.adresse = adresse;
@@ -236,7 +239,8 @@ const updateUtilisateur = async (req, res) => {
     if (date_fin_adhesion_association !== undefined) utilisateur.date_fin_adhesion_association = date_fin_adhesion_association;
     if (notes !== undefined) utilisateur.notes = notes;
 
-    await utilisateur.save();
+    // Si mot de passe hashé manuellement, sauvegarder sans hook pour éviter double hashage
+    await utilisateur.save({ hooks: !passwordHashed });
 
     // Declencher les evenements appropries
     try {

@@ -209,12 +209,14 @@ const updateAdherent = async (req, res) => {
     if (nom) adherent.nom = nom;
     if (prenom) adherent.prenom = prenom;
     if (email) adherent.email = email;
+    // Flag pour savoir si on a hashé manuellement
+    let passwordHashed = false;
     if (password) {
       // Hasher le mot de passe directement car changed() ne detecte pas toujours le changement
       const bcrypt = require('bcryptjs');
       const salt = await bcrypt.genSalt(10);
       adherent.password = await bcrypt.hash(password, salt);
-      console.log('Password updated and hashed for user', id);
+      passwordHashed = true;
     }
     if (telephone !== undefined) adherent.telephone = telephone;
     if (adresse !== undefined) adherent.adresse = adresse;
@@ -229,7 +231,8 @@ const updateAdherent = async (req, res) => {
     if (adhesion_association !== undefined) adherent.adhesion_association = adhesion_association;
     if (notes !== undefined) adherent.notes = notes;
 
-    await adherent.save();
+    // Si mot de passe hashé manuellement, sauvegarder sans hook pour éviter double hashage
+    await adherent.save({ hooks: !passwordHashed });
 
     // Déclencher les événements appropriés
     try {
