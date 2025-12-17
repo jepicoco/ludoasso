@@ -39,9 +39,10 @@ tmp/
 # OS
 Thumbs.db
 
-# Scripts locaux (sauf install.js)
+# Scripts locaux (sauf scripts d'installation)
 scripts/*
 !scripts/install.js
+!scripts/setup-env.sh
 test-logging.sh
 TEST_LOGGING.bat
 
