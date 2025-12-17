@@ -210,8 +210,11 @@ const updateAdherent = async (req, res) => {
     if (prenom) adherent.prenom = prenom;
     if (email) adherent.email = email;
     if (password) {
-      console.log('DEBUG: Updating password for user', id, '- password length:', password.length);
-      adherent.password = password; // Le hook beforeUpdate hashera le mot de passe
+      // Hasher le mot de passe directement car changed() ne detecte pas toujours le changement
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      adherent.password = await bcrypt.hash(password, salt);
+      console.log('Password updated and hashed for user', id);
     }
     if (telephone !== undefined) adherent.telephone = telephone;
     if (adresse !== undefined) adherent.adresse = adresse;

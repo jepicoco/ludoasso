@@ -197,7 +197,7 @@ const updateUtilisateur = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      nom, prenom, email, telephone, adresse, ville,
+      nom, prenom, email, password, telephone, adresse, ville,
       code_postal, date_naissance, date_inscription, date_fin_cotisation,
       statut, role, photo, date_fin_adhesion_association, notes
     } = req.body;
@@ -217,6 +217,12 @@ const updateUtilisateur = async (req, res) => {
     if (nom) utilisateur.nom = nom;
     if (prenom) utilisateur.prenom = prenom;
     if (email) utilisateur.email = email;
+    if (password) {
+      // Hasher le mot de passe directement
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      utilisateur.password = await bcrypt.hash(password, salt);
+    }
     if (telephone !== undefined) utilisateur.telephone = telephone;
     if (adresse !== undefined) utilisateur.adresse = adresse;
     if (ville !== undefined) utilisateur.ville = ville;
@@ -235,9 +241,9 @@ const updateUtilisateur = async (req, res) => {
     // Declencher les evenements appropries
     try {
       if (statut && statut === 'suspendu' && previousStatut !== 'suspendu') {
-        await eventTriggerService.trigger('UTILISATEUR_SUSPENDED', { utilisateur });
+        await eventTriggerService.triggerAdherentSuspended(utilisateur);
       } else {
-        await eventTriggerService.trigger('UTILISATEUR_MODIFICATION', { utilisateur });
+        await eventTriggerService.triggerAdherentUpdated(utilisateur);
       }
     } catch (eventError) {
       console.error('Erreur declenchement evenement:', eventError);
