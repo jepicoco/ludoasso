@@ -209,7 +209,10 @@ const updateAdherent = async (req, res) => {
     if (nom) adherent.nom = nom;
     if (prenom) adherent.prenom = prenom;
     if (email) adherent.email = email;
-    if (password) adherent.password = password; // Le hook beforeSave hashera le mot de passe
+    if (password) {
+      console.log('DEBUG: Updating password for user', id, '- password length:', password.length);
+      adherent.password = password; // Le hook beforeUpdate hashera le mot de passe
+    }
     if (telephone !== undefined) adherent.telephone = telephone;
     if (adresse !== undefined) adherent.adresse = adresse;
     if (ville !== undefined) adherent.ville = ville;

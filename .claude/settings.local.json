@@ -70,9 +70,12 @@
       "Bash(git pull:*)",
       "Bash(xargs basename:*)",
       "Bash(git config --global --add safe.directory '%(prefix)///SRV-AD/www/ludo/liberteko')",
-      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add reservations module and customizable module colors\n\nReservations System:\n- Full reservation management with queue system\n- Reserve articles when loaned, auto-notify when returned\n- Status workflow: en_attente -> prete -> empruntee/expiree/annulee\n- Admin actions: mark ready, notify user, extend, convert to loan\n- Queue management with position tracking\n- Limits per user type, status, and optionally genre\n- SweetAlert2 popups for all confirmations\n- Module-based access control filtering\n\nModule Colors:\n- Customizable background and text colors per collection module\n- Color picker in Holodeck settings page\n- Colors saved to database (modules_actifs.couleur, couleur_texte)\n- Cached in localStorage for performance\n- Applied to: admin sidebar, emprunts tabs, reservations page\n- CSS variables for consistent theming\n\nOther improvements:\n- Article status ''reserve'' added to all collections\n- Return loans checks for pending reservations\n- Holodeck moved to last position in parametres.html\n- Module colors centralized in admin-navigation.js\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(npm install exceljs)"
+      "Bash(npm install exceljs)",
+      "Bash(dir:*)",
+      "Bash(move tablet.css default.css)",
+      "Bash(powershell -Command \"Rename-Item -Path ''C:\\Users\\jepic\\Documents\\Projets\\liberteko\\frontend\\tablet\\css\\tablet.css'' -NewName ''default.css''\")",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

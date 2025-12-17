@@ -228,7 +228,9 @@ module.exports = (sequelize) => {
         }
       },
       beforeUpdate: async (utilisateur) => {
+        console.log('DEBUG beforeUpdate: changed fields =', utilisateur.changed());
         if (utilisateur.changed('password')) {
+          console.log('DEBUG beforeUpdate: hashing password');
           const salt = await bcrypt.genSalt(10);
           utilisateur.password = await bcrypt.hash(utilisateur.password, salt);
         }
