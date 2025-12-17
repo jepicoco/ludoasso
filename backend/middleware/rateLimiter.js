@@ -26,12 +26,12 @@ const apiLimiter = rateLimit({
 });
 
 /**
- * Limiter strict pour les tentatives de login
- * 5 tentatives par 15 minutes par IP
+ * Limiter pour les tentatives de login
+ * 20 tentatives par 15 minutes par IP
  */
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 tentatives max
+  max: 20, // 20 tentatives max
   message: {
     error: 'Trop de tentatives de connexion',
     message: 'Trop de tentatives de connexion depuis cette adresse IP. Veuillez réessayer dans 15 minutes.',
