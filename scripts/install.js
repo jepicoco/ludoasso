@@ -257,7 +257,6 @@ async function createDefaultAdmin() {
   logStep('5/5', 'Verification du compte administrateur');
 
   const { Utilisateur } = require('../backend/models');
-  const bcrypt = require('bcryptjs');
 
   try {
     const existingAdmin = await Utilisateur.findOne({
@@ -270,13 +269,13 @@ async function createDefaultAdmin() {
     }
 
     const defaultPassword = 'admin123';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 12);
+    // Le hook beforeCreate du modèle hash automatiquement le password
 
     const admin = await Utilisateur.create({
       nom: 'Admin',
       prenom: 'Liberteko',
       email: 'admin@liberteko.local',
-      mot_de_passe: hashedPassword,
+      password: defaultPassword,
       role: 'administrateur',
       statut: 'actif'
     });
