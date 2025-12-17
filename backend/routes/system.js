@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const systemController = require('../controllers/systemController');
 const { verifyToken, optionalAuth } = require('../middleware/auth');
-const checkRole = require('../middleware/checkRole');
+const { checkRole } = require('../middleware/checkRole');
 
 // GET /api/system/version - Version (public, mais enrichi si admin)
 router.get('/version', optionalAuth, systemController.getVersion);
