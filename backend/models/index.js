@@ -1926,7 +1926,9 @@ ValidationCharte.belongsTo(Cotisation, {
 module.exports = {
   sequelize,
   Utilisateur,
+  Adherent: Utilisateur, // Alias pour retrocompatibilité
   UtilisateurArchive,
+  AdherentArchive: UtilisateurArchive, // Alias pour retrocompatibilité
   Jeu,
   Emprunt,
   TarifCotisation,
