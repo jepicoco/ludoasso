@@ -437,8 +437,8 @@
           headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         if (response.ok) {
-          const user = await response.json();
-          currentUserRole = user.role || 'usager';
+          const data = await response.json();
+          currentUserRole = data.user?.role || 'usager';
         }
       } catch (error) {
         console.error('Erreur chargement profil:', error);
