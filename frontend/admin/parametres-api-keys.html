@@ -337,11 +337,16 @@
           ? Math.min(100, (stats.requetes_periode / stats.limite_periode) * 100)
           : 0;
 
-        const permBadges = (cle.permissions || []).slice(0, 3)
+        // Parser permissions si c'est une chaîne JSON
+        let permissions = cle.permissions || [];
+        if (typeof permissions === 'string') {
+          try { permissions = JSON.parse(permissions); } catch (e) { permissions = []; }
+        }
+        const permBadges = permissions.slice(0, 3)
           .map(p => `<span class="badge bg-secondary permission-badge">${p}</span>`)
           .join('');
-        const plusBadge = (cle.permissions || []).length > 3
-          ? `<span class="badge bg-secondary permission-badge">+${cle.permissions.length - 3}</span>`
+        const plusBadge = permissions.length > 3
+          ? `<span class="badge bg-secondary permission-badge">+${permissions.length - 3}</span>`
           : '';
 
         return `<tr>
