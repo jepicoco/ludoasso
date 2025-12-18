@@ -289,14 +289,38 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">QR Code de configuration</h5>
+                    <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>QR Code de configuration</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body text-center">
-                    <img id="qrcode-image" class="qr-preview mb-3" alt="QR Code">
-                    <p class="text-muted small">
-                        Scannez ce QR code avec la tablette pour la configurer automatiquement.
-                    </p>
+                <div class="modal-body">
+                    <!-- Etape 1: Saisie de la cle API -->
+                    <div id="qrcode-step-key">
+                        <div class="alert alert-info py-2 small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Entrez la cle API associee a cette tablette. La cle a ete affichee lors de sa creation.
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Cle API</label>
+                            <input type="text" class="form-control font-monospace" id="qrcode-apikey-input"
+                                   placeholder="ask_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                            <div class="form-text">Format: ask_ suivi de 32 caracteres</div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary" onclick="generateQRCodeWithKey()">
+                                <i class="bi bi-qr-code me-1"></i>Generer le QR Code
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Etape 2: Affichage du QR Code -->
+                    <div id="qrcode-step-display" class="text-center" style="display: none;">
+                        <img id="qrcode-image" class="qr-preview mb-3" alt="QR Code" style="width: 250px; height: 250px;">
+                        <p class="text-muted small">
+                            Scannez ce QR code avec la tablette pour la configurer automatiquement.
+                        </p>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetQRCodeModal()">
+                            <i class="bi bi-arrow-left me-1"></i>Modifier la cle
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -782,14 +806,54 @@
             }
         }
 
-        async function showQRCode(questionnaireId, apiKeyId) {
-            try {
-                const result = await apiAdmin.get(`/frequentation/questionnaires/${questionnaireId}/qrcode?api_key_id=${apiKeyId}`);
-                document.getElementById('qrcode-image').src = result.qrCode;
-                new bootstrap.Modal(document.getElementById('qrcodeModal')).show();
-            } catch (error) {
-                showError('Erreur generation QR code: ' + error.message);
+        // Variables pour la generation QR code
+        let currentQRQuestionnaireId = null;
+
+        function showQRCode(questionnaireId, apiKeyId) {
+            currentQRQuestionnaireId = questionnaireId;
+            // Reset l'etat de la modal
+            resetQRCodeModal();
+            // Ouvrir la modal
+            new bootstrap.Modal(document.getElementById('qrcodeModal')).show();
+        }
+
+        function resetQRCodeModal() {
+            document.getElementById('qrcode-step-key').style.display = 'block';
+            document.getElementById('qrcode-step-display').style.display = 'none';
+            document.getElementById('qrcode-apikey-input').value = '';
+        }
+
+        function generateQRCodeWithKey() {
+            const apiKey = document.getElementById('qrcode-apikey-input').value.trim();
+
+            // Validation basique
+            if (!apiKey) {
+                showError('Veuillez entrer la cle API');
+                return;
             }
+            if (!apiKey.startsWith('ask_')) {
+                showError('La cle API doit commencer par "ask_"');
+                return;
+            }
+            if (apiKey.length < 20) {
+                showError('La cle API semble trop courte');
+                return;
+            }
+
+            // Construire les donnees du QR code (format attendu par la tablette)
+            const qrData = {
+                apiUrl: window.location.origin,
+                apiKey: apiKey,
+                questionnaireId: currentQRQuestionnaireId
+            };
+
+            // Generer le QR code via API externe
+            const qrDataString = JSON.stringify(qrData);
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrDataString)}`;
+
+            document.getElementById('qrcode-image').src = qrApiUrl;
+            document.getElementById('qrcode-step-key').style.display = 'none';
+            document.getElementById('qrcode-step-display').style.display = 'block';
         }
 
         function showManualConfig(questionnaireId) {
