@@ -628,7 +628,7 @@
     // Charger les statistiques
     async function loadStats() {
       try {
-        const stats = await apiRequest('/api/thematiques/stats');
+        const stats = await apiRequest('/thematiques/stats');
         document.getElementById('stat-total').textContent = stats.totalActives;
         document.getElementById('stat-inactives').textContent = stats.totalInactives;
         document.getElementById('stat-alias').textContent = stats.totalAlias;
@@ -653,7 +653,7 @@
       });
 
       try {
-        const result = await apiRequest(`/api/thematiques?${params}`);
+        const result = await apiRequest(`/thematiques?${params}`);
         thematiques = result.thematiques;
         renderThematiques();
         renderPagination(result.total);
@@ -729,7 +729,7 @@
     // Modal edition
     async function openEditModal(id) {
       try {
-        const t = await apiRequest(`/api/thematiques/${id}`);
+        const t = await apiRequest(`/thematiques/${id}`);
         document.getElementById('modal-id').value = t.id;
         document.getElementById('modal-nom').value = t.nom;
         document.getElementById('modal-type').value = t.type;
@@ -754,9 +754,9 @@
 
       try {
         if (id) {
-          await apiRequest(`/api/thematiques/${id}`, { method: 'PUT', body: data });
+          await apiRequest(`/thematiques/${id}`, { method: 'PUT', body: data });
         } else {
-          await apiRequest('/api/thematiques', { method: 'POST', body: data });
+          await apiRequest('/thematiques', { method: 'POST', body: data });
         }
         bootstrap.Modal.getInstance(document.getElementById('thematiqueModal')).hide();
         loadThematiques();
@@ -782,7 +782,7 @@
       };
 
       try {
-        const result = await apiRequest('/api/enrichissement/dry-run', { method: 'POST', body: data });
+        const result = await apiRequest('/enrichissement/dry-run', { method: 'POST', body: data });
 
         document.getElementById('dr-articles').textContent = result.articles;
         document.getElementById('dr-cout').textContent = '$' + (result.coutEstime || 0).toFixed(4);
@@ -817,7 +817,7 @@
       };
 
       try {
-        const result = await apiRequest('/api/enrichissement/batch', { method: 'POST', body: data });
+        const result = await apiRequest('/enrichissement/batch', { method: 'POST', body: data });
 
         if (result.count === 0) {
           showToast('Aucun article a traiter', 'warning');
@@ -938,7 +938,7 @@
       if (!confirm('Annuler le batch en cours ?')) return;
 
       try {
-        const result = await apiRequest(`/api/enrichissement/batch/${currentBatchId}/annuler`, { method: 'POST' });
+        const result = await apiRequest(`/enrichissement/batch/${currentBatchId}/annuler`, { method: 'POST' });
         showToast(result.message, 'warning');
         document.getElementById('btn-annuler-batch').disabled = true;
       } catch (e) {
@@ -949,7 +949,7 @@
     // Charger les batches recents
     async function loadBatches() {
       try {
-        const batches = await apiRequest('/api/enrichissement/batches');
+        const batches = await apiRequest('/enrichissement/batches');
         document.getElementById('batches-list').innerHTML = batches.map(b => `
           <tr>
             <td><code>${b.batch_id?.substring(0, 8) || '-'}...</code></td>
@@ -974,7 +974,7 @@
       if (!confirm('Valider toutes les thematiques de ce batch ?')) return;
 
       try {
-        await apiRequest(`/api/enrichissement/batch/${batchId}/valider`, { method: 'POST' });
+        await apiRequest(`/enrichissement/batch/${batchId}/valider`, { method: 'POST' });
         showToast('Batch valide', 'success');
         loadBatches();
         loadValidation();
@@ -1043,7 +1043,7 @@
     // Ouvrir le detail pour modification
     async function openValidationDetail(itemId) {
       try {
-        currentValidationItem = await apiRequest(`/api/enrichissement/${itemId}`);
+        currentValidationItem = await apiRequest(`/enrichissement/${itemId}`);
 
         document.getElementById('vd-item-id').value = currentValidationItem.id;
         document.getElementById('vd-type').textContent = currentValidationItem.type_article;
@@ -1121,13 +1121,13 @@
         const itemId = document.getElementById('vd-item-id').value;
 
         // Sauvegarder les modifications
-        await apiRequest(`/api/enrichissement/${itemId}/thematiques`, {
+        await apiRequest(`/enrichissement/${itemId}/thematiques`, {
           method: 'PUT',
           body: { thematiques: currentValidationItem.thematiques_proposees }
         });
 
         // Valider
-        await apiRequest(`/api/enrichissement/${itemId}/valider`, { method: 'POST' });
+        await apiRequest(`/enrichissement/${itemId}/valider`, { method: 'POST' });
 
         bootstrap.Modal.getInstance(document.getElementById('validationDetailModal')).hide();
         showToast('Item valide', 'success');
@@ -1142,7 +1142,7 @@
     async function rejeterItemModal() {
       try {
         const itemId = document.getElementById('vd-item-id').value;
-        await apiRequest(`/api/enrichissement/${itemId}/rejeter`, { method: 'POST' });
+        await apiRequest(`/enrichissement/${itemId}/rejeter`, { method: 'POST' });
         bootstrap.Modal.getInstance(document.getElementById('validationDetailModal')).hide();
         showToast('Item rejete', 'success');
         loadValidation();
@@ -1154,7 +1154,7 @@
     // Valider un item directement (sans modal)
     async function validerItem(id) {
       try {
-        await apiRequest(`/api/enrichissement/${id}/valider`, { method: 'POST' });
+        await apiRequest(`/enrichissement/${id}/valider`, { method: 'POST' });
         showToast('Item valide', 'success');
         loadValidation();
         loadStats();
@@ -1166,7 +1166,7 @@
     // Rejeter un item directement
     async function rejeterItem(id) {
       try {
-        await apiRequest(`/api/enrichissement/${id}/rejeter`, { method: 'POST' });
+        await apiRequest(`/enrichissement/${id}/rejeter`, { method: 'POST' });
         showToast('Item rejete', 'success');
         loadValidation();
       } catch (e) {
@@ -1186,7 +1186,7 @@
       let succes = 0;
       for (const item of validationItems) {
         try {
-          await apiRequest(`/api/enrichissement/${item.id}/valider`, { method: 'POST' });
+          await apiRequest(`/enrichissement/${item.id}/valider`, { method: 'POST' });
           succes++;
         } catch (e) {
           console.error(`Erreur validation item ${item.id}:`, e);
@@ -1203,7 +1203,7 @@
       const seuil = parseInt(document.getElementById('seuil-doublons').value) / 100;
 
       try {
-        const doublons = await apiRequest(`/api/thematiques/doublons?seuil=${seuil}`);
+        const doublons = await apiRequest(`/thematiques/doublons?seuil=${seuil}`);
 
         document.getElementById('doublons-list').innerHTML = doublons.length > 0 ?
           doublons.map(d => `
@@ -1253,7 +1253,7 @@
       const cibleId = document.getElementById('fusion-cible-id').value;
 
       try {
-        await apiRequest('/api/thematiques/fusionner', {
+        await apiRequest('/thematiques/fusionner', {
           method: 'POST',
           body: { sourceId: parseInt(sourceId), cibleId: parseInt(cibleId) }
         });
