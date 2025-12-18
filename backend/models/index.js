@@ -133,6 +133,12 @@ const CodeBarreLivreModel = require('./CodeBarreLivre');
 const CodeBarreFilmModel = require('./CodeBarreFilm');
 const CodeBarreDisqueModel = require('./CodeBarreDisque');
 
+// Import Exemplaires (exemplaires multiples par article)
+const ExemplaireJeuModel = require('./ExemplaireJeu');
+const ExemplaireLivreModel = require('./ExemplaireLivre');
+const ExemplaireFilmModel = require('./ExemplaireFilm');
+const ExemplaireDisqueModel = require('./ExemplaireDisque');
+
 // Import Configuration API (lookup EAN/ISBN externe)
 const ConfigurationAPIModel = require('./ConfigurationAPI');
 
@@ -319,6 +325,12 @@ const CodeBarreLivre = CodeBarreLivreModel(sequelize);
 const CodeBarreFilm = CodeBarreFilmModel(sequelize);
 const CodeBarreDisque = CodeBarreDisqueModel(sequelize);
 
+// Initialize Exemplaires (exemplaires multiples par article)
+const ExemplaireJeu = ExemplaireJeuModel(sequelize);
+const ExemplaireLivre = ExemplaireLivreModel(sequelize);
+const ExemplaireFilm = ExemplaireFilmModel(sequelize);
+const ExemplaireDisque = ExemplaireDisqueModel(sequelize);
+
 // Initialize Configuration API (lookup EAN/ISBN externe)
 const ConfigurationAPI = ConfigurationAPIModel(sequelize);
 
@@ -438,6 +450,144 @@ Emprunt.belongsTo(Disque, {
   foreignKey: 'disque_id',
   as: 'disque'
 });
+
+// ============================================================
+// EXEMPLAIRES (exemplaires multiples par article)
+// ============================================================
+
+// Jeu <-> ExemplaireJeu (One-to-Many)
+Jeu.hasMany(ExemplaireJeu, {
+  foreignKey: 'jeu_id',
+  as: 'exemplaires'
+});
+
+ExemplaireJeu.belongsTo(Jeu, {
+  foreignKey: 'jeu_id',
+  as: 'jeu'
+});
+
+// ExemplaireJeu <-> EmplacementJeu (Many-to-One)
+EmplacementJeu.hasMany(ExemplaireJeu, {
+  foreignKey: 'emplacement_id',
+  as: 'exemplaires'
+});
+
+ExemplaireJeu.belongsTo(EmplacementJeu, {
+  foreignKey: 'emplacement_id',
+  as: 'emplacement'
+});
+
+// ExemplaireJeu <-> Emprunt (One-to-Many)
+ExemplaireJeu.hasMany(Emprunt, {
+  foreignKey: 'exemplaire_jeu_id',
+  as: 'emprunts'
+});
+
+Emprunt.belongsTo(ExemplaireJeu, {
+  foreignKey: 'exemplaire_jeu_id',
+  as: 'exemplaireJeu'
+});
+
+// Livre <-> ExemplaireLivre (One-to-Many)
+Livre.hasMany(ExemplaireLivre, {
+  foreignKey: 'livre_id',
+  as: 'exemplaires'
+});
+
+ExemplaireLivre.belongsTo(Livre, {
+  foreignKey: 'livre_id',
+  as: 'livre'
+});
+
+// ExemplaireLivre <-> EmplacementLivre (Many-to-One)
+EmplacementLivre.hasMany(ExemplaireLivre, {
+  foreignKey: 'emplacement_id',
+  as: 'exemplaires'
+});
+
+ExemplaireLivre.belongsTo(EmplacementLivre, {
+  foreignKey: 'emplacement_id',
+  as: 'emplacement'
+});
+
+// ExemplaireLivre <-> Emprunt (One-to-Many)
+ExemplaireLivre.hasMany(Emprunt, {
+  foreignKey: 'exemplaire_livre_id',
+  as: 'emprunts'
+});
+
+Emprunt.belongsTo(ExemplaireLivre, {
+  foreignKey: 'exemplaire_livre_id',
+  as: 'exemplaireLivre'
+});
+
+// Film <-> ExemplaireFilm (One-to-Many)
+Film.hasMany(ExemplaireFilm, {
+  foreignKey: 'film_id',
+  as: 'exemplaires'
+});
+
+ExemplaireFilm.belongsTo(Film, {
+  foreignKey: 'film_id',
+  as: 'film'
+});
+
+// ExemplaireFilm <-> EmplacementFilm (Many-to-One)
+EmplacementFilm.hasMany(ExemplaireFilm, {
+  foreignKey: 'emplacement_id',
+  as: 'exemplaires'
+});
+
+ExemplaireFilm.belongsTo(EmplacementFilm, {
+  foreignKey: 'emplacement_id',
+  as: 'emplacement'
+});
+
+// ExemplaireFilm <-> Emprunt (One-to-Many)
+ExemplaireFilm.hasMany(Emprunt, {
+  foreignKey: 'exemplaire_film_id',
+  as: 'emprunts'
+});
+
+Emprunt.belongsTo(ExemplaireFilm, {
+  foreignKey: 'exemplaire_film_id',
+  as: 'exemplaireFilm'
+});
+
+// Disque <-> ExemplaireDisque (One-to-Many)
+Disque.hasMany(ExemplaireDisque, {
+  foreignKey: 'disque_id',
+  as: 'exemplaires'
+});
+
+ExemplaireDisque.belongsTo(Disque, {
+  foreignKey: 'disque_id',
+  as: 'disque'
+});
+
+// ExemplaireDisque <-> EmplacementDisque (Many-to-One)
+EmplacementDisque.hasMany(ExemplaireDisque, {
+  foreignKey: 'emplacement_id',
+  as: 'exemplaires'
+});
+
+ExemplaireDisque.belongsTo(EmplacementDisque, {
+  foreignKey: 'emplacement_id',
+  as: 'emplacement'
+});
+
+// ExemplaireDisque <-> Emprunt (One-to-Many)
+ExemplaireDisque.hasMany(Emprunt, {
+  foreignKey: 'exemplaire_disque_id',
+  as: 'emprunts'
+});
+
+Emprunt.belongsTo(ExemplaireDisque, {
+  foreignKey: 'exemplaire_disque_id',
+  as: 'exemplaireDisque'
+});
+
+// ============================================================
 
 // Utilisateur <-> Cotisation (One-to-Many)
 Utilisateur.hasMany(Cotisation, {
@@ -2065,6 +2215,11 @@ module.exports = {
   CodeBarreLivre,
   CodeBarreFilm,
   CodeBarreDisque,
+  // Exemplaires (exemplaires multiples par article)
+  ExemplaireJeu,
+  ExemplaireLivre,
+  ExemplaireFilm,
+  ExemplaireDisque,
   // Configuration API (lookup EAN/ISBN externe)
   ConfigurationAPI,
   // Configuration Export Comptable (multi-formats)

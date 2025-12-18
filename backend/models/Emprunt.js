@@ -57,6 +57,51 @@ module.exports = (sequelize) => {
       onUpdate: 'CASCADE',
       onDelete: 'RESTRICT'
     },
+    // Champs pour lier aux exemplaires (systeme multi-exemplaires)
+    exemplaire_jeu_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'exemplaires_jeux',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'FK vers exemplaire specifique du jeu emprunte'
+    },
+    exemplaire_livre_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'exemplaires_livres',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'FK vers exemplaire specifique du livre emprunte'
+    },
+    exemplaire_film_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'exemplaires_films',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'FK vers exemplaire specifique du film emprunte'
+    },
+    exemplaire_disque_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'exemplaires_disques',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'FK vers exemplaire specifique du disque emprunte'
+    },
     date_emprunt: {
       type: DataTypes.DATE,
       allowNull: false,
@@ -115,6 +160,18 @@ module.exports = (sequelize) => {
       },
       {
         fields: ['cd_id']
+      },
+      {
+        fields: ['exemplaire_jeu_id']
+      },
+      {
+        fields: ['exemplaire_livre_id']
+      },
+      {
+        fields: ['exemplaire_film_id']
+      },
+      {
+        fields: ['exemplaire_disque_id']
       },
       {
         fields: ['statut']
@@ -191,6 +248,16 @@ module.exports = (sequelize) => {
   // Helper pour obtenir l'ID de l'item emprunté
   Emprunt.prototype.getItemId = function() {
     return this.jeu_id || this.livre_id || this.film_id || this.cd_id;
+  };
+
+  // Helper pour obtenir l'ID de l'exemplaire emprunté
+  Emprunt.prototype.getExemplaireId = function() {
+    return this.exemplaire_jeu_id || this.exemplaire_livre_id || this.exemplaire_film_id || this.exemplaire_disque_id;
+  };
+
+  // Helper pour savoir si l'emprunt utilise le systeme d'exemplaires
+  Emprunt.prototype.hasExemplaire = function() {
+    return !!(this.exemplaire_jeu_id || this.exemplaire_livre_id || this.exemplaire_film_id || this.exemplaire_disque_id);
   };
 
   // Class method to update overdue loans

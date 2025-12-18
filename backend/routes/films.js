@@ -1,11 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const filmController = require('../controllers/filmController');
+const exemplaireController = require('../controllers/exemplaireController');
 const { verifyToken } = require('../middleware/auth');
 const { isAgent, checkModuleAccess } = require('../middleware/checkRole');
 
 // Middleware pour vérifier l'accès au module filmothèque
 const checkFilmoAccess = checkModuleAccess('filmotheque');
+
+// Middleware pour injecter le module dans les params (pour les routes exemplaires)
+const setModuleFilm = (req, res, next) => {
+  req.params.module = 'film';
+  req.params.articleId = req.params.id;
+  next();
+};
 
 // Apply authentication to all routes
 router.use(verifyToken);
@@ -77,5 +85,44 @@ router.get('/:id', filmController.getById);
 router.post('/', isAgent(), checkFilmoAccess, filmController.create);
 router.put('/:id', isAgent(), checkFilmoAccess, filmController.update);
 router.delete('/:id', isAgent(), checkFilmoAccess, filmController.delete);
+
+// ============================================
+// Routes Exemplaires
+// ============================================
+
+/**
+ * @route   GET /api/films/:id/exemplaires
+ * @desc    Liste les exemplaires d'un film
+ * @access  Private (agent+ avec accès filmothèque)
+ */
+router.get('/:id/exemplaires', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplaires);
+
+/**
+ * @route   POST /api/films/:id/exemplaires
+ * @desc    Créer un nouvel exemplaire pour un film
+ * @access  Private (agent+ avec accès filmothèque)
+ */
+router.post('/:id/exemplaires', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.createExemplaire);
+
+/**
+ * @route   GET /api/films/:id/exemplaires/disponibles
+ * @desc    Liste les exemplaires disponibles d'un film
+ * @access  Private (agent+ avec accès filmothèque)
+ */
+router.get('/:id/exemplaires/disponibles', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesDisponibles);
+
+/**
+ * @route   GET /api/films/:id/exemplaires/sans-code-barre
+ * @desc    Liste les exemplaires sans code-barre d'un film
+ * @access  Private (agent+ avec accès filmothèque)
+ */
+router.get('/:id/exemplaires/sans-code-barre', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesSansCodeBarre);
+
+/**
+ * @route   GET /api/films/:id/exemplaires/stats
+ * @desc    Statistiques des exemplaires d'un film
+ * @access  Private (agent+ avec accès filmothèque)
+ */
+router.get('/:id/exemplaires/stats', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesStats);
 
 module.exports = router;

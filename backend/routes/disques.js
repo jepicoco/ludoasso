@@ -6,11 +6,19 @@
 const express = require('express');
 const router = express.Router();
 const disqueController = require('../controllers/disqueController');
+const exemplaireController = require('../controllers/exemplaireController');
 const { verifyToken } = require('../middleware/auth');
 const { isAgent, checkModuleAccess } = require('../middleware/checkRole');
 
 // Middleware pour vérifier l'accès au module discothèque
 const checkDiscoAccess = checkModuleAccess('discotheque');
+
+// Middleware pour injecter le module dans les params (pour les routes exemplaires)
+const setModuleDisque = (req, res, next) => {
+  req.params.module = 'disque';
+  req.params.articleId = req.params.id;
+  next();
+};
 
 // All routes require authentication
 router.use(verifyToken);
@@ -71,5 +79,44 @@ router.get('/:id', disqueController.getDisqueById);
 router.post('/', isAgent(), checkDiscoAccess, disqueController.createDisque);
 router.put('/:id', isAgent(), checkDiscoAccess, disqueController.updateDisque);
 router.delete('/:id', isAgent(), checkDiscoAccess, disqueController.deleteDisque);
+
+// ============================================
+// Routes Exemplaires
+// ============================================
+
+/**
+ * @route   GET /api/disques/:id/exemplaires
+ * @desc    Liste les exemplaires d'un disque
+ * @access  Private (agent+ avec accès discothèque)
+ */
+router.get('/:id/exemplaires', isAgent(), checkDiscoAccess, setModuleDisque, exemplaireController.getExemplaires);
+
+/**
+ * @route   POST /api/disques/:id/exemplaires
+ * @desc    Créer un nouvel exemplaire pour un disque
+ * @access  Private (agent+ avec accès discothèque)
+ */
+router.post('/:id/exemplaires', isAgent(), checkDiscoAccess, setModuleDisque, exemplaireController.createExemplaire);
+
+/**
+ * @route   GET /api/disques/:id/exemplaires/disponibles
+ * @desc    Liste les exemplaires disponibles d'un disque
+ * @access  Private (agent+ avec accès discothèque)
+ */
+router.get('/:id/exemplaires/disponibles', isAgent(), checkDiscoAccess, setModuleDisque, exemplaireController.getExemplairesDisponibles);
+
+/**
+ * @route   GET /api/disques/:id/exemplaires/sans-code-barre
+ * @desc    Liste les exemplaires sans code-barre d'un disque
+ * @access  Private (agent+ avec accès discothèque)
+ */
+router.get('/:id/exemplaires/sans-code-barre', isAgent(), checkDiscoAccess, setModuleDisque, exemplaireController.getExemplairesSansCodeBarre);
+
+/**
+ * @route   GET /api/disques/:id/exemplaires/stats
+ * @desc    Statistiques des exemplaires d'un disque
+ * @access  Private (agent+ avec accès discothèque)
+ */
+router.get('/:id/exemplaires/stats', isAgent(), checkDiscoAccess, setModuleDisque, exemplaireController.getExemplairesStats);
 
 module.exports = router;

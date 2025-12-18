@@ -278,6 +278,7 @@ app.use('/api/frequentation', require('./routes/frequentation'));
 app.use('/api/communes', require('./routes/communes'));
 app.use('/api/external/frequentation', apiLimiter, require('./routes/frequentationTablet'));
 app.use('/api/system', require('./routes/system'));
+app.use('/api/exemplaires', require('./routes/exemplaires'));
 
 // Routes espace usager (adherents)
 app.use('/api/usager/auth', require('./routes/usagerAuth'));
