@@ -181,6 +181,7 @@ const QuestionnaireFrequentationModel = require('./QuestionnaireFrequentation');
 const QuestionnaireCommuneFavoriteModel = require('./QuestionnaireCommuneFavorite');
 const EnregistrementFrequentationModel = require('./EnregistrementFrequentation');
 const ApiKeyQuestionnaireModel = require('./ApiKeyQuestionnaire');
+const TabletPairingTokenModel = require('./TabletPairingToken');
 
 // Import Charte Usager (validation signature numerique)
 const CharteUsagerModel = require('./CharteUsager');
@@ -364,6 +365,7 @@ const QuestionnaireFrequentation = QuestionnaireFrequentationModel(sequelize);
 const QuestionnaireCommuneFavorite = QuestionnaireCommuneFavoriteModel(sequelize);
 const EnregistrementFrequentation = EnregistrementFrequentationModel(sequelize);
 const ApiKeyQuestionnaire = ApiKeyQuestionnaireModel(sequelize);
+const TabletPairingToken = TabletPairingTokenModel(sequelize);
 
 // Initialize Charte Usager (validation signature numerique)
 const CharteUsager = CharteUsagerModel(sequelize);
@@ -1885,6 +1887,29 @@ Site.hasMany(ApiKeyQuestionnaire, {
   as: 'tablettesFrequentation'
 });
 
+// TabletPairingToken <-> QuestionnaireFrequentation
+TabletPairingToken.belongsTo(QuestionnaireFrequentation, {
+  foreignKey: 'questionnaire_id',
+  as: 'questionnaire'
+});
+
+QuestionnaireFrequentation.hasMany(TabletPairingToken, {
+  foreignKey: 'questionnaire_id',
+  as: 'pairingTokens'
+});
+
+// TabletPairingToken <-> Site
+TabletPairingToken.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+// TabletPairingToken <-> ApiKey
+TabletPairingToken.belongsTo(ApiKey, {
+  foreignKey: 'api_key_id',
+  as: 'apiKey'
+});
+
 // ============================================
 // Charte Usager (Validation signature numerique)
 // ============================================
@@ -2077,6 +2102,7 @@ module.exports = {
   QuestionnaireCommuneFavorite,
   EnregistrementFrequentation,
   ApiKeyQuestionnaire,
+  TabletPairingToken,
   // Charte Usager (validation signature numerique)
   CharteUsager,
   ValidationCharte

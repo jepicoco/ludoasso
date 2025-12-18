@@ -12,6 +12,9 @@ const { verifyApiKey } = require('../middleware/apiKeyAuth');
 // Toutes les routes necessitent une ApiKey valide avec permission frequentation
 const requiredPermissions = ['frequentation:read', 'frequentation:create'];
 
+// POST /api/external/frequentation/pair - Appairage tablette (pas d'auth requise)
+router.post('/pair', frequentationTabletController.pair);
+
 // GET /api/external/frequentation/config - Configuration tablette
 router.get('/config', verifyApiKey(['frequentation:read']), frequentationTabletController.getConfig);
 

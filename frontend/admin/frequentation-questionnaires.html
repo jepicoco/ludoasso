@@ -289,40 +289,50 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>QR Code de configuration</h5>
+                    <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>Configuration tablette</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Etape 1: Saisie de la cle API -->
-                    <div id="qrcode-step-key">
-                        <div class="alert alert-info py-2 small">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Entrez la cle API associee a cette tablette. La cle a ete affichee lors de sa creation.
+                    <!-- Chargement -->
+                    <div id="qrcode-loading" class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Chargement...</span>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Cle API</label>
-                            <input type="text" class="form-control font-monospace" id="qrcode-apikey-input"
-                                   placeholder="ask_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
-                            <div class="form-text">Format: ask_ suivi de 32 caracteres</div>
-                        </div>
-                        <div class="d-grid">
-                            <button type="button" class="btn btn-primary" onclick="generateQRCodeWithKey()">
-                                <i class="bi bi-qr-code me-1"></i>Generer le QR Code
-                            </button>
-                        </div>
+                        <p class="text-muted">Generation du code d'appairage...</p>
                     </div>
-                    <!-- Etape 2: Affichage du QR Code -->
-                    <div id="qrcode-step-display" class="text-center" style="display: none;">
-                        <img id="qrcode-image" class="qr-preview mb-3" alt="QR Code" style="width: 250px; height: 250px;">
-                        <p class="text-muted small">
-                            Scannez ce QR code avec la tablette pour la configurer automatiquement.
+                    <!-- QR Code affiche -->
+                    <div id="qrcode-display" class="text-center" style="display: none;">
+                        <img id="qrcode-image" class="qr-preview mb-3" alt="QR Code" style="width: 280px; height: 280px; border: 2px solid #dee2e6; border-radius: 8px;">
+
+                        <div class="alert alert-warning py-2 mb-3">
+                            <div class="d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-clock"></i>
+                                <span>Code valide encore <strong id="qrcode-countdown">15:00</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="small text-muted mb-1">Code d'appairage</div>
+                            <div class="h3 font-monospace mb-0 text-primary" id="qrcode-pairing-code">------</div>
+                        </div>
+
+                        <p class="text-muted small mb-0">
+                            Scannez le QR code ou entrez le code manuellement sur la tablette.
                         </p>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetQRCodeModal()">
-                            <i class="bi bi-arrow-left me-1"></i>Modifier la cle
+                    </div>
+                    <!-- Erreur -->
+                    <div id="qrcode-error" class="text-center py-4" style="display: none;">
+                        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                        <p class="text-danger mt-2" id="qrcode-error-message">Erreur</p>
+                        <button type="button" class="btn btn-primary" onclick="retryQRCode()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Reessayer
                         </button>
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="regenerateQRCode()" id="btn-regenerate" style="display: none;">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Nouveau code
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                 </div>
             </div>
@@ -752,21 +762,23 @@
                                     <br><small class="text-muted">Site: ${escapeHtml(t.site?.nom || '-')}</small>
                                     ${t.apiKey?.derniere_utilisation ? `<br><small class="text-muted">Derniere activite: ${new Date(t.apiKey.derniere_utilisation).toLocaleString('fr-FR')}</small>` : ''}
                                 </div>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="showQRCode(${questionnaireId}, ${t.api_key_id})" title="QR Code">
-                                        <i class="bi bi-qr-code"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="showManualConfig(${questionnaireId})" title="Configuration manuelle">
-                                        <i class="bi bi-gear"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="unlinkTablet(${questionnaireId}, ${t.api_key_id})">
+                                <div>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="unlinkTablet(${questionnaireId}, ${t.api_key_id})" title="Supprimer">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
                             </div>
                         `).join('')}
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-primary btn-sm" onclick="showQRCode(${questionnaireId})">
+                            <i class="bi bi-qr-code me-1"></i>Ajouter une tablette
+                        </button>
                     </div>`
-                    : '<em class="text-muted">Aucune tablette configuree</em>';
+                    : `<em class="text-muted d-block mb-2">Aucune tablette configuree</em>
+                       <button class="btn btn-primary btn-sm" onclick="showQRCode(${questionnaireId})">
+                           <i class="bi bi-qr-code me-1"></i>Ajouter une tablette
+                       </button>`;
             } catch (error) {
                 console.error('Erreur chargement tablettes:', error);
             }
@@ -808,53 +820,98 @@
 
         // Variables pour la generation QR code
         let currentQRQuestionnaireId = null;
+        let qrCountdownInterval = null;
+        let qrExpiresAt = null;
 
-        function showQRCode(questionnaireId, apiKeyId) {
+        async function showQRCode(questionnaireId) {
             currentQRQuestionnaireId = questionnaireId;
-            // Reset l'etat de la modal
-            resetQRCodeModal();
+
+            // Reset et afficher le loading
+            document.getElementById('qrcode-loading').style.display = 'block';
+            document.getElementById('qrcode-display').style.display = 'none';
+            document.getElementById('qrcode-error').style.display = 'none';
+            document.getElementById('btn-regenerate').style.display = 'none';
+
             // Ouvrir la modal
-            new bootstrap.Modal(document.getElementById('qrcodeModal')).show();
+            const modal = new bootstrap.Modal(document.getElementById('qrcodeModal'));
+            modal.show();
+
+            // Appeler l'API pour generer le QR code
+            await generateQRCodeFromAPI();
         }
 
-        function resetQRCodeModal() {
-            document.getElementById('qrcode-step-key').style.display = 'block';
-            document.getElementById('qrcode-step-display').style.display = 'none';
-            document.getElementById('qrcode-apikey-input').value = '';
+        async function generateQRCodeFromAPI() {
+            try {
+                const result = await apiAdmin.get(`/frequentation/questionnaires/${currentQRQuestionnaireId}/qrcode`);
+
+                // Afficher le QR code
+                document.getElementById('qrcode-image').src = result.qrCode;
+                document.getElementById('qrcode-pairing-code').textContent = result.pairingCode;
+
+                // Configurer le countdown
+                qrExpiresAt = new Date(result.expiresAt);
+                startCountdown();
+
+                // Basculer l'affichage
+                document.getElementById('qrcode-loading').style.display = 'none';
+                document.getElementById('qrcode-display').style.display = 'block';
+                document.getElementById('btn-regenerate').style.display = 'inline-block';
+
+            } catch (error) {
+                console.error('Erreur generation QR:', error);
+                document.getElementById('qrcode-loading').style.display = 'none';
+                document.getElementById('qrcode-error').style.display = 'block';
+                document.getElementById('qrcode-error-message').textContent = error.message || 'Erreur de generation';
+            }
         }
 
-        function generateQRCodeWithKey() {
-            const apiKey = document.getElementById('qrcode-apikey-input').value.trim();
-
-            // Validation basique
-            if (!apiKey) {
-                showError('Veuillez entrer la cle API');
-                return;
-            }
-            if (!apiKey.startsWith('ask_')) {
-                showError('La cle API doit commencer par "ask_"');
-                return;
-            }
-            if (apiKey.length < 20) {
-                showError('La cle API semble trop courte');
-                return;
+        function startCountdown() {
+            // Arreter le precedent si existe
+            if (qrCountdownInterval) {
+                clearInterval(qrCountdownInterval);
             }
 
-            // Construire les donnees du QR code (format attendu par la tablette)
-            const qrData = {
-                apiUrl: window.location.origin,
-                apiKey: apiKey,
-                questionnaireId: currentQRQuestionnaireId
+            const updateCountdown = () => {
+                const now = new Date();
+                const remaining = Math.max(0, Math.floor((qrExpiresAt - now) / 1000));
+
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                const display = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                document.getElementById('qrcode-countdown').textContent = display;
+
+                if (remaining <= 0) {
+                    clearInterval(qrCountdownInterval);
+                    document.getElementById('qrcode-countdown').textContent = 'Expire';
+                    document.getElementById('qrcode-countdown').classList.add('text-danger');
+                }
             };
 
-            // Generer le QR code via API externe
-            const qrDataString = JSON.stringify(qrData);
-            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrDataString)}`;
-
-            document.getElementById('qrcode-image').src = qrApiUrl;
-            document.getElementById('qrcode-step-key').style.display = 'none';
-            document.getElementById('qrcode-step-display').style.display = 'block';
+            updateCountdown();
+            qrCountdownInterval = setInterval(updateCountdown, 1000);
         }
+
+        function retryQRCode() {
+            document.getElementById('qrcode-loading').style.display = 'block';
+            document.getElementById('qrcode-error').style.display = 'none';
+            generateQRCodeFromAPI();
+        }
+
+        function regenerateQRCode() {
+            document.getElementById('qrcode-countdown').classList.remove('text-danger');
+            document.getElementById('qrcode-loading').style.display = 'block';
+            document.getElementById('qrcode-display').style.display = 'none';
+            generateQRCodeFromAPI();
+        }
+
+        // Nettoyer le countdown quand la modal se ferme
+        document.getElementById('qrcodeModal')?.addEventListener('hidden.bs.modal', () => {
+            if (qrCountdownInterval) {
+                clearInterval(qrCountdownInterval);
+                qrCountdownInterval = null;
+            }
+        });
 
         function showManualConfig(questionnaireId) {
             // URL du serveur = origine actuelle

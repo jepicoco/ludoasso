@@ -150,6 +150,31 @@ function getQuestionnaireId() {
     return apiConfig?.questionnaireId || null;
 }
 
+/**
+ * Echange un code d'appairage contre une cle API
+ * @param {string} pairingCode - Code a 6 chiffres
+ * @param {string} apiUrl - URL du serveur
+ * @returns {Object} { apiKey, questionnaireId, siteId }
+ */
+async function pair(pairingCode, apiUrl) {
+    const url = `${apiUrl}/api/external/frequentation/pair`;
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ pairingCode })
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Erreur serveur' }));
+        throw new Error(error.message || `Erreur ${response.status}`);
+    }
+
+    return response.json();
+}
+
 // Exporter les fonctions
 window.API = {
     initAPI,
@@ -163,5 +188,6 @@ window.API = {
     syncRecords,
     configure,
     clearConfig,
-    getQuestionnaireId
+    getQuestionnaireId,
+    pair
 };

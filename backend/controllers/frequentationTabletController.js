@@ -178,3 +178,71 @@ exports.getAllCommunes = async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
+
+/**
+ * POST /api/external/frequentation/pair
+ * Echange un code d'appairage contre une cle API
+ * Auth: Aucune (le code d'appairage sert d'authentification)
+ */
+exports.pair = async (req, res) => {
+  try {
+    const { pairingCode } = req.body;
+
+    if (!pairingCode) {
+      return res.status(400).json({
+        message: 'Code d\'appairage requis'
+      });
+    }
+
+    const { TabletPairingToken, ApiKeyQuestionnaire } = require('../models');
+
+    // Valider et consommer le token
+    const result = await TabletPairingToken.consumeToken(pairingCode);
+
+    if (!result.valid) {
+      logger.warn('Echec appairage tablette:', { pairingCode, error: result.error });
+      return res.status(400).json({
+        message: result.error
+      });
+    }
+
+    // Lier la cle API au questionnaire si pas deja fait
+    const existingLink = await ApiKeyQuestionnaire.findOne({
+      where: {
+        api_key_id: result.apiKeyId,
+        questionnaire_id: result.questionnaireId
+      }
+    });
+
+    if (!existingLink) {
+      await ApiKeyQuestionnaire.create({
+        api_key_id: result.apiKeyId,
+        questionnaire_id: result.questionnaireId,
+        site_id: result.siteId,
+        actif: true
+      });
+    } else if (!existingLink.actif) {
+      existingLink.actif = true;
+      existingLink.site_id = result.siteId;
+      await existingLink.save();
+    }
+
+    logger.info('Appairage tablette reussi:', {
+      apiKeyId: result.apiKeyId,
+      questionnaireId: result.questionnaireId
+    });
+
+    // Retourner les informations de configuration
+    res.json({
+      success: true,
+      apiKey: result.apiKey,
+      apiUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
+      questionnaireId: result.questionnaireId,
+      siteId: result.siteId
+    });
+
+  } catch (error) {
+    logger.error('Erreur pair:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};

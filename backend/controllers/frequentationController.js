@@ -4,7 +4,7 @@
  */
 
 const frequentationService = require('../services/frequentationService');
-const { ApiKey, Site } = require('../models');
+const { ApiKey, Site, TabletPairingToken } = require('../models');
 const QRCode = require('qrcode');
 const logger = require('../utils/logger');
 
@@ -244,34 +244,46 @@ exports.unlinkTablet = async (req, res) => {
 /**
  * GET /api/frequentation/questionnaires/:id/qrcode
  * Generer un QR code pour configurer une tablette
+ * Cree automatiquement une cle API et un token d'appairage temporaire
  */
 exports.generateQRCode = async (req, res) => {
   try {
-    const { api_key_id } = req.query;
+    const { site_id } = req.query;
+    const questionnaireId = parseInt(req.params.id, 10);
 
-    if (!api_key_id) {
-      return res.status(400).json({ message: 'api_key_id requis' });
-    }
-
-    // Recuperer l'ApiKey (avec la cle en clair si disponible)
-    const apiKey = await ApiKey.findByPk(api_key_id);
-    if (!apiKey) {
-      return res.status(404).json({ message: 'Cle API non trouvee' });
-    }
-
-    const questionnaire = await frequentationService.getQuestionnaire(req.params.id);
+    const questionnaire = await frequentationService.getQuestionnaire(questionnaireId);
     if (!questionnaire) {
       return res.status(404).json({ message: 'Questionnaire non trouve' });
     }
 
-    // Construire les donnees du QR code
+    // Creer une nouvelle cle API dediee a cette tablette
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    const apiKeyResult = await ApiKey.creerCle({
+      nom: `Tablette - ${questionnaire.nom} - ${dateStr} ${timeStr}`,
+      description: `Cle API auto-generee pour tablette frequentation`,
+      permissions: ['frequentation:read', 'frequentation:create'],
+      collections_autorisees: [],
+      limite_requetes: null, // Pas de limite
+      periode_limite: 'jour'
+    }, req.user?.id);
+
+    // Creer le token d'appairage (valide 15 minutes)
+    const pairingToken = await TabletPairingToken.createToken(
+      apiKeyResult.cleEnClair,
+      apiKeyResult.apiKey.id,
+      questionnaireId,
+      site_id ? parseInt(site_id, 10) : (questionnaire.site_id || null),
+      15 // 15 minutes
+    );
+
+    // Construire les donnees du QR code (minimaliste)
+    const apiUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
     const qrData = {
-      apiUrl: process.env.APP_URL || `${req.protocol}://${req.get('host')}`,
-      apiKeyId: apiKey.id,
-      // Note: la cle en clair n'est pas stockee, l'admin doit la fournir
-      questionnaireId: questionnaire.id,
-      questionnaireName: questionnaire.nom,
-      siteName: questionnaire.site?.nom || 'Multi-site'
+      pairingCode: pairingToken.pairing_code,
+      apiUrl
     };
 
     // Generer le QR code
@@ -284,10 +296,23 @@ exports.generateQRCode = async (req, res) => {
       }
     });
 
+    logger.info('QR code appairage genere:', {
+      questionnaireId,
+      apiKeyId: apiKeyResult.apiKey.id,
+      pairingCode: pairingToken.pairing_code,
+      expiresAt: pairingToken.expires_at
+    });
+
     res.json({
       qrCode: qrCodeDataUrl,
-      data: qrData,
-      instructions: 'Scannez ce QR code avec la tablette pour configurer l\'application. Vous devrez saisir la cle API manuellement.'
+      pairingCode: pairingToken.pairing_code,
+      expiresAt: pairingToken.expires_at,
+      expiresInSeconds: pairingToken.getRemainingSeconds(),
+      questionnaire: {
+        id: questionnaire.id,
+        nom: questionnaire.nom
+      },
+      instructions: 'Scannez ce QR code avec la tablette. Code valide 15 minutes.'
     });
   } catch (error) {
     logger.error('Erreur generateQRCode:', error);

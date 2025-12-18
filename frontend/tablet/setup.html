@@ -48,13 +48,23 @@
                    id="apiUrlInput"
                    placeholder="URL du serveur (ex: https://ludo.fr)">
 
+            <div style="background: #e8f5e9; padding: 0.75rem; border-radius: 8px; margin: 0.5rem 0;">
+                <label style="font-size: 0.85rem; color: #2e7d32; font-weight: 600;">Code d'appairage (recommande)</label>
+                <input type="text"
+                       id="pairingCodeInput"
+                       placeholder="123456"
+                       maxlength="6"
+                       pattern="[0-9]{6}"
+                       style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em; font-weight: bold;">
+            </div>
+
+            <div style="text-align: center; color: #666; font-size: 0.85rem; margin: 0.5rem 0;">
+                - ou -
+            </div>
+
             <input type="text"
                    id="apiKeyInput"
-                   placeholder="Cle API (ask_...)">
-
-            <input type="number"
-                   id="questionnaireIdInput"
-                   placeholder="ID du questionnaire">
+                   placeholder="Cle API (ask_...) - mode avance">
 
             <button class="setup-btn" onclick="submitManualConfig()">
                 Configurer
@@ -214,39 +224,89 @@
             }
         }
 
-        function processQRData(data) {
+        async function processQRData(data) {
             try {
                 const config = JSON.parse(data);
 
-                if (!config.apiKey || !config.apiUrl) {
-                    throw new Error('QR code invalide');
+                // Nouveau format: code d'appairage
+                if (config.pairingCode && config.apiUrl) {
+                    console.log('[Setup] Code d\'appairage detecte');
+                    await processPairingCode(config.pairingCode, config.apiUrl);
+                    return;
                 }
 
-                validateAndConfigure(config);
+                // Format legacy: cle API directe
+                if (config.apiKey && config.apiUrl) {
+                    console.log('[Setup] Format legacy detecte');
+                    await validateAndConfigure(config);
+                    return;
+                }
+
+                throw new Error('QR code invalide');
 
             } catch (e) {
                 console.error('QR parse error:', e);
-                showError('QR code invalide. Verifiez et reessayez.');
+                showError(e.message || 'QR code invalide. Verifiez et reessayez.');
+            }
+        }
+
+        async function processPairingCode(pairingCode, apiUrl) {
+            showValidating();
+
+            try {
+                // Echanger le code contre une cle API
+                const result = await API.pair(pairingCode, apiUrl);
+
+                if (!result.success || !result.apiKey) {
+                    throw new Error(result.message || 'Echec de l\'appairage');
+                }
+
+                console.log('[Setup] Appairage reussi');
+
+                // Configurer avec les donnees recues
+                const config = {
+                    apiUrl: result.apiUrl || apiUrl,
+                    apiKey: result.apiKey,
+                    questionnaireId: result.questionnaireId
+                };
+
+                await validateAndConfigure(config);
+
+            } catch (error) {
+                console.error('[Setup] Erreur appairage:', error);
+                showError(error.message || 'Erreur d\'appairage');
             }
         }
 
         async function submitManualConfig() {
             const apiUrl = document.getElementById('apiUrlInput').value.trim();
+            const pairingCode = document.getElementById('pairingCodeInput')?.value.trim();
             const apiKey = document.getElementById('apiKeyInput').value.trim();
-            const questionnaireId = document.getElementById('questionnaireIdInput').value.trim();
 
-            if (!apiUrl || !apiKey) {
-                alert('Veuillez remplir l\'URL et la cle API');
+            if (!apiUrl) {
+                alert('Veuillez remplir l\'URL du serveur');
+                return;
+            }
+
+            // Priorite au code d'appairage s'il est rempli
+            if (pairingCode && pairingCode.length === 6) {
+                await processPairingCode(pairingCode, apiUrl.replace(/\/$/, ''));
+                return;
+            }
+
+            // Sinon, utiliser la cle API (mode legacy)
+            if (!apiKey) {
+                alert('Veuillez entrer un code d\'appairage ou une cle API');
                 return;
             }
 
             const config = {
-                apiUrl: apiUrl.replace(/\/$/, ''), // Supprimer le slash final
+                apiUrl: apiUrl.replace(/\/$/, ''),
                 apiKey,
-                questionnaireId: questionnaireId ? parseInt(questionnaireId) : null
+                questionnaireId: null
             };
 
-            validateAndConfigure(config);
+            await validateAndConfigure(config);
         }
 
         async function validateAndConfigure(config) {
