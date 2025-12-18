@@ -82,6 +82,7 @@ if (process.env.NODE_ENV === 'production') {
         styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net", "cdn.quilljs.com"],
         fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
         imgSrc: ["'self'", "data:", "https:"],
+        mediaSrc: ["'self'", "data:"],
         connectSrc: ["'self'", "cdn.jsdelivr.net"],
         frameSrc: ["'none'"],
         objectSrc: ["'none'"],
