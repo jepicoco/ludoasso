@@ -383,6 +383,24 @@ function updateCounters() {
 }
 
 /**
+ * Retourne l'horodatage a utiliser pour l'enregistrement
+ * En mode admin, permet de forcer une date/heure specifique
+ */
+function getRecordTimestamp() {
+    const forcedInput = document.getElementById('forcedDateTime');
+    const forcedValue = forcedInput?.value;
+
+    // Si mode admin ET champ rempli, utiliser la date forcee
+    if (forcedValue && adminState.isAdmin) {
+        console.log('[Admin] Horodatage force:', forcedValue);
+        return new Date(forcedValue).toISOString();
+    }
+
+    // Sinon, date/heure actuelle
+    return new Date().toISOString();
+}
+
+/**
  * Valide l'enregistrement
  */
 async function validateRecord() {
@@ -401,7 +419,7 @@ async function validateRecord() {
         commune_nom: state.selectedCommune?.nom || null,
         nb_adultes: state.adultes,
         nb_enfants: state.enfants,
-        horodatage: new Date().toISOString()
+        horodatage: getRecordTimestamp()
     };
 
     try {
@@ -439,6 +457,10 @@ function resetForm() {
     updateCounters();
     renderFavorites();
     updateCommuneSelection();
+
+    // Reset du champ date/heure forcee (mode admin)
+    const forcedDT = document.getElementById('forcedDateTime');
+    if (forcedDT) forcedDT.value = '';
 }
 
 /**
