@@ -573,6 +573,7 @@ const getMonthlyStats = async (req, res) => {
 /**
  * Get category/genre statistics
  * GET /api/stats/categories?module=ludotheque
+ * Uses normalized junction tables for each collection
  */
 const getCategoryStats = async (req, res) => {
   try {
@@ -589,27 +590,55 @@ const getCategoryStats = async (req, res) => {
       });
     }
 
-    let Model, field, empruntField;
+    let query;
+    const fieldLabel = targetModule === 'ludotheque' ? 'categorie' : 'genre';
+
+    // Utiliser les tables normalisees pour chaque collection
     switch (targetModule) {
       case 'ludotheque':
-        Model = Jeu;
-        field = 'categorie';
-        empruntField = 'jeu_id';
+        // Jeu -> Categorie via jeu_categories
+        query = `
+          SELECT c.nom as categorie, COUNT(jc.jeu_id) as count
+          FROM categories c
+          LEFT JOIN jeu_categories jc ON c.id = jc.categorie_id
+          WHERE c.actif = 1
+          GROUP BY c.id, c.nom
+          HAVING count > 0
+          ORDER BY count DESC
+        `;
         break;
       case 'bibliotheque':
-        Model = Livre;
-        field = 'genre';
-        empruntField = 'livre_id';
+        // Livre -> GenreLitteraire via livre_genres
+        query = `
+          SELECT g.nom as categorie, COUNT(lg.livre_id) as count
+          FROM genres_litteraires g
+          LEFT JOIN livre_genres lg ON g.id = lg.genre_id
+          GROUP BY g.id, g.nom
+          HAVING count > 0
+          ORDER BY count DESC
+        `;
         break;
       case 'filmotheque':
-        Model = Film;
-        field = 'genre';
-        empruntField = 'film_id';
+        // Film -> GenreFilm via film_genres
+        query = `
+          SELECT g.nom as categorie, COUNT(fg.film_id) as count
+          FROM genres_films g
+          LEFT JOIN film_genres fg ON g.id = fg.genre_id
+          GROUP BY g.id, g.nom
+          HAVING count > 0
+          ORDER BY count DESC
+        `;
         break;
       case 'discotheque':
-        Model = Disque;
-        field = 'genre';
-        empruntField = 'cd_id';
+        // Disque -> GenreMusical via disque_genres
+        query = `
+          SELECT g.nom as categorie, COUNT(dg.disque_id) as count
+          FROM genres_musicaux g
+          LEFT JOIN disque_genres dg ON g.id = dg.genre_id
+          GROUP BY g.id, g.nom
+          HAVING count > 0
+          ORDER BY count DESC
+        `;
         break;
       default:
         return res.status(400).json({
@@ -618,25 +647,14 @@ const getCategoryStats = async (req, res) => {
         });
     }
 
-    // Count items by category/genre
-    const categoryStats = await Model.findAll({
-      attributes: [
-        field,
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
-      ],
-      where: {
-        [field]: { [Op.ne]: null }
-      },
-      group: [field],
-      order: [[sequelize.literal('count'), 'DESC']]
-    });
+    const [results] = await sequelize.query(query);
 
     res.json({
       module: targetModule,
-      field: field,
-      categories: categoryStats.map(c => ({
-        categorie: c[field],
-        count: parseInt(c.dataValues.count)
+      field: fieldLabel,
+      categories: results.map(r => ({
+        categorie: r.categorie,
+        count: parseInt(r.count)
       }))
     });
   } catch (error) {

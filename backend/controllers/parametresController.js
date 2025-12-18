@@ -139,12 +139,26 @@ exports.getUtilisateurs = async (req, res) => {
       where,
       attributes: [
         'id', 'nom', 'prenom', 'email', 'telephone',
-        'role', 'statut', 'date_adhesion', 'code_barre'
+        'role', 'statut', 'date_adhesion', 'code_barre', 'modules_autorises'
       ],
       order: [['nom', 'ASC'], ['prenom', 'ASC']]
     });
 
-    res.json(utilisateurs);
+    // S'assurer que modules_autorises est correctement formaté
+    const result = utilisateurs.map(u => {
+      const userData = u.toJSON();
+      // Parser si c'est une chaîne JSON
+      if (typeof userData.modules_autorises === 'string') {
+        try {
+          userData.modules_autorises = JSON.parse(userData.modules_autorises);
+        } catch (e) {
+          userData.modules_autorises = null;
+        }
+      }
+      return userData;
+    });
+
+    res.json(result);
   } catch (error) {
     console.error('Erreur lors de la récupération des utilisateurs:', error);
     res.status(500).json({
@@ -155,21 +169,39 @@ exports.getUtilisateurs = async (req, res) => {
 };
 
 /**
- * Changer le rôle d'un utilisateur
+ * Changer le rôle et/ou les modules autorises d'un utilisateur
  * Accessible uniquement aux administrateurs
  */
 exports.changerRole = async (req, res) => {
   try {
     const { id } = req.params;
-    const { role } = req.body;
+    const { role, modules_autorises } = req.body;
 
     // Validation du rôle
-    const rolesValides = ['usager', 'benevole', 'gestionnaire', 'comptable', 'administrateur'];
-    if (!rolesValides.includes(role)) {
+    const rolesValides = ['usager', 'benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
+    if (role && !rolesValides.includes(role)) {
       return res.status(400).json({
         error: 'Rôle invalide',
         message: `Le rôle doit être l'un des suivants: ${rolesValides.join(', ')}`
       });
+    }
+
+    // Validation des modules
+    const modulesValides = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
+    if (modules_autorises !== undefined && modules_autorises !== null) {
+      if (!Array.isArray(modules_autorises)) {
+        return res.status(400).json({
+          error: 'Modules invalides',
+          message: 'modules_autorises doit être un tableau ou null'
+        });
+      }
+      const modulesInvalides = modules_autorises.filter(m => !modulesValides.includes(m));
+      if (modulesInvalides.length > 0) {
+        return res.status(400).json({
+          error: 'Modules invalides',
+          message: `Modules invalides: ${modulesInvalides.join(', ')}. Modules valides: ${modulesValides.join(', ')}`
+        });
+      }
     }
 
     // Récupérer l'utilisateur
@@ -182,7 +214,7 @@ exports.changerRole = async (req, res) => {
     }
 
     // Empêcher un utilisateur de modifier son propre rôle
-    if (req.user && req.user.id === parseInt(id)) {
+    if (req.user && req.user.id === parseInt(id) && role) {
       return res.status(403).json({
         error: 'Action interdite',
         message: 'Vous ne pouvez pas modifier votre propre rôle'
@@ -190,18 +222,31 @@ exports.changerRole = async (req, res) => {
     }
 
     const ancienRole = utilisateur.role;
-    await utilisateur.update({ role });
+    const anciensModules = utilisateur.modules_autorises;
 
-    // TODO: Log de l'audit - enregistrer qui a changé quel rôle pour qui
+    // Preparer les donnees a mettre a jour
+    const updateData = {};
+    if (role) updateData.role = role;
+    if (modules_autorises !== undefined) {
+      // null ou tableau vide = tous les modules
+      updateData.modules_autorises = (modules_autorises === null || modules_autorises.length === 0)
+        ? null
+        : modules_autorises;
+    }
+
+    await utilisateur.update(updateData);
+
+    // TODO: Log de l'audit - enregistrer qui a changé quel rôle/modules pour qui
 
     res.json({
-      message: `Rôle changé de ${ancienRole} à ${role}`,
+      message: role ? `Rôle changé de ${ancienRole} à ${role}` : 'Modules mis à jour',
       utilisateur: {
         id: utilisateur.id,
         nom: utilisateur.nom,
         prenom: utilisateur.prenom,
         email: utilisateur.email,
-        role: utilisateur.role
+        role: utilisateur.role,
+        modules_autorises: utilisateur.modules_autorises
       }
     });
   } catch (error) {

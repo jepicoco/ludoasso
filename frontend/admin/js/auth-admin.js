@@ -29,11 +29,25 @@ const setCurrentUser = (user) => {
   }
   // Stocker les modules autorisés pour le filtrage des menus
   if (user && user.modules_autorises !== undefined) {
-    if (user.modules_autorises === null || (Array.isArray(user.modules_autorises) && user.modules_autorises.length === 0)) {
+    // Parser si c'est une chaine JSON
+    let modules = user.modules_autorises;
+    if (typeof modules === 'string') {
+      try {
+        modules = JSON.parse(modules);
+      } catch (e) {
+        console.warn('Erreur parsing modules_autorises:', e);
+        modules = null;
+      }
+    }
+
+    if (modules === null || (Array.isArray(modules) && modules.length === 0)) {
       // null ou vide = accès à tous, on supprime la clé
       localStorage.removeItem('userModulesAutorises');
+    } else if (Array.isArray(modules)) {
+      localStorage.setItem('userModulesAutorises', JSON.stringify(modules));
     } else {
-      localStorage.setItem('userModulesAutorises', JSON.stringify(user.modules_autorises));
+      // Valeur inattendue, traiter comme "tous les modules"
+      localStorage.removeItem('userModulesAutorises');
     }
   }
 };

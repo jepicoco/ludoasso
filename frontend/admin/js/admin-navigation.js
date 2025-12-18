@@ -245,7 +245,7 @@ const MENU_ITEMS = [
         label: 'Paramètres',
         icon: 'gear-fill',
         href: 'parametres.html',
-        adminOnly: true  // Visible uniquement pour les administrateurs
+        minRole: 'gestionnaire'  // Accessible aux gestionnaires et au-dessus
     },
     // === Séparation 4 ===
     { separator: true },

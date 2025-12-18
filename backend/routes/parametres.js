@@ -64,8 +64,8 @@ router.delete('/themes/:code/files/:type/:filename', verifyToken, isAdmin(), the
 // Récupérer les modules actifs (pour le frontend - gestionnaire+)
 router.get('/modules-actifs', verifyToken, isGestionnaire(), modulesActifsController.getActifs);
 
-// Récupérer tous les modules avec détails (admin seulement)
-router.get('/modules-actifs/all', verifyToken, isAdmin(), modulesActifsController.getAll);
+// Récupérer tous les modules avec détails (benevole+, pour les couleurs du menu)
+router.get('/modules-actifs/all', verifyToken, modulesActifsController.getAll);
 
 // Vérifier si un module est actif
 router.get('/modules-actifs/:code/check', verifyToken, isGestionnaire(), modulesActifsController.checkModule);
