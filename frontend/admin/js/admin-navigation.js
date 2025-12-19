@@ -179,14 +179,6 @@ const MENU_ITEMS = [
         href: 'historique-communications.html',
         module: 'communications'
     },
-    {
-        id: 'frequentation',
-        label: 'Frequentation',
-        icon: 'people-fill',
-        href: 'frequentation-questionnaires.html',
-        module: 'frequentation',
-        minRole: 'gestionnaire'
-    },
     // === Séparation 2 ===
     { separator: true },
     // === Section 3: Les 4 modules/collections ===
@@ -226,10 +218,25 @@ const MENU_ITEMS = [
     { separator: true },
     // === Section 4: Administration ===
     {
+        id: 'frequentation',
+        label: 'Frequentation',
+        icon: 'people-fill',
+        href: 'frequentation-questionnaires.html',
+        module: 'frequentation',
+        minRole: 'gestionnaire'
+    },
+    {
         id: 'statistiques',
         label: 'Statistiques',
         icon: 'graph-up',
         href: 'statistiques.html',
+        minRole: 'benevole'  // Accessible aux benevoles et au-dessus
+    },
+    {
+        id: 'desherbage',
+        label: 'Desherbage',
+        icon: 'trash3',
+        href: 'desherbage.html',
         minRole: 'benevole'  // Accessible aux benevoles et au-dessus
     },
     {

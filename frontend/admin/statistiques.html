@@ -3,21 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistiques - Administration</title>
+    <title>Statistiques - Liberteko Admin</title>
     <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
     <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
     <style>
-        .module-tab {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .module-tab:hover {
-            transform: translateY(-2px);
-        }
-        .module-tab.active {
-            border-width: 3px !important;
-        }
         .stat-card {
             transition: all 0.2s;
         }
@@ -30,6 +20,22 @@
         }
         .progress-thin {
             height: 8px;
+        }
+        .nav-pills .nav-link {
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.25rem;
+        }
+        .nav-pills .nav-link.active {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .tab-icon {
+            font-size: 1.2rem;
+        }
+        .nouveautes-card {
+            border-left: 4px solid #198754;
+        }
+        .chart-bar {
+            transition: height 0.3s ease;
         }
     </style>
 </head>
@@ -54,124 +60,158 @@
                 <!-- Alerts -->
                 <div id="alertContainer"></div>
 
-                <!-- Onglets Modules -->
-                <div class="row g-3 mb-4" id="moduleTabs">
-                    <!-- Genere dynamiquement -->
-                </div>
+                <!-- Onglets Navigation -->
+                <ul class="nav nav-pills mb-4" id="statsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="general-tab" data-bs-toggle="pill"
+                                data-bs-target="#general" type="button" role="tab">
+                            <i class="bi bi-house-door tab-icon me-2"></i>General
+                        </button>
+                    </li>
+                    <!-- Onglets modules generes dynamiquement -->
+                </ul>
 
-                <!-- Stats Globales (toujours visibles) -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
-                        <div class="card border-primary stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Total Usagers</h6>
-                                        <h2 class="mb-0" id="statTotalAdherents">-</h2>
+                <!-- Contenu des onglets -->
+                <div class="tab-content" id="statsTabContent">
+                    <!-- Onglet General -->
+                    <div class="tab-pane fade show active" id="general" role="tabpanel">
+                        <!-- Stats Globales -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-6">
+                                <div class="card border-primary stat-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Total Usagers</h6>
+                                                <h2 class="mb-0" id="statTotalAdherents">-</h2>
+                                            </div>
+                                            <div class="module-icon text-primary">
+                                                <i class="bi bi-people"></i>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="module-icon text-primary">
-                                        <i class="bi bi-people"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card border-success stat-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Usagers Actifs</h6>
+                                                <h2 class="mb-0" id="statAdherentsActifs">-</h2>
+                                                <small class="text-muted" id="statCotisationsActives"></small>
+                                            </div>
+                                            <div class="module-icon text-success">
+                                                <i class="bi bi-person-check"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card border-info stat-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Total Collection</h6>
+                                                <h2 class="mb-0" id="statTotalCollection">-</h2>
+                                                <small class="text-muted" id="statCollectionDetails"></small>
+                                            </div>
+                                            <div class="module-icon text-info">
+                                                <i class="bi bi-collection"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card border-warning stat-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="text-muted mb-2">Emprunts en Cours</h6>
+                                                <h2 class="mb-0" id="statEmpruntsEnCours">-</h2>
+                                                <small class="text-danger" id="statRetards"></small>
+                                            </div>
+                                            <div class="module-icon text-warning">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-success stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Usagers Actifs</h6>
-                                        <h2 class="mb-0" id="statAdherentsActifs">-</h2>
-                                    </div>
-                                    <div class="module-icon text-success">
-                                        <i class="bi bi-person-check"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-info stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Total Collection</h6>
-                                        <h2 class="mb-0" id="statTotalCollection">-</h2>
-                                    </div>
-                                    <div class="module-icon text-info">
-                                        <i class="bi bi-collection"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card border-warning stat-card">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Emprunts en Cours</h6>
-                                        <h2 class="mb-0" id="statEmpruntsEnCours">-</h2>
-                                    </div>
-                                    <div class="module-icon text-warning">
-                                        <i class="bi bi-arrow-left-right"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Stats du module selectionne -->
-                <div id="moduleStatsContainer">
-                    <!-- Genere dynamiquement selon le module selectionne -->
-                </div>
+                        <!-- Resume par module -->
+                        <div class="row g-3 mb-4" id="modulesSummary">
+                            <!-- Genere dynamiquement -->
+                        </div>
 
-                <!-- Section Comptabilite (comptable+ uniquement) -->
-                <div id="comptabiliteSection" class="d-none">
-                    <hr class="my-4">
-                    <h4 class="mb-3"><i class="bi bi-cash-coin"></i> Statistiques Comptables</h4>
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-4">
-                            <div class="card bg-success text-white">
-                                <div class="card-body">
-                                    <h6 class="mb-2">Chiffre d'Affaires <span id="comptaYear"></span></h6>
-                                    <h2 class="mb-0" id="comptaCA">-</h2>
+                        <!-- Graphique emprunts globaux -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-bar-chart"></i> Emprunts Mensuels (toutes collections)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="globalMonthlyChart">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Chargement...</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="card bg-primary text-white">
-                                <div class="card-body">
-                                    <h6 class="mb-2">Cotisations Actives</h6>
-                                    <h2 class="mb-0" id="comptaCotisationsActives">-</h2>
+
+                        <!-- Section Comptabilite (comptable+ uniquement) -->
+                        <div id="comptabiliteSection" class="d-none">
+                            <h4 class="mb-3"><i class="bi bi-cash-coin"></i> Statistiques Comptables</h4>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">Chiffre d'Affaires <span id="comptaYear"></span></h6>
+                                            <h2 class="mb-0" id="comptaCA">-</h2>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">Cotisations Actives</h6>
+                                            <h2 class="mb-0" id="comptaCotisationsActives">-</h2>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body">
+                                            <h6 class="mb-2">Cotisations ce Mois</h6>
+                                            <h2 class="mb-0" id="comptaCotisationsMois">-</h2>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-info text-white">
-                                <div class="card-body">
-                                    <h6 class="mb-2">Cotisations ce Mois</h6>
-                                    <h2 class="mb-0" id="comptaCotisationsMois">-</h2>
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0"><i class="bi bi-bar-chart"></i> Cotisations Mensuelles</h5>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0"><i class="bi bi-bar-chart"></i> Cotisations Mensuelles</h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="comptaMensuelChart">
-                                <div class="text-center p-4">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Chargement...</span>
+                                <div class="card-body">
+                                    <div id="comptaMensuelChart">
+                                        <div class="text-center p-4">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Chargement...</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Onglets modules generes dynamiquement -->
                 </div>
             </div>
         </div>
@@ -185,15 +225,15 @@
     <script>
         // Configuration des modules
         const MODULE_CONFIG = {
-            ludotheque: { icon: 'dice-6', color: 'primary', label: 'Ludotheque', itemLabel: 'jeux' },
-            bibliotheque: { icon: 'book', color: 'success', label: 'Bibliotheque', itemLabel: 'livres' },
-            filmotheque: { icon: 'film', color: 'danger', label: 'Filmotheque', itemLabel: 'films' },
-            discotheque: { icon: 'disc', color: 'warning', label: 'Discotheque', itemLabel: 'disques' }
+            ludotheque: { icon: 'dice-6', color: 'primary', label: 'Ludotheque', itemLabel: 'jeux', itemLabelSingular: 'jeu' },
+            bibliotheque: { icon: 'book', color: 'success', label: 'Bibliotheque', itemLabel: 'livres', itemLabelSingular: 'livre' },
+            filmotheque: { icon: 'film', color: 'danger', label: 'Filmotheque', itemLabel: 'films', itemLabelSingular: 'film' },
+            discotheque: { icon: 'disc', color: 'warning', label: 'Discotheque', itemLabel: 'disques', itemLabelSingular: 'disque' }
         };
 
-        let currentModule = null;
         let dashboardData = null;
         let userRole = null;
+        let accessibleModules = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             initTemplate('statistiques');
@@ -214,17 +254,16 @@
             try {
                 // Charger le dashboard principal
                 dashboardData = await apiRequest('/stats/dashboard');
+                accessibleModules = dashboardData.accessibleModules || [];
 
-                // Afficher les onglets des modules accessibles
-                renderModuleTabs(dashboardData.accessibleModules);
+                // Generer les onglets des modules accessibles
+                renderModuleTabs();
 
                 // Afficher les stats globales
-                renderGlobalStats(dashboardData);
+                renderGlobalStats();
 
-                // Selectionner le premier module par defaut
-                if (dashboardData.accessibleModules?.length > 0) {
-                    selectModule(dashboardData.accessibleModules[0]);
-                }
+                // Charger le graphique global
+                loadGlobalMonthlyStats();
 
                 // Charger les stats comptables si comptable+
                 if (isComptable()) {
@@ -241,34 +280,87 @@
             return comptableRoles.includes(userRole);
         }
 
-        function renderModuleTabs(modules) {
-            const container = document.getElementById('moduleTabs');
+        function renderModuleTabs() {
+            const tabsContainer = document.getElementById('statsTabs');
+            const contentContainer = document.getElementById('statsTabContent');
 
-            if (!modules || modules.length === 0) {
+            // Ajouter les onglets pour chaque module accessible
+            accessibleModules.forEach(moduleCode => {
+                const config = MODULE_CONFIG[moduleCode];
+                if (!config) return;
+
+                // Ajouter l'onglet
+                const tabLi = document.createElement('li');
+                tabLi.className = 'nav-item';
+                tabLi.setAttribute('role', 'presentation');
+                tabLi.innerHTML = `
+                    <button class="nav-link" id="${moduleCode}-tab" data-bs-toggle="pill"
+                            data-bs-target="#${moduleCode}" type="button" role="tab"
+                            onclick="loadModuleStats('${moduleCode}')">
+                        <i class="bi bi-${config.icon} tab-icon me-2 text-${config.color}"></i>${config.label}
+                    </button>
+                `;
+                tabsContainer.appendChild(tabLi);
+
+                // Ajouter le contenu de l'onglet
+                const tabPane = document.createElement('div');
+                tabPane.className = 'tab-pane fade';
+                tabPane.id = moduleCode;
+                tabPane.setAttribute('role', 'tabpanel');
+                tabPane.innerHTML = `
+                    <div id="${moduleCode}-content">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-${config.color}" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Chargement des statistiques ${config.label}...</p>
+                        </div>
+                    </div>
+                `;
+                contentContainer.appendChild(tabPane);
+            });
+
+            // Afficher le resume par module dans l'onglet general
+            renderModulesSummary();
+        }
+
+        function renderModulesSummary() {
+            const container = document.getElementById('modulesSummary');
+
+            if (accessibleModules.length === 0) {
                 container.innerHTML = '<div class="col-12"><div class="alert alert-warning">Aucun module accessible</div></div>';
                 return;
             }
 
-            container.innerHTML = modules.map(moduleCode => {
+            container.innerHTML = accessibleModules.map(moduleCode => {
                 const config = MODULE_CONFIG[moduleCode];
                 if (!config) return '';
 
                 const moduleStats = dashboardData.modules?.[moduleCode];
                 const total = moduleStats?.collection?.total || 0;
+                const disponibles = moduleStats?.collection?.disponibles || 0;
                 const emprunts = moduleStats?.emprunts?.enCours || 0;
+                const retards = moduleStats?.emprunts?.enRetard || 0;
 
                 return `
                     <div class="col-md-3 col-6">
-                        <div class="card module-tab border-${config.color}"
-                             id="tab-${moduleCode}"
-                             onclick="selectModule('${moduleCode}')">
-                            <div class="card-body text-center">
-                                <i class="bi bi-${config.icon} fs-1 text-${config.color}"></i>
-                                <h5 class="card-title mt-2">${config.label}</h5>
-                                <div class="d-flex justify-content-around mt-2">
-                                    <small class="text-muted">${total} ${config.itemLabel}</small>
-                                    <small class="text-${config.color}">${emprunts} emprunts</small>
+                        <div class="card border-${config.color} stat-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-${config.icon} fs-4 text-${config.color} me-2"></i>
+                                    <h6 class="mb-0">${config.label}</h6>
                                 </div>
+                                <div class="row text-center">
+                                    <div class="col-6 border-end">
+                                        <h4 class="mb-0 text-${config.color}">${total}</h4>
+                                        <small class="text-muted">${config.itemLabel}</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="mb-0">${emprunts}</h4>
+                                        <small class="text-muted">emprunts</small>
+                                    </div>
+                                </div>
+                                ${retards > 0 ? `<div class="text-danger text-center mt-2"><small><i class="bi bi-exclamation-triangle"></i> ${retards} en retard</small></div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -276,48 +368,59 @@
             }).join('');
         }
 
-        function renderGlobalStats(data) {
-            document.getElementById('statTotalAdherents').textContent = data.utilisateurs?.total || 0;
-            document.getElementById('statAdherentsActifs').textContent = data.utilisateurs?.actifs || 0;
-            document.getElementById('statTotalCollection').textContent = data.global?.collection?.total || 0;
-            document.getElementById('statEmpruntsEnCours').textContent = data.global?.emprunts?.enCours || 0;
-        }
+        function renderGlobalStats() {
+            document.getElementById('statTotalAdherents').textContent = dashboardData.utilisateurs?.total || 0;
+            document.getElementById('statAdherentsActifs').textContent = dashboardData.utilisateurs?.actifs || 0;
+            document.getElementById('statTotalCollection').textContent = dashboardData.global?.collection?.total || 0;
+            document.getElementById('statEmpruntsEnCours').textContent = dashboardData.global?.emprunts?.enCours || 0;
 
-        function selectModule(moduleCode) {
-            // Mettre a jour l'onglet actif
-            document.querySelectorAll('.module-tab').forEach(tab => {
-                tab.classList.remove('active', 'shadow');
-            });
-            const activeTab = document.getElementById(`tab-${moduleCode}`);
-            if (activeTab) {
-                activeTab.classList.add('active', 'shadow');
+            // Details supplementaires
+            const retards = dashboardData.global?.emprunts?.enRetard || 0;
+            if (retards > 0) {
+                document.getElementById('statRetards').innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${retards} en retard`;
             }
 
-            currentModule = moduleCode;
-            renderModuleStats(moduleCode);
-            loadModuleDetails(moduleCode);
+            // Details collection par module
+            const details = accessibleModules.map(m => {
+                const count = dashboardData.modules?.[m]?.collection?.total || 0;
+                return count > 0 ? `${count} ${MODULE_CONFIG[m]?.itemLabel || m}` : null;
+            }).filter(Boolean);
+            if (details.length > 0) {
+                document.getElementById('statCollectionDetails').textContent = details.join(', ');
+            }
         }
 
-        function renderModuleStats(moduleCode) {
+        async function loadGlobalMonthlyStats() {
+            try {
+                const data = await apiRequest('/stats/monthly?months=12');
+                const monthly = data.data || [];
+                renderBarChart('globalMonthlyChart', monthly, 'primary');
+            } catch (error) {
+                console.error('Error loading global monthly stats:', error);
+                document.getElementById('globalMonthlyChart').innerHTML =
+                    '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadModuleStats(moduleCode) {
             const config = MODULE_CONFIG[moduleCode];
+            const container = document.getElementById(`${moduleCode}-content`);
             const moduleStats = dashboardData.modules?.[moduleCode];
 
             if (!config || !moduleStats) {
-                document.getElementById('moduleStatsContainer').innerHTML =
-                    '<div class="alert alert-warning">Donnees non disponibles pour ce module</div>';
+                container.innerHTML = '<div class="alert alert-warning">Donnees non disponibles pour ce module</div>';
                 return;
             }
 
             const collection = moduleStats.collection;
             const emprunts = moduleStats.emprunts;
-            const disponibilite = collection.total > 0
-                ? ((collection.disponibles / collection.total) * 100).toFixed(1)
-                : 0;
+            const disponibilite = collection.total > 0 ? ((collection.disponibles / collection.total) * 100).toFixed(1) : 0;
 
-            document.getElementById('moduleStatsContainer').innerHTML = `
+            // Generer le contenu de l'onglet
+            container.innerHTML = `
                 <!-- Stats du module -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-6">
                         <div class="card border-${config.color} stat-card">
                             <div class="card-body">
                                 <h6 class="text-muted mb-2">Total ${config.itemLabel}</h6>
@@ -325,7 +428,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-6">
                         <div class="card border-success stat-card">
                             <div class="card-body">
                                 <h6 class="text-muted mb-2">Disponibles</h6>
@@ -336,7 +439,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-6">
                         <div class="card border-info stat-card">
                             <div class="card-body">
                                 <h6 class="text-muted mb-2">Empruntes</h6>
@@ -344,7 +447,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-3 col-6">
                         <div class="card border-danger stat-card">
                             <div class="card-body">
                                 <h6 class="text-muted mb-2">En Retard</h6>
@@ -354,10 +457,10 @@
                     </div>
                 </div>
 
-                <!-- Details du module -->
+                <!-- Top emprunts et usagers -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card h-100">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-trophy text-${config.color}"></i>
@@ -365,18 +468,16 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div id="topItemsList">
+                                <div id="${moduleCode}-topItems">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border text-${config.color}" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
+                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card h-100">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
                                     <i class="bi bi-star text-warning"></i>
@@ -384,11 +485,9 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div id="topAdherentsList">
+                                <div id="${moduleCode}-topAdherents">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -396,9 +495,29 @@
                     </div>
                 </div>
 
-                <!-- Categories -->
+                <!-- Nouveautes -->
                 <div class="row g-3 mb-4">
-                    <div class="col-md-12">
+                    <div class="col-12">
+                        <div class="card nouveautes-card">
+                            <div class="card-header bg-success bg-opacity-10">
+                                <h5 class="card-title mb-0 text-success">
+                                    <i class="bi bi-stars"></i> Nouveautes - Emprunts recents
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="${moduleCode}-nouveautes">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border spinner-border-sm text-success" role="status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories / Editeurs -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
@@ -407,11 +526,26 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <div id="categoriesChart">
+                                <div id="${moduleCode}-categories">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border text-${config.color}" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
+                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-building text-${config.color}"></i>
+                                    Top Editeurs
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="${moduleCode}-editeurs">
+                                    <div class="text-center p-4">
+                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -419,38 +553,35 @@
                     </div>
                 </div>
 
-                <!-- Emprunts mensuels -->
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-bar-chart text-${config.color}"></i>
-                                    Emprunts Mensuels (12 derniers mois)
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="monthlyChart">
-                                    <div class="text-center p-4">
-                                        <div class="spinner-border text-${config.color}" role="status">
-                                            <span class="visually-hidden">Chargement...</span>
-                                        </div>
-                                    </div>
-                                </div>
+                <!-- Graphique mensuel -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bar-chart text-${config.color}"></i>
+                            Emprunts Mensuels (12 derniers mois)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="${moduleCode}-monthly">
+                            <div class="text-center p-4">
+                                <div class="spinner-border text-${config.color}" role="status"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
+
+            // Charger les donnees
+            loadModuleDetails(moduleCode, config);
         }
 
-        async function loadModuleDetails(moduleCode) {
-            const config = MODULE_CONFIG[moduleCode];
-
+        async function loadModuleDetails(moduleCode, config) {
             await Promise.all([
                 loadTopItems(moduleCode, config),
                 loadTopAdherents(moduleCode),
+                loadNouveautes(moduleCode, config),
                 loadCategories(moduleCode, config),
+                loadEditeurs(moduleCode, config),
                 loadMonthlyStats(moduleCode, config)
             ]);
         }
@@ -459,8 +590,7 @@
             try {
                 const data = await apiRequest(`/stats/popular-items?module=${moduleCode}&limit=10`);
                 const items = data.items || [];
-
-                const container = document.getElementById('topItemsList');
+                const container = document.getElementById(`${moduleCode}-topItems`);
 
                 if (items.length === 0) {
                     container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
@@ -470,7 +600,7 @@
                 container.innerHTML = `
                     <div class="list-group list-group-flush">
                         ${items.map((entry, index) => `
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <div>
                                     <span class="badge bg-${config.color} rounded-pill me-2">${index + 1}</span>
                                     <strong>${entry.item?.titre || 'N/A'}</strong>
@@ -482,8 +612,7 @@
                 `;
             } catch (error) {
                 console.error('Error loading top items:', error);
-                document.getElementById('topItemsList').innerHTML =
-                    '<p class="text-center text-muted">Erreur de chargement</p>';
+                document.getElementById(`${moduleCode}-topItems`).innerHTML = '<p class="text-center text-muted">Erreur de chargement</p>';
             }
         }
 
@@ -491,8 +620,7 @@
             try {
                 const data = await apiRequest(`/stats/active-members?module=${moduleCode}&limit=10`);
                 const members = data.members || [];
-
-                const container = document.getElementById('topAdherentsList');
+                const container = document.getElementById(`${moduleCode}-topAdherents`);
 
                 if (members.length === 0) {
                     container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
@@ -502,12 +630,10 @@
                 container.innerHTML = `
                     <div class="list-group list-group-flush">
                         ${members.map((entry, index) => `
-                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <div>
                                     <span class="badge bg-primary rounded-pill me-2">${index + 1}</span>
                                     <strong>${entry.utilisateur?.prenom || ''} ${entry.utilisateur?.nom || 'N/A'}</strong>
-                                    <br>
-                                    <small class="text-muted">${entry.utilisateur?.email || ''}</small>
                                 </div>
                                 <span class="badge bg-success rounded-pill">${entry.emprunts} emprunts</span>
                             </div>
@@ -516,8 +642,37 @@
                 `;
             } catch (error) {
                 console.error('Error loading top adherents:', error);
-                document.getElementById('topAdherentsList').innerHTML =
-                    '<p class="text-center text-muted">Erreur de chargement</p>';
+                document.getElementById(`${moduleCode}-topAdherents`).innerHTML = '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadNouveautes(moduleCode, config) {
+            const container = document.getElementById(`${moduleCode}-nouveautes`);
+            try {
+                const data = await apiRequest(`/stats/nouveautes?module=${moduleCode}&limit=10`);
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Pas de nouveautes recentes</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="list-group list-group-flush">
+                        ${items.map(item => `
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div>
+                                    <strong>${item.titre || 'N/A'}</strong>
+                                    ${item.date_acquisition ? `<br><small class="text-muted">Acquis le ${new Date(item.date_acquisition).toLocaleDateString('fr-FR')}</small>` : ''}
+                                </div>
+                                <span class="badge bg-success rounded-pill">${item.emprunts_count || 0} emprunts</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading nouveautes:', error);
+                container.innerHTML = '<p class="text-center text-muted">Donnees non disponibles</p>';
             }
         }
 
@@ -525,8 +680,7 @@
             try {
                 const data = await apiRequest(`/stats/categories?module=${moduleCode}`);
                 const categories = data.categories || [];
-
-                const container = document.getElementById('categoriesChart');
+                const container = document.getElementById(`${moduleCode}-categories`);
 
                 if (categories.length === 0) {
                     container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
@@ -537,17 +691,16 @@
 
                 container.innerHTML = `
                     <div class="row">
-                        ${categories.slice(0, 12).map(cat => {
+                        ${categories.slice(0, 8).map(cat => {
                             const percentage = ((cat.count / total) * 100).toFixed(1);
                             return `
-                                <div class="col-md-4 mb-3">
+                                <div class="col-6 mb-2">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span><strong>${cat.categorie || 'Non categorise'}</strong></span>
-                                        <span class="text-muted">${cat.count} (${percentage}%)</span>
+                                        <span class="text-truncate" style="max-width: 120px;" title="${cat.categorie || 'Non categorise'}">${cat.categorie || 'Non categorise'}</span>
+                                        <small class="text-muted">${cat.count}</small>
                                     </div>
                                     <div class="progress progress-thin">
-                                        <div class="progress-bar bg-${config.color}" role="progressbar"
-                                             style="width: ${percentage}%"></div>
+                                        <div class="progress-bar bg-${config.color}" style="width: ${percentage}%"></div>
                                     </div>
                                 </div>
                             `;
@@ -556,8 +709,44 @@
                 `;
             } catch (error) {
                 console.error('Error loading categories:', error);
-                document.getElementById('categoriesChart').innerHTML =
-                    '<p class="text-center text-muted">Erreur de chargement</p>';
+                document.getElementById(`${moduleCode}-categories`).innerHTML = '<p class="text-center text-muted">Erreur de chargement</p>';
+            }
+        }
+
+        async function loadEditeurs(moduleCode, config) {
+            const container = document.getElementById(`${moduleCode}-editeurs`);
+            try {
+                const data = await apiRequest(`/stats/editeurs?module=${moduleCode}&limit=8`);
+                const editeurs = data.editeurs || [];
+
+                if (editeurs.length === 0) {
+                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
+                    return;
+                }
+
+                const total = editeurs.reduce((sum, e) => sum + e.count, 0);
+
+                container.innerHTML = `
+                    <div class="row">
+                        ${editeurs.map(ed => {
+                            const percentage = ((ed.count / total) * 100).toFixed(1);
+                            return `
+                                <div class="col-6 mb-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-truncate" style="max-width: 120px;" title="${ed.editeur || 'Non renseigne'}">${ed.editeur || 'Non renseigne'}</span>
+                                        <small class="text-muted">${ed.count}</small>
+                                    </div>
+                                    <div class="progress progress-thin">
+                                        <div class="progress-bar bg-${config.color}" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading editeurs:', error);
+                container.innerHTML = '<p class="text-center text-muted">Donnees non disponibles</p>';
             }
         }
 
@@ -565,41 +754,43 @@
             try {
                 const data = await apiRequest(`/stats/monthly?module=${moduleCode}&months=12`);
                 const monthly = data.data || [];
-
-                const container = document.getElementById('monthlyChart');
-
-                if (monthly.length === 0) {
-                    container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
-                    return;
-                }
-
-                const maxValue = Math.max(...monthly.map(m => m.emprunts), 1);
-
-                container.innerHTML = `
-                    <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
-                        ${monthly.map(m => {
-                            const height = (m.emprunts / maxValue) * 100;
-                            const [year, month] = m.month.split('-');
-                            const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            const label = monthNames[parseInt(month) - 1];
-                            return `
-                                <div class="text-center" style="flex: 1; max-width: 60px;">
-                                    <div class="bg-${config.color} rounded-top mx-1"
-                                         style="height: ${Math.max(height, 5)}%; min-height: 5px;"
-                                         title="${m.emprunts} emprunts">
-                                    </div>
-                                    <small class="text-muted d-block mt-1">${label}</small>
-                                    <small class="fw-bold">${m.emprunts}</small>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
+                renderBarChart(`${moduleCode}-monthly`, monthly, config.color);
             } catch (error) {
                 console.error('Error loading monthly stats:', error);
-                document.getElementById('monthlyChart').innerHTML =
-                    '<p class="text-center text-muted">Erreur de chargement</p>';
+                document.getElementById(`${moduleCode}-monthly`).innerHTML = '<p class="text-center text-muted">Erreur de chargement</p>';
             }
+        }
+
+        function renderBarChart(containerId, monthly, color) {
+            const container = document.getElementById(containerId);
+
+            if (monthly.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
+                return;
+            }
+
+            const maxValue = Math.max(...monthly.map(m => m.emprunts), 1);
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+            container.innerHTML = `
+                <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
+                    ${monthly.map(m => {
+                        const height = (m.emprunts / maxValue) * 100;
+                        const [year, month] = m.month.split('-');
+                        const label = monthNames[parseInt(month) - 1];
+                        return `
+                            <div class="text-center" style="flex: 1; max-width: 60px;">
+                                <div class="bg-${color} rounded-top mx-1 chart-bar"
+                                     style="height: ${Math.max(height, 5)}%; min-height: 5px;"
+                                     title="${m.emprunts} emprunts">
+                                </div>
+                                <small class="text-muted d-block mt-1">${label}</small>
+                                <small class="fw-bold">${m.emprunts}</small>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
         }
 
         async function loadComptabiliteStats() {
@@ -637,17 +828,17 @@
             }
 
             const maxValue = Math.max(...monthly.map(m => parseFloat(m.total)), 1);
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
 
             container.innerHTML = `
                 <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
                     ${monthly.map(m => {
                         const height = (parseFloat(m.total) / maxValue) * 100;
                         const [year, month] = m.month.split('-');
-                        const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const label = monthNames[parseInt(month) - 1];
                         return `
                             <div class="text-center" style="flex: 1; max-width: 80px;">
-                                <div class="bg-success rounded-top mx-1"
+                                <div class="bg-success rounded-top mx-1 chart-bar"
                                      style="height: ${Math.max(height, 5)}%; min-height: 5px;"
                                      title="${m.total} EUR - ${m.count} cotisations">
                                 </div>

@@ -7,7 +7,11 @@
  * - comptable+ : acces aux stats financieres
  */
 
-const { Utilisateur, Jeu, Livre, Film, Disque, Emprunt, Cotisation, sequelize } = require('../models');
+const {
+  Utilisateur, Jeu, Livre, Film, Disque, Emprunt, Cotisation, sequelize,
+  EmplacementJeu, EmplacementLivre, EmplacementFilm, EmplacementDisque,
+  ArticleThematique
+} = require('../models');
 const { Op } = require('sequelize');
 const { getUserAllowedModules, hasModuleAccess, hasRoleLevel, MODULES, MODULE_MAPPING } = require('../middleware/checkRole');
 
@@ -758,6 +762,168 @@ const getModuleLibelle = (moduleCode) => {
   return libelles[moduleCode] || moduleCode;
 };
 
+/**
+ * Get items that have never been borrowed (for weeding/desherbage)
+ * GET /api/stats/never-borrowed?module=ludotheque&limit=10&thematique=5&emplacement=12
+ */
+const getNeverBorrowed = async (req, res) => {
+  try {
+    const { module: moduleCode = 'ludotheque', limit = 100, thematique, emplacement } = req.query;
+
+    // Verifier l'acces au module
+    if (!hasModuleAccess(req.user, moduleCode)) {
+      return res.status(403).json({ error: 'Access denied to this module' });
+    }
+
+    const modelMapping = {
+      'ludotheque': { model: Jeu, fk: 'jeu_id', type: 'jeu', emplacementField: 'emplacement_jeu_id' },
+      'bibliotheque': { model: Livre, fk: 'livre_id', type: 'livre', emplacementField: 'emplacement_livre_id' },
+      'filmotheque': { model: Film, fk: 'film_id', type: 'film', emplacementField: 'emplacement_film_id' },
+      'discotheque': { model: Disque, fk: 'disque_id', type: 'disque', emplacementField: 'emplacement_disque_id' }
+    };
+
+    const config = modelMapping[moduleCode];
+    if (!config) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
+
+    // Construire les conditions sur id
+    const idConditions = [
+      { [Op.notIn]: sequelize.literal(`(SELECT DISTINCT ${config.fk} FROM emprunts WHERE ${config.fk} IS NOT NULL)`) }
+    ];
+
+    // Filtre par thematique (via sous-requete)
+    if (thematique) {
+      idConditions.push({
+        [Op.in]: sequelize.literal(`(SELECT article_id FROM article_thematiques WHERE type_article = '${config.type}' AND thematique_id = ${parseInt(thematique)})`)
+      });
+    }
+
+    // Construire la condition WHERE de base
+    const where = {
+      [Op.and]: idConditions.map(cond => ({ id: cond })),
+      statut: 'disponible'
+    };
+
+    // Filtre par emplacement
+    if (emplacement) {
+      where[config.emplacementField] = parseInt(emplacement);
+    }
+
+    // Trouver les items qui n'ont jamais ete empruntes
+    const items = await config.model.findAll({
+      where,
+      attributes: ['id', 'titre', 'date_acquisition'],
+      order: [['date_acquisition', 'ASC']],
+      limit: parseInt(limit)
+    });
+
+    // Compter le total
+    const total = await config.model.count({ where });
+
+    res.json({ items, total, module: moduleCode });
+  } catch (error) {
+    console.error('Get never borrowed error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+/**
+ * Get recent acquisitions with their borrow count (nouveautes stats)
+ * GET /api/stats/nouveautes?module=ludotheque&limit=10&months=3
+ */
+const getNouveautesStats = async (req, res) => {
+  try {
+    const { module: moduleCode = 'ludotheque', limit = 10, months = 3 } = req.query;
+
+    // Verifier l'acces au module
+    if (!hasModuleAccess(req.user, moduleCode)) {
+      return res.status(403).json({ error: 'Access denied to this module' });
+    }
+
+    const modelMapping = {
+      'ludotheque': { model: Jeu, fk: 'jeu_id' },
+      'bibliotheque': { model: Livre, fk: 'livre_id' },
+      'filmotheque': { model: Film, fk: 'film_id' },
+      'discotheque': { model: Disque, fk: 'disque_id' }
+    };
+
+    const config = modelMapping[moduleCode];
+    if (!config) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
+
+    // Date limite pour les nouveautes
+    const dateLimit = new Date();
+    dateLimit.setMonth(dateLimit.getMonth() - parseInt(months));
+
+    // Trouver les items recents avec leur nombre d'emprunts
+    const items = await config.model.findAll({
+      where: {
+        date_acquisition: { [Op.gte]: dateLimit }
+      },
+      attributes: [
+        'id', 'titre', 'date_acquisition',
+        [sequelize.literal(`(SELECT COUNT(*) FROM emprunts WHERE emprunts.${config.fk} = ${config.model.name}.id)`), 'emprunts_count']
+      ],
+      order: [[sequelize.literal('emprunts_count'), 'DESC']],
+      limit: parseInt(limit)
+    });
+
+    res.json({ items, module: moduleCode, months: parseInt(months) });
+  } catch (error) {
+    console.error('Get nouveautes stats error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+/**
+ * Get publisher/editor statistics
+ * GET /api/stats/editeurs?module=ludotheque&limit=10
+ */
+const getEditeursStats = async (req, res) => {
+  try {
+    const { module: moduleCode = 'ludotheque', limit = 10 } = req.query;
+
+    // Verifier l'acces au module
+    if (!hasModuleAccess(req.user, moduleCode)) {
+      return res.status(403).json({ error: 'Access denied to this module' });
+    }
+
+    const modelMapping = {
+      'ludotheque': Jeu,
+      'bibliotheque': Livre,
+      'filmotheque': Film,
+      'discotheque': Disque
+    };
+
+    const Model = modelMapping[moduleCode];
+    if (!Model) {
+      return res.status(400).json({ error: 'Invalid module' });
+    }
+
+    // Compter par editeur
+    const editeurs = await Model.findAll({
+      attributes: [
+        'editeur',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where: {
+        editeur: { [Op.ne]: null, [Op.ne]: '' }
+      },
+      group: ['editeur'],
+      order: [[sequelize.literal('count'), 'DESC']],
+      limit: parseInt(limit),
+      raw: true
+    });
+
+    res.json({ editeurs, module: moduleCode });
+  } catch (error) {
+    console.error('Get editeurs stats error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
 module.exports = {
   getDashboardStats,
   getPopularItems,
@@ -766,5 +932,8 @@ module.exports = {
   getLoanDurationStats,
   getMonthlyStats,
   getCategoryStats,
-  getCotisationsStats
+  getCotisationsStats,
+  getNeverBorrowed,
+  getNouveautesStats,
+  getEditeursStats
 };
