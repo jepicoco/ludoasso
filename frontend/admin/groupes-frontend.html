@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portails publics - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .groupe-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .groupe-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .structure-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin: 2px;
+    }
+    .url-badge {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: #f8f9fa;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    .sortable-ghost {
+      opacity: 0.4;
+    }
+    .drag-handle {
+      cursor: grab;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub Navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-window-stack me-2 text-teal"></i>
+              Portails publics
+            </h1>
+            <p class="text-muted mb-0">Configuration des points d'entree du site public</p>
+          </div>
+          <button class="btn btn-success" onclick="showModalGroupe()">
+            <i class="bi bi-plus-lg"></i> Nouveau portail
+          </button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card border-start border-4 border-info">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-info me-3" style="font-size: 2rem;"><i class="bi bi-window-stack"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-groupes">0</h3>
+                  <small class="text-muted">Portails</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-start border-4 border-success">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-success me-3" style="font-size: 2rem;"><i class="bi bi-check-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-actifs">0</h3>
+                  <small class="text-muted">Actifs</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-start border-4 border-primary">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-primary me-3" style="font-size: 2rem;"><i class="bi bi-globe"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-domaines">0</h3>
+                  <small class="text-muted">Domaines personnalises</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          <strong>Portail public :</strong> point d'entree pour les usagers vers le catalogue.
+          Chaque portail peut combiner plusieurs structures et posseder son propre domaine ou slug URL.
+          <br><small>Exemple: <code>mediatheque.sciez.fr</code> ou <code>/bibliotheque</code></small>
+        </div>
+
+        <!-- Liste des groupes -->
+        <div id="liste-groupes" class="row g-3">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Groupe Frontend -->
+  <div class="modal fade" id="modalGroupe" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalGroupeTitle">Nouveau portail public</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-groupe">
+          <div class="modal-body">
+            <input type="hidden" id="groupe_id">
+
+            <!-- Onglets -->
+            <ul class="nav nav-tabs mb-3" id="portalTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-general" data-bs-toggle="tab" data-bs-target="#panel-general" type="button">
+                  <i class="bi bi-gear"></i> General
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-identite" data-bs-toggle="tab" data-bs-target="#panel-identite" type="button">
+                  <i class="bi bi-card-heading"></i> Identite
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-contact" data-bs-toggle="tab" data-bs-target="#panel-contact" type="button">
+                  <i class="bi bi-envelope"></i> Contact
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-structures" data-bs-toggle="tab" data-bs-target="#panel-structures" type="button">
+                  <i class="bi bi-diagram-3"></i> Structures
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-maintenance" data-bs-toggle="tab" data-bs-target="#panel-maintenance" type="button">
+                  <i class="bi bi-tools"></i> Maintenance
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="portalTabsContent">
+              <!-- Onglet General -->
+              <div class="tab-pane fade show active" id="panel-general" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <label for="groupe_nom" class="form-label">Nom du portail *</label>
+                    <input type="text" class="form-control" id="groupe_nom" required placeholder="Mediatheque de Sciez">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="groupe_code" class="form-label">Code *</label>
+                    <input type="text" class="form-control text-uppercase" id="groupe_code" required placeholder="MEDIATHEQUE">
+                    <small class="text-muted">Identifiant unique</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_slug" class="form-label">Slug URL</label>
+                    <div class="input-group">
+                      <span class="input-group-text">/</span>
+                      <input type="text" class="form-control" id="groupe_slug" placeholder="mediatheque-sciez">
+                    </div>
+                    <small class="text-muted">Acces via <code>/slug/catalogue</code></small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_domaine" class="form-label">Domaine personnalise</label>
+                    <input type="text" class="form-control" id="groupe_domaine" placeholder="mediatheque.sciez.fr">
+                    <small class="text-muted">Optionnel - necessite configuration DNS</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_theme" class="form-label">Theme</label>
+                    <select class="form-select" id="groupe_theme">
+                      <optgroup label="Themes clairs">
+                        <option value="default">Violet Gradient (defaut)</option>
+                        <option value="ocean-blue">Ocean Blue</option>
+                        <option value="forest-green">Foret Verdoyante</option>
+                        <option value="spring-blossom">Floraison Printaniere</option>
+                        <option value="summer-vibes">Soleil d'Ete</option>
+                      </optgroup>
+                      <optgroup label="Themes sombres">
+                        <option value="pixel-geek">Pixel Geek</option>
+                        <option value="elegant-dark">Elegant Sombre</option>
+                        <option value="autumn-harvest">Recolte d'Automne</option>
+                        <option value="winter-wonder">Frost & Wonder</option>
+                      </optgroup>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <div class="form-check mt-4">
+                      <input type="checkbox" class="form-check-input" id="groupe_actif" checked>
+                      <label class="form-check-label" for="groupe_actif">Portail actif</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Identite -->
+              <div class="tab-pane fade" id="panel-identite" role="tabpanel">
+                <p class="text-muted small mb-3">
+                  <i class="bi bi-info-circle"></i> Ces parametres remplacent les valeurs globales pour ce portail uniquement.
+                </p>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="groupe_nom_affiche" class="form-label">Nom affiche</label>
+                    <input type="text" class="form-control" id="groupe_nom_affiche" placeholder="Bibliotheque Municipale">
+                    <small class="text-muted">Nom affiche dans le titre du site</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_logo" class="form-label">URL du logo</label>
+                    <input type="url" class="form-control" id="groupe_logo" placeholder="https://...">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_favicon" class="form-label">URL du favicon</label>
+                    <input type="url" class="form-control" id="groupe_favicon" placeholder="https://...favicon.ico">
+                  </div>
+
+                  <div class="col-md-6">
+                    <!-- Placeholder pour preview -->
+                  </div>
+
+                  <div class="col-12">
+                    <label for="groupe_meta_description" class="form-label">Meta description (SEO)</label>
+                    <textarea class="form-control" id="groupe_meta_description" rows="2" placeholder="Description du portail pour les moteurs de recherche..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Contact -->
+              <div class="tab-pane fade" id="panel-contact" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="groupe_email_contact" class="form-label">Email de contact</label>
+                    <input type="email" class="form-control" id="groupe_email_contact" placeholder="contact@bibliotheque.fr">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="groupe_telephone_contact" class="form-label">Telephone</label>
+                    <input type="tel" class="form-control" id="groupe_telephone_contact" placeholder="04 50 XX XX XX">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Structures -->
+              <div class="tab-pane fade" id="panel-structures" role="tabpanel">
+                <p class="text-muted small mb-3">
+                  Selectionnez les structures accessibles via ce portail. Si plusieurs structures sont selectionnees,
+                  les catalogues seront combines avec un filtre par structure.
+                </p>
+                <div id="groupe-structures-checkboxes" class="row g-2">
+                  <!-- Genere dynamiquement -->
+                  <div class="col-12 text-center py-3">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Maintenance -->
+              <div class="tab-pane fade" id="panel-maintenance" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" id="groupe_mode_maintenance">
+                      <label class="form-check-label" for="groupe_mode_maintenance">
+                        <strong>Activer le mode maintenance</strong>
+                      </label>
+                      <small class="d-block text-muted">Le portail affichera un message de maintenance aux visiteurs</small>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="groupe_message_maintenance" class="form-label">Message de maintenance</label>
+                    <textarea class="form-control" id="groupe_message_maintenance" rows="3" placeholder="Le site est actuellement en maintenance. Merci de votre patience."></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/groupes-frontend.js"></script>
+  <script>
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('organisation', 'groupes-frontend');
+      initGroupesFrontendPage();
+    });
+  </script>
+</body>
+</html>

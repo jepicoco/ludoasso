@@ -1,4 +1,4 @@
-const { Cotisation, Utilisateur, TarifCotisation, CodeReduction, ModePaiement, ParametresStructure, ParametresFront } = require('../models');
+const { Cotisation, Utilisateur, TarifCotisation, CodeReduction, ModePaiement, ParametresStructure, ParametresFront, Structure } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -11,9 +11,14 @@ const charteValidationService = require('../services/charteValidationService');
 exports.getAllCotisations = async (req, res) => {
   try {
     // Support adherent_id pour rétrocompatibilité frontend
-    const { adherent_id, utilisateur_id, statut, annee } = req.query;
+    const { adherent_id, utilisateur_id, statut, annee, structure_id } = req.query;
 
     let where = {};
+
+    // Filtrer par structure
+    if (structure_id) {
+      where.structure_id = parseInt(structure_id);
+    }
 
     // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
     const userId = utilisateur_id || adherent_id;
@@ -28,24 +33,27 @@ exports.getAllCotisations = async (req, res) => {
     // Filtrer par année
     if (annee) {
       const year = parseInt(annee);
-      where[Op.or] = [
-        {
-          periode_debut: {
-            [Op.between]: [
-              new Date(`${year}-01-01`),
-              new Date(`${year}-12-31`)
-            ]
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push({
+        [Op.or]: [
+          {
+            periode_debut: {
+              [Op.between]: [
+                new Date(`${year}-01-01`),
+                new Date(`${year}-12-31`)
+              ]
+            }
+          },
+          {
+            periode_fin: {
+              [Op.between]: [
+                new Date(`${year}-01-01`),
+                new Date(`${year}-12-31`)
+              ]
+            }
           }
-        },
-        {
-          periode_fin: {
-            [Op.between]: [
-              new Date(`${year}-01-01`),
-              new Date(`${year}-12-31`)
-            ]
-          }
-        }
-      ];
+        ]
+      });
     }
 
     const cotisations = await Cotisation.findAll({
@@ -60,6 +68,11 @@ exports.getAllCotisations = async (req, res) => {
           model: TarifCotisation,
           as: 'tarif',
           attributes: ['id', 'libelle', 'type_periode', 'type_montant']
+        },
+        {
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur']
         }
       ],
       order: [['created_at', 'DESC']]
@@ -98,6 +111,11 @@ exports.getCotisationById = async (req, res) => {
         {
           model: TarifCotisation,
           as: 'tarif'
+        },
+        {
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur']
         }
       ]
     });
@@ -139,7 +157,8 @@ exports.createCotisation = async (req, res) => {
       mode_paiement_id,
       reference_paiement,
       notes,
-      code_reduction_id
+      code_reduction_id,
+      structure_id // Optionnel, sinon utilise celui du tarif
     } = req.body;
 
     // Utiliser utilisateur_id (ou adherent_id pour rétrocompatibilité)
@@ -253,6 +272,9 @@ exports.createCotisation = async (req, res) => {
       }
     }
 
+    // Determiner la structure (explicite, ou celle du tarif, ou null)
+    const cotisationStructureId = structure_id || tarif.structure_id || null;
+
     // Créer la cotisation
     const cotisation = await Cotisation.create({
       utilisateur_id: userId,
@@ -270,7 +292,8 @@ exports.createCotisation = async (req, res) => {
       notes,
       code_reduction_id: code_reduction_id || null,
       code_reduction_applique: codeReductionApplique,
-      avoir_genere: avoirGenere
+      avoir_genere: avoirGenere,
+      structure_id: cotisationStructureId
     });
 
     // Mettre à jour les dates d'adhésion de l'utilisateur
@@ -315,6 +338,11 @@ exports.createCotisation = async (req, res) => {
         {
           model: TarifCotisation,
           as: 'tarif'
+        },
+        {
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur']
         }
       ]
     });

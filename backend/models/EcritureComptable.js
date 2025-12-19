@@ -118,6 +118,18 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: 'ID de la section analytique'
+    },
+    // Structure (pour multi-structures)
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'structures',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'ID de la structure associee a cette ecriture'
     }
   }, {
     tableName: 'ecritures_comptables',
@@ -195,13 +207,18 @@ module.exports = (sequelize) => {
   /**
    * Récupère toutes les écritures d'un exercice pour export FEC
    * @param {number} exercice - Année de l'exercice
+   * @param {number|null} structureId - ID de la structure (null = toutes)
    * @returns {Promise<Array>}
    */
-  EcritureComptable.getEcrituresPourFEC = async function(exercice) {
+  EcritureComptable.getEcrituresPourFEC = async function(exercice, structureId = null) {
+    const where = { exercice: exercice };
+
+    if (structureId) {
+      where.structure_id = structureId;
+    }
+
     return await this.findAll({
-      where: {
-        exercice: exercice
-      },
+      where,
       order: [
         ['journal_code', 'ASC'],
         ['date_ecriture', 'ASC'],

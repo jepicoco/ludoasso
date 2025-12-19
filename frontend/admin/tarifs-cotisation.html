@@ -142,7 +142,7 @@
             <input type="hidden" id="tarif_id">
 
             <div class="row">
-              <div class="col-md-8">
+              <div class="col-md-5">
                 <div class="mb-3">
                   <label for="tarif_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
                   <input type="text" class="form-control" id="tarif_libelle" required
@@ -150,6 +150,15 @@
                 </div>
               </div>
               <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="tarif_structure" class="form-label">Structure</label>
+                  <select class="form-select" id="tarif_structure">
+                    <option value="">Toutes les structures (global)</option>
+                  </select>
+                  <div class="form-text">Laissez vide pour un tarif utilisable par toutes les structures</div>
+                </div>
+              </div>
+              <div class="col-md-3">
                 <div class="mb-3">
                   <label for="tarif_montant_base" class="form-label">Montant de base <span class="text-danger">*</span></label>
                   <div class="input-group">

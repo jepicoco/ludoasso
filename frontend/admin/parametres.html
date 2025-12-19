@@ -59,35 +59,47 @@
         </div>
 
         <!-- Tabs Navigation -->
-        <ul class="nav nav-tabs mb-4" id="parametresTabs" role="tablist">
+        <ul class="nav nav-tabs mb-4 flex-nowrap overflow-auto" id="parametresTabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general"
+            <button class="nav-link active" id="organisation-tab" data-bs-toggle="tab" data-bs-target="#organisation"
                     type="button" role="tab">
-              <i class="bi bi-gear"></i> General
+              <i class="bi bi-building"></i> <span class="d-none d-md-inline">Organisation</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="configuration-tab" data-bs-toggle="tab" data-bs-target="#configuration"
+                    type="button" role="tab">
+              <i class="bi bi-gear"></i> <span class="d-none d-md-inline">Configuration</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="referentiels-tab" data-bs-toggle="tab" data-bs-target="#referentiels"
+                    type="button" role="tab">
+              <i class="bi bi-tags"></i> <span class="d-none d-md-inline">Referentiels</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="comptabilite-tab" data-bs-toggle="tab" data-bs-target="#comptabilite"
                     type="button" role="tab">
-              <i class="bi bi-calculator"></i> Comptabilite
+              <i class="bi bi-calculator"></i> <span class="d-none d-md-inline">Comptabilite</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="communication-tab" data-bs-toggle="tab" data-bs-target="#communication"
                     type="button" role="tab">
-              <i class="bi bi-envelope"></i> Communication
+              <i class="bi bi-envelope"></i> <span class="d-none d-md-inline">Communication</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="services-externes-tab" data-bs-toggle="tab" data-bs-target="#services-externes"
                     type="button" role="tab">
-              <i class="bi bi-cloud"></i> Services externes
+              <i class="bi bi-cloud"></i> <span class="d-none d-md-inline">Services</span>
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="outils-tab" data-bs-toggle="tab" data-bs-target="#outils"
                     type="button" role="tab">
-              <i class="bi bi-tools"></i> Outils
+              <i class="bi bi-tools"></i> <span class="d-none d-md-inline">Outils</span>
             </button>
           </li>
         </ul>
@@ -96,10 +108,55 @@
         <div class="tab-content" id="parametresTabContent">
 
           <!-- ======================== -->
-          <!-- General Tab              -->
+          <!-- Organisation Tab         -->
           <!-- ======================== -->
-          <div class="tab-pane fade show active" id="general" role="tabpanel">
+          <div class="tab-pane fade show active" id="organisation" role="tabpanel">
             <div class="row g-4">
+              <!-- Organisations -->
+              <div class="col-md-6 col-lg-4">
+                <a href="organisations.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #0d6efd;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #0d6efd, #0a58ca);">
+                        <i class="bi bi-building-gear text-white"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Organisations</h5>
+                      <p class="text-muted mb-0">Entites juridiques (associations, collectivites...)</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Structures -->
+              <div class="col-md-6 col-lg-4">
+                <a href="structures.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #6f42c1;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #6f42c1, #9b59b6);">
+                        <i class="bi bi-diagram-3 text-white"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Structures</h5>
+                      <p class="text-muted mb-0">Bibliotheque, Ludotheque, modules par structure</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Groupes Frontend -->
+              <div class="col-md-6 col-lg-4">
+                <a href="groupes-frontend.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #20c997;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #20c997, #0dcaf0);">
+                        <i class="bi bi-window-stack text-white"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Portails publics</h5>
+                      <p class="text-muted mb-0">Groupes frontend, domaines, slugs URL</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
               <!-- Site web -->
               <div class="col-md-6 col-lg-4">
                 <a href="parametres-site-web.html" class="text-decoration-none">
@@ -108,8 +165,60 @@
                       <div class="icon-container bg-primary bg-opacity-10">
                         <i class="bi bi-globe text-primary"></i>
                       </div>
-                      <h5 class="card-title text-dark">Site web</h5>
-                      <p class="text-muted mb-0">Nom, logo, SEO, modules actifs, CGV/CGU</p>
+                      <h5 class="card-title text-dark">Identite</h5>
+                      <p class="text-muted mb-0">Nom, logo, SEO, CGV/CGU</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Sites -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-sites.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-geo-alt text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Sites</h5>
+                      <p class="text-muted mb-0">Lieux physiques, horaires d'ouverture</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Utilisateurs -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-utilisateurs.html" class="text-decoration-none">
+                  <div class="card param-card border-warning">
+                    <div class="card-body">
+                      <div class="icon-container bg-warning bg-opacity-10">
+                        <i class="bi bi-people text-warning"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Utilisateurs</h5>
+                      <p class="text-muted mb-0">Roles, droits d'acces, acces structures</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Configuration Tab        -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="configuration" role="tabpanel">
+            <div class="row g-4">
+              <!-- Themes du site -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-themes.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #7c3aed;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                        <i class="bi bi-palette text-white"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Themes du site</h5>
+                      <p class="text-muted mb-0">Personnaliser l'apparence du site public</p>
                     </div>
                   </div>
                 </a>
@@ -125,51 +234,6 @@
                       </div>
                       <h5 class="card-title text-dark">Charte usager</h5>
                       <p class="text-muted mb-0">Reglement interieur, validation par signature</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Referentiels -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-listes.html" class="text-decoration-none">
-                  <div class="card param-card border-info">
-                    <div class="card-body">
-                      <div class="icon-container bg-info bg-opacity-10">
-                        <i class="bi bi-tags text-info"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Referentiels</h5>
-                      <p class="text-muted mb-0">Categories, genres, auteurs, editeurs...</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Sites -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-sites.html" class="text-decoration-none">
-                  <div class="card param-card border-success">
-                    <div class="card-body">
-                      <div class="icon-container bg-success bg-opacity-10">
-                        <i class="bi bi-building text-success"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Sites</h5>
-                      <p class="text-muted mb-0">Multi-sites, horaires d'ouverture, fermetures</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Utilisateurs -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-utilisateurs.html" class="text-decoration-none">
-                  <div class="card param-card border-warning">
-                    <div class="card-body">
-                      <div class="icon-container bg-warning bg-opacity-10">
-                        <i class="bi bi-people text-warning"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Utilisateurs</h5>
-                      <p class="text-muted mb-0">Gestion des roles et droits d'acces</p>
                     </div>
                   </div>
                 </a>
@@ -205,22 +269,7 @@
                 </a>
               </div>
 
-              <!-- Themes du site -->
-              <div class="col-md-6 col-lg-4">
-                <a href="parametres-themes.html" class="text-decoration-none">
-                  <div class="card param-card" style="border-color: #7c3aed;">
-                    <div class="card-body">
-                      <div class="icon-container" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-                        <i class="bi bi-palette text-white"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Themes du site</h5>
-                      <p class="text-muted mb-0">Personnaliser l'apparence du site public</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
-
-              <!-- Holodeck (Modules) - Admin uniquement - Toujours en dernier -->
+              <!-- Holodeck (Modules) - Admin uniquement -->
               <div class="col-md-6 col-lg-4" id="holodeck-card">
                 <a href="parametres-holodeck.html" class="text-decoration-none">
                   <div class="card param-card" style="border-color: #1a1a2e;">
@@ -230,6 +279,58 @@
                       </div>
                       <h5 class="card-title text-dark">Holodeck</h5>
                       <p class="text-muted mb-0">Activer/desactiver les modules de l'application</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Referentiels Tab         -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="referentiels" role="tabpanel">
+            <div class="row g-4">
+              <!-- Referentiels (categories, genres...) -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-listes.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-tags text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Referentiels</h5>
+                      <p class="text-muted mb-0">Categories, genres, auteurs, editeurs...</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Calendrier & Fermetures -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-calendrier.html" class="text-decoration-none">
+                  <div class="card param-card border-warning">
+                    <div class="card-body">
+                      <div class="icon-container bg-warning bg-opacity-10">
+                        <i class="bi bi-calendar3 text-warning"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Calendrier & Fermetures</h5>
+                      <p class="text-muted mb-0">Jours feries, vacances, fermetures exceptionnelles</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Referentiel communes - visible si module frequentation actif -->
+              <div class="col-md-6 col-lg-4" id="card-communes">
+                <a href="parametres-communes.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-geo-alt text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Communes</h5>
+                      <p class="text-muted mb-0">Referentiel des communes francaises</p>
                     </div>
                   </div>
                 </a>
@@ -296,7 +397,7 @@
                         <i class="bi bi-bank text-primary"></i>
                       </div>
                       <h5 class="card-title text-dark">Comptes bancaires</h5>
-                      <p class="text-muted mb-0">RIB, IBAN/BIC pour les encaissements</p>
+                      <p class="text-muted mb-0">IBAN/BIC, comptes par structure</p>
                     </div>
                   </div>
                 </a>
@@ -560,21 +661,6 @@
                   </div>
                 </a>
               </div>
-
-              <!-- Referentiel communes - visible uniquement si module frequentation actif -->
-              <div class="col-md-6 col-lg-4" id="card-communes">
-                <a href="parametres-communes.html" class="text-decoration-none">
-                  <div class="card param-card border-info">
-                    <div class="card-body">
-                      <div class="icon-container bg-info bg-opacity-10">
-                        <i class="bi bi-geo-alt text-info"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Referentiel communes</h5>
-                      <p class="text-muted mb-0">Import et gestion des communes francaises</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
             </div>
           </div>
 
@@ -787,16 +873,7 @@
 
     // Gestion du hash pour ouvrir l'onglet correspondant
     document.addEventListener('DOMContentLoaded', async () => {
-      // Masquer la carte Holodeck si l'utilisateur n'est pas admin
-      const userRole = localStorage.getItem('userRole') || 'usager';
-      if (userRole !== 'administrateur') {
-        const holodeckCard = document.getElementById('holodeck-card');
-        if (holodeckCard) {
-          holodeckCard.style.display = 'none';
-        }
-      }
-
-      // Masquer les onglets selon les modules actifs
+      // Masquer les onglets et cartes selon les modules actifs
       await filterTabsByModules();
 
       const hash = window.location.hash.replace('#', '');
@@ -863,6 +940,12 @@
       if (userRoleForApiKeys !== 'administrateur') {
         const cardApiKeys = document.getElementById('card-api-keys');
         if (cardApiKeys) cardApiKeys.style.display = 'none';
+      }
+
+      // Masquer la carte Holodeck si l'utilisateur n'est pas admin
+      if (userRoleForApiKeys !== 'administrateur') {
+        const holodeckCard = document.getElementById('holodeck-card');
+        if (holodeckCard) holodeckCard.style.display = 'none';
       }
     }
 

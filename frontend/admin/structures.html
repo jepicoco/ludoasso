@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Structures - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .structure-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .structure-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .structure-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+    .module-badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .color-preview {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    .access-badge {
+      font-size: 0.7rem;
+    }
+    .stat-card {
+      border-left: 4px solid;
+    }
+    .stat-card .stat-icon {
+      font-size: 2rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub Navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-diagram-3 me-2 text-purple"></i>
+              Structures
+            </h1>
+            <p class="text-muted mb-0">Gestion des entites operationnelles (Bibliotheque, Ludotheque...)</p>
+          </div>
+          <button class="btn btn-success" onclick="showModalStructure()">
+            <i class="bi bi-plus-lg"></i> Nouvelle structure
+          </button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #6f42c1;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-purple me-3"><i class="bi bi-diagram-3"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-structures">0</h3>
+                  <small class="text-muted">Structures</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #198754;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-success me-3"><i class="bi bi-check-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-actives">0</h3>
+                  <small class="text-muted">Actives</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #0d6efd;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-primary me-3"><i class="bi bi-geo-alt"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-sites">0</h3>
+                  <small class="text-muted">Sites total</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #ffc107;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-warning me-3"><i class="bi bi-box-seam"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-articles">0</h3>
+                  <small class="text-muted">Articles total</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          <strong>Structure :</strong> entite operationnelle independante avec ses propres cotisations, caisse et comptabilite.
+          Chaque structure peut avoir plusieurs sites physiques et gere des collections specifiques (jeux, livres, films, disques).
+        </div>
+
+        <!-- Liste des structures -->
+        <div id="liste-structures" class="row g-3">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Structure -->
+  <div class="modal fade" id="modalStructure" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalStructureTitle">Nouvelle structure</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-structure">
+          <div class="modal-body">
+            <input type="hidden" id="structure_id">
+
+            <!-- Informations de base -->
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label for="structure_nom" class="form-label">Nom de la structure *</label>
+                <input type="text" class="form-control" id="structure_nom" required placeholder="Ludotheque de Sciez">
+              </div>
+              <div class="col-md-4">
+                <label for="structure_code" class="form-label">Code *</label>
+                <input type="text" class="form-control text-uppercase" id="structure_code" required placeholder="LUDO">
+                <small class="text-muted">Identifiant unique</small>
+              </div>
+
+              <div class="col-12">
+                <label for="structure_description" class="form-label">Description</label>
+                <textarea class="form-control" id="structure_description" rows="2"></textarea>
+              </div>
+
+              <div class="col-md-6">
+                <label for="structure_organisation_id" class="form-label">Organisation parente</label>
+                <select class="form-select" id="structure_organisation_id">
+                  <option value="">Aucune organisation</option>
+                  <!-- Options chargees dynamiquement -->
+                </select>
+                <small class="text-muted">
+                  <a href="organisations.html">Gerer les organisations</a>
+                </small>
+              </div>
+
+              <div class="col-md-6">
+                <label for="structure_type_structure" class="form-label">Type de structure</label>
+                <select class="form-select" id="structure_type_structure">
+                  <option value="ludotheque">Ludotheque</option>
+                  <option value="bibliotheque">Bibliotheque</option>
+                  <option value="mediatheque">Mediatheque</option>
+                  <option value="relais_petite_enfance" disabled>Relais Petite Enfance (A venir)</option>
+                  <option value="enfance" disabled>Enfance (A venir)</option>
+                  <option value="jeunesse" disabled>Jeunesse (A venir)</option>
+                  <option value="culturel_sportif" disabled>Culturel et Sportif (A venir)</option>
+                  <option value="autre">Autre</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Modules actifs -->
+            <div class="mt-4">
+              <h6 class="border-bottom pb-2"><i class="bi bi-grid-3x3-gap"></i> Modules actifs</h6>
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="module_jeux" value="jeux" checked>
+                    <label class="form-check-label" for="module_jeux">
+                      <i class="bi bi-dice-6 text-success"></i> Jeux
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="module_livres" value="livres">
+                    <label class="form-check-label" for="module_livres">
+                      <i class="bi bi-book text-primary"></i> Livres
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="module_films" value="films">
+                    <label class="form-check-label" for="module_films">
+                      <i class="bi bi-film text-danger"></i> Films
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="module_disques" value="disques">
+                    <label class="form-check-label" for="module_disques">
+                      <i class="bi bi-disc text-warning"></i> Disques
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="mt-4">
+              <h6 class="border-bottom pb-2"><i class="bi bi-geo-alt"></i> Coordonnees</h6>
+              <div class="row g-3">
+                <div class="col-12">
+                  <label for="structure_adresse" class="form-label">Adresse</label>
+                  <textarea class="form-control" id="structure_adresse" rows="2"></textarea>
+                </div>
+                <div class="col-md-4">
+                  <label for="structure_telephone" class="form-label">Telephone</label>
+                  <input type="tel" class="form-control" id="structure_telephone">
+                </div>
+                <div class="col-md-8">
+                  <label for="structure_email" class="form-label">Email</label>
+                  <input type="email" class="form-control" id="structure_email">
+                </div>
+              </div>
+            </div>
+
+            <!-- Apparence -->
+            <div class="mt-4">
+              <h6 class="border-bottom pb-2"><i class="bi bi-palette"></i> Apparence</h6>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label for="structure_couleur" class="form-label">Couleur</label>
+                  <input type="color" class="form-control form-control-color" id="structure_couleur" value="#007bff">
+                </div>
+                <div class="col-md-4">
+                  <label for="structure_icone" class="form-label">Icone</label>
+                  <select class="form-select" id="structure_icone">
+                    <option value="building">Building</option>
+                    <option value="book">Livre</option>
+                    <option value="dice-6">De (jeu)</option>
+                    <option value="collection">Collection</option>
+                    <option value="house">Maison</option>
+                    <option value="shop">Boutique</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="structure_code_comptable" class="form-label">Code comptable</label>
+                  <input type="text" class="form-control" id="structure_code_comptable" placeholder="LUDO01">
+                  <small class="text-muted">Pour exports FEC</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Connecteurs par defaut -->
+            <div class="mt-4" id="section-connecteurs">
+              <h6 class="border-bottom pb-2"><i class="bi bi-envelope-at"></i> Connecteurs par defaut</h6>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="structure_email_connector" class="form-label">Connecteur Email</label>
+                  <select class="form-select" id="structure_email_connector">
+                    <option value="">Defaut systeme</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="structure_sms_connector" class="form-label">Connecteur SMS</label>
+                  <select class="form-select" id="structure_sms_connector">
+                    <option value="">Defaut systeme</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle"></i> Pour une configuration plus fine par evenement,
+                  <a href="#" id="link-config-connecteurs" class="d-none">cliquez ici</a>
+                  <span id="text-save-first">enregistrez d'abord la structure</span>
+                </small>
+              </div>
+            </div>
+
+            <div class="form-check mt-3">
+              <input type="checkbox" class="form-check-input" id="structure_actif" checked>
+              <label class="form-check-label" for="structure_actif">Structure active</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Acces Utilisateurs -->
+  <div class="modal fade" id="modalAcces" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-people"></i> Acces utilisateurs - <span id="acces-structure-nom"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="acces_structure_id">
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="text-muted mb-0">
+              <i class="bi bi-info-circle"></i> Definir les utilisateurs ayant acces a cette structure
+            </p>
+            <button class="btn btn-sm btn-success" onclick="showModalAddAcces()">
+              <i class="bi bi-plus-lg"></i> Ajouter
+            </button>
+          </div>
+
+          <div id="liste-acces">
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter Acces -->
+  <div class="modal fade" id="modalAddAcces" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ajouter un acces</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-add-acces">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="acces_utilisateur" class="form-label">Utilisateur *</label>
+              <select class="form-select" id="acces_utilisateur" required>
+                <option value="">Selectionner un utilisateur</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="acces_role" class="form-label">Role dans cette structure</label>
+              <select class="form-select" id="acces_role">
+                <option value="">Utiliser le role global</option>
+                <option value="usager">Usager</option>
+                <option value="benevole">Benevole</option>
+                <option value="gestionnaire">Gestionnaire</option>
+                <option value="comptable">Comptable</option>
+                <option value="administrateur">Administrateur</option>
+              </select>
+              <small class="text-muted">Laissez vide pour utiliser le role global de l'utilisateur</small>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="acces_date_debut" class="form-label">Date debut</label>
+                <input type="date" class="form-control" id="acces_date_debut">
+              </div>
+              <div class="col-md-6">
+                <label for="acces_date_fin" class="form-label">Date fin</label>
+                <input type="date" class="form-control" id="acces_date_fin">
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/structures.js"></script>
+  <script>
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('organisation', 'structures');
+      initStructuresPage();
+    });
+  </script>
+</body>
+</html>

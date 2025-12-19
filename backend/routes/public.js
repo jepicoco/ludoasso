@@ -15,7 +15,9 @@ const {
   Mecanisme,
   GenreLitteraire,
   GenreFilm,
-  GenreMusical
+  GenreMusical,
+  Structure,
+  GroupeFrontend
 } = require('../models');
 const RechercheNaturelleService = require('../services/rechercheNaturelleService');
 const themesSiteController = require('../controllers/themesSiteController');
@@ -24,6 +26,11 @@ const {
   getParamsNouveaute,
   buildNouveauteWhereClause
 } = require('../utils/nouveauteHelper');
+const {
+  groupeFrontendContext,
+  filterByGroupeStructures,
+  buildStructureWhereClause
+} = require('../middleware/groupeFrontendContext');
 
 // Include configurations for public queries (simplified, no sensitive data)
 const JEU_INCLUDES = [
@@ -830,6 +837,501 @@ router.get('/random-items', async (req, res) => {
   } catch (error) {
     console.error('Erreur random-items:', error);
     res.status(500).json({ error: 'Erreur serveur', message: error.message });
+  }
+});
+
+// ============================================
+// Routes Multi-Structures (V0.9)
+// ============================================
+
+/**
+ * @route   GET /api/public/groupe
+ * @desc    Get current frontend group info (resolved by domain or default)
+ * @access  Public
+ */
+router.get('/groupe', groupeFrontendContext, async (req, res) => {
+  try {
+    if (!req.groupeFrontend) {
+      // Pas de groupe configure, retourner toutes les structures
+      const structures = await Structure.findAll({
+        where: { actif: true },
+        attributes: ['id', 'code', 'nom', 'couleur', 'couleur_texte', 'icone', 'description'],
+        order: [['nom', 'ASC']]
+      });
+
+      return res.json({
+        groupe: null,
+        structures: structures,
+        multi_structures: structures.length > 1
+      });
+    }
+
+    res.json({
+      groupe: {
+        id: req.groupeFrontend.id,
+        code: req.groupeFrontend.code,
+        nom: req.groupeFrontend.nom,
+        slug: req.groupeFrontend.slug,
+        theme_code: req.groupeFrontend.theme_code,
+        logo_url: req.groupeFrontend.logo_url
+      },
+      structures: req.structures.map(s => ({
+        id: s.id,
+        code: s.code,
+        nom: s.nom,
+        couleur: s.couleur,
+        couleur_texte: s.couleur_texte,
+        icone: s.icone,
+        description: s.description
+      })),
+      multi_structures: req.structures.length > 1
+    });
+  } catch (error) {
+    console.error('Erreur groupe frontend:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/structures
+ * @desc    List all active structures (for public selection)
+ * @access  Public
+ */
+router.get('/structures', async (req, res) => {
+  try {
+    const structures = await Structure.findAll({
+      where: { actif: true },
+      attributes: ['id', 'code', 'nom', 'description', 'couleur', 'couleur_texte', 'icone',
+                   'adresse', 'telephone', 'email'],
+      order: [['nom', 'ASC']]
+    });
+
+    res.json(structures);
+  } catch (error) {
+    console.error('Erreur liste structures:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/structures/:code
+ * @desc    Get a specific structure by code
+ * @access  Public
+ */
+router.get('/structures/:code', async (req, res) => {
+  try {
+    const structure = await Structure.findOne({
+      where: {
+        code: req.params.code,
+        actif: true
+      },
+      attributes: ['id', 'code', 'nom', 'description', 'couleur', 'couleur_texte', 'icone',
+                   'adresse', 'telephone', 'email', 'modules_actifs'],
+      include: [{
+        model: Site,
+        as: 'sites',
+        where: { actif: true },
+        required: false,
+        attributes: ['id', 'code', 'nom', 'type', 'adresse', 'code_postal', 'ville'],
+        include: [{
+          model: HoraireOuverture,
+          as: 'horaires',
+          where: { actif: true },
+          required: false,
+          attributes: ['jour_semaine', 'heure_debut', 'heure_fin', 'recurrence', 'periode']
+        }]
+      }]
+    });
+
+    if (!structure) {
+      return res.status(404).json({ error: 'Structure non trouvee' });
+    }
+
+    res.json(structure);
+  } catch (error) {
+    console.error('Erreur detail structure:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/groupes-frontend
+ * @desc    List all frontend groups (for portal selection)
+ * @access  Public
+ */
+router.get('/groupes-frontend', async (req, res) => {
+  try {
+    const groupes = await GroupeFrontend.findAll({
+      where: { actif: true },
+      attributes: ['id', 'code', 'nom', 'slug', 'logo_url', 'theme_code'],
+      include: [{
+        model: Structure,
+        as: 'structures',
+        where: { actif: true },
+        required: false,
+        attributes: ['id', 'code', 'nom', 'couleur', 'icone'],
+        through: { attributes: ['ordre_affichage'] }
+      }],
+      order: [['nom', 'ASC']]
+    });
+
+    res.json(groupes);
+  } catch (error) {
+    console.error('Erreur liste groupes frontend:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/g/:slug/config
+ * @desc    Get config for a specific frontend group (by slug)
+ * @access  Public
+ */
+router.get('/g/:slug/config', async (req, res) => {
+  try {
+    const groupe = await GroupeFrontend.findOne({
+      where: {
+        slug: req.params.slug,
+        actif: true
+      },
+      include: [{
+        model: Structure,
+        as: 'structures',
+        where: { actif: true },
+        required: false,
+        attributes: ['id', 'code', 'nom', 'couleur', 'couleur_texte', 'icone', 'modules_actifs'],
+        through: { attributes: ['ordre_affichage'] }
+      }]
+    });
+
+    if (!groupe) {
+      return res.status(404).json({ error: 'Groupe non trouve' });
+    }
+
+    // Fusionner les modules actifs de toutes les structures
+    const modulesActifs = new Set();
+    groupe.structures.forEach(s => {
+      if (s.modules_actifs && Array.isArray(s.modules_actifs)) {
+        s.modules_actifs.forEach(m => modulesActifs.add(m));
+      }
+    });
+
+    // Recuperer la config de base
+    const baseConfig = await getPublicConfig();
+
+    res.json({
+      ...baseConfig,
+      groupe: {
+        id: groupe.id,
+        code: groupe.code,
+        nom: groupe.nom,
+        slug: groupe.slug,
+        logo_url: groupe.logo_url,
+        theme_code: groupe.theme_code
+      },
+      structures: groupe.structures.map(s => ({
+        id: s.id,
+        code: s.code,
+        nom: s.nom,
+        couleur: s.couleur,
+        couleur_texte: s.couleur_texte,
+        icone: s.icone
+      })),
+      modules_groupe: Array.from(modulesActifs),
+      multi_structures: groupe.structures.length > 1
+    });
+  } catch (error) {
+    console.error('Erreur config groupe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/g/:slug/catalogue
+ * @desc    Get catalog filtered by frontend group structures
+ * @access  Public
+ * @query   Same as /catalogue + structure_id to filter within group
+ */
+router.get('/g/:slug/catalogue', groupeFrontendContext, filterByGroupeStructures, async (req, res) => {
+  try {
+    // Utiliser les memes parametres que /catalogue
+    const parametres = await ParametresFront.getParametres();
+    const {
+      type,
+      search,
+      page = 1,
+      limit = 20,
+      tri = 'titre',
+      ordre = 'ASC',
+      nouveautes,
+      structure_id
+    } = req.query;
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const results = {
+      items: [],
+      total: 0,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      modules_actifs: [],
+      groupe: req.groupeFrontend ? {
+        id: req.groupeFrontend.id,
+        code: req.groupeFrontend.code,
+        nom: req.groupeFrontend.nom
+      } : null,
+      structures: req.structures.map(s => ({
+        id: s.id,
+        code: s.code,
+        nom: s.nom,
+        couleur: s.couleur
+      })),
+      structure_filtre: structure_id ? parseInt(structure_id) : null
+    };
+
+    const filterNouveautes = nouveautes === 'true' || nouveautes === '1';
+
+    // Build structure filter clause
+    const structureFilter = buildStructureWhereClause(req.filterStructureIds);
+
+    // Base where clause - exclude archived items + structure filter
+    const baseWhere = {
+      statut: { [Op.notIn]: ['archive', 'perdu'] },
+      ...structureFilter
+    };
+
+    if (search) {
+      baseWhere.titre = { [Op.like]: `%${search}%` };
+    }
+
+    const jeuWhere = { ...baseWhere, prive: { [Op.ne]: true } };
+
+    // Determine which modules to query based on structures' active modules
+    const activeModulesFromStructures = new Set();
+    req.structures.forEach(s => {
+      if (s.modules_actifs && Array.isArray(s.modules_actifs)) {
+        s.modules_actifs.forEach(m => activeModulesFromStructures.add(m));
+      }
+    });
+
+    // Si aucun module defini dans les structures, utiliser les parametres globaux
+    const useGlobalModules = activeModulesFromStructures.size === 0;
+
+    const modulesToQuery = [];
+    if ((useGlobalModules ? parametres.module_ludotheque : activeModulesFromStructures.has('jeux')) && (!type || type === 'jeux')) {
+      modulesToQuery.push('jeux');
+      results.modules_actifs.push('jeux');
+    }
+    if ((useGlobalModules ? parametres.module_bibliotheque : activeModulesFromStructures.has('livres')) && (!type || type === 'livres')) {
+      modulesToQuery.push('livres');
+      results.modules_actifs.push('livres');
+    }
+    if ((useGlobalModules ? parametres.module_filmotheque : activeModulesFromStructures.has('films')) && (!type || type === 'films')) {
+      modulesToQuery.push('films');
+      results.modules_actifs.push('films');
+    }
+    if ((useGlobalModules ? parametres.module_discotheque : activeModulesFromStructures.has('disques')) && (!type || type === 'disques')) {
+      modulesToQuery.push('disques');
+      results.modules_actifs.push('disques');
+    }
+
+    // Get novelty params
+    const nouveauteParamsJeux = getParamsNouveaute(parametres, 'ludotheque');
+    const nouveauteParamsLivres = getParamsNouveaute(parametres, 'bibliotheque');
+    const nouveauteParamsFilms = getParamsNouveaute(parametres, 'filmotheque');
+    const nouveauteParamsDisques = getParamsNouveaute(parametres, 'discotheque');
+
+    // Include structure info in results
+    const includeStructure = [{ model: Structure, as: 'structure', attributes: ['id', 'code', 'nom', 'couleur'], required: false }];
+
+    // Query each module
+    if (modulesToQuery.includes('jeux')) {
+      try {
+        let jeuxWhere = { ...jeuWhere };
+        if (filterNouveautes) {
+          const nw = buildNouveauteWhereClause('ludotheque', parametres);
+          if (nw) jeuxWhere = { ...jeuxWhere, ...nw };
+        }
+
+        const { count, rows } = await Jeu.findAndCountAll({
+          where: jeuxWhere,
+          attributes: ['id', 'code_barre', 'titre', 'sous_titre', 'annee_sortie',
+                       'age_min', 'nb_joueurs_min', 'nb_joueurs_max', 'duree_partie',
+                       'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute', 'structure_id'],
+          include: [...JEU_INCLUDES, ...includeStructure],
+          order: [[tri === 'titre' ? 'titre' : tri, ordre]],
+          limit: type === 'jeux' ? parseInt(limit) : undefined,
+          offset: type === 'jeux' ? offset : undefined,
+          distinct: true
+        });
+
+        results.items.push(...rows.map(j => transformRefs(j, 'jeu', nouveauteParamsJeux)));
+        if (type === 'jeux') results.total = count;
+      } catch (err) {
+        console.error('Erreur query jeux:', err.message);
+      }
+    }
+
+    if (modulesToQuery.includes('livres')) {
+      try {
+        let livresWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nw = buildNouveauteWhereClause('bibliotheque', parametres);
+          if (nw) livresWhere = { ...livresWhere, ...nw };
+        }
+
+        const { count, rows } = await Livre.findAndCountAll({
+          where: livresWhere,
+          attributes: ['id', 'code_barre', 'titre', 'sous_titre', 'annee_publication',
+                       'nb_pages', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute', 'structure_id'],
+          include: [...LIVRE_INCLUDES, ...includeStructure],
+          order: [[tri === 'titre' ? 'titre' : tri, ordre]],
+          limit: type === 'livres' ? parseInt(limit) : undefined,
+          offset: type === 'livres' ? offset : undefined,
+          distinct: true
+        });
+
+        results.items.push(...rows.map(l => transformRefs(l, 'livre', nouveauteParamsLivres)));
+        if (type === 'livres') results.total = count;
+      } catch (err) {
+        console.error('Erreur query livres:', err.message);
+      }
+    }
+
+    if (modulesToQuery.includes('films')) {
+      try {
+        let filmsWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nw = buildNouveauteWhereClause('filmotheque', parametres);
+          if (nw) filmsWhere = { ...filmsWhere, ...nw };
+        }
+
+        const { count, rows } = await Film.findAndCountAll({
+          where: filmsWhere,
+          attributes: ['id', 'code_barre', 'titre', 'titre_original', 'annee_sortie',
+                       'duree', 'classification', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute', 'structure_id'],
+          include: [...FILM_INCLUDES, ...includeStructure],
+          order: [[tri === 'titre' ? 'titre' : tri, ordre]],
+          limit: type === 'films' ? parseInt(limit) : undefined,
+          offset: type === 'films' ? offset : undefined,
+          distinct: true
+        });
+
+        results.items.push(...rows.map(f => transformRefs(f, 'film', nouveauteParamsFilms)));
+        if (type === 'films') results.total = count;
+      } catch (err) {
+        console.error('Erreur query films:', err.message);
+      }
+    }
+
+    if (modulesToQuery.includes('disques')) {
+      try {
+        let disquesWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nw = buildNouveauteWhereClause('discotheque', parametres);
+          if (nw) disquesWhere = { ...disquesWhere, ...nw };
+        }
+
+        const { count, rows } = await Disque.findAndCountAll({
+          where: disquesWhere,
+          attributes: ['id', 'code_barre', 'titre', 'titre_original', 'annee_sortie',
+                       'nb_pistes', 'duree_totale', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute', 'structure_id'],
+          include: [...DISQUE_INCLUDES, ...includeStructure],
+          order: [[tri === 'titre' ? 'titre' : tri, ordre]],
+          limit: type === 'disques' ? parseInt(limit) : undefined,
+          offset: type === 'disques' ? offset : undefined,
+          distinct: true
+        });
+
+        results.items.push(...rows.map(d => transformRefs(d, 'disque', nouveauteParamsDisques)));
+        if (type === 'disques') results.total = count;
+      } catch (err) {
+        console.error('Erreur query disques:', err.message);
+      }
+    }
+
+    // If no specific type, paginate combined results
+    if (!type) {
+      results.total = results.items.length;
+      results.items.sort((a, b) => {
+        const aVal = a[tri] || '';
+        const bVal = b[tri] || '';
+        return ordre === 'ASC'
+          ? String(aVal).localeCompare(String(bVal))
+          : String(bVal).localeCompare(String(aVal));
+      });
+      results.items = results.items.slice(offset, offset + parseInt(limit));
+    }
+
+    results.pages = Math.ceil(results.total / parseInt(limit));
+
+    res.json(results);
+  } catch (error) {
+    console.error('Erreur catalogue groupe:', error);
+    res.status(500).json({ error: 'Erreur serveur', message: error.message });
+  }
+});
+
+/**
+ * @route   GET /api/public/g/:slug/stats
+ * @desc    Get stats for a specific frontend group
+ * @access  Public
+ */
+router.get('/g/:slug/stats', groupeFrontendContext, async (req, res) => {
+  try {
+    const structureFilter = buildStructureWhereClause(req.structureIds);
+    const stats = {};
+
+    const baseCountWhere = {
+      statut: { [Op.notIn]: ['archive', 'perdu'] },
+      ...structureFilter
+    };
+
+    const jeuCountWhere = {
+      ...baseCountWhere,
+      prive: { [Op.ne]: true }
+    };
+
+    // Compter par module
+    stats.jeux = await Jeu.count({ where: jeuCountWhere });
+    stats.livres = await Livre.count({ where: baseCountWhere });
+    stats.films = await Film.count({ where: baseCountWhere });
+    stats.disques = await Disque.count({ where: baseCountWhere });
+    stats.total = stats.jeux + stats.livres + stats.films + stats.disques;
+
+    // Stats par structure
+    if (req.structures.length > 1) {
+      stats.par_structure = {};
+      for (const s of req.structures) {
+        const sWhere = { structure_id: s.id, statut: { [Op.notIn]: ['archive', 'perdu'] } };
+        const sJeuWhere = { ...sWhere, prive: { [Op.ne]: true } };
+
+        stats.par_structure[s.code] = {
+          nom: s.nom,
+          couleur: s.couleur,
+          jeux: await Jeu.count({ where: sJeuWhere }),
+          livres: await Livre.count({ where: sWhere }),
+          films: await Film.count({ where: sWhere }),
+          disques: await Disque.count({ where: sWhere })
+        };
+        stats.par_structure[s.code].total =
+          stats.par_structure[s.code].jeux +
+          stats.par_structure[s.code].livres +
+          stats.par_structure[s.code].films +
+          stats.par_structure[s.code].disques;
+      }
+    }
+
+    res.json({
+      groupe: req.groupeFrontend ? {
+        id: req.groupeFrontend.id,
+        code: req.groupeFrontend.code,
+        nom: req.groupeFrontend.nom
+      } : null,
+      stats
+    });
+  } catch (error) {
+    console.error('Erreur stats groupe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

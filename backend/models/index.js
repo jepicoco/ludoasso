@@ -194,6 +194,16 @@ const TabletPairingTokenModel = require('./TabletPairingToken');
 const CharteUsagerModel = require('./CharteUsager');
 const ValidationCharteModel = require('./ValidationCharte');
 
+// Import Structures (Multi-structures V0.9)
+const OrganisationModel = require('./Organisation');
+const StructureModel = require('./Structure');
+const UtilisateurStructureModel = require('./UtilisateurStructure');
+const GroupeFrontendModel = require('./GroupeFrontend');
+const GroupeFrontendStructureModel = require('./GroupeFrontendStructure');
+const ParametresFrontStructureModel = require('./ParametresFrontStructure');
+const StructureConnecteurCategorieModel = require('./StructureConnecteurCategorie');
+const StructureConnecteurEvenementModel = require('./StructureConnecteurEvenement');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -384,6 +394,16 @@ const TabletPairingToken = TabletPairingTokenModel(sequelize);
 // Initialize Charte Usager (validation signature numerique)
 const CharteUsager = CharteUsagerModel(sequelize);
 const ValidationCharte = ValidationCharteModel(sequelize);
+
+// Initialize Structures (Multi-structures V0.9)
+const Organisation = OrganisationModel(sequelize);
+const Structure = StructureModel(sequelize);
+const UtilisateurStructure = UtilisateurStructureModel(sequelize);
+const GroupeFrontend = GroupeFrontendModel(sequelize);
+const GroupeFrontendStructure = GroupeFrontendStructureModel(sequelize);
+const ParametresFrontStructure = ParametresFrontStructureModel(sequelize);
+const StructureConnecteurCategorie = StructureConnecteurCategorieModel(sequelize);
+const StructureConnecteurEvenement = StructureConnecteurEvenementModel(sequelize);
 
 // Define associations
 
@@ -2110,6 +2130,314 @@ ValidationCharte.belongsTo(Cotisation, {
   as: 'cotisation'
 });
 
+// ============================================
+// Organisations et Structures (Multi-structures V0.9)
+// ============================================
+
+// Organisation <-> Structure (One-to-Many)
+Organisation.hasMany(Structure, {
+  foreignKey: 'organisation_id',
+  as: 'structures'
+});
+
+Structure.belongsTo(Organisation, {
+  foreignKey: 'organisation_id',
+  as: 'organisation'
+});
+
+// Organisation <-> ConfigurationEmail (Many-to-One)
+Organisation.belongsTo(ConfigurationEmail, {
+  foreignKey: 'configuration_email_id',
+  as: 'configurationEmail'
+});
+
+ConfigurationEmail.hasMany(Organisation, {
+  foreignKey: 'configuration_email_id',
+  as: 'organisations'
+});
+
+// Organisation <-> ConfigurationSMS (Many-to-One)
+Organisation.belongsTo(ConfigurationSMS, {
+  foreignKey: 'configuration_sms_id',
+  as: 'configurationSms'
+});
+
+ConfigurationSMS.hasMany(Organisation, {
+  foreignKey: 'configuration_sms_id',
+  as: 'organisations'
+});
+
+// Structure <-> Site (One-to-Many)
+Structure.hasMany(Site, {
+  foreignKey: 'structure_id',
+  as: 'sites'
+});
+
+Site.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> ParametresFrontStructure (One-to-One)
+Structure.hasOne(ParametresFrontStructure, {
+  foreignKey: 'structure_id',
+  as: 'parametresFront'
+});
+
+ParametresFrontStructure.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> SectionAnalytique (Many-to-One)
+Structure.belongsTo(SectionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'sectionAnalytique'
+});
+
+SectionAnalytique.hasMany(Structure, {
+  foreignKey: 'section_analytique_id',
+  as: 'structures'
+});
+
+// Structure <-> Utilisateur (Many-to-Many via UtilisateurStructure)
+Structure.belongsToMany(Utilisateur, {
+  through: UtilisateurStructure,
+  foreignKey: 'structure_id',
+  otherKey: 'utilisateur_id',
+  as: 'utilisateurs'
+});
+
+Utilisateur.belongsToMany(Structure, {
+  through: UtilisateurStructure,
+  foreignKey: 'utilisateur_id',
+  otherKey: 'structure_id',
+  as: 'structures'
+});
+
+// UtilisateurStructure direct associations pour acces aux champs pivot
+UtilisateurStructure.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+Utilisateur.hasMany(UtilisateurStructure, {
+  foreignKey: 'utilisateur_id',
+  as: 'accesStructures'
+});
+
+UtilisateurStructure.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(UtilisateurStructure, {
+  foreignKey: 'structure_id',
+  as: 'accesUtilisateurs'
+});
+
+// GroupeFrontend <-> Structure (Many-to-Many via GroupeFrontendStructure)
+GroupeFrontend.belongsToMany(Structure, {
+  through: GroupeFrontendStructure,
+  foreignKey: 'groupe_frontend_id',
+  otherKey: 'structure_id',
+  as: 'structures'
+});
+
+Structure.belongsToMany(GroupeFrontend, {
+  through: GroupeFrontendStructure,
+  foreignKey: 'structure_id',
+  otherKey: 'groupe_frontend_id',
+  as: 'groupesFrontend'
+});
+
+// GroupeFrontendStructure direct associations
+GroupeFrontendStructure.belongsTo(GroupeFrontend, {
+  foreignKey: 'groupe_frontend_id',
+  as: 'groupe'
+});
+
+GroupeFrontend.hasMany(GroupeFrontendStructure, {
+  foreignKey: 'groupe_frontend_id',
+  as: 'liensStructures'
+});
+
+GroupeFrontendStructure.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(GroupeFrontendStructure, {
+  foreignKey: 'structure_id',
+  as: 'liensGroupes'
+});
+
+// Structure <-> Collections (One-to-Many - optionnel si structure_id existe)
+Structure.hasMany(Jeu, {
+  foreignKey: 'structure_id',
+  as: 'jeux'
+});
+
+Jeu.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(Livre, {
+  foreignKey: 'structure_id',
+  as: 'livres'
+});
+
+Livre.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(Film, {
+  foreignKey: 'structure_id',
+  as: 'films'
+});
+
+Film.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(Disque, {
+  foreignKey: 'structure_id',
+  as: 'disques'
+});
+
+Disque.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> Cotisation (One-to-Many)
+Structure.hasMany(Cotisation, {
+  foreignKey: 'structure_id',
+  as: 'cotisations'
+});
+
+Cotisation.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> TarifCotisation (One-to-Many)
+Structure.hasMany(TarifCotisation, {
+  foreignKey: 'structure_id',
+  as: 'tarifsCotisation'
+});
+
+TarifCotisation.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> Emprunt (One-to-Many)
+Structure.hasMany(Emprunt, {
+  foreignKey: 'structure_id',
+  as: 'emprunts'
+});
+
+Emprunt.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> EcritureComptable (One-to-Many)
+Structure.hasMany(EcritureComptable, {
+  foreignKey: 'structure_id',
+  as: 'ecrituresComptables'
+});
+
+EcritureComptable.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> Caisse (One-to-Many)
+Structure.hasMany(Caisse, {
+  foreignKey: 'structure_id',
+  as: 'caisses'
+});
+
+Caisse.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+// Structure <-> ConfigurationEmail (connecteur par defaut)
+Structure.belongsTo(ConfigurationEmail, {
+  foreignKey: 'configuration_email_id',
+  as: 'configurationEmailDefaut'
+});
+
+ConfigurationEmail.hasMany(Structure, {
+  foreignKey: 'configuration_email_id',
+  as: 'structuresDefaut'
+});
+
+// Structure <-> ConfigurationSMS (connecteur par defaut)
+Structure.belongsTo(ConfigurationSMS, {
+  foreignKey: 'configuration_sms_id',
+  as: 'configurationSMSDefaut'
+});
+
+ConfigurationSMS.hasMany(Structure, {
+  foreignKey: 'configuration_sms_id',
+  as: 'structuresDefaut'
+});
+
+// StructureConnecteurCategorie associations
+StructureConnecteurCategorie.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(StructureConnecteurCategorie, {
+  foreignKey: 'structure_id',
+  as: 'connecteursCategories'
+});
+
+StructureConnecteurCategorie.belongsTo(ConfigurationEmail, {
+  foreignKey: 'configuration_email_id',
+  as: 'configurationEmail'
+});
+
+StructureConnecteurCategorie.belongsTo(ConfigurationSMS, {
+  foreignKey: 'configuration_sms_id',
+  as: 'configurationSMS'
+});
+
+// StructureConnecteurEvenement associations
+StructureConnecteurEvenement.belongsTo(Structure, {
+  foreignKey: 'structure_id',
+  as: 'structure'
+});
+
+Structure.hasMany(StructureConnecteurEvenement, {
+  foreignKey: 'structure_id',
+  as: 'connecteursEvenements'
+});
+
+StructureConnecteurEvenement.belongsTo(ConfigurationEmail, {
+  foreignKey: 'configuration_email_id',
+  as: 'configurationEmail'
+});
+
+StructureConnecteurEvenement.belongsTo(ConfigurationSMS, {
+  foreignKey: 'configuration_sms_id',
+  as: 'configurationSMS'
+});
+
+StructureConnecteurEvenement.belongsTo(EventTrigger, {
+  foreignKey: 'event_trigger_code',
+  targetKey: 'code',
+  as: 'eventTrigger'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -2274,5 +2602,14 @@ module.exports = {
   TabletPairingToken,
   // Charte Usager (validation signature numerique)
   CharteUsager,
-  ValidationCharte
+  ValidationCharte,
+  // Structures (Multi-structures V0.9)
+  Organisation,
+  Structure,
+  UtilisateurStructure,
+  GroupeFrontend,
+  GroupeFrontendStructure,
+  ParametresFrontStructure,
+  StructureConnecteurCategorie,
+  StructureConnecteurEvenement
 };

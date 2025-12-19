@@ -3,6 +3,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { sequelize } = require('./models');
 const { checkMaintenance } = require('./middleware/maintenance');
 const requestLogger = require('./middleware/requestLogger');
@@ -288,6 +289,132 @@ app.use('/api/usager/factures', require('./routes/usagerFactures'));
 // Routes charte usager (validation avec signature numerique)
 app.use('/api/chartes', require('./routes/chartes')); // Admin CRUD
 app.use('/api/charte', require('./routes/charteValidation')); // Validation publique
+
+// Routes organisations et structures (Multi-structures V0.9)
+app.use('/api/organisations', require('./routes/organisations'));
+app.use('/api/structures', require('./routes/structures'));
+app.use('/api/groupes-frontend', require('./routes/groupesFrontend'));
+
+// ============================================
+// ROUTES PORTAILS PUBLICS (/:slug/*)
+// Routes dynamiques basées sur les groupes frontend
+// ============================================
+const { GroupeFrontend } = require('./models');
+const { createPortalThemeResolverMiddleware } = require('./middleware/portalResolver');
+const portalThemeResolver = createPortalThemeResolverMiddleware(frontendPath);
+
+// Middleware pour résoudre le portail par slug
+const resolvePortal = async (req, res, next) => {
+  const { slug } = req.params;
+
+  // Éviter les conflits avec les routes existantes
+  const reservedPaths = ['api', 'admin', 'vendor', 'public', 'usager', 'theme', 'tablet'];
+  if (reservedPaths.includes(slug)) {
+    return next('route');
+  }
+
+  try {
+    const groupe = await GroupeFrontend.findOne({
+      where: { slug, actif: true }
+    });
+
+    if (!groupe) {
+      return next('route'); // Passer à la route suivante (404)
+    }
+
+    req.portal = groupe;
+    req.portalTheme = groupe.theme_code || 'default';
+    next();
+  } catch (error) {
+    console.error('Erreur résolution portail:', error.message);
+    next('route');
+  }
+};
+
+// Routes portail: /:slug (index)
+app.get('/:slug', checkMaintenance, resolvePortal, (req, res, next) => {
+  req.targetPage = 'index.html';
+  next();
+}, portalThemeResolver);
+
+// Routes portail: /:slug/catalogue
+app.get('/:slug/catalogue/:collection?', checkMaintenance, resolvePortal, (req, res, next) => {
+  req.targetPage = 'catalogue.html';
+  next();
+}, portalThemeResolver);
+
+// Routes portail: /:slug/fiche/:collection/:id
+app.get('/:slug/fiche/:collection/:id', checkMaintenance, resolvePortal, (req, res, next) => {
+  req.targetPage = 'fiche.html';
+  next();
+}, portalThemeResolver);
+
+// Routes portail: pages statiques
+['infos', 'aide', 'contact', 'plan', 'mentions-legales', 'cgu', 'cgv'].forEach(page => {
+  app.get(`/:slug/${page}`, checkMaintenance, resolvePortal, (req, res, next) => {
+    req.targetPage = `${page}.html`;
+    next();
+  }, portalThemeResolver);
+});
+
+// Routes portail: espace usager
+app.get('/:slug/usager/:page', checkMaintenance, resolvePortal, (req, res, next) => {
+  const validPages = ['login', 'dashboard', 'emprunts', 'profil', 'forgot-password', 'reset-password'];
+  const pageName = req.params.page.replace('.html', '');
+  if (validPages.includes(pageName)) {
+    req.targetPage = `usager/${pageName}.html`;
+    next();
+  } else {
+    next('route');
+  }
+}, portalThemeResolver);
+
+// Routes portail: assets statiques du theme (/:slug/theme/*)
+app.get('/:slug/theme/*', async (req, res, next) => {
+  const { slug } = req.params;
+
+  // Éviter les conflits avec les routes existantes
+  const reservedPaths = ['api', 'admin', 'vendor', 'public', 'usager', 'theme', 'tablet'];
+  if (reservedPaths.includes(slug)) {
+    return next('route');
+  }
+
+  try {
+    const groupe = await GroupeFrontend.findOne({
+      where: { slug, actif: true }
+    });
+
+    if (!groupe) {
+      return next('route');
+    }
+
+    const themeCode = groupe.theme_code || 'default';
+    const filePath = req.params[0]; // Tout après /theme/
+
+    const themeFilePath = path.join(frontendPath, 'themes', themeCode, filePath);
+
+    if (fs.existsSync(themeFilePath)) {
+      return res.sendFile(themeFilePath);
+    }
+
+    // Fallback vers le theme default
+    const defaultThemePath = path.join(frontendPath, 'themes', 'default', filePath);
+    if (fs.existsSync(defaultThemePath)) {
+      return res.sendFile(defaultThemePath);
+    }
+
+    // Fallback vers frontend root
+    const rootPath = path.join(frontendPath, filePath);
+    if (fs.existsSync(rootPath)) {
+      return res.sendFile(rootPath);
+    }
+
+    res.status(404).json({ error: 'Fichier non trouve' });
+  } catch (error) {
+    console.error('Erreur portal theme static:', error.message);
+    next('route');
+  }
+});
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

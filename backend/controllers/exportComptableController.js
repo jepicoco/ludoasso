@@ -115,11 +115,12 @@ class ExportComptableController {
   /**
    * Exporte les ecritures dans le format specifie
    * GET /api/export-comptable/export/:format
+   * Query params: exercice, dateDebut, dateFin, journal, structure_id
    */
   static async exportFormat(req, res) {
     try {
       const { format } = req.params;
-      const { exercice, dateDebut, dateFin, journal } = req.query;
+      const { exercice, dateDebut, dateFin, journal, structure_id } = req.query;
 
       // Validation
       if (!exercice && !dateDebut && !dateFin) {
@@ -153,6 +154,14 @@ class ExportComptableController {
         filtres.journal = journal;
       }
 
+      // Filtrage par structure
+      if (structure_id) {
+        const structureIdNum = parseInt(structure_id);
+        if (!isNaN(structureIdNum)) {
+          filtres.structure_id = structureIdNum;
+        }
+      }
+
       // Exporter
       const result = await ExportComptableService.exporter(format, filtres);
 
@@ -162,6 +171,9 @@ class ExportComptableController {
       res.setHeader('Content-Length', result.buffer.length);
       res.setHeader('X-Export-Format', result.format);
       res.setHeader('X-Export-Ecritures', result.nbEcritures);
+      if (result.structure) {
+        res.setHeader('X-Export-Structure', result.structure.code);
+      }
 
       res.send(result.buffer);
     } catch (error) {
@@ -176,10 +188,12 @@ class ExportComptableController {
   /**
    * Statistiques d'un exercice avec formats disponibles
    * GET /api/export-comptable/statistiques-complet/:exercice
+   * Query params: structure_id (optionnel)
    */
   static async getStatistiquesComplet(req, res) {
     try {
       const { exercice } = req.params;
+      const { structure_id } = req.query;
       const exerciceNum = parseInt(exercice);
 
       if (isNaN(exerciceNum)) {
@@ -188,7 +202,16 @@ class ExportComptableController {
         });
       }
 
-      const stats = await ExportComptableService.getStatistiquesExercice(exerciceNum);
+      // Filtrage par structure si specifie
+      let structureId = null;
+      if (structure_id) {
+        structureId = parseInt(structure_id);
+        if (isNaN(structureId)) {
+          structureId = null;
+        }
+      }
+
+      const stats = await ExportComptableService.getStatistiquesExercice(exerciceNum, structureId);
       res.json(stats);
     } catch (error) {
       console.error('Erreur lors de la recuperation des statistiques:', error);
@@ -258,7 +281,7 @@ class ExportComptableController {
    */
   static async exportFEC(req, res) {
     try {
-      const { exercice } = req.query;
+      const { exercice, structure_id } = req.query;
 
       // Validation de l'exercice
       if (!exercice) {
@@ -274,18 +297,38 @@ class ExportComptableController {
         });
       }
 
-      // Récupérer les écritures de l'exercice
-      const ecritures = await EcritureComptable.getEcrituresPourFEC(exerciceNum);
+      // Parser structure_id si fourni
+      let structureId = null;
+      if (structure_id) {
+        structureId = parseInt(structure_id);
+        if (isNaN(structureId)) {
+          structureId = null;
+        }
+      }
+
+      // Récupérer les écritures de l'exercice (avec filtre structure optionnel)
+      const ecritures = await EcritureComptable.getEcrituresPourFEC(exerciceNum, structureId);
 
       if (ecritures.length === 0) {
-        return res.status(404).json({
-          error: `Aucune écriture comptable trouvée pour l'exercice ${exerciceNum}`
-        });
+        const msg = structureId
+          ? `Aucune écriture comptable trouvée pour l'exercice ${exerciceNum} et la structure spécifiée`
+          : `Aucune écriture comptable trouvée pour l'exercice ${exerciceNum}`;
+        return res.status(404).json({ error: msg });
       }
 
       // Récupérer les informations de la structure pour le SIREN
       const parametres = await ParametresStructure.findOne();
       const siren = parametres?.siren || '000000000';
+
+      // Recuperer code structure pour le nom du fichier
+      let structureCode = '';
+      if (structureId) {
+        const { Structure } = require('../models');
+        const structure = await Structure.findByPk(structureId);
+        if (structure) {
+          structureCode = `_${structure.code.toUpperCase()}`;
+        }
+      }
 
       // Construire le contenu du fichier FEC
       // Format: 18 colonnes séparées par des pipes (|)
@@ -344,7 +387,7 @@ class ExportComptableController {
       const contenuFEC = lignes.join('\r\n');
 
       // Nom du fichier selon la norme FEC
-      // Format: SIRENFECAAAAMMJJhhmmss.txt
+      // Format: SIRENFECAAAAMMJJhhmmss.txt (avec code structure si filtre)
       const maintenant = new Date();
       const timestamp = [
         maintenant.getFullYear(),
@@ -355,7 +398,7 @@ class ExportComptableController {
         String(maintenant.getSeconds()).padStart(2, '0')
       ].join('');
 
-      const nomFichier = `${siren}FEC${timestamp}.txt`;
+      const nomFichier = `${siren}FEC${structureCode}${timestamp}.txt`;
 
       // Définir les headers pour le téléchargement
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
@@ -375,12 +418,14 @@ class ExportComptableController {
 
   /**
    * Obtient les statistiques des écritures pour un exercice
+   * Query params: structure_id (optionnel)
    * @param {Object} req - Requête Express
    * @param {Object} res - Réponse Express
    */
   static async getStatistiquesExercice(req, res) {
     try {
       const { exercice } = req.params;
+      const { structure_id } = req.query;
 
       const exerciceNum = parseInt(exercice);
       if (isNaN(exerciceNum)) {
@@ -389,8 +434,17 @@ class ExportComptableController {
         });
       }
 
+      // Construire le where avec filtre structure optionnel
+      const where = { exercice: exerciceNum };
+      if (structure_id) {
+        const structureIdNum = parseInt(structure_id);
+        if (!isNaN(structureIdNum)) {
+          where.structure_id = structureIdNum;
+        }
+      }
+
       const ecritures = await EcritureComptable.findAll({
-        where: { exercice: exerciceNum },
+        where,
         attributes: [
           'journal_code',
           [EcritureComptable.sequelize.fn('COUNT', EcritureComptable.sequelize.col('id')), 'nb_ecritures'],
@@ -402,12 +456,10 @@ class ExportComptableController {
       });
 
       // Calculer les totaux
-      const totalEcritures = await EcritureComptable.count({
-        where: { exercice: exerciceNum }
-      });
+      const totalEcritures = await EcritureComptable.count({ where });
 
       const totaux = await EcritureComptable.findOne({
-        where: { exercice: exerciceNum },
+        where,
         attributes: [
           [EcritureComptable.sequelize.fn('SUM', EcritureComptable.sequelize.col('debit')), 'total_debit'],
           [EcritureComptable.sequelize.fn('SUM', EcritureComptable.sequelize.col('credit')), 'total_credit']
@@ -421,6 +473,7 @@ class ExportComptableController {
 
       res.json({
         exercice: exerciceNum,
+        structure_id: where.structure_id || null,
         statistiques: {
           nb_ecritures_total: totalEcritures,
           total_debit: totalDebit,
@@ -446,12 +499,25 @@ class ExportComptableController {
 
   /**
    * Liste les exercices disponibles
+   * Query params: structure_id (optionnel)
    * @param {Object} req - Requête Express
    * @param {Object} res - Réponse Express
    */
   static async listeExercices(req, res) {
     try {
+      const { structure_id } = req.query;
+
+      // Construire le where avec filtre structure optionnel
+      const where = {};
+      if (structure_id) {
+        const structureIdNum = parseInt(structure_id);
+        if (!isNaN(structureIdNum)) {
+          where.structure_id = structureIdNum;
+        }
+      }
+
       const exercices = await EcritureComptable.findAll({
+        where,
         attributes: [
           'exercice',
           [EcritureComptable.sequelize.fn('COUNT', EcritureComptable.sequelize.col('id')), 'nb_ecritures'],
@@ -464,6 +530,7 @@ class ExportComptableController {
       });
 
       res.json({
+        structure_id: where.structure_id || null,
         exercices: exercices.map(e => ({
           exercice: e.exercice,
           nb_ecritures: parseInt(e.nb_ecritures),

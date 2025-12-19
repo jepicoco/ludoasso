@@ -126,6 +126,17 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: 0,
       comment: 'Montant d\'avoir généré si réduction > montant (fixe_avec_avoir)'
+    },
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'structures',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Structure a laquelle cette cotisation appartient'
     }
   }, {
     tableName: 'cotisations',

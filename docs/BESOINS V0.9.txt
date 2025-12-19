@@ -1,0 +1,37 @@
+Etude de modification de structure importante.
+
+L'association FOYER CULTUREL DE SCIEZ possède : 
+Une ludothèque
+Une bibliothèque
+
+La bibliothèque est sur un site fixe unique.
+La ludothèque est sur 3 sites fixes + 1 site mobile.
+
+La bibliothèque contient, des films, des livres, des jeux et des disques.
+La ludothèque contient des jeux et des livres.
+
+La bibliothèque et la ludothèque possèdent chacun leur propre cotisation.
+La bibliothèque : 4€ enfants / 7€ adultes et une réduction de 1€ sur l'usager est adhérent à la structue FOYER CULTURE DE SCIEZ.
+La bibliothèque peut revendre certains livres, jeux, disques, films lors du desherbage dans une bourse au livre (tarif en fonction du type de livre, mais négociable au moment de la vente)
+La ludothèque : 90€ sur une année scolaire, septembre X à aout X+1 avec un prorata au mois entammé et une réduction de 5% si l'usager est adhérent à la structure FOYER CULTUREL DE SCIEZ.
+La ludothèque facture également certains jeux à la location, avec un tarif en fonction du jeux OU propose un pack de jeux pour un certain montant.
+La ludothèque peut parfois vendre des jeux et des livres lors de la bourse aux jeux. Tarifs par jeu ou livre et négociable.
+
+Niveau gestion, la bibliothèque et la ludothèque sont séparées.
+Les salariés de la ludothèque ne s'occupent QUE ludothèques.
+Les salaries de la bibliothèque ne s'occupent QUE de la bibliothèque.
+MAIS
+Certains bénévoles le sont dans les 2.
+Certains salariés : Facturation / administratifs / Comptabilité / direction peuvent l'être dans les deux MAIS s'il y avait une troisème structure, il pourraient n'avoir accès qu'à 2 d'entre elles.
+
+La comptabilité a besoin de savoir le montant de cotisations d'un mois pour chaque structure pour la saisir (avec code compta et analytique) (et donc les marquer comme exportés).
+
+La bibliothèque a besoin d'un suivi de caisse pour elle.
+La ludothèquea besoin d'un suivi de caisse pour elle.
+
+La bibliothèque a besoin d'un suivi des autres moyens paiements (CB, CHEQUES, PASSREGION).
+La ludothèque besoin d'un suivi des autres moyens paiements (CB, CHEQUES, PASSREGION).
+
+Sur le front des Usagers la ludothèque et la bibliothèque peuvent chacun définir les fonctions disponibles (accès espace usagers, réservation, demande de prolongation, factures, plan, catalogue)
+Le FOYER CULTUREL DE SCIEZ doit pouvoir choisir s'il regroupe la bibliothèque et la ludothèque sur le même front usager ou chacun son espace et son thème (Avec une troisième structure, il doit pouvoir choisir d'en regrouper 2 et d'en isoler 1).
+

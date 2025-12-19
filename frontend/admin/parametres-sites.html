@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sites & Calendrier - Ludotheque Admin</title>
+  <title>Sites - Liberteko Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
@@ -59,6 +59,9 @@
     .drag-handle:active {
       cursor: grabbing;
     }
+    .stat-card {
+      border-left: 4px solid;
+    }
   </style>
 </head>
 <body>
@@ -79,209 +82,77 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1 class="h3 mb-0">
-              <i class="bi bi-building me-2"></i>
-              Sites & Calendrier
+              <i class="bi bi-geo-alt me-2 text-primary"></i>
+              Sites
             </h1>
-            <p class="text-muted mb-0">Gestion multi-sites et fermetures</p>
+            <p class="text-muted mb-0">Gestion des emplacements physiques et mobiles</p>
+          </div>
+          <button class="btn btn-success" onclick="showModalSite()">
+            <i class="bi bi-plus-lg"></i> Nouveau site
+          </button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #0d6efd;">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-primary me-3" style="font-size: 2rem;"><i class="bi bi-geo-alt"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-sites">0</h3>
+                  <small class="text-muted">Sites total</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #198754;">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-success me-3" style="font-size: 2rem;"><i class="bi bi-building"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-fixes">0</h3>
+                  <small class="text-muted">Sites fixes</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #ffc107;">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-warning me-3" style="font-size: 2rem;"><i class="bi bi-truck"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-mobiles">0</h3>
+                  <small class="text-muted">Sites mobiles</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #6c757d;">
+              <div class="card-body d-flex align-items-center">
+                <div class="text-secondary me-3" style="font-size: 2rem;"><i class="bi bi-x-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-inactifs">0</h3>
+                  <small class="text-muted">Inactifs</small>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Tabs -->
-        <ul class="nav nav-tabs mb-4" id="sitesTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="sites-tab" data-bs-toggle="tab" data-bs-target="#sites-panel" type="button" role="tab">
-              <i class="bi bi-geo-alt me-1"></i> Sites
-              <span class="badge bg-primary ms-1" id="count-sites">0</span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="calendrier-tab" data-bs-toggle="tab" data-bs-target="#calendrier-panel" type="button" role="tab">
-              <i class="bi bi-calendar3 me-1"></i> Calendrier & Fermetures
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="comptes-tab" data-bs-toggle="tab" data-bs-target="#comptes-panel" type="button" role="tab">
-              <i class="bi bi-bank me-1"></i> Comptes bancaires
-              <span class="badge bg-secondary ms-1" id="count-comptes">0</span>
-            </button>
-          </li>
-        </ul>
+        <!-- Info -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          <strong>Site :</strong> emplacement physique ou mobile rattache a une structure.
+          Chaque site peut avoir ses propres horaires d'ouverture et fermetures exceptionnelles.
+          <br><small>Glissez-deposez les cartes pour reorganiser l'ordre d'affichage.</small>
+        </div>
 
-        <!-- Tab Content -->
-        <div class="tab-content">
-          <!-- ===================== -->
-          <!-- Panel Sites           -->
-          <!-- ===================== -->
-          <div class="tab-pane fade show active" id="sites-panel" role="tabpanel">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <p class="text-muted mb-0">
-                <i class="bi bi-info-circle"></i> Glissez-deposez pour reorganiser l'ordre d'affichage
-              </p>
-              <button class="btn btn-success" onclick="showModalSite()">
-                <i class="bi bi-plus-lg"></i> Nouveau site
-              </button>
-            </div>
-
-            <div id="liste-sites" class="row g-3">
-              <div class="col-12 text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Chargement...</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ===================== -->
-          <!-- Panel Calendrier      -->
-          <!-- ===================== -->
-          <div class="tab-pane fade" id="calendrier-panel" role="tabpanel">
-            <div class="row g-4">
-              <!-- Parametres globaux -->
-              <div class="col-md-6">
-                <div class="card h-100">
-                  <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-gear"></i> Parametres calendrier</h5>
-                  </div>
-                  <div class="card-body">
-                    <form id="form-parametres-calendrier">
-                      <div class="mb-3">
-                        <label for="cal_pays" class="form-label">Pays</label>
-                        <select class="form-select" id="cal_pays">
-                          <option value="FR">France</option>
-                          <option value="CH">Suisse</option>
-                          <option value="DE">Allemagne</option>
-                          <option value="BE">Belgique</option>
-                        </select>
-                      </div>
-
-                      <div class="mb-3" id="zone-vacances-container">
-                        <label for="cal_zone" class="form-label">Zone academique</label>
-                        <select class="form-select" id="cal_zone">
-                          <option value="A">Zone A</option>
-                          <option value="B">Zone B</option>
-                          <option value="C">Zone C</option>
-                        </select>
-                        <small class="text-muted">Pour import automatique des vacances scolaires francaises</small>
-                      </div>
-
-                      <div class="form-check mb-2">
-                        <input type="checkbox" class="form-check-input" id="cal_ouvert_feries">
-                        <label class="form-check-label" for="cal_ouvert_feries">
-                          Ouvert les jours feries
-                        </label>
-                      </div>
-
-                      <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" id="cal_ouvert_vacances" checked>
-                        <label class="form-check-label" for="cal_ouvert_vacances">
-                          Ouvert pendant les vacances scolaires
-                        </label>
-                      </div>
-
-                      <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check"></i> Enregistrer
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Import automatique -->
-              <div class="col-md-6">
-                <div class="card h-100">
-                  <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-cloud-download"></i> Import automatique</h5>
-                  </div>
-                  <div class="card-body">
-                    <div class="mb-4">
-                      <h6><i class="bi bi-calendar-event"></i> Jours feries</h6>
-                      <p class="text-muted small">Importer les jours feries pour l'annee selectionnee</p>
-                      <div class="input-group">
-                        <select class="form-select" id="import_feries_annee">
-                          <option value="2024">2024</option>
-                          <option value="2025" selected>2025</option>
-                          <option value="2026">2026</option>
-                        </select>
-                        <button class="btn btn-outline-primary" onclick="importerJoursFeries()">
-                          <i class="bi bi-download"></i> Importer
-                        </button>
-                      </div>
-                    </div>
-
-                    <div id="import-vacances-section">
-                      <h6><i class="bi bi-sun"></i> Vacances scolaires (France)</h6>
-                      <p class="text-muted small">Importer les vacances depuis data.education.gouv.fr</p>
-                      <div class="input-group">
-                        <select class="form-select" id="import_vacances_annee">
-                          <option value="2023-2024">2023-2024</option>
-                          <option value="2024-2025" selected>2024-2025</option>
-                          <option value="2025-2026">2025-2026</option>
-                        </select>
-                        <button class="btn btn-outline-primary" onclick="importerVacances()">
-                          <i class="bi bi-download"></i> Importer
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Liste des fermetures -->
-              <div class="col-12">
-                <div class="card">
-                  <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0"><i class="bi bi-calendar-x"></i> Fermetures exceptionnelles</h5>
-                    <button class="btn btn-success btn-sm" onclick="showModalFermeture()">
-                      <i class="bi bi-plus-lg"></i> Ajouter
-                    </button>
-                  </div>
-                  <div class="card-body">
-                    <div class="mb-3">
-                      <select class="form-select w-auto d-inline-block" id="filter-fermetures-annee" onchange="loadFermetures()">
-                        <option value="2024">2024</option>
-                        <option value="2025" selected>2025</option>
-                        <option value="2026">2026</option>
-                      </select>
-                      <select class="form-select w-auto d-inline-block ms-2" id="filter-fermetures-type" onchange="loadFermetures()">
-                        <option value="">Tous types</option>
-                        <option value="ferie">Jours feries</option>
-                        <option value="vacances">Vacances</option>
-                        <option value="ponctuel">Ponctuels</option>
-                        <option value="autre">Autres</option>
-                      </select>
-                    </div>
-                    <div id="liste-fermetures">
-                      <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                          <span class="visually-hidden">Chargement...</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ===================== -->
-          <!-- Panel Comptes         -->
-          <!-- ===================== -->
-          <div class="tab-pane fade" id="comptes-panel" role="tabpanel">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <p class="text-muted mb-0">
-                <i class="bi bi-info-circle"></i> Comptes bancaires pour la comptabilite et les exports
-              </p>
-              <button class="btn btn-success" onclick="showModalCompte()">
-                <i class="bi bi-plus-lg"></i> Nouveau compte
-              </button>
-            </div>
-
-            <div id="liste-comptes" class="row g-3">
-              <div class="col-12 text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Chargement...</span>
-                </div>
-              </div>
+        <!-- Liste des sites -->
+        <div id="liste-sites" class="row g-3">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
             </div>
           </div>
         </div>
@@ -318,6 +189,14 @@
                 <select class="form-select" id="site_type" required onchange="toggleSiteTypeFields()">
                   <option value="fixe">Fixe (adresse permanente)</option>
                   <option value="mobile">Mobile (lieux variables)</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label for="site_structure" class="form-label">Structure rattachee</label>
+                <select class="form-select" id="site_structure">
+                  <option value="">Aucune (global)</option>
+                  <!-- Options chargees dynamiquement -->
                 </select>
               </div>
 
@@ -369,15 +248,6 @@
                   <input type="email" class="form-control" id="site_email">
                 </div>
               </div>
-            </div>
-
-            <!-- Compte bancaire -->
-            <div class="mt-4">
-              <h6 class="border-bottom pb-2"><i class="bi bi-bank"></i> Compte bancaire associe</h6>
-              <select class="form-select" id="site_compte_bancaire">
-                <option value="">Aucun compte associe</option>
-                <!-- Options chargees dynamiquement -->
-              </select>
             </div>
 
             <!-- Apparence -->
@@ -546,127 +416,6 @@
     </div>
   </div>
 
-  <!-- Modal Fermeture -->
-  <div class="modal fade" id="modalFermeture" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Ajouter une fermeture</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="form-fermeture">
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="fermeture_site" class="form-label">Site concerne</label>
-              <select class="form-select" id="fermeture_site">
-                <option value="">Tous les sites</option>
-                <!-- Options chargees dynamiquement -->
-              </select>
-            </div>
-
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label for="fermeture_date_debut" class="form-label">Date debut *</label>
-                <input type="date" class="form-control" id="fermeture_date_debut" required>
-              </div>
-              <div class="col-md-6">
-                <label for="fermeture_date_fin" class="form-label">Date fin *</label>
-                <input type="date" class="form-control" id="fermeture_date_fin" required>
-              </div>
-            </div>
-
-            <div class="mb-3 mt-3">
-              <label for="fermeture_motif" class="form-label">Motif</label>
-              <input type="text" class="form-control" id="fermeture_motif" placeholder="Travaux, Conges...">
-            </div>
-
-            <div class="mb-3">
-              <label for="fermeture_type" class="form-label">Type</label>
-              <select class="form-select" id="fermeture_type">
-                <option value="ponctuel">Fermeture ponctuelle</option>
-                <option value="ferie">Jour ferie</option>
-                <option value="vacances">Vacances</option>
-                <option value="autre">Autre</option>
-              </select>
-            </div>
-
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="fermeture_recurrent">
-              <label class="form-check-label" for="fermeture_recurrent">
-                Recurrent chaque annee (ex: 25 decembre)
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-primary">Ajouter</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Compte Bancaire -->
-  <div class="modal fade" id="modalCompte" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalCompteTitle">Nouveau compte bancaire</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="form-compte">
-          <div class="modal-body">
-            <input type="hidden" id="compte_id">
-
-            <div class="mb-3">
-              <label for="compte_libelle" class="form-label">Libelle *</label>
-              <input type="text" class="form-control" id="compte_libelle" required placeholder="Compte principal">
-            </div>
-
-            <div class="mb-3">
-              <label for="compte_titulaire" class="form-label">Titulaire</label>
-              <input type="text" class="form-control" id="compte_titulaire" placeholder="Association XYZ">
-            </div>
-
-            <div class="mb-3">
-              <label for="compte_banque" class="form-label">Banque</label>
-              <input type="text" class="form-control" id="compte_banque" placeholder="Credit Mutuel">
-            </div>
-
-            <div class="mb-3">
-              <label for="compte_iban" class="form-label">IBAN</label>
-              <input type="text" class="form-control font-monospace" id="compte_iban" placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX">
-            </div>
-
-            <div class="mb-3">
-              <label for="compte_bic" class="form-label">BIC</label>
-              <input type="text" class="form-control font-monospace" id="compte_bic" placeholder="CMCIFR2A">
-            </div>
-
-            <div class="row">
-              <div class="col-6">
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input" id="compte_par_defaut">
-                  <label class="form-check-label" for="compte_par_defaut">Compte par defaut</label>
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="form-check">
-                  <input type="checkbox" class="form-check-input" id="compte_actif" checked>
-                  <label class="form-check-label" for="compte_actif">Actif</label>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
@@ -678,7 +427,7 @@
     initTemplate('parametres');
 
     document.addEventListener('DOMContentLoaded', () => {
-      renderSubNav('general', 'sites');
+      renderSubNav('organisation', 'sites');
       initSitesPage();
     });
   </script>

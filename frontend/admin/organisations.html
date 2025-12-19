@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organisations - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .organisation-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .organisation-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .organisation-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+    .type-badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .color-preview {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+    }
+    .stat-card {
+      border-left: 4px solid;
+    }
+    .stat-card .stat-icon {
+      font-size: 2rem;
+      opacity: 0.7;
+    }
+    .nav-tabs .nav-link {
+      color: #6c757d;
+    }
+    .nav-tabs .nav-link.active {
+      font-weight: 600;
+    }
+    .info-label {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub Navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-building-gear me-2 text-primary"></i>
+              Organisations
+            </h1>
+            <p class="text-muted mb-0">Entites juridiques (associations, collectivites, entreprises)</p>
+          </div>
+          <button class="btn btn-success" onclick="showModalOrganisation()">
+            <i class="bi bi-plus-lg"></i> Nouvelle organisation
+          </button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card stat-card" style="border-left-color: #0d6efd;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-primary me-3"><i class="bi bi-building-gear"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-organisations">0</h3>
+                  <small class="text-muted">Organisations</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card stat-card" style="border-left-color: #198754;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-success me-3"><i class="bi bi-check-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-actives">0</h3>
+                  <small class="text-muted">Actives</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card stat-card" style="border-left-color: #6f42c1;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-purple me-3"><i class="bi bi-diagram-3"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-structures">0</h3>
+                  <small class="text-muted">Structures rattachees</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          <strong>Organisation :</strong> entite juridique (association, collectivite, entreprise) qui peut regrouper plusieurs structures operationnelles.
+          Chaque organisation a ses propres identifiants legaux (SIRET, RNA...), son representant legal et ses informations comptables.
+        </div>
+
+        <!-- Liste des organisations -->
+        <div id="liste-organisations" class="row g-3">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Organisation -->
+  <div class="modal fade" id="modalOrganisation" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalOrganisationTitle">Nouvelle organisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-organisation">
+          <div class="modal-body">
+            <input type="hidden" id="organisation_id">
+
+            <!-- Onglets -->
+            <ul class="nav nav-tabs mb-4" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-identification" type="button">
+                  <i class="bi bi-card-text"></i> Identification
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-legal" type="button">
+                  <i class="bi bi-file-earmark-text"></i> Identifiants legaux
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-contact" type="button">
+                  <i class="bi bi-geo-alt"></i> Coordonnees
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-representant" type="button">
+                  <i class="bi bi-person-badge"></i> Representant
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-comptabilite" type="button">
+                  <i class="bi bi-calculator"></i> Comptabilite
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-connecteurs" type="button">
+                  <i class="bi bi-envelope-at"></i> Connecteurs
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <!-- Onglet Identification -->
+              <div class="tab-pane fade show active" id="tab-identification">
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <label for="organisation_nom" class="form-label">Nom officiel *</label>
+                    <input type="text" class="form-control" id="organisation_nom" required placeholder="FOYER CULTUREL DE SCIEZ">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="organisation_nom_court" class="form-label">Nom abrege</label>
+                    <input type="text" class="form-control" id="organisation_nom_court" placeholder="FCS">
+                    <small class="text-muted">Pour affichage compact</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_type" class="form-label">Type d'organisation</label>
+                    <select class="form-select" id="organisation_type">
+                      <option value="association">Association</option>
+                      <option value="collectivite">Collectivite territoriale</option>
+                      <option value="entreprise">Entreprise</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="organisation_couleur" class="form-label">Couleur</label>
+                    <input type="color" class="form-control form-control-color" id="organisation_couleur" value="#007bff">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="organisation_actif" class="form-label">Statut</label>
+                    <div class="form-check form-switch mt-2">
+                      <input type="checkbox" class="form-check-input" id="organisation_actif" checked>
+                      <label class="form-check-label" for="organisation_actif">Active</label>
+                    </div>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="organisation_logo" class="form-label">URL du logo</label>
+                    <input type="url" class="form-control" id="organisation_logo" placeholder="https://...">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Identifiants legaux -->
+              <div class="tab-pane fade" id="tab-legal">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="alert alert-light">
+                      <i class="bi bi-info-circle"></i> Les champs affiches dependent du type d'organisation selectionne.
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_siret" class="form-label">SIRET</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_siret" placeholder="12345678901234" maxlength="14">
+                    <small class="text-muted">14 chiffres</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_siren" class="form-label">SIREN</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_siren" placeholder="123456789" readonly>
+                    <small class="text-muted">Auto-extrait du SIRET</small>
+                  </div>
+
+                  <div class="col-md-6" id="field-rna">
+                    <label for="organisation_rna" class="form-label">RNA (associations)</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_rna" placeholder="W123456789" maxlength="10">
+                    <small class="text-muted">W + 9 chiffres</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_code_ape" class="form-label">Code APE/NAF</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_code_ape" placeholder="9499Z" maxlength="6">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_numero_tva" class="form-label">Numero TVA</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_numero_tva" placeholder="FR12345678901">
+                  </div>
+
+                  <div class="col-md-6" id="field-agrement">
+                    <label for="organisation_numero_agrement" class="form-label">Numero agrement</label>
+                    <input type="text" class="form-control" id="organisation_numero_agrement" placeholder="Jeunesse & Sports...">
+                  </div>
+
+                  <div class="col-md-6" id="field-prefecture">
+                    <label for="organisation_prefecture" class="form-label">Prefecture de declaration</label>
+                    <input type="text" class="form-control" id="organisation_prefecture" placeholder="Prefecture de Haute-Savoie">
+                  </div>
+
+                  <div class="col-md-3" id="field-jo">
+                    <label for="organisation_date_jo" class="form-label">Publication JO</label>
+                    <input type="date" class="form-control" id="organisation_date_jo">
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="organisation_date_creation" class="form-label">Date de creation</label>
+                    <input type="date" class="form-control" id="organisation_date_creation">
+                  </div>
+
+                  <div class="col-md-6" id="field-insee">
+                    <label for="organisation_code_insee" class="form-label">Code INSEE (collectivites)</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_code_insee" placeholder="74261" maxlength="5">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Coordonnees -->
+              <div class="tab-pane fade" id="tab-contact">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label for="organisation_adresse" class="form-label">Adresse du siege</label>
+                    <textarea class="form-control" id="organisation_adresse" rows="2" placeholder="123 rue de la Ludotheque"></textarea>
+                  </div>
+
+                  <div class="col-md-3">
+                    <label for="organisation_code_postal" class="form-label">Code postal</label>
+                    <input type="text" class="form-control" id="organisation_code_postal" placeholder="74140" maxlength="10">
+                  </div>
+
+                  <div class="col-md-5">
+                    <label for="organisation_ville" class="form-label">Ville</label>
+                    <input type="text" class="form-control" id="organisation_ville" placeholder="Sciez">
+                  </div>
+
+                  <div class="col-md-4">
+                    <label for="organisation_pays" class="form-label">Pays</label>
+                    <select class="form-select" id="organisation_pays">
+                      <option value="FR">France</option>
+                      <option value="BE">Belgique</option>
+                      <option value="CH">Suisse</option>
+                      <option value="LU">Luxembourg</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="organisation_email" placeholder="contact@foyer-sciez.fr">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_telephone" class="form-label">Telephone</label>
+                    <input type="tel" class="form-control" id="organisation_telephone" placeholder="04 50 12 34 56">
+                  </div>
+
+                  <div class="col-12">
+                    <label for="organisation_site_web" class="form-label">Site web</label>
+                    <input type="url" class="form-control" id="organisation_site_web" placeholder="https://www.foyer-sciez.fr">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Representant legal -->
+              <div class="tab-pane fade" id="tab-representant">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="alert alert-light">
+                      <i class="bi bi-person-badge"></i> Informations sur le representant legal (President, Maire, Directeur...)
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_representant_nom" class="form-label">Nom complet</label>
+                    <input type="text" class="form-control" id="organisation_representant_nom" placeholder="Mme Marie DUPONT">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_representant_fonction" class="form-label">Fonction</label>
+                    <input type="text" class="form-control" id="organisation_representant_fonction" placeholder="Presidente">
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_representant_email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="organisation_representant_email" placeholder="president@foyer-sciez.fr">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Comptabilite -->
+              <div class="tab-pane fade" id="tab-comptabilite">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label for="organisation_regime_tva" class="form-label">Regime TVA</label>
+                    <select class="form-select" id="organisation_regime_tva">
+                      <option value="non_assujetti">Non assujetti (associations)</option>
+                      <option value="franchise">Franchise en base</option>
+                      <option value="assujetti">Assujetti</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_code_comptable" class="form-label">Code comptable</label>
+                    <input type="text" class="form-control font-monospace" id="organisation_code_comptable" placeholder="ORG01">
+                    <small class="text-muted">Pour exports FEC</small>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label">Debut exercice comptable</label>
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <select class="form-select" id="organisation_debut_exercice_jour">
+                          <option value="1">1</option>
+                          <!-- Jours 2-31 ajoutes par JS -->
+                        </select>
+                        <small class="text-muted">Jour</small>
+                      </div>
+                      <div class="col-6">
+                        <select class="form-select" id="organisation_debut_exercice_mois">
+                          <option value="1">Janvier</option>
+                          <option value="2">Fevrier</option>
+                          <option value="3">Mars</option>
+                          <option value="4">Avril</option>
+                          <option value="5">Mai</option>
+                          <option value="6">Juin</option>
+                          <option value="7">Juillet</option>
+                          <option value="8">Aout</option>
+                          <option value="9">Septembre</option>
+                          <option value="10">Octobre</option>
+                          <option value="11">Novembre</option>
+                          <option value="12">Decembre</option>
+                        </select>
+                        <small class="text-muted">Mois</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Onglet Connecteurs -->
+              <div class="tab-pane fade" id="tab-connecteurs">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="alert alert-light">
+                      <i class="bi bi-envelope-at"></i> Connecteurs par defaut pour l'envoi d'emails et SMS.
+                      Les structures peuvent surcharger ces parametres.
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_email_connector" class="form-label">Connecteur Email</label>
+                    <select class="form-select" id="organisation_email_connector">
+                      <option value="">Defaut systeme</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label for="organisation_sms_connector" class="form-label">Connecteur SMS</label>
+                    <select class="form-select" id="organisation_sms_connector">
+                      <option value="">Defaut systeme</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/organisations.js"></script>
+  <script>
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('organisation', 'organisations');
+      initOrganisationsPage();
+    });
+  </script>
+</body>
+</html>

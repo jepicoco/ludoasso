@@ -15,6 +15,12 @@ window.ACTIVE_MODULES = null;
 // Variable globale pour les modules autorisés à l'utilisateur
 window.USER_ALLOWED_MODULES = null;
 
+// Variable globale pour les structures accessibles
+window.USER_STRUCTURES = null;
+
+// Structure actuellement selectionnee
+window.CURRENT_STRUCTURE_ID = null;
+
 // Hierarchie des roles (niveau croissant)
 const ROLE_HIERARCHY = {
     'usager': 0,
@@ -226,6 +232,193 @@ function purgeModulesCache() {
     console.log('Cache des modules purgé');
 }
 
+// ==================== GESTION MULTI-STRUCTURES ====================
+
+/**
+ * Charge les structures accessibles a l'utilisateur
+ * @returns {Promise<Array>} Liste des structures
+ */
+async function loadUserStructures() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.USER_STRUCTURES = [];
+            return [];
+        }
+
+        const response = await fetch('/api/structures', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const structures = await response.json();
+            window.USER_STRUCTURES = Array.isArray(structures) ? structures : [];
+
+            // Charger la structure selectionnee depuis localStorage
+            const savedStructureId = localStorage.getItem('selectedStructureId');
+            if (savedStructureId && window.USER_STRUCTURES.find(s => s.id === parseInt(savedStructureId))) {
+                window.CURRENT_STRUCTURE_ID = parseInt(savedStructureId);
+            } else if (window.USER_STRUCTURES.length === 1) {
+                // Si une seule structure, la selectionner automatiquement
+                window.CURRENT_STRUCTURE_ID = window.USER_STRUCTURES[0].id;
+                localStorage.setItem('selectedStructureId', window.CURRENT_STRUCTURE_ID);
+            }
+
+            return window.USER_STRUCTURES;
+        }
+    } catch (error) {
+        console.error('Erreur chargement structures:', error);
+    }
+
+    window.USER_STRUCTURES = [];
+    return [];
+}
+
+/**
+ * Recupere l'ID de la structure actuellement selectionnee
+ * @returns {number|null}
+ */
+function getCurrentStructureId() {
+    return window.CURRENT_STRUCTURE_ID;
+}
+
+/**
+ * Change la structure selectionnee
+ * @param {number|null} structureId - ID de la structure ou null pour toutes
+ */
+function setCurrentStructure(structureId) {
+    window.CURRENT_STRUCTURE_ID = structureId;
+    if (structureId) {
+        localStorage.setItem('selectedStructureId', structureId);
+    } else {
+        localStorage.removeItem('selectedStructureId');
+    }
+
+    // Emettre un evenement personnalise pour notifier les pages
+    window.dispatchEvent(new CustomEvent('structureChanged', { detail: { structureId } }));
+
+    // Rafraichir la page pour appliquer le filtre
+    window.location.reload();
+}
+
+/**
+ * Genere le HTML du selecteur de structure pour la navbar
+ * Affichage adaptatif: boutons directs si <= 3 structures, dropdown sinon
+ * @returns {string}
+ */
+function renderStructureSelector() {
+    if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+        return '';
+    }
+
+    // Si une seule structure, l'afficher en badge statique (pas de choix)
+    if (window.USER_STRUCTURES.length === 1) {
+        const s = window.USER_STRUCTURES[0];
+        return `
+            <div class="me-3 d-flex align-items-center">
+                <span class="badge d-flex align-items-center gap-2" style="background-color: ${s.couleur || '#6c757d'}; color: ${s.couleur_texte || '#ffffff'}; padding: 0.5rem 0.75rem;">
+                    <i class="bi bi-${s.icone || 'building'}"></i>
+                    <span class="d-none d-md-inline">${escapeHtml(s.nom)}</span>
+                </span>
+            </div>
+        `;
+    }
+
+    const current = window.USER_STRUCTURES.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+
+    // Si 2 ou 3 structures: afficher des boutons/badges cliquables directement
+    if (window.USER_STRUCTURES.length <= 3) {
+        return `
+            <div class="me-3 d-flex align-items-center gap-1 structure-selector-buttons">
+                <button class="btn btn-sm structure-btn ${!window.CURRENT_STRUCTURE_ID ? 'active' : ''}"
+                        onclick="setCurrentStructure(null)"
+                        title="Toutes les structures"
+                        style="background-color: ${!window.CURRENT_STRUCTURE_ID ? '#ffffff' : 'transparent'};
+                               color: ${!window.CURRENT_STRUCTURE_ID ? '#0d6efd' : '#ffffff'};
+                               border: 1px solid rgba(255,255,255,0.5);">
+                    <i class="bi bi-collection"></i>
+                    <span class="d-none d-lg-inline ms-1">Toutes</span>
+                </button>
+                ${window.USER_STRUCTURES.map(s => {
+                    const isActive = s.id === window.CURRENT_STRUCTURE_ID;
+                    const bgColor = isActive ? (s.couleur || '#6c757d') : 'transparent';
+                    const textColor = isActive ? (s.couleur_texte || '#ffffff') : '#ffffff';
+                    const borderColor = s.couleur || '#ffffff';
+                    return `
+                        <button class="btn btn-sm structure-btn ${isActive ? 'active' : ''}"
+                                onclick="setCurrentStructure(${s.id})"
+                                title="${escapeHtml(s.nom)}"
+                                style="background-color: ${bgColor};
+                                       color: ${textColor};
+                                       border: 2px solid ${borderColor};">
+                            <i class="bi bi-${s.icone || 'building'}"></i>
+                            <span class="d-none d-lg-inline ms-1">${escapeHtml(s.nom)}</span>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+            <style>
+                .structure-selector-buttons .structure-btn {
+                    padding: 0.35rem 0.6rem;
+                    border-radius: 0.375rem;
+                    transition: all 0.2s ease;
+                    font-size: 0.85rem;
+                }
+                .structure-selector-buttons .structure-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                }
+                .structure-selector-buttons .structure-btn.active {
+                    font-weight: 600;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                }
+            </style>
+        `;
+    }
+
+    // Si plus de 3 structures: dropdown classique
+    const currentLabel = current ? current.nom : 'Toutes les structures';
+    const currentColor = current ? (current.couleur || '#6c757d') : '#6c757d';
+    const currentIcon = current ? (current.icone || 'building') : 'collection';
+
+    return `
+        <div class="dropdown me-3">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center gap-2" type="button" id="structureSelectorBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="structure-indicator" style="background-color: ${currentColor}; width: 10px; height: 10px; border-radius: 50%; display: inline-block;"></span>
+                <i class="bi bi-${currentIcon} d-md-none"></i>
+                <span class="d-none d-md-inline">${escapeHtml(currentLabel)}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="structureSelectorBtn">
+                <li>
+                    <a class="dropdown-item ${!window.CURRENT_STRUCTURE_ID ? 'active' : ''}" href="#" onclick="setCurrentStructure(null); return false;">
+                        <i class="bi bi-collection me-2"></i> Toutes les structures
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                ${window.USER_STRUCTURES.map(s => `
+                    <li>
+                        <a class="dropdown-item ${s.id === window.CURRENT_STRUCTURE_ID ? 'active' : ''}" href="#" onclick="setCurrentStructure(${s.id}); return false;">
+                            <span class="me-2" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${s.couleur || '#6c757d'};"></span>
+                            <i class="bi bi-${s.icone || 'building'} me-1"></i>
+                            ${escapeHtml(s.nom)}
+                        </a>
+                    </li>
+                `).join('')}
+            </ul>
+        </div>
+    `;
+}
+
+/**
+ * Fonction utilitaire pour echapper le HTML
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 /**
  * Variable globale pour stocker la version de l'application
  */
@@ -263,6 +456,8 @@ function updateVersionDisplay() {
  * Génère le HTML de la navbar
  */
 function renderNavbar(activePage) {
+    const structureSelector = renderStructureSelector();
+
     return `
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
@@ -270,12 +465,29 @@ function renderNavbar(activePage) {
                     <i class="bi bi-dice-5"></i> Ludothèque
                     <small class="opacity-75 ms-2" id="app-version-footer" style="font-size: 0.7rem;"></small>
                 </a>
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="dashboard.html"><i class="bi bi-house"></i> Accueil</a>
-                    <a class="nav-link" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Déconnexion</a>
+                <div class="navbar-nav ms-auto d-flex align-items-center">
+                    ${structureSelector}
+                    <a class="nav-link position-relative me-2" href="notifications.html" title="Notifications">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge d-none position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count">
+                            0
+                        </span>
+                    </a>
+                    <a class="nav-link" href="dashboard.html"><i class="bi bi-house"></i> <span class="d-none d-md-inline">Accueil</span></a>
+                    <a class="nav-link" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Déconnexion</span></a>
                 </div>
             </div>
         </nav>
+        <style>
+            .notification-badge {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.4rem;
+                min-width: 1.2rem;
+            }
+            .nav-link .bi-bell {
+                font-size: 1.1rem;
+            }
+        </style>
     `;
 }
 
@@ -476,6 +688,9 @@ async function initTemplate(pageId) {
     // Charger les modules autorisés à l'utilisateur
     loadUserAllowedModules();
 
+    // Charger les structures accessibles (multi-structures V0.9)
+    await loadUserStructures();
+
     // Charger la version de l'application (en arriere-plan)
     loadAppVersion();
 
@@ -519,3 +734,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Le template sera initialisé par la page elle-même via initTemplate()
     // ou automatiquement si aucun pageId n'est spécifié
 });
+
+// Exports globaux pour multi-structures
+window.loadUserStructures = loadUserStructures;
+window.getCurrentStructureId = getCurrentStructureId;
+window.setCurrentStructure = setCurrentStructure;

@@ -51,8 +51,13 @@
         <div class="card section-card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="bi bi-graph-up"></i> Exercice courant</span>
-            <select class="form-select form-select-sm w-auto" id="exercice-select" onchange="loadStats()">
-            </select>
+            <div class="d-flex gap-2">
+              <select class="form-select form-select-sm w-auto" id="structure-select" onchange="loadStats()">
+                <option value="">Toutes les structures</option>
+              </select>
+              <select class="form-select form-select-sm w-auto" id="exercice-select" onchange="loadStats()">
+              </select>
+            </div>
           </div>
           <div class="card-body" id="stats-container">
             <div class="text-center py-3">
@@ -287,10 +292,22 @@
               <input type="text" class="form-control" id="export_format_label" readonly>
             </div>
 
-            <div class="mb-3">
-              <label for="export_exercice" class="form-label">Exercice <span class="text-danger">*</span></label>
-              <select class="form-select" id="export_exercice" required>
-              </select>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export_exercice" class="form-label">Exercice <span class="text-danger">*</span></label>
+                  <select class="form-select" id="export_exercice" required>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export_structure" class="form-label">Structure</label>
+                  <select class="form-select" id="export_structure">
+                    <option value="">Toutes les structures</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="row">
@@ -337,6 +354,7 @@
   <script src="js/admin-template.js"></script>
   <script>
     let allFormats = [];
+    let allStructures = [];
     let currentFormat = null;
     let mappingComptes = {};
     let mappingJournaux = {};
@@ -346,10 +364,32 @@
       initTemplate('parametres');
       modalFormat = new bootstrap.Modal(document.getElementById('modalFormat'));
       modalExport = new bootstrap.Modal(document.getElementById('modalExport'));
+      await loadStructures();
       await loadExercices();
       await loadFormats();
       await loadStats();
     });
+
+    async function loadStructures() {
+      try {
+        const structures = await apiRequest('/structures');
+        allStructures = structures || [];
+
+        // Peupler les selecteurs de structure
+        const structureSelect = document.getElementById('structure-select');
+        const exportStructureSelect = document.getElementById('export_structure');
+
+        const options = allStructures.map(s =>
+          `<option value="${s.id}">${s.nom}</option>`
+        ).join('');
+
+        structureSelect.innerHTML = '<option value="">Toutes les structures</option>' + options;
+        exportStructureSelect.innerHTML = '<option value="">Toutes les structures</option>' + options;
+      } catch (error) {
+        console.error('Erreur chargement structures:', error);
+        allStructures = [];
+      }
+    }
 
     async function loadExercices() {
       try {
@@ -382,11 +422,22 @@
 
     async function loadStats() {
       const exercice = document.getElementById('exercice-select').value;
+      const structureId = document.getElementById('structure-select').value;
 
       try {
-        const stats = await apiRequest(`/export-comptable/statistiques/${exercice}`);
+        let url = `/export-comptable/statistiques/${exercice}`;
+        if (structureId) {
+          url += `?structure_id=${structureId}`;
+        }
+        const stats = await apiRequest(url);
 
-        let html = `
+        // Afficher le nom de la structure si filtre actif
+        let structureInfo = '';
+        if (stats.structure) {
+          structureInfo = `<div class="alert alert-info py-2 mb-3"><i class="bi bi-building"></i> Filtré sur : <strong>${stats.structure.nom}</strong></div>`;
+        }
+
+        let html = structureInfo + `
           <div class="row text-center">
             <div class="col-md-3">
               <div class="h4 text-primary">${stats.statistiques?.nb_ecritures_total || 0}</div>
@@ -678,11 +729,13 @@
     async function doExport() {
       const format = document.getElementById('export_format').value;
       const exercice = document.getElementById('export_exercice').value;
+      const structureId = document.getElementById('export_structure').value;
       const dateDebut = document.getElementById('export_date_debut').value;
       const dateFin = document.getElementById('export_date_fin').value;
       const journal = document.getElementById('export_journal').value;
 
       let url = `/export-comptable/export/${format}?exercice=${exercice}`;
+      if (structureId) url += `&structure_id=${structureId}`;
       if (dateDebut) url += `&dateDebut=${dateDebut}`;
       if (dateFin) url += `&dateFin=${dateFin}`;
       if (journal) url += `&journal=${journal}`;

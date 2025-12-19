@@ -3,7 +3,7 @@
  * Supporte: FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON
  */
 
-const { EcritureComptable, ConfigurationExportComptable } = require('../models');
+const { EcritureComptable, ConfigurationExportComptable, Structure } = require('../models');
 const { Op } = require('sequelize');
 const dayjs = require('dayjs');
 const iconv = require('iconv-lite');
@@ -380,6 +380,7 @@ class ExportComptableService {
    * @param {Date} filtres.dateDebut - Date de debut
    * @param {Date} filtres.dateFin - Date de fin
    * @param {string} filtres.journal - Code journal
+   * @param {number} filtres.structure_id - ID de la structure (optionnel)
    * @returns {Object} { buffer, filename, contentType, extension }
    */
   static async exporter(format, filtres = {}) {
@@ -414,6 +415,14 @@ class ExportComptableService {
       where.journal_code = filtres.journal;
     }
 
+    // Filtrage par structure
+    let structure = null;
+    if (filtres.structure_id) {
+      where.structure_id = filtres.structure_id;
+      // Recuperer les infos de la structure pour le nom de fichier
+      structure = await Structure.findByPk(filtres.structure_id);
+    }
+
     // Recuperer les ecritures
     const ecritures = await EcritureComptable.findAll({
       where,
@@ -432,12 +441,13 @@ class ExportComptableService {
     const exporter = createExporter(config.toJSON());
     const buffer = await exporter.exporter(ecritures);
 
-    // Generer le nom de fichier
+    // Generer le nom de fichier (avec code structure si filtre)
     const exercice = filtres.exercice || dayjs().year();
     const dateExport = dayjs().format('YYYYMMDD_HHmmss');
+    const structureSuffix = structure ? `_${structure.code.toUpperCase()}` : '';
     const nomBase = format === 'fec'
-      ? `${exercice}FEC${dateExport}`
-      : `export_${format}_${exercice}_${dateExport}`;
+      ? `${exercice}FEC${structureSuffix}${dateExport}`
+      : `export_${format}_${exercice}${structureSuffix}_${dateExport}`;
 
     const extension = config.extension || '.txt';
     const filename = `${nomBase}${extension}`;
@@ -474,16 +484,27 @@ class ExportComptableService {
       extension,
       nbEcritures: ecritures.length,
       format: config.format,
-      libelle: config.libelle
+      libelle: config.libelle,
+      structure: structure ? { id: structure.id, code: structure.code, nom: structure.nom } : null
     };
   }
 
   /**
    * Genere les statistiques d'un exercice pour chaque format
+   * @param {number} exercice - Exercice comptable
+   * @param {number|null} structureId - ID de la structure (optionnel)
+   * @returns {Object} Statistiques de l'exercice
    */
-  static async getStatistiquesExercice(exercice) {
+  static async getStatistiquesExercice(exercice, structureId = null) {
+    const where = { exercice };
+
+    // Filtrage par structure si specifie
+    if (structureId) {
+      where.structure_id = structureId;
+    }
+
     const ecritures = await EcritureComptable.findAll({
-      where: { exercice },
+      where,
       attributes: [
         'journal_code',
         [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'nb_ecritures'],
@@ -494,7 +515,7 @@ class ExportComptableService {
     });
 
     const totalGeneral = await EcritureComptable.findOne({
-      where: { exercice },
+      where,
       attributes: [
         [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'nb_ecritures'],
         [require('sequelize').fn('SUM', require('sequelize').col('debit')), 'total_debit'],
@@ -507,8 +528,18 @@ class ExportComptableService {
 
     const formats = await ConfigurationExportComptable.getActifs();
 
+    // Recuperer info structure si filtre actif
+    let structureInfo = null;
+    if (structureId) {
+      const structure = await Structure.findByPk(structureId);
+      if (structure) {
+        structureInfo = { id: structure.id, code: structure.code, nom: structure.nom };
+      }
+    }
+
     return {
       exercice,
+      structure: structureInfo,
       total: totalGeneral,
       par_journal: ecritures,
       formats_disponibles: formats.map(f => ({

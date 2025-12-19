@@ -42,6 +42,12 @@ const apiRequest = async (endpoint, options = {}) => {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Ajouter le header X-Structure-Id si une structure est selectionnee (Multi-structures V0.9)
+  const structureId = typeof getCurrentStructureId === 'function' ? getCurrentStructureId() : null;
+  if (structureId) {
+    headers['X-Structure-Id'] = structureId.toString();
+  }
+
   const config = {
     ...options,
     headers

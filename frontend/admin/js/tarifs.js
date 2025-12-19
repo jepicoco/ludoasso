@@ -4,6 +4,7 @@
 
 let tarifsSortable = null;
 let tarifsCache = [];
+let structuresCache = [];
 
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
@@ -23,10 +24,46 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * Chargement des structures
+ */
+async function loadStructures() {
+  try {
+    const structures = await apiRequest('/structures');
+    structuresCache = structures || [];
+    populateStructureSelect();
+  } catch (error) {
+    console.error('Erreur chargement structures:', error);
+    structuresCache = [];
+  }
+}
+
+/**
+ * Peupler le select des structures
+ */
+function populateStructureSelect() {
+  const select = document.getElementById('tarif_structure');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Toutes les structures (global)</option>';
+  structuresCache.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.nom;
+    opt.style.borderLeft = `4px solid ${s.couleur || '#007bff'}`;
+    select.appendChild(opt);
+  });
+}
+
+/**
  * Chargement des tarifs
  */
 async function loadTarifs() {
   try {
+    // Charger les structures si pas encore fait
+    if (structuresCache.length === 0) {
+      await loadStructures();
+    }
+
     const tarifs = await apiRequest('/parametres/tarifs');
     tarifsCache = tarifs;
     renderTarifsList(tarifs);
@@ -86,6 +123,14 @@ function renderTarifsList(tarifs) {
       ? '<span class="badge bg-info"><i class="bi bi-star-fill"></i> Par défaut</span>'
       : '';
 
+    // Badge structure
+    let badgeStructure = '';
+    if (tarif.structure) {
+      badgeStructure = `<span class="badge" style="background-color: ${tarif.structure.couleur || '#6c757d'};">${tarif.structure.nom}</span>`;
+    } else {
+      badgeStructure = '<span class="badge bg-secondary">Global</span>';
+    }
+
     const cotisationsEnCours = parseInt(tarif.cotisations_en_cours) || 0;
     const totalCotisations = parseInt(tarif.total_cotisations) || 0;
     const cotisationsInfo = totalCotisations > 0
@@ -101,6 +146,7 @@ function renderTarifsList(tarifs) {
             <div class="d-flex align-items-center gap-2 mb-2">
               <i class="bi bi-grip-vertical text-muted" style="cursor: grab;"></i>
               <h5 class="mb-0">${tarif.libelle}</h5>
+              ${badgeStructure}
               ${badgeStatut}
               ${badgePeriode}
               ${badgeMontant}
@@ -200,6 +246,7 @@ function showModalTarif() {
   document.getElementById('tarif_type_montant').value = 'fixe';
   document.getElementById('tarif_reduction_type').value = 'pourcentage';
   document.getElementById('tarif_reduction_valeur').value = '0';
+  document.getElementById('tarif_structure').value = '';
 
   const modal = new bootstrap.Modal(document.getElementById('modalTarif'));
   modal.show();
@@ -225,6 +272,7 @@ async function editTarif(id) {
     document.getElementById('tarif_reduction_valeur').value = tarif.reduction_association_valeur || 0;
     document.getElementById('tarif_actif').checked = tarif.actif !== false;
     document.getElementById('tarif_par_defaut').checked = tarif.par_defaut === true;
+    document.getElementById('tarif_structure').value = tarif.structure?.id || tarif.structure_id || '';
 
     document.getElementById('modalTarifTitle').textContent = 'Modifier le tarif';
 
@@ -243,6 +291,8 @@ async function handleSubmitTarif(e) {
   e.preventDefault();
 
   const id = document.getElementById('tarif_id').value;
+  const structureValue = document.getElementById('tarif_structure').value;
+
   const data = {
     libelle: document.getElementById('tarif_libelle').value.trim(),
     description: document.getElementById('tarif_description').value.trim() || null,
@@ -252,7 +302,8 @@ async function handleSubmitTarif(e) {
     reduction_association_type: document.getElementById('tarif_reduction_type').value,
     reduction_association_valeur: parseFloat(document.getElementById('tarif_reduction_valeur').value) || 0,
     actif: document.getElementById('tarif_actif').checked,
-    par_defaut: document.getElementById('tarif_par_defaut').checked
+    par_defaut: document.getElementById('tarif_par_defaut').checked,
+    structure_id: structureValue ? parseInt(structureValue) : null
   };
 
   try {

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendrier & Fermetures - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .stat-card {
+      border-left: 4px solid;
+    }
+    .stat-card .stat-icon {
+      font-size: 2rem;
+      opacity: 0.7;
+    }
+    .fermeture-badge {
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub Navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-calendar3 me-2 text-info"></i>
+              Calendrier & Fermetures
+            </h1>
+            <p class="text-muted mb-0">Gestion des jours feries, vacances et fermetures exceptionnelles</p>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #dc3545;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-danger me-3"><i class="bi bi-calendar-x"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-feries">0</h3>
+                  <small class="text-muted">Jours feries</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #ffc107;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-warning me-3"><i class="bi bi-sun"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-vacances">0</h3>
+                  <small class="text-muted">Periodes vacances</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #0dcaf0;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-info me-3"><i class="bi bi-exclamation-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-ponctuels">0</h3>
+                  <small class="text-muted">Fermetures ponctuelles</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card stat-card" style="border-left-color: #198754;">
+              <div class="card-body d-flex align-items-center">
+                <div class="stat-icon text-success me-3"><i class="bi bi-check-circle"></i></div>
+                <div>
+                  <h3 class="mb-0" id="count-prochaine">-</h3>
+                  <small class="text-muted">Jours jusqu'a fermeture</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <!-- Parametres globaux -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bi bi-gear"></i> Parametres calendrier</h5>
+              </div>
+              <div class="card-body">
+                <form id="form-parametres-calendrier">
+                  <div class="mb-3">
+                    <label for="cal_pays" class="form-label">Pays</label>
+                    <select class="form-select" id="cal_pays">
+                      <option value="FR">France</option>
+                      <option value="CH">Suisse</option>
+                      <option value="DE">Allemagne</option>
+                      <option value="BE">Belgique</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-3" id="zone-vacances-container">
+                    <label for="cal_zone" class="form-label">Zone academique</label>
+                    <select class="form-select" id="cal_zone">
+                      <option value="A">Zone A</option>
+                      <option value="B">Zone B</option>
+                      <option value="C">Zone C</option>
+                    </select>
+                    <small class="text-muted">Pour import automatique des vacances scolaires francaises</small>
+                  </div>
+
+                  <div class="form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="cal_ouvert_feries">
+                    <label class="form-check-label" for="cal_ouvert_feries">
+                      Ouvert les jours feries
+                    </label>
+                  </div>
+
+                  <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="cal_ouvert_vacances" checked>
+                    <label class="form-check-label" for="cal_ouvert_vacances">
+                      Ouvert pendant les vacances scolaires
+                    </label>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check"></i> Enregistrer
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Import automatique -->
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bi bi-cloud-download"></i> Import automatique</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-4">
+                  <h6><i class="bi bi-calendar-event text-danger"></i> Jours feries</h6>
+                  <p class="text-muted small">Importer les jours feries pour l'annee selectionnee</p>
+                  <div class="input-group">
+                    <select class="form-select" id="import_feries_annee">
+                      <option value="2024">2024</option>
+                      <option value="2025" selected>2025</option>
+                      <option value="2026">2026</option>
+                      <option value="2027">2027</option>
+                    </select>
+                    <button class="btn btn-outline-danger" onclick="importerJoursFeries()">
+                      <i class="bi bi-download"></i> Importer
+                    </button>
+                  </div>
+                </div>
+
+                <div id="import-vacances-section">
+                  <h6><i class="bi bi-sun text-warning"></i> Vacances scolaires (France)</h6>
+                  <p class="text-muted small">Importer les vacances depuis data.education.gouv.fr</p>
+                  <div class="input-group">
+                    <select class="form-select" id="import_vacances_annee">
+                      <option value="2023-2024">2023-2024</option>
+                      <option value="2024-2025" selected>2024-2025</option>
+                      <option value="2025-2026">2025-2026</option>
+                      <option value="2026-2027">2026-2027</option>
+                    </select>
+                    <button class="btn btn-outline-warning" onclick="importerVacances()">
+                      <i class="bi bi-download"></i> Importer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Liste des fermetures -->
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0"><i class="bi bi-calendar-x"></i> Fermetures exceptionnelles</h5>
+                <button class="btn btn-success btn-sm" onclick="showModalFermeture()">
+                  <i class="bi bi-plus-lg"></i> Ajouter
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="mb-3 d-flex flex-wrap gap-2">
+                  <select class="form-select w-auto" id="filter-fermetures-annee" onchange="loadFermetures()">
+                    <option value="2024">2024</option>
+                    <option value="2025" selected>2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                  </select>
+                  <select class="form-select w-auto" id="filter-fermetures-type" onchange="loadFermetures()">
+                    <option value="">Tous types</option>
+                    <option value="ferie">Jours feries</option>
+                    <option value="vacances">Vacances</option>
+                    <option value="ponctuel">Ponctuels</option>
+                    <option value="autre">Autres</option>
+                  </select>
+                  <select class="form-select w-auto" id="filter-fermetures-site" onchange="loadFermetures()">
+                    <option value="">Tous les sites</option>
+                    <!-- Options chargees dynamiquement -->
+                  </select>
+                </div>
+                <div id="liste-fermetures">
+                  <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Fermeture -->
+  <div class="modal fade" id="modalFermeture" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalFermetureTitle">Ajouter une fermeture</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="form-fermeture">
+          <div class="modal-body">
+            <input type="hidden" id="fermeture_id">
+
+            <div class="mb-3">
+              <label for="fermeture_site" class="form-label">Site concerne</label>
+              <select class="form-select" id="fermeture_site">
+                <option value="">Tous les sites</option>
+                <!-- Options chargees dynamiquement -->
+              </select>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="fermeture_date_debut" class="form-label">Date debut *</label>
+                <input type="date" class="form-control" id="fermeture_date_debut" required>
+              </div>
+              <div class="col-md-6">
+                <label for="fermeture_date_fin" class="form-label">Date fin *</label>
+                <input type="date" class="form-control" id="fermeture_date_fin" required>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label for="fermeture_motif" class="form-label">Motif</label>
+              <input type="text" class="form-control" id="fermeture_motif" placeholder="Travaux, Conges...">
+            </div>
+
+            <div class="mb-3">
+              <label for="fermeture_type" class="form-label">Type</label>
+              <select class="form-select" id="fermeture_type">
+                <option value="ponctuel">Fermeture ponctuelle</option>
+                <option value="ferie">Jour ferie</option>
+                <option value="vacances">Vacances</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="fermeture_recurrent">
+              <label class="form-check-label" for="fermeture_recurrent">
+                Recurrent chaque annee (ex: 25 decembre)
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/parametres-calendrier.js"></script>
+  <script>
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('referentiels', 'calendrier');
+      initCalendrierPage();
+    });
+  </script>
+</body>
+</html>

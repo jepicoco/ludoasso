@@ -1,4 +1,4 @@
-const { TarifCotisation } = require('../models');
+const { TarifCotisation, Cotisation, Structure } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -6,10 +6,18 @@ const { Op } = require('sequelize');
  */
 exports.getAllTarifs = async (req, res) => {
   try {
-    const { actif, valide } = req.query;
-    const { Cotisation } = require('../models');
+    const { actif, valide, structure_id } = req.query;
 
     let where = {};
+
+    // Filtrer par structure
+    if (structure_id) {
+      // Tarifs de la structure OU tarifs globaux (structure_id = null)
+      where[Op.or] = [
+        { structure_id: parseInt(structure_id) },
+        { structure_id: null }
+      ];
+    }
 
     // Filtrer par statut actif
     if (actif !== undefined) {
@@ -19,34 +27,42 @@ exports.getAllTarifs = async (req, res) => {
     // Filtrer par validité (date)
     if (valide === 'true') {
       const now = new Date();
-      where[Op.or] = [
-        { date_debut_validite: null },
-        { date_debut_validite: { [Op.lte]: now } }
-      ];
-      where[Op.and] = [
-        {
-          [Op.or]: [
-            { date_fin_validite: null },
-            { date_fin_validite: { [Op.gte]: now } }
-          ]
-        }
-      ];
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push({
+        [Op.or]: [
+          { date_debut_validite: null },
+          { date_debut_validite: { [Op.lte]: now } }
+        ]
+      });
+      where[Op.and].push({
+        [Op.or]: [
+          { date_fin_validite: null },
+          { date_fin_validite: { [Op.gte]: now } }
+        ]
+      });
     }
 
     const tarifs = await TarifCotisation.findAll({
       where,
-      include: [{
-        model: Cotisation,
-        as: 'cotisations',
-        attributes: [],
-        required: false
-      }],
+      include: [
+        {
+          model: Cotisation,
+          as: 'cotisations',
+          attributes: [],
+          required: false
+        },
+        {
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur']
+        }
+      ],
       attributes: {
         include: [
           [TarifCotisation.sequelize.fn('COUNT', TarifCotisation.sequelize.col('cotisations.id')), 'nb_utilisations']
         ]
       },
-      group: ['TarifCotisation.id'],
+      group: ['TarifCotisation.id', 'structure.id'],
       order: [['ordre_affichage', 'ASC'], ['libelle', 'ASC']]
     });
 
@@ -73,21 +89,27 @@ exports.getAllTarifs = async (req, res) => {
 exports.getTarifById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { Cotisation } = require('../models');
 
     const tarif = await TarifCotisation.findByPk(id, {
-      include: [{
-        model: Cotisation,
-        as: 'cotisations',
-        attributes: [],
-        required: false
-      }],
+      include: [
+        {
+          model: Cotisation,
+          as: 'cotisations',
+          attributes: [],
+          required: false
+        },
+        {
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur']
+        }
+      ],
       attributes: {
         include: [
           [TarifCotisation.sequelize.fn('COUNT', TarifCotisation.sequelize.col('cotisations.id')), 'nb_utilisations']
         ]
       },
-      group: ['TarifCotisation.id']
+      group: ['TarifCotisation.id', 'structure.id']
     });
 
     if (!tarif) {
@@ -127,7 +149,8 @@ exports.createTarif = async (req, res) => {
       date_fin_validite,
       ordre_affichage,
       code_comptable,
-      code_analytique
+      code_analytique,
+      structure_id
     } = req.body;
 
     // Validation
@@ -156,10 +179,20 @@ exports.createTarif = async (req, res) => {
       date_fin_validite,
       ordre_affichage: ordre_affichage || 0,
       code_comptable,
-      code_analytique
+      code_analytique,
+      structure_id: structure_id || null
     });
 
-    res.status(201).json(tarif);
+    // Recharger avec la structure
+    const tarifWithStructure = await TarifCotisation.findByPk(tarif.id, {
+      include: [{
+        model: Structure,
+        as: 'structure',
+        attributes: ['id', 'code', 'nom', 'couleur']
+      }]
+    });
+
+    res.status(201).json(tarifWithStructure);
   } catch (error) {
     console.error('Erreur lors de la création du tarif:', error);
     res.status(500).json({
@@ -192,9 +225,23 @@ exports.updateTarif = async (req, res) => {
       });
     }
 
+    // Gerer structure_id explicitement (peut etre null pour global)
+    if ('structure_id' in updateData) {
+      updateData.structure_id = updateData.structure_id || null;
+    }
+
     await tarif.update(updateData);
 
-    res.json(tarif);
+    // Recharger avec la structure
+    const tarifWithStructure = await TarifCotisation.findByPk(id, {
+      include: [{
+        model: Structure,
+        as: 'structure',
+        attributes: ['id', 'code', 'nom', 'couleur']
+      }]
+    });
+
+    res.json(tarifWithStructure);
   } catch (error) {
     console.error('Erreur lors de la mise à jour du tarif:', error);
     res.status(500).json({

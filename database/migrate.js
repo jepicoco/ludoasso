@@ -31,14 +31,39 @@ async function getConnection() {
 
 // Créer la table migrations si elle n'existe pas
 async function ensureMigrationsTable(connection) {
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE} (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL UNIQUE,
-      executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      batch INT NOT NULL DEFAULT 1
-    )
-  `);
+  // Verifier si la table existe
+  const [tables] = await connection.query(
+    `SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+    [process.env.DB_NAME, MIGRATIONS_TABLE]
+  );
+
+  if (tables.length === 0) {
+    // Creer la table avec VARCHAR(191) pour compatibilite utf8mb4
+    await connection.query(`
+      CREATE TABLE ${MIGRATIONS_TABLE} (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(191) NOT NULL UNIQUE,
+        executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        batch INT NOT NULL DEFAULT 1
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  } else {
+    // Table existe - verifier si on doit modifier la colonne name
+    try {
+      const [columns] = await connection.query(
+        `SELECT CHARACTER_MAXIMUM_LENGTH FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = 'name'`,
+        [process.env.DB_NAME, MIGRATIONS_TABLE]
+      );
+      if (columns.length > 0 && columns[0].CHARACTER_MAXIMUM_LENGTH > 191) {
+        // Modifier la colonne pour eviter l'erreur de cle trop longue
+        await connection.query(`ALTER TABLE ${MIGRATIONS_TABLE} MODIFY name VARCHAR(191) NOT NULL`);
+        console.log('Table migrations: colonne name reduite a VARCHAR(191)');
+      }
+    } catch (e) {
+      // Ignorer les erreurs de modification
+    }
+  }
 }
 
 // Récupérer les migrations déjà exécutées

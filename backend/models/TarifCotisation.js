@@ -102,6 +102,17 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: false,
       comment: 'Tarif par défaut préchargé dans le formulaire de cotisation'
+    },
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'structures',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Structure a laquelle ce tarif appartient (null = toutes structures)'
     }
   }, {
     tableName: 'tarifs_cotisation',

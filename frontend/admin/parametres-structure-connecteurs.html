@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connecteurs Structure - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .connector-card {
+      border-left: 4px solid #dee2e6;
+      transition: border-color 0.2s;
+    }
+    .connector-card.has-override {
+      border-left-color: #0d6efd;
+    }
+    .connector-card.system-default {
+      border-left-color: #6c757d;
+    }
+    .category-section {
+      margin-bottom: 1.5rem;
+    }
+    .category-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem 0.5rem 0 0;
+      margin-bottom: 0;
+    }
+    .event-row {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #dee2e6;
+      transition: background-color 0.15s;
+    }
+    .event-row:hover {
+      background-color: #f8f9fa;
+    }
+    .event-row:last-child {
+      border-bottom: none;
+    }
+    .connector-select {
+      min-width: 200px;
+    }
+    .override-badge {
+      font-size: 0.7rem;
+      vertical-align: middle;
+    }
+    .hierarchy-diagram {
+      font-size: 0.85rem;
+    }
+    .hierarchy-level {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+    }
+    .hierarchy-arrow {
+      text-align: center;
+      color: #6c757d;
+      margin: 0.25rem 0;
+    }
+    .default-connector-card {
+      border: 2px solid #0d6efd;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub Navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="parametres-structures.html">Structures</a></li>
+                <li class="breadcrumb-item active" id="breadcrumb-structure">Configuration connecteurs</li>
+              </ol>
+            </nav>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-envelope-at me-2"></i>
+              Connecteurs - <span id="structure-nom">...</span>
+            </h1>
+            <p class="text-muted mb-0">Configuration Email/SMS par evenement</p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="parametres-structures.html" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Retour
+            </a>
+            <button class="btn btn-primary" onclick="saveAllChanges()">
+              <i class="bi bi-check-lg"></i> Enregistrer
+            </button>
+          </div>
+        </div>
+
+        <!-- Hierarchy Explanation -->
+        <div class="row mb-4">
+          <div class="col-md-8">
+            <!-- Default Connectors -->
+            <div class="card mb-4 default-connector-card">
+              <div class="card-header">
+                <h5 class="card-title mb-0">
+                  <i class="bi bi-gear me-2"></i>
+                  Connecteurs par defaut de la structure
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">
+                      <i class="bi bi-envelope text-primary"></i> Email par defaut
+                    </label>
+                    <select class="form-select" id="default-email-connector">
+                      <option value="">Utiliser le defaut systeme</option>
+                    </select>
+                    <small class="text-muted" id="system-email-default"></small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">
+                      <i class="bi bi-chat-dots text-success"></i> SMS par defaut
+                    </label>
+                    <select class="form-select" id="default-sms-connector">
+                      <option value="">Utiliser le defaut systeme</option>
+                    </select>
+                    <small class="text-muted" id="system-sms-default"></small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Categories and Events -->
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title mb-0">
+                  <i class="bi bi-diagram-3 me-2"></i>
+                  Configuration par categorie et evenement
+                </h5>
+              </div>
+              <div class="card-body p-0">
+                <div id="categories-container">
+                  <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Chargement...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <!-- Hierarchy Diagram -->
+            <div class="card sticky-top" style="top: 1rem;">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="bi bi-info-circle me-1"></i> Hierarchie de resolution
+                </h6>
+              </div>
+              <div class="card-body hierarchy-diagram">
+                <p class="small text-muted mb-3">
+                  Lors de l'envoi d'un email/SMS, le systeme cherche le connecteur dans cet ordre:
+                </p>
+                <div class="hierarchy-level bg-primary text-white">
+                  <strong>1. Override Evenement</strong>
+                  <small class="d-block opacity-75">Le plus specifique</small>
+                </div>
+                <div class="hierarchy-arrow"><i class="bi bi-arrow-down"></i></div>
+                <div class="hierarchy-level bg-info text-white">
+                  <strong>2. Override Categorie</strong>
+                  <small class="d-block opacity-75">Par type d'action</small>
+                </div>
+                <div class="hierarchy-arrow"><i class="bi bi-arrow-down"></i></div>
+                <div class="hierarchy-level bg-success text-white">
+                  <strong>3. Defaut Structure</strong>
+                  <small class="d-block opacity-75">Configure ci-dessus</small>
+                </div>
+                <div class="hierarchy-arrow"><i class="bi bi-arrow-down"></i></div>
+                <div class="hierarchy-level bg-secondary text-white">
+                  <strong>4. Defaut Systeme</strong>
+                  <small class="d-block opacity-75">Fallback global</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Test Panel -->
+            <div class="card mt-3">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="bi bi-play-circle me-1"></i> Tester la resolution
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label small">Evenement</label>
+                  <select class="form-select form-select-sm" id="test-event-code">
+                    <option value="">Selectionner un evenement</option>
+                  </select>
+                </div>
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="testResolve()">
+                  <i class="bi bi-lightning"></i> Tester
+                </button>
+                <div id="test-result" class="mt-3 d-none">
+                  <hr>
+                  <div class="small">
+                    <strong>Email:</strong> <span id="test-email-result"></span><br>
+                    <strong>SMS:</strong> <span id="test-sms-result"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/parametres-structure-connecteurs.js"></script>
+  <script>
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('general', 'structures');
+      initConnecteursPage();
+    });
+  </script>
+</body>
+</html>
