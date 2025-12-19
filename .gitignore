@@ -54,3 +54,4 @@ TEST_LOGGING.bat
 # Audit reports (confidentiels)
 AUDIT_REPORT.md
 nul
+.claude/settings.local.json
