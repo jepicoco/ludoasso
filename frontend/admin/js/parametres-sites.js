@@ -152,7 +152,7 @@ function renderSites() {
           ` : ''}
 
           <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); showModalHoraires(${site.id}, '${escapeHtml(site.nom)}', '${site.type}')">
+            <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); showModalHoraires(${site.id}, '${escapeJs(site.nom)}', '${site.type}')">
               <i class="bi bi-clock"></i> Horaires
             </button>
             <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteSite(${site.id})">
@@ -640,6 +640,11 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function escapeJs(text) {
+  if (!text) return '';
+  return text.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
 function formatDate(dateStr) {

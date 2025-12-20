@@ -15,6 +15,7 @@ const ipAutoriseesController = require('../controllers/ipAutoriseesController');
 const outilsController = require('../controllers/outilsController');
 const configurationsAPIController = require('../controllers/configurationsAPIController');
 const themesSiteController = require('../controllers/themesSiteController');
+const configAccesDonneesController = require('../controllers/configAccesDonneesController');
 
 // ============================================
 // Routes pour les themes du site public
@@ -417,5 +418,25 @@ router.post('/apis-externes/:id/test', verifyToken, isAdmin(), configurationsAPI
 
 // Obtenir les statistiques d'une configuration API (admin seulement)
 router.get('/apis-externes/:id/stats', verifyToken, isAdmin(), configurationsAPIController.getStats);
+
+// ============================================
+// Routes pour la configuration d'acces aux donnees personnelles
+// (Controle des champs PII visibles par role)
+// ============================================
+
+// Obtenir la configuration actuelle (admin seulement)
+router.get('/acces-donnees', verifyToken, isAdmin(), configAccesDonneesController.getConfiguration);
+
+// Mettre a jour la configuration (admin seulement)
+router.put('/acces-donnees', verifyToken, isAdmin(), configAccesDonneesController.updateConfiguration);
+
+// Obtenir les champs PII disponibles (admin seulement)
+router.get('/acces-donnees/champs', verifyToken, isAdmin(), configAccesDonneesController.getChampsDisponibles);
+
+// Obtenir la configuration effective pour un role (gestionnaire+)
+router.get('/acces-donnees/role/:role', verifyToken, isGestionnaire(), configAccesDonneesController.getConfigForRole);
+
+// Reinitialiser aux valeurs par defaut (admin seulement)
+router.post('/acces-donnees/reset', verifyToken, isAdmin(), configAccesDonneesController.resetConfiguration);
 
 module.exports = router;

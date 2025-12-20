@@ -4,6 +4,7 @@ const utilisateurController = require('../controllers/utilisateurController');
 const { verifyToken } = require('../middleware/auth');
 const { isBenevole, isGestionnaire, isAdmin } = require('../middleware/checkRole');
 const { validate, schemas } = require('../middleware/validate');
+const { filterPIIResponse } = require('../middleware/filterPIIResponse');
 
 /**
  * @route   GET /api/adherents/recherche/disponibles
@@ -11,29 +12,31 @@ const { validate, schemas } = require('../middleware/validate');
  * @access  Private (Gestionnaire+)
  * @query   ?q=dupont&exclude=5
  */
-router.get('/recherche/disponibles', verifyToken, isGestionnaire(), utilisateurController.rechercherDisponibles);
+router.get('/recherche/disponibles', verifyToken, isGestionnaire(), filterPIIResponse(), utilisateurController.rechercherDisponibles);
 
 /**
  * @route   GET /api/adherents
  * @desc    Get all adherents with filters
  * @access  Private (Benevole+)
  * @query   ?statut=actif&search=dupont&page=1&limit=50
+ * @note    Filtrage PII selon role (voir ConfigurationAccesDonnees)
  */
-router.get('/', verifyToken, isBenevole(), validate(schemas.utilisateur.list), utilisateurController.getAllAdherents);
+router.get('/', verifyToken, isBenevole(), filterPIIResponse(), validate(schemas.utilisateur.list), utilisateurController.getAllAdherents);
 
 /**
  * @route   GET /api/adherents/:id
  * @desc    Get adherent by ID with emprunts
  * @access  Private (Benevole+)
+ * @note    Filtrage PII selon role (voir ConfigurationAccesDonnees)
  */
-router.get('/:id', verifyToken, isBenevole(), validate(schemas.utilisateur.getById), utilisateurController.getAdherentById);
+router.get('/:id', verifyToken, isBenevole(), filterPIIResponse(), validate(schemas.utilisateur.getById), utilisateurController.getAdherentById);
 
 /**
  * @route   GET /api/adherents/:id/stats
  * @desc    Get adherent statistics
  * @access  Private (Benevole+)
  */
-router.get('/:id/stats', verifyToken, isBenevole(), validate(schemas.utilisateur.getById), utilisateurController.getAdherentStats);
+router.get('/:id/stats', verifyToken, isBenevole(), filterPIIResponse(), validate(schemas.utilisateur.getById), utilisateurController.getAdherentStats);
 
 /**
  * @route   POST /api/adherents

@@ -146,6 +146,9 @@ const ConfigurationAPIModel = require('./ConfigurationAPI');
 // Import Configuration Export Comptable (multi-formats)
 const ConfigurationExportComptableModel = require('./ConfigurationExportComptable');
 
+// Import Configuration Acces Donnees (controle PII par role)
+const ConfigurationAccesDonneesModel = require('./ConfigurationAccesDonnees');
+
 // Import ThemeSite (themes du site public)
 const ThemeSiteModel = require('./ThemeSite');
 
@@ -348,6 +351,9 @@ const ConfigurationAPI = ConfigurationAPIModel(sequelize);
 
 // Initialize Configuration Export Comptable (multi-formats)
 const ConfigurationExportComptable = ConfigurationExportComptableModel(sequelize);
+
+// Initialize Configuration Acces Donnees (controle PII par role)
+const ConfigurationAccesDonnees = ConfigurationAccesDonneesModel(sequelize);
 
 // Initialize ThemeSite (themes du site public)
 const ThemeSite = ThemeSiteModel(sequelize);
@@ -2566,6 +2572,8 @@ module.exports = {
   ConfigurationAPI,
   // Configuration Export Comptable (multi-formats)
   ConfigurationExportComptable,
+  // Configuration Acces Donnees (controle PII par role)
+  ConfigurationAccesDonnees,
   // Themes du site public
   ThemeSite,
   // Mini-jeu chat leaderboard

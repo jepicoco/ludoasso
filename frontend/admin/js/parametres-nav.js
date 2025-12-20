@@ -35,6 +35,7 @@ const PARAMETRES_CATEGORIES = {
     tabId: 'configuration',
     pages: [
       { id: 'charte', label: 'Charte usager', href: 'parametres-charte.html', icon: 'bi-file-earmark-check' },
+      { id: 'confidentialite', label: 'Confidentialite', href: 'parametres-confidentialite.html', icon: 'bi-shield-lock', adminOnly: true },
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'codes-barres', label: 'Codes-Barres', href: 'parametres-codes-barres.html', icon: 'bi-upc-scan' },
       { id: 'emprunts', label: 'Emprunts', href: 'parametres-emprunts.html', icon: 'bi-arrow-repeat' },
