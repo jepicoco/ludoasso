@@ -44,33 +44,21 @@ async function up() {
     console.log('Colonne qf_surcharge_manuelle ajoutee');
   }
 
-  // Commune de prise en charge (differente de la residence)
+  // Commune de prise en charge (differente de la residence) - sans FK
   if (!columns.commune_prise_en_charge_id) {
     await queryInterface.addColumn('utilisateurs', 'commune_prise_en_charge_id', {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'communes',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Commune pour calcul reductions (si != residence)'
     });
     console.log('Colonne commune_prise_en_charge_id ajoutee');
   }
 
-  // Commune de residence (lien direct)
+  // Commune de residence (lien direct) - sans FK
   if (!columns.commune_id) {
     await queryInterface.addColumn('utilisateurs', 'commune_id', {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'communes',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Commune de residence (deduite de code_postal/ville)'
     });
     console.log('Colonne commune_id ajoutee');

@@ -50,12 +50,6 @@ async function up() {
       structure_id: {
         type: sequelize.Sequelize.DataTypes.INTEGER,
         allowNull: true,
-        references: {
-          model: 'structures',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
         comment: 'Structure proprietaire (null = global)'
       },
       created_at: {

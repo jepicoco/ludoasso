@@ -19,6 +19,16 @@ async function up() {
     return;
   }
 
+  // Verifier les dependances
+  if (!tables.includes('tranches_quotient_familial')) {
+    console.log('Table tranches_quotient_familial n\'existe pas - migration ignoree');
+    return;
+  }
+  if (!tables.includes('types_tarifs')) {
+    console.log('Table types_tarifs n\'existe pas - migration ignoree');
+    return;
+  }
+
   // Creer la table tranches_qf_valeurs
   await queryInterface.createTable('tranches_qf_valeurs', {
     id: {

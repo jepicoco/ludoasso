@@ -33,17 +33,11 @@ async function up() {
     console.log('Colonne total_reductions ajoutée');
   }
 
-  // Lien vers historique QF utilisé
+  // Lien vers historique QF utilisé (sans FK si table n'existe pas)
   if (!columns.historique_qf_id) {
     await queryInterface.addColumn('cotisations', 'historique_qf_id', {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'historique_quotient_familial',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Historique QF utilisé pour le calcul'
     });
     console.log('Colonne historique_qf_id ajoutée');
@@ -59,33 +53,21 @@ async function up() {
     console.log('Colonne quotient_familial_snapshot ajoutée');
   }
 
-  // Lien vers tranche QF utilisée
+  // Lien vers tranche QF utilisée (sans FK si table n'existe pas)
   if (!columns.tranche_qf_id) {
     await queryInterface.addColumn('cotisations', 'tranche_qf_id', {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'tranches_quotient_familial',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Tranche QF appliquée'
     });
     console.log('Colonne tranche_qf_id ajoutée');
   }
 
-  // Commune prise en charge au moment de la cotisation
+  // Commune prise en charge au moment de la cotisation (sans FK)
   if (!columns.commune_id_snapshot) {
     await queryInterface.addColumn('cotisations', 'commune_id_snapshot', {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'communes',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Commune de prise en charge au moment de la cotisation'
     });
     console.log('Colonne commune_id_snapshot ajoutée');

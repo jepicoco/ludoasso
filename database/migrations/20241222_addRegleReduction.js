@@ -90,23 +90,11 @@ async function up() {
     section_analytique_id: {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'sections_analytiques',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Section analytique pour cette reduction'
     },
     regroupement_analytique_id: {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'regroupements_analytiques',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'OU regroupement analytique'
     },
     actif: {
@@ -117,12 +105,6 @@ async function up() {
     structure_id: {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'structures',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Structure proprietaire (null = global)'
     },
     created_at: {
