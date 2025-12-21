@@ -19,6 +19,12 @@ async function up() {
     return;
   }
 
+  // Verifier si les tables de dependance existent
+  if (!tables.includes('types_tarifs')) {
+    console.log('Table types_tarifs n\'existe pas - migration ignoree (sera creee par addTypeTarif)');
+    return;
+  }
+
   // Creer la table tarifs_types_tarifs
   await queryInterface.createTable('tarifs_types_tarifs', {
     id: {
