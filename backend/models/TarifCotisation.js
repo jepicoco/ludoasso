@@ -17,9 +17,15 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'Description détaillée du tarif'
     },
+    type: {
+      type: DataTypes.ENUM('cotisation', 'prestation'),
+      allowNull: false,
+      defaultValue: 'cotisation',
+      comment: 'Type: cotisation (abonnement periodique) ou prestation (achat ponctuel)'
+    },
     type_periode: {
       type: DataTypes.ENUM('annee_civile', 'annee_scolaire', 'date_a_date'),
-      allowNull: false,
+      allowNull: true, // Nullable pour les prestations ponctuelles
       defaultValue: 'annee_civile',
       comment: 'Type de période: année civile (1er jan-31 déc), année scolaire (1er sep-31 août), ou date à date'
     },
@@ -75,10 +81,21 @@ module.exports = (sequelize) => {
       comment: 'Ordre d\'affichage dans les listes'
     },
     // Champs pour la gestion comptable
+    operation_comptable_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'parametrage_comptable_operations',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Operation comptable associee (herite compte, TVA, analytique)'
+    },
     code_comptable: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'Code comptable general (ex: 756 Cotisations, 706 Prestations)'
+      comment: 'Code comptable surcharge (priorite sur operation)'
     },
     taux_tva_id: {
       type: DataTypes.INTEGER,
@@ -89,19 +106,25 @@ module.exports = (sequelize) => {
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
-      comment: 'Taux de TVA applicable (null = utilise le taux du module)'
+      comment: 'Taux de TVA surcharge (priorite sur operation)'
     },
     // Ancien champ conserve pour retrocompatibilite, utiliser RepartitionAnalytique
     code_analytique: {
       type: DataTypes.STRING(20),
       allowNull: true,
-      comment: 'DEPRECATED: Utiliser RepartitionAnalytique pour multi-axes'
+      comment: 'DEPRECATED: Utiliser operation_comptable_id'
     },
     par_defaut: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
       comment: 'Tarif par défaut préchargé dans le formulaire de cotisation'
+    },
+    criteres: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Criteres d\'eligibilite dynamiques (age, sexe, commune, adhesion, tags)'
     },
     structure_id: {
       type: DataTypes.INTEGER,

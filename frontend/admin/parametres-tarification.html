@@ -104,6 +104,26 @@
       text-align: right;
     }
 
+    /* Criteres summary */
+    .criteres-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .critere-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 2rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .critere-badge i {
+      font-size: 0.9rem;
+    }
+
     /* Modificateurs */
     .modificateur-item {
       background: white;
@@ -280,7 +300,7 @@
           </li>
           <li class="nav-item">
             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-prestations">
-              <i class="bi bi-receipt"></i> Prestations ponctuelles
+              <i class="bi bi-receipt"></i> Prestations
             </button>
           </li>
         </ul>
@@ -301,7 +321,7 @@
           <div class="tab-pane fade" id="tab-prestations">
             <div class="empty-state">
               <i class="bi bi-receipt-cutoff"></i>
-              <h5>Prestations ponctuelles</h5>
+              <h5>Prestations</h5>
               <p class="text-muted">
                 Gerez ici les tarifs pour les activites ponctuelles<br>
                 (animations, ateliers, locations exceptionnelles...)
@@ -332,6 +352,28 @@
         <div class="modal-body">
           <form id="formTarif">
             <input type="hidden" id="tarif_id">
+            <input type="hidden" id="tarif_type" value="cotisation">
+
+            <!-- Type de tarif (cotisation ou prestation) -->
+            <div class="mb-3" id="tarif_type_selector">
+              <label class="form-label fw-bold">Type</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="tarif_type_radio" id="tarif_type_cotisation" value="cotisation" checked onchange="toggleTarifType('cotisation')">
+                  <label class="form-check-label" for="tarif_type_cotisation">
+                    <i class="bi bi-card-checklist text-primary"></i> Cotisation
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="tarif_type_radio" id="tarif_type_prestation" value="prestation" onchange="toggleTarifType('prestation')">
+                  <label class="form-check-label" for="tarif_type_prestation">
+                    <i class="bi bi-receipt text-success"></i> Prestation
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <hr>
 
             <div class="row">
               <div class="col-md-8">
@@ -343,7 +385,7 @@
               </div>
               <div class="col-md-4">
                 <div class="mb-3">
-                  <label for="tarif_montant" class="form-label">Montant de base <span class="text-danger">*</span></label>
+                  <label for="tarif_montant" class="form-label">Montant <span class="text-danger">*</span></label>
                   <div class="input-group">
                     <input type="number" class="form-control" id="tarif_montant" required min="0" step="0.01">
                     <span class="input-group-text">EUR</span>
@@ -357,39 +399,180 @@
               <textarea class="form-control" id="tarif_description" rows="2"></textarea>
             </div>
 
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="tarif_periode" class="form-label">Type de periode</label>
-                  <select class="form-select" id="tarif_periode">
-                    <option value="annee_civile">Annee civile (janvier-decembre)</option>
-                    <option value="annee_scolaire">Annee scolaire (septembre-aout)</option>
-                    <option value="date_a_date">Date a date (12 mois glissants)</option>
-                  </select>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="tarif_calcul" class="form-label">Mode de calcul</label>
-                  <select class="form-select" id="tarif_calcul">
-                    <option value="fixe">Montant fixe</option>
-                    <option value="prorata">Prorata mensuel</option>
-                  </select>
-                </div>
+            <!-- Operation comptable -->
+            <div class="mb-3">
+              <label for="tarif_operation_comptable" class="form-label">
+                <i class="bi bi-journal-text text-primary"></i> Operation comptable
+              </label>
+              <select class="form-select" id="tarif_operation_comptable">
+                <option value="">-- Aucune (pas d'ecritures auto) --</option>
+              </select>
+              <div class="form-text">
+                Lie ce tarif a une operation comptable pour generer automatiquement les ecritures.
               </div>
             </div>
 
-            <hr>
-            <h6 class="mb-3"><i class="bi bi-people"></i> Types de tarifs (categories)</h6>
-            <p class="text-muted small">Definissez des montants differents selon l'age de l'usager</p>
+            <!-- Section cotisation uniquement -->
+            <div id="section_cotisation">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="tarif_periode" class="form-label">Type de periode</label>
+                    <select class="form-select" id="tarif_periode">
+                      <option value="annee_civile">Annee civile (janvier-decembre)</option>
+                      <option value="annee_scolaire">Annee scolaire (septembre-aout)</option>
+                      <option value="date_a_date">Date a date (12 mois glissants)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="tarif_calcul" class="form-label">Mode de calcul</label>
+                    <select class="form-select" id="tarif_calcul">
+                      <option value="fixe">Montant fixe</option>
+                      <option value="prorata">Prorata mensuel</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-            <div id="types-tarifs-container">
-              <!-- Genere dynamiquement -->
+              <hr>
+              <h6 class="mb-3"><i class="bi bi-funnel"></i> Criteres d'eligibilite</h6>
+              <p class="text-muted small">
+                Definissez les conditions pour qu'un usager soit eligible a cette cotisation.
+                <strong>Sans critere = pour tous les usagers.</strong>
+              </p>
+
+              <!-- Critere Age -->
+              <div class="card mb-2">
+                <div class="card-header py-2 d-flex align-items-center">
+                  <div class="form-check form-switch mb-0 me-2">
+                    <input class="form-check-input" type="checkbox" id="tarif_critere_age_actif" onchange="toggleTarifCritereSection('age')">
+                  </div>
+                  <label class="form-check-label mb-0" for="tarif_critere_age_actif">
+                    <i class="bi bi-calendar-event text-secondary"></i> Age
+                  </label>
+                </div>
+                <div class="card-body py-2" id="tarif_critere_age_config" style="display: none;">
+                  <div class="row align-items-center g-2">
+                    <div class="col-auto">
+                      <select class="form-select form-select-sm" id="tarif_critere_age_operateur" onchange="toggleTarifCritereAgeInputs()" style="width: auto;">
+                        <option value="<">Moins de</option>
+                        <option value="<=">Jusqu'a</option>
+                        <option value=">">Plus de</option>
+                        <option value=">=">A partir de</option>
+                        <option value="entre">Entre</option>
+                      </select>
+                    </div>
+                    <div class="col-auto" id="tarif_critere_age_min_col" style="display: none;">
+                      <div class="input-group input-group-sm" style="width: 100px;">
+                        <input type="number" class="form-control" id="tarif_critere_age_min" min="0" max="120" placeholder="Min">
+                        <span class="input-group-text">ans</span>
+                      </div>
+                    </div>
+                    <div class="col-auto" id="tarif_critere_age_et" style="display: none;">et</div>
+                    <div class="col-auto" id="tarif_critere_age_max_col">
+                      <div class="input-group input-group-sm" style="width: 100px;">
+                        <input type="number" class="form-control" id="tarif_critere_age_max" min="0" max="120" placeholder="Max">
+                        <span class="input-group-text">ans</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Critere Sexe/Civilite -->
+              <div class="card mb-2">
+                <div class="card-header py-2 d-flex align-items-center">
+                  <div class="form-check form-switch mb-0 me-2">
+                    <input class="form-check-input" type="checkbox" id="tarif_critere_sexe_actif" onchange="toggleTarifCritereSection('sexe')">
+                  </div>
+                  <label class="form-check-label mb-0" for="tarif_critere_sexe_actif">
+                    <i class="bi bi-gender-ambiguous text-info"></i> Civilite
+                  </label>
+                </div>
+                <div class="card-body py-2" id="tarif_critere_sexe_config" style="display: none;">
+                  <div class="d-flex gap-3">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="tarif_critere_sexe_M" value="M" checked>
+                      <label class="form-check-label" for="tarif_critere_sexe_M">M.</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="tarif_critere_sexe_F" value="F" checked>
+                      <label class="form-check-label" for="tarif_critere_sexe_F">Mme</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="tarif_critere_sexe_A" value="A" checked>
+                      <label class="form-check-label" for="tarif_critere_sexe_A">Mx</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Critere Commune -->
+              <div class="card mb-2">
+                <div class="card-header py-2 d-flex align-items-center">
+                  <div class="form-check form-switch mb-0 me-2">
+                    <input class="form-check-input" type="checkbox" id="tarif_critere_commune_actif" onchange="toggleTarifCritereSection('commune')">
+                  </div>
+                  <label class="form-check-label mb-0" for="tarif_critere_commune_actif">
+                    <i class="bi bi-geo-alt text-primary"></i> Commune
+                  </label>
+                </div>
+                <div class="card-body py-2" id="tarif_critere_commune_config" style="display: none;">
+                  <div class="mb-2">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="tarif_critere_commune_type" id="tarif_critere_commune_type_communaute" value="communaute" checked onchange="toggleTarifCritereCommuneInputs()">
+                      <label class="form-check-label small" for="tarif_critere_commune_type_communaute">Communaute</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="tarif_critere_commune_type" id="tarif_critere_commune_type_liste" value="liste" onchange="toggleTarifCritereCommuneInputs()">
+                      <label class="form-check-label small" for="tarif_critere_commune_type_liste">Liste</label>
+                    </div>
+                  </div>
+                  <div id="tarif_critere_communaute_select_container">
+                    <select class="form-select form-select-sm" id="tarif_critere_communaute_id">
+                      <option value="">-- Selectionnez --</option>
+                    </select>
+                  </div>
+                  <div id="tarif_critere_communes_liste_container" style="display: none;">
+                    <select class="form-select form-select-sm" id="tarif_critere_communes_ids" multiple size="4">
+                    </select>
+                    <small class="text-muted">Ctrl+clic pour selectionner plusieurs</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Critere Adhesion -->
+              <div class="card mb-2">
+                <div class="card-header py-2 d-flex align-items-center">
+                  <div class="form-check form-switch mb-0 me-2">
+                    <input class="form-check-input" type="checkbox" id="tarif_critere_adhesion_actif">
+                  </div>
+                  <label class="form-check-label mb-0" for="tarif_critere_adhesion_actif">
+                    <i class="bi bi-building text-success"></i> Adhesion association active requise
+                  </label>
+                </div>
+              </div>
+
+              <!-- Critere Tags -->
+              <div class="card mb-2">
+                <div class="card-header py-2 d-flex align-items-center">
+                  <div class="form-check form-switch mb-0 me-2">
+                    <input class="form-check-input" type="checkbox" id="tarif_critere_tags_actif" onchange="toggleTarifCritereSection('tags')">
+                  </div>
+                  <label class="form-check-label mb-0" for="tarif_critere_tags_actif">
+                    <i class="bi bi-tags text-warning"></i> Tags (au moins un)
+                  </label>
+                </div>
+                <div class="card-body py-2" id="tarif_critere_tags_config" style="display: none;">
+                  <div id="tarif_critere_tags_liste" class="d-flex flex-wrap gap-2">
+                    <!-- Tags generes dynamiquement -->
+                  </div>
+                </div>
+              </div>
+
             </div>
-
-            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="ajouterTypeTarif()">
-              <i class="bi bi-plus"></i> Ajouter un type
-            </button>
 
             <hr>
             <div class="row">

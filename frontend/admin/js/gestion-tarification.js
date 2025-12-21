@@ -8,6 +8,7 @@
 // ============================================================
 
 let tarifsCache = [];
+let prestationsCache = []; // Prestations
 let typesTarifsCache = [];
 let modificateursCache = [];
 let configurationsQFCache = [];
@@ -15,6 +16,7 @@ let communesCache = [];
 let communautesCache = [];
 let utilisateursCache = [];
 let tagsCache = []; // Tags utilisateur pour les criteres
+let operationsComptablesCache = []; // Operations comptables
 let currentModificateurConfig = {}; // Configuration du modificateur en cours d'edition
 
 // ============================================================
@@ -29,15 +31,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initTemplate('parametres');
   }
 
-  // Charger les donnees
+  // Charger d'abord les referentiels (tags, communes, communautes, operations comptables)
   await Promise.all([
-    chargerTarifs(),
+    chargerCommunes(),
+    chargerCommunautesCommunes(),
+    chargerTags(),
     chargerTypesTarifs(),
     chargerModificateurs(),
     chargerConfigurationsQF(),
-    chargerCommunes(),
-    chargerCommunautesCommunes(),
-    chargerTags()
+    chargerOperationsComptables()
+  ]);
+
+  // Puis charger et afficher les tarifs (qui utilisent les referentiels)
+  await Promise.all([
+    chargerTarifs(),
+    chargerPrestations()
   ]);
 
   // Charger utilisateurs en arriere-plan
@@ -54,6 +62,8 @@ async function chargerTarifs() {
   try {
     const response = await apiAdmin.get('/tarifs-cotisation');
     tarifsCache = Array.isArray(response) ? response : (response?.data || []);
+    // Filtrer pour ne garder que les cotisations (type != 'prestation')
+    tarifsCache = tarifsCache.filter(t => t.type !== 'prestation');
     afficherCotisations(tarifsCache);
   } catch (error) {
     console.error('[Tarification] Erreur chargement tarifs:', error);
@@ -64,6 +74,81 @@ async function chargerTarifs() {
       </div>
     `;
   }
+}
+
+async function chargerPrestations() {
+  try {
+    const response = await apiAdmin.get('/tarifs-cotisation?type=prestation');
+    prestationsCache = Array.isArray(response) ? response : (response?.data || []);
+    afficherPrestations(prestationsCache);
+  } catch (error) {
+    console.error('[Tarification] Erreur chargement prestations:', error);
+    prestationsCache = [];
+  }
+}
+
+function afficherPrestations(prestations) {
+  const container = document.getElementById('tab-prestations');
+
+  if (!prestations || prestations.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="bi bi-receipt-cutoff"></i>
+        <h5>Prestations</h5>
+        <p class="text-muted">
+          Gerez ici les tarifs pour les activites ponctuelles<br>
+          (animations, ateliers, locations exceptionnelles...)
+        </p>
+        <button class="btn btn-outline-primary" onclick="ouvrirModalNouveauTarif('prestation')">
+          <i class="bi bi-plus"></i> Ajouter une prestation
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '<div class="row">';
+  prestations.forEach(prestation => {
+    const statusClass = prestation.actif ? '' : 'opacity-50';
+    const statusBadge = prestation.actif
+      ? '<span class="badge bg-success">Actif</span>'
+      : '<span class="badge bg-secondary">Inactif</span>';
+
+    html += `
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 ${statusClass}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="card-title mb-0">${escapeHtml(prestation.libelle)}</h6>
+              ${statusBadge}
+            </div>
+            ${prestation.description ? `<p class="card-text text-muted small">${escapeHtml(prestation.description)}</p>` : ''}
+            <p class="card-text fs-4 fw-bold text-success mb-0">${formatMontant(prestation.montant_base || prestation.montant)} EUR</p>
+          </div>
+          <div class="card-footer bg-transparent d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary flex-fill" onclick="ouvrirModalTarif(${prestation.id}, 'prestation')">
+              <i class="bi bi-pencil"></i> Modifier
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="supprimerTarif(${prestation.id}, 'prestation')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  // Ajouter bouton pour nouvelle prestation
+  html += `
+    <div class="text-center mt-3">
+      <button class="btn btn-primary" onclick="ouvrirModalNouveauTarif('prestation')">
+        <i class="bi bi-plus-lg"></i> Nouvelle prestation
+      </button>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 async function chargerTypesTarifs() {
@@ -101,7 +186,7 @@ async function chargerConfigurationsQF() {
 
 async function chargerCommunes() {
   try {
-    const response = await apiAdmin.get('/communes');
+    const response = await apiAdmin.get('/communes/all');
     communesCache = response?.communes || response?.data || response || [];
     if (!Array.isArray(communesCache)) communesCache = [];
   } catch (error) {
@@ -129,6 +214,17 @@ async function chargerTags() {
   } catch (error) {
     console.error('[Tarification] Erreur chargement tags:', error);
     tagsCache = [];
+  }
+}
+
+async function chargerOperationsComptables() {
+  try {
+    const response = await apiAdmin.get('/parametres/operations-comptables');
+    operationsComptablesCache = response?.data || response || [];
+    if (!Array.isArray(operationsComptablesCache)) operationsComptablesCache = [];
+  } catch (error) {
+    console.error('[Tarification] Erreur chargement operations comptables:', error);
+    operationsComptablesCache = [];
   }
 }
 
@@ -191,9 +287,8 @@ function afficherCotisations(tarifs) {
       'date_a_date': '12 mois glissants'
     }[tarif.type_periode] || tarif.type_periode;
 
-    // Types de tarifs pour cette cotisation
-    const montantsParType = tarif.montantsParType || [];
-    const typesHtml = genererTypesHtml(tarif, montantsParType);
+    // Criteres d'eligibilite pour cette cotisation
+    const criteresHtml = genererCriteresSummaryHtml(tarif.criteres);
 
     // Modificateurs pour cette cotisation
     const modsHtml = genererModificateursHtml(tarif.id);
@@ -236,8 +331,8 @@ function afficherCotisations(tarifs) {
             <div class="tab-content p-3">
               <!-- Tab General -->
               <div class="tab-pane fade show active" id="${tabsId}-general">
-                <h6 class="mb-3">Types de tarifs (avec montants)</h6>
-                ${typesHtml}
+                <h6 class="mb-3"><i class="bi bi-funnel"></i> Criteres d'eligibilite</h6>
+                ${criteresHtml}
 
                 <div class="info-row">
                   <div class="info-item">
@@ -402,6 +497,106 @@ function formatCriteresDescription(type) {
   }
 
   return parts.join(' | ');
+}
+
+/**
+ * Generer le HTML resume des criteres pour affichage dans les cartes cotisation
+ */
+function genererCriteresSummaryHtml(criteres) {
+  if (!criteres || Object.keys(criteres).length === 0) {
+    return `
+      <div class="alert alert-light border-0 py-2 px-3">
+        <i class="bi bi-globe text-muted"></i>
+        <span class="ms-2">Aucun critere - Cette cotisation est accessible a tous les usagers</span>
+      </div>
+    `;
+  }
+
+  let html = '<div class="criteres-summary">';
+
+  // Age
+  if (criteres.age) {
+    const op = criteres.age.operateur;
+    const min = criteres.age.min;
+    const max = criteres.age.max;
+    let ageText = '';
+    if (op === 'entre' && min !== undefined && max !== undefined) {
+      ageText = `${min} a ${max} ans`;
+    } else if ((op === '<' || op === '<=') && max !== undefined) {
+      ageText = `${op === '<' ? 'Moins de' : "Jusqu'a"} ${max} ans`;
+    } else if ((op === '>' || op === '>=') && min !== undefined) {
+      ageText = `${op === '>' ? 'Plus de' : 'A partir de'} ${min} ans`;
+    } else {
+      ageText = 'Critere age';
+    }
+    html += `
+      <span class="critere-badge bg-secondary-subtle">
+        <i class="bi bi-calendar-event"></i> ${ageText}
+      </span>
+    `;
+  }
+
+  // Sexe / Civilite
+  if (criteres.sexe && criteres.sexe.length > 0 && criteres.sexe.length < 3) {
+    const sexeLabels = { M: 'Hommes', F: 'Femmes', A: 'Autre' };
+    const sexeText = criteres.sexe.map(s => sexeLabels[s] || s).join(', ');
+    html += `
+      <span class="critere-badge bg-info-subtle">
+        <i class="bi bi-person"></i> ${sexeText}
+      </span>
+    `;
+  }
+
+  // Commune
+  if (criteres.commune) {
+    let communeText = '';
+    if (criteres.commune.type === 'communaute') {
+      const cc = communautesCache.find(c => c.id === criteres.commune.id);
+      communeText = cc ? cc.nom : 'Communaute de communes';
+    } else {
+      communeText = `${criteres.commune.ids?.length || 0} commune(s)`;
+    }
+    html += `
+      <span class="critere-badge bg-primary-subtle">
+        <i class="bi bi-geo-alt"></i> ${escapeHtml(communeText)}
+      </span>
+    `;
+  }
+
+  // Adhesion association
+  if (criteres.adhesion_active) {
+    html += `
+      <span class="critere-badge bg-success-subtle">
+        <i class="bi bi-check-circle"></i> Adhesion asso. active
+      </span>
+    `;
+  }
+
+  // Tags
+  if (criteres.tags && criteres.tags.length > 0) {
+    let tagsText = '';
+    if (tagsCache && tagsCache.length > 0) {
+      const tagLabels = criteres.tags.map(id => {
+        const tag = tagsCache.find(t => t.id === id);
+        return tag ? tag.libelle : null;
+      }).filter(Boolean);
+      if (tagLabels.length > 0) {
+        tagsText = tagLabels.slice(0, 3).join(', ') + (tagLabels.length > 3 ? '...' : '');
+      } else {
+        tagsText = `${criteres.tags.length} tag(s)`;
+      }
+    } else {
+      tagsText = `${criteres.tags.length} tag(s)`;
+    }
+    html += `
+      <span class="critere-badge bg-warning-subtle">
+        <i class="bi bi-tag"></i> ${escapeHtml(tagsText)}
+      </span>
+    `;
+  }
+
+  html += '</div>';
+  return html;
 }
 
 /**
@@ -580,45 +775,364 @@ function ouvrirModalNouveauTarif(type = 'cotisation') {
   ouvrirModalTarif(null, type);
 }
 
+/**
+ * Toggle l'affichage des sections selon le type (cotisation/prestation)
+ */
+function toggleTarifType(type) {
+  const sectionCotisation = document.getElementById('section_cotisation');
+  const tarifTypeHidden = document.getElementById('tarif_type');
+  const labelLibelle = document.querySelector('label[for="tarif_libelle"]');
+  const inputLibelle = document.getElementById('tarif_libelle');
+
+  tarifTypeHidden.value = type;
+
+  if (type === 'prestation') {
+    sectionCotisation.style.display = 'none';
+    inputLibelle.placeholder = 'Ex: Atelier creation jeux, Location salle...';
+    document.getElementById('modalTarifTitle').innerHTML = '<i class="bi bi-receipt text-success"></i> Prestation';
+  } else {
+    sectionCotisation.style.display = 'block';
+    inputLibelle.placeholder = 'Ex: Cotisation annuelle 2025';
+    const id = document.getElementById('tarif_id').value;
+    document.getElementById('modalTarifTitle').innerHTML = id
+      ? '<i class="bi bi-pencil"></i> Modifier la cotisation'
+      : '<i class="bi bi-plus-circle"></i> Nouvelle cotisation';
+  }
+}
+
 function ouvrirModalTarif(id = null, type = 'cotisation') {
   const modal = new bootstrap.Modal(document.getElementById('modalTarif'));
   const form = document.getElementById('formTarif');
   form.reset();
 
-  // Generer les types de tarifs
-  genererTypesTarifsForm();
+  // Initialiser les selects de criteres
+  initTarifCriteresSelects();
+
+  // Initialiser le select des operations comptables
+  initOperationsComptablesSelect();
+
+  // Reset des criteres
+  resetTarifCriteres();
+
+  // Configurer le type
+  document.getElementById('tarif_type').value = type;
+  document.getElementById(`tarif_type_${type}`).checked = true;
+  toggleTarifType(type);
+
+  // Masquer le selecteur de type en mode edition (on ne change pas le type)
+  const typeSelector = document.getElementById('tarif_type_selector');
 
   if (id) {
-    const tarif = tarifsCache.find(t => t.id === id);
+    // Mode edition - chercher dans le bon cache selon le type
+    let tarif;
+    if (type === 'prestation') {
+      tarif = prestationsCache.find(t => t.id === id);
+    } else {
+      tarif = tarifsCache.find(t => t.id === id);
+    }
+
     if (!tarif) {
       showToast('Tarif non trouve', 'error');
       return;
     }
 
-    document.getElementById('modalTarifTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier la cotisation';
+    typeSelector.style.display = 'none'; // Masquer le selecteur en edition
+
+    if (type === 'prestation') {
+      document.getElementById('modalTarifTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier la prestation';
+    } else {
+      document.getElementById('modalTarifTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier la cotisation';
+    }
+
     document.getElementById('tarif_id').value = tarif.id;
     document.getElementById('tarif_libelle').value = tarif.libelle || '';
-    document.getElementById('tarif_montant').value = tarif.montant_base || 0;
+    document.getElementById('tarif_montant').value = tarif.montant_base || tarif.montant || 0;
     document.getElementById('tarif_description').value = tarif.description || '';
-    document.getElementById('tarif_periode').value = tarif.type_periode || 'annee_civile';
-    document.getElementById('tarif_calcul').value = tarif.type_montant || 'fixe';
     document.getElementById('tarif_actif').checked = tarif.actif !== false;
     document.getElementById('tarif_defaut').checked = tarif.par_defaut === true;
 
-    // Remplir les montants par type
-    if (tarif.montantsParType) {
-      tarif.montantsParType.forEach(mt => {
-        const input = document.getElementById(`type_montant_${mt.type_tarif_id}`);
-        if (input) input.value = mt.montant;
-      });
+    // Operation comptable
+    document.getElementById('tarif_operation_comptable').value = tarif.operation_comptable_id || '';
+
+    if (type === 'cotisation') {
+      document.getElementById('tarif_periode').value = tarif.type_periode || 'annee_civile';
+      document.getElementById('tarif_calcul').value = tarif.type_montant || 'fixe';
+
+      // Charger les criteres
+      if (tarif.criteres) {
+        chargerTarifCriteres(tarif.criteres);
+      }
     }
   } else {
-    document.getElementById('modalTarifTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Nouvelle cotisation';
+    typeSelector.style.display = 'block'; // Afficher le selecteur en creation
     document.getElementById('tarif_id').value = '';
     document.getElementById('tarif_actif').checked = true;
   }
 
   modal.show();
+}
+
+// ============================================================
+// Gestion des criteres dans le modal Tarif
+// ============================================================
+
+/**
+ * Initialise le select des operations comptables
+ */
+function initOperationsComptablesSelect() {
+  const select = document.getElementById('tarif_operation_comptable');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">-- Aucune (pas d\'ecritures auto) --</option>';
+
+  operationsComptablesCache.forEach(op => {
+    const label = `${op.libelle} (${op.compte_produit})`;
+    select.innerHTML += `<option value="${op.id}">${escapeHtml(label)}</option>`;
+  });
+}
+
+/**
+ * Initialise les selects des criteres (communautes, communes, tags)
+ */
+function initTarifCriteresSelects() {
+  // Communautes
+  const communauteSelect = document.getElementById('tarif_critere_communaute_id');
+  if (communauteSelect) {
+    communauteSelect.innerHTML = '<option value="">-- Selectionnez --</option>';
+    communautesCache.forEach(c => {
+      communauteSelect.innerHTML += `<option value="${c.id}">${escapeHtml(c.nom)}</option>`;
+    });
+  }
+
+  // Communes
+  const communesSelect = document.getElementById('tarif_critere_communes_ids');
+  if (communesSelect) {
+    communesSelect.innerHTML = '';
+    communesCache.forEach(c => {
+      communesSelect.innerHTML += `<option value="${c.id}">${c.code_postal} - ${escapeHtml(c.nom)}</option>`;
+    });
+  }
+
+  // Tags
+  const tagsContainer = document.getElementById('tarif_critere_tags_liste');
+  if (tagsContainer) {
+    if (!tagsCache || tagsCache.length === 0) {
+      tagsContainer.innerHTML = '<span class="text-muted small">Aucun tag disponible</span>';
+    } else {
+      tagsContainer.innerHTML = tagsCache.map(tag => `
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="tarif_critere_tag_${tag.id}" value="${tag.id}">
+          <label class="form-check-label" for="tarif_critere_tag_${tag.id}" style="color: ${tag.couleur};">
+            <i class="bi ${tag.icone || 'bi-tag'}"></i> ${escapeHtml(tag.libelle)}
+          </label>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+/**
+ * Reset tous les criteres du formulaire tarif
+ */
+function resetTarifCriteres() {
+  // Age
+  document.getElementById('tarif_critere_age_actif').checked = false;
+  document.getElementById('tarif_critere_age_config').style.display = 'none';
+  document.getElementById('tarif_critere_age_operateur').value = '<';
+  document.getElementById('tarif_critere_age_min').value = '';
+  document.getElementById('tarif_critere_age_max').value = '';
+  toggleTarifCritereAgeInputs();
+
+  // Sexe
+  document.getElementById('tarif_critere_sexe_actif').checked = false;
+  document.getElementById('tarif_critere_sexe_config').style.display = 'none';
+  document.getElementById('tarif_critere_sexe_M').checked = true;
+  document.getElementById('tarif_critere_sexe_F').checked = true;
+  document.getElementById('tarif_critere_sexe_A').checked = true;
+
+  // Commune
+  document.getElementById('tarif_critere_commune_actif').checked = false;
+  document.getElementById('tarif_critere_commune_config').style.display = 'none';
+  document.getElementById('tarif_critere_commune_type_communaute').checked = true;
+  document.getElementById('tarif_critere_communaute_id').value = '';
+  toggleTarifCritereCommuneInputs();
+
+  // Adhesion
+  document.getElementById('tarif_critere_adhesion_actif').checked = false;
+
+  // Tags
+  document.getElementById('tarif_critere_tags_actif').checked = false;
+  document.getElementById('tarif_critere_tags_config').style.display = 'none';
+  document.querySelectorAll('#tarif_critere_tags_liste input[type="checkbox"]').forEach(cb => cb.checked = false);
+}
+
+/**
+ * Charge les criteres dans le formulaire
+ */
+function chargerTarifCriteres(criteres) {
+  if (!criteres) return;
+
+  // Age
+  if (criteres.age) {
+    document.getElementById('tarif_critere_age_actif').checked = true;
+    document.getElementById('tarif_critere_age_config').style.display = 'block';
+    document.getElementById('tarif_critere_age_operateur').value = criteres.age.operateur || '<';
+    document.getElementById('tarif_critere_age_min').value = criteres.age.min || '';
+    document.getElementById('tarif_critere_age_max').value = criteres.age.max || '';
+    toggleTarifCritereAgeInputs();
+  }
+
+  // Sexe
+  if (criteres.sexe && Array.isArray(criteres.sexe)) {
+    document.getElementById('tarif_critere_sexe_actif').checked = true;
+    document.getElementById('tarif_critere_sexe_config').style.display = 'block';
+    document.getElementById('tarif_critere_sexe_M').checked = criteres.sexe.includes('M');
+    document.getElementById('tarif_critere_sexe_F').checked = criteres.sexe.includes('F');
+    document.getElementById('tarif_critere_sexe_A').checked = criteres.sexe.includes('A');
+  }
+
+  // Commune
+  if (criteres.commune) {
+    document.getElementById('tarif_critere_commune_actif').checked = true;
+    document.getElementById('tarif_critere_commune_config').style.display = 'block';
+    if (criteres.commune.type === 'communaute') {
+      document.getElementById('tarif_critere_commune_type_communaute').checked = true;
+      document.getElementById('tarif_critere_communaute_id').value = criteres.commune.id || '';
+    } else {
+      document.getElementById('tarif_critere_commune_type_liste').checked = true;
+      const select = document.getElementById('tarif_critere_communes_ids');
+      (criteres.commune.ids || []).forEach(id => {
+        const option = select.querySelector(`option[value="${id}"]`);
+        if (option) option.selected = true;
+      });
+    }
+    toggleTarifCritereCommuneInputs();
+  }
+
+  // Adhesion
+  if (criteres.adhesion_active) {
+    document.getElementById('tarif_critere_adhesion_actif').checked = true;
+  }
+
+  // Tags
+  if (criteres.tags && Array.isArray(criteres.tags)) {
+    document.getElementById('tarif_critere_tags_actif').checked = true;
+    document.getElementById('tarif_critere_tags_config').style.display = 'block';
+    criteres.tags.forEach(tagId => {
+      const cb = document.getElementById(`tarif_critere_tag_${tagId}`);
+      if (cb) cb.checked = true;
+    });
+  }
+}
+
+/**
+ * Recupere les criteres depuis le formulaire
+ */
+function getTarifCriteres() {
+  const criteres = {};
+
+  // Age
+  if (document.getElementById('tarif_critere_age_actif').checked) {
+    const op = document.getElementById('tarif_critere_age_operateur').value;
+    criteres.age = { operateur: op };
+    if (op === 'entre' || op === '>' || op === '>=') {
+      const min = document.getElementById('tarif_critere_age_min').value;
+      if (min) criteres.age.min = parseInt(min);
+    }
+    if (op === 'entre' || op === '<' || op === '<=') {
+      const max = document.getElementById('tarif_critere_age_max').value;
+      if (max) criteres.age.max = parseInt(max);
+    }
+  }
+
+  // Sexe
+  if (document.getElementById('tarif_critere_sexe_actif').checked) {
+    const sexes = [];
+    if (document.getElementById('tarif_critere_sexe_M').checked) sexes.push('M');
+    if (document.getElementById('tarif_critere_sexe_F').checked) sexes.push('F');
+    if (document.getElementById('tarif_critere_sexe_A').checked) sexes.push('A');
+    if (sexes.length > 0 && sexes.length < 3) { // Ne pas sauvegarder si tous selectionnes
+      criteres.sexe = sexes;
+    }
+  }
+
+  // Commune
+  if (document.getElementById('tarif_critere_commune_actif').checked) {
+    if (document.getElementById('tarif_critere_commune_type_communaute').checked) {
+      const communauteId = document.getElementById('tarif_critere_communaute_id').value;
+      if (communauteId) {
+        criteres.commune = { type: 'communaute', id: parseInt(communauteId) };
+      }
+    } else {
+      const select = document.getElementById('tarif_critere_communes_ids');
+      const ids = Array.from(select.selectedOptions).map(opt => parseInt(opt.value));
+      if (ids.length > 0) {
+        criteres.commune = { type: 'liste', ids: ids };
+      }
+    }
+  }
+
+  // Adhesion
+  if (document.getElementById('tarif_critere_adhesion_actif').checked) {
+    criteres.adhesion_active = true;
+  }
+
+  // Tags
+  if (document.getElementById('tarif_critere_tags_actif').checked) {
+    const tags = [];
+    document.querySelectorAll('#tarif_critere_tags_liste input[type="checkbox"]:checked').forEach(cb => {
+      tags.push(parseInt(cb.value));
+    });
+    if (tags.length > 0) {
+      criteres.tags = tags;
+    }
+  }
+
+  return Object.keys(criteres).length > 0 ? criteres : null;
+}
+
+/**
+ * Toggle l'affichage d'une section de critere
+ */
+function toggleTarifCritereSection(section) {
+  const checkbox = document.getElementById(`tarif_critere_${section}_actif`);
+  const config = document.getElementById(`tarif_critere_${section}_config`);
+  if (config) {
+    config.style.display = checkbox.checked ? 'block' : 'none';
+  }
+}
+
+/**
+ * Toggle les inputs d'age selon l'operateur
+ */
+function toggleTarifCritereAgeInputs() {
+  const op = document.getElementById('tarif_critere_age_operateur').value;
+  const minCol = document.getElementById('tarif_critere_age_min_col');
+  const maxCol = document.getElementById('tarif_critere_age_max_col');
+  const etLabel = document.getElementById('tarif_critere_age_et');
+
+  if (op === 'entre') {
+    minCol.style.display = 'block';
+    maxCol.style.display = 'block';
+    etLabel.style.display = 'block';
+  } else if (op === '>' || op === '>=') {
+    minCol.style.display = 'block';
+    maxCol.style.display = 'none';
+    etLabel.style.display = 'none';
+  } else {
+    minCol.style.display = 'none';
+    maxCol.style.display = 'block';
+    etLabel.style.display = 'none';
+  }
+}
+
+/**
+ * Toggle les inputs de commune selon le type
+ */
+function toggleTarifCritereCommuneInputs() {
+  const isCommunaute = document.getElementById('tarif_critere_commune_type_communaute').checked;
+  document.getElementById('tarif_critere_communaute_select_container').style.display = isCommunaute ? 'block' : 'none';
+  document.getElementById('tarif_critere_communes_liste_container').style.display = isCommunaute ? 'none' : 'block';
 }
 
 function genererTypesTarifsForm() {
@@ -674,16 +1188,35 @@ function formatConditionAge(type) {
 
 async function sauvegarderTarif() {
   const id = document.getElementById('tarif_id').value;
+  const type = document.getElementById('tarif_type').value;
+  const isPrestation = type === 'prestation';
+
+  // Operation comptable
+  const opComptableValue = document.getElementById('tarif_operation_comptable').value;
+  const operationComptableId = opComptableValue ? parseInt(opComptableValue) : null;
 
   const data = {
     libelle: document.getElementById('tarif_libelle').value.trim(),
     montant_base: parseFloat(document.getElementById('tarif_montant').value),
     description: document.getElementById('tarif_description').value.trim() || null,
-    type_periode: document.getElementById('tarif_periode').value,
-    type_montant: document.getElementById('tarif_calcul').value,
     actif: document.getElementById('tarif_actif').checked,
-    par_defaut: document.getElementById('tarif_defaut').checked
+    par_defaut: document.getElementById('tarif_defaut').checked,
+    type: type, // 'cotisation' ou 'prestation'
+    operation_comptable_id: operationComptableId
   };
+
+  // Ajouter les champs specifiques aux cotisations
+  if (!isPrestation) {
+    data.type_periode = document.getElementById('tarif_periode').value;
+    data.type_montant = document.getElementById('tarif_calcul').value;
+    // Criteres d'eligibilite dynamiques
+    data.criteres = getTarifCriteres();
+  } else {
+    // Pour les prestations, pas de periode ni calcul prorata ni criteres
+    data.type_periode = null;
+    data.type_montant = 'fixe';
+    data.criteres = null;
+  }
 
   if (!data.libelle) {
     showToast('Le libelle est obligatoire', 'error');
@@ -691,19 +1224,50 @@ async function sauvegarderTarif() {
   }
 
   try {
+    const successMsg = isPrestation ? 'Prestation' : 'Cotisation';
+
     if (id) {
       await apiAdmin.put(`/tarifs-cotisation/${id}`, data);
-      showToast('Cotisation modifiee', 'success');
+      showToast(`${successMsg} modifiee`, 'success');
     } else {
       await apiAdmin.post('/tarifs-cotisation', data);
-      showToast('Cotisation creee', 'success');
+      showToast(`${successMsg} creee`, 'success');
     }
 
     bootstrap.Modal.getInstance(document.getElementById('modalTarif')).hide();
-    await chargerTarifs();
+
+    // Recharger le bon cache selon le type
+    if (isPrestation) {
+      await chargerPrestations();
+    } else {
+      await chargerTarifs();
+    }
   } catch (error) {
     console.error('[Tarification] Erreur sauvegarde:', error);
     showToast('Erreur: ' + (error.message || 'Erreur inconnue'), 'error');
+  }
+}
+
+async function supprimerTarif(id, type = 'cotisation') {
+  const isPrestation = type === 'prestation';
+  const typeLabel = isPrestation ? 'cette prestation' : 'cette cotisation';
+
+  if (!confirm(`Voulez-vous vraiment supprimer ${typeLabel} ?`)) {
+    return;
+  }
+
+  try {
+    await apiAdmin.delete(`/tarifs-cotisation/${id}`);
+    showToast(isPrestation ? 'Prestation supprimee' : 'Cotisation supprimee', 'success');
+
+    if (isPrestation) {
+      await chargerPrestations();
+    } else {
+      await chargerTarifs();
+    }
+  } catch (error) {
+    console.error('[Tarification] Erreur suppression:', error);
+    showToast('Erreur: ' + (error.message || 'Impossible de supprimer'), 'error');
   }
 }
 
@@ -1826,7 +2390,9 @@ async function sauvegarderCriteres() {
 window.ouvrirModalNouveauTarif = ouvrirModalNouveauTarif;
 window.ouvrirModalTarif = ouvrirModalTarif;
 window.sauvegarderTarif = sauvegarderTarif;
+window.supprimerTarif = supprimerTarif;
 window.toggleTarifActif = toggleTarifActif;
+window.toggleTarifType = toggleTarifType;
 window.dupliquerTarif = dupliquerTarif;
 
 window.ouvrirModalModificateur = ouvrirModalModificateur;
@@ -1847,6 +2413,11 @@ window.sauvegarderCriteres = sauvegarderCriteres;
 window.toggleCritereSection = toggleCritereSection;
 window.toggleCritereAgeInputs = toggleCritereAgeInputs;
 window.toggleCritereCommuneInputs = toggleCritereCommuneInputs;
+
+// Criteres sur tarifs cotisation (modal tarif)
+window.toggleTarifCritereSection = toggleTarifCritereSection;
+window.toggleTarifCritereAgeInputs = toggleTarifCritereAgeInputs;
+window.toggleTarifCritereCommuneInputs = toggleTarifCritereCommuneInputs;
 
 window.ajouterTypeTarif = function() {
   // TODO: Ouvrir modal creation type tarif

@@ -58,6 +58,25 @@ exports.getStats = async (req, res) => {
 };
 
 /**
+ * GET /api/communes/all
+ * Toutes les communes (limite a 2000 pour les selects)
+ */
+exports.getAll = async (req, res) => {
+  try {
+    const { Commune } = require('../models');
+    const communes = await Commune.findAll({
+      attributes: ['id', 'code_insee', 'nom', 'code_postal'],
+      order: [['code_postal', 'ASC'], ['nom', 'ASC']],
+      limit: 2000
+    });
+    res.json({ communes });
+  } catch (error) {
+    logger.error('Erreur getAll communes:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
  * GET /api/communes/departement/:departement
  * Communes d'un departement
  */

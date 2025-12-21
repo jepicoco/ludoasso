@@ -34,6 +34,20 @@ function setupComptabiliteAssociations(models) {
   });
 
   // ========================================
+  // TarifCotisation <-> ParametrageComptableOperation
+  // ========================================
+
+  TarifCotisation.belongsTo(ParametrageComptableOperation, {
+    foreignKey: 'operation_comptable_id',
+    as: 'operationComptable'
+  });
+
+  ParametrageComptableOperation.hasMany(TarifCotisation, {
+    foreignKey: 'operation_comptable_id',
+    as: 'tarifsCotisation'
+  });
+
+  // ========================================
   // Sections Analytiques (hierarchie)
   // ========================================
 

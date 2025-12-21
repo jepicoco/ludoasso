@@ -6,9 +6,14 @@ const { Op } = require('sequelize');
  */
 exports.getAllTarifs = async (req, res) => {
   try {
-    const { actif, valide, structure_id } = req.query;
+    const { actif, valide, structure_id, type } = req.query;
 
     let where = {};
+
+    // Filtrer par type (cotisation ou prestation)
+    if (type) {
+      where.type = type;
+    }
 
     // Filtrer par structure
     if (structure_id) {
@@ -139,22 +144,26 @@ exports.createTarif = async (req, res) => {
     const {
       libelle,
       description,
+      type,
       type_periode,
       type_montant,
       montant_base,
       reduction_association_type,
       reduction_association_valeur,
       actif,
+      par_defaut,
+      criteres,
       date_debut_validite,
       date_fin_validite,
       ordre_affichage,
+      operation_comptable_id,
       code_comptable,
       code_analytique,
       structure_id
     } = req.body;
 
     // Validation
-    if (!libelle || !montant_base) {
+    if (!libelle || montant_base === undefined) {
       return res.status(400).json({
         error: 'Le libellé et le montant de base sont obligatoires'
       });
@@ -166,18 +175,24 @@ exports.createTarif = async (req, res) => {
       });
     }
 
+    const isPrestation = type === 'prestation';
+
     const tarif = await TarifCotisation.create({
       libelle,
       description,
-      type_periode: type_periode || 'annee_civile',
-      type_montant: type_montant || 'fixe',
+      type: type || 'cotisation',
+      type_periode: isPrestation ? null : (type_periode || 'annee_civile'),
+      type_montant: isPrestation ? 'fixe' : (type_montant || 'fixe'),
       montant_base,
       reduction_association_type: reduction_association_type || 'pourcentage',
       reduction_association_valeur: reduction_association_valeur || 0,
       actif: actif !== undefined ? actif : true,
+      par_defaut: par_defaut || false,
+      criteres: isPrestation ? null : (criteres || null),
       date_debut_validite,
       date_fin_validite,
       ordre_affichage: ordre_affichage || 0,
+      operation_comptable_id: operation_comptable_id || null,
       code_comptable,
       code_analytique,
       structure_id: structure_id || null
@@ -228,6 +243,11 @@ exports.updateTarif = async (req, res) => {
     // Gerer structure_id explicitement (peut etre null pour global)
     if ('structure_id' in updateData) {
       updateData.structure_id = updateData.structure_id || null;
+    }
+
+    // Gerer operation_comptable_id explicitement (peut etre null)
+    if ('operation_comptable_id' in updateData) {
+      updateData.operation_comptable_id = updateData.operation_comptable_id || null;
     }
 
     await tarif.update(updateData);

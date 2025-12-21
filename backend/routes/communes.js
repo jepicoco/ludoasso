@@ -26,6 +26,9 @@ const upload = multer({
 // GET /api/communes - Recherche communes
 router.get('/', verifyToken, communeController.search);
 
+// GET /api/communes/all - Toutes les communes (pour selects)
+router.get('/all', verifyToken, communeController.getAll);
+
 // GET /api/communes/stats - Statistiques du referentiel
 router.get('/stats', verifyToken, checkMinRole('gestionnaire'), communeController.getStats);
 

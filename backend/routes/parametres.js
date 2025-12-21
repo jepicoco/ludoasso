@@ -494,4 +494,24 @@ router.delete('/tags-utilisateur/:id', verifyToken, isAdmin(), tagsUtilisateurCo
 // Reordonner les tags (admin seulement)
 router.put('/tags-utilisateur-reorder', verifyToken, isAdmin(), tagsUtilisateurController.reorder);
 
+// ============================================
+// Routes pour les operations comptables
+// ============================================
+
+// Liste toutes les operations comptables actives
+router.get('/operations-comptables', verifyToken, isGestionnaire(), async (req, res) => {
+  try {
+    const { ParametrageComptableOperation } = require('../models');
+    const operations = await ParametrageComptableOperation.findAll({
+      where: { actif: true },
+      order: [['ordre_affichage', 'ASC'], ['libelle', 'ASC']],
+      attributes: ['id', 'type_operation', 'libelle', 'description', 'journal_code', 'compte_produit', 'compte_produit_libelle']
+    });
+    res.json(operations);
+  } catch (error) {
+    console.error('Erreur getAll operations comptables:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+});
+
 module.exports = router;
