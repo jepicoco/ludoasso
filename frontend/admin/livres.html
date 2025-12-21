@@ -2064,7 +2064,28 @@
       const data = result.data;
 
       document.getElementById('lookupTitre').textContent = data.titre || data.title || 'Sans titre';
-      document.getElementById('lookupAuteur').textContent = data.auteur || (Array.isArray(data.authors) ? data.authors.join(', ') : data.authors) || '-';
+
+      // Formater les auteurs (peut etre un array d'objets {nom, prenom, role} ou de strings)
+      let auteursDisplay = '-';
+      if (data.auteurs && Array.isArray(data.auteurs)) {
+        auteursDisplay = data.auteurs.map(a => {
+          if (typeof a === 'object' && a.nom) {
+            const name = a.prenom ? `${a.prenom} ${a.nom}` : a.nom;
+            // Ajouter le role si different d'auteur
+            if (a.role && a.role !== 'auteur') {
+              return `${name} (${a.role})`;
+            }
+            return name;
+          }
+          return a;
+        }).join(', ');
+      } else if (data.auteur) {
+        auteursDisplay = data.auteur;
+      } else if (Array.isArray(data.authors)) {
+        auteursDisplay = data.authors.join(', ');
+      }
+      document.getElementById('lookupAuteur').textContent = auteursDisplay;
+
       document.getElementById('lookupEditeur').textContent = data.editeur || data.publisher || '-';
       document.getElementById('lookupAnnee').textContent = data.annee_publication || data.year || '-';
       document.getElementById('lookupIsbn').textContent = data.isbn || data.isbn13 || data._searchedCode || '-';
@@ -2167,8 +2188,19 @@
 
       const data = currentLookupResult;
 
-      // Nettoyer le titre BNF
-      const { titre, sousTitre } = cleanBNFTitle(data.titre || data.title || '');
+      // Titre et sous-titre
+      // Le backend BNF parse maintenant correctement titre/sous_titre
+      // Fallback sur le parsing frontend si sous_titre non fourni
+      let titre = data.titre || data.title || '';
+      let sousTitre = data.sous_titre || '';
+
+      if (!sousTitre && titre) {
+        // Fallback: parser le titre si le backend n'a pas separe
+        const parsed = cleanBNFTitle(titre);
+        titre = parsed.titre;
+        sousTitre = parsed.sousTitre;
+      }
+
       document.getElementById('titre').value = titre;
       document.getElementById('sous_titre').value = sousTitre;
 
@@ -2198,11 +2230,22 @@
       clearContributeurs();
 
       if (data.auteurs && Array.isArray(data.auteurs)) {
-        // Parser et ajouter les auteurs comme contributeurs
-        data.auteurs.forEach(rawAuteur => {
-          const cleaned = cleanBNFAuthor(rawAuteur);
-          if (cleaned.fullName) {
-            addContributeurRowWithName(cleaned.fullName, 'auteur');
+        data.auteurs.forEach(auteurData => {
+          // Le backend renvoie maintenant des objets {nom, prenom, role}
+          if (typeof auteurData === 'object' && auteurData.nom) {
+            // Construire le nom complet: "Prenom Nom"
+            const fullName = auteurData.prenom
+              ? `${auteurData.prenom} ${auteurData.nom}`
+              : auteurData.nom;
+            // Utiliser le role fourni par l'API (auteur, traducteur, illustrateur, etc.)
+            const role = auteurData.role || 'auteur';
+            addContributeurRowWithName(fullName, role);
+          } else if (typeof auteurData === 'string') {
+            // Fallback: ancienne API retournant des strings
+            const cleaned = cleanBNFAuthor(auteurData);
+            if (cleaned.fullName) {
+              addContributeurRowWithName(cleaned.fullName, 'auteur');
+            }
           }
         });
       } else if (data.auteur) {
@@ -2855,7 +2898,7 @@
       if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
     }
 
-    // Surligner les auteurs (propose d'ajouter comme contributeurs avec role 'auteur')
+    // Surligner les auteurs (propose d'ajouter comme contributeurs avec leur role)
     function highlightAuteurs(auteurs) {
       if (!auteurs || !auteurs.length) return;
 
@@ -2879,11 +2922,22 @@
 
       const newAuteurs = [];
       for (const auteur of auteurs) {
-        const auteurNom = typeof auteur === 'string' ? cleanBNFAuthor(auteur).fullName : (auteur.fullName || `${auteur.prenom || ''} ${auteur.nom || ''}`.trim());
+        let auteurNom, auteurRole;
+        if (typeof auteur === 'string') {
+          auteurNom = cleanBNFAuthor(auteur).fullName;
+          auteurRole = 'auteur';
+        } else if (typeof auteur === 'object' && auteur.nom) {
+          // Nouveau format avec {nom, prenom, role}
+          auteurNom = auteur.prenom ? `${auteur.prenom} ${auteur.nom}` : auteur.nom;
+          auteurRole = auteur.role || 'auteur';
+        } else {
+          auteurNom = auteur.fullName || `${auteur.prenom || ''} ${auteur.nom || ''}`.trim();
+          auteurRole = auteur.role || 'auteur';
+        }
         if (!auteurNom) continue;
 
         if (!currentNames.includes(auteurNom.toLowerCase())) {
-          newAuteurs.push(auteurNom);
+          newAuteurs.push({ nom: auteurNom, role: auteurRole });
         }
       }
 
@@ -2895,12 +2949,20 @@
         container.style.border = '2px solid var(--bs-warning)';
         container.style.borderRadius = '0.375rem';
 
+        // Afficher avec le role si different d'auteur
+        const displayNames = newAuteurs.map(a => {
+          if (a.role && a.role !== 'auteur') {
+            return `${escapeHtml(a.nom)} (${a.role})`;
+          }
+          return escapeHtml(a.nom);
+        }).join(', ');
+
         const diffDiv = document.createElement('div');
         diffDiv.className = 'enrichment-diff mt-2 p-2 bg-warning bg-opacity-25 rounded small';
         diffDiv.innerHTML = `
           <div class="d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-person me-1"></i><strong>API:</strong> ${newAuteurs.map(a => escapeHtml(a)).join(', ')}</span>
-            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentAuteurs()" title="Ajouter ces auteurs">
+            <span><i class="bi bi-person me-1"></i><strong>API:</strong> ${displayNames}</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentAuteurs()" title="Ajouter ces contributeurs">
               <i class="bi bi-plus-lg"></i>
             </button>
           </div>
@@ -2918,9 +2980,13 @@
       if (!diffDiv) return;
 
       const auteurs = JSON.parse(diffDiv.dataset.auteurs || '[]');
-      for (const auteurNom of auteurs) {
-        // Ajouter une nouvelle ligne contributeur avec le nom et role 'auteur'
-        addContributeurRowWithName(auteurNom, 'auteur');
+      for (const auteur of auteurs) {
+        // Le format peut etre {nom, role} ou une simple string (ancien format)
+        if (typeof auteur === 'object' && auteur.nom) {
+          addContributeurRowWithName(auteur.nom, auteur.role || 'auteur');
+        } else {
+          addContributeurRowWithName(auteur, 'auteur');
+        }
       }
 
       diffDiv.remove();

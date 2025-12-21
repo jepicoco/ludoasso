@@ -65,6 +65,23 @@ let thematiquesCache = {};
 let emplacementsCache = {};
 let plansCache = {};
 
+/**
+ * Parse modules_actifs qui peut etre un array ou une string JSON (MariaDB)
+ */
+function parseModulesActifs(modules) {
+    if (!modules) return null;
+    if (Array.isArray(modules)) return modules;
+    if (typeof modules === 'string') {
+        try {
+            const parsed = JSON.parse(modules);
+            return Array.isArray(parsed) ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
 // Initialisation
 document.addEventListener('DOMContentLoaded', async () => {
     applyModuleColors();
@@ -92,8 +109,9 @@ function getStructureModules() {
         // Pas de structure selectionnee mais pas admin = union de tous les modules accessibles
         const allModules = new Set();
         window.USER_STRUCTURES.forEach(s => {
-            if (s.modules_actifs) {
-                s.modules_actifs.forEach(m => allModules.add(COLLECTION_TO_MODULE[m] || m));
+            const modules = parseModulesActifs(s.modules_actifs);
+            if (modules) {
+                modules.forEach(m => allModules.add(COLLECTION_TO_MODULE[m] || m));
             }
         });
         return allModules.size > 0 ? Array.from(allModules) : null;
@@ -101,12 +119,13 @@ function getStructureModules() {
 
     // Structure selectionnee: recuperer ses modules
     const currentStructure = window.USER_STRUCTURES?.find(s => s.id === window.CURRENT_STRUCTURE_ID);
-    if (!currentStructure || !currentStructure.modules_actifs) {
+    const modules = parseModulesActifs(currentStructure?.modules_actifs);
+    if (!modules) {
         return null;
     }
 
     // Convertir codes collection en codes module
-    return currentStructure.modules_actifs.map(m => COLLECTION_TO_MODULE[m] || m);
+    return modules.map(m => COLLECTION_TO_MODULE[m] || m);
 }
 
 /**

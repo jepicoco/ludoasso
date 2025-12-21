@@ -132,6 +132,23 @@ function getModuleTextColor(moduleCode) {
     return textColors[moduleCode] || DEFAULT_MODULE_TEXT_COLORS[moduleCode] || '#ffffff';
 }
 
+/**
+ * Parse modules_actifs qui peut etre un array ou une string JSON (MariaDB)
+ */
+function parseModulesActifs(modules) {
+    if (!modules) return null;
+    if (Array.isArray(modules)) return modules;
+    if (typeof modules === 'string') {
+        try {
+            const parsed = JSON.parse(modules);
+            return Array.isArray(parsed) ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+    return null;
+}
+
 // Configuration des éléments du menu
 // L'ordre détermine l'affichage dans la sidebar
 // separator: true crée une ligne de séparation
@@ -313,17 +330,20 @@ function getFilteredMenuItems() {
         }
 
         // Verifier le module si defini et si une structure est selectionnee
-        if (item.module && currentStructure && currentStructure.modules_actifs) {
-            // Convertir le code module du menu vers le code collection
-            const collectionCode = MENU_TO_COLLECTION[item.module];
+        if (item.module && currentStructure) {
+            const structureModules = parseModulesActifs(currentStructure.modules_actifs);
+            if (structureModules) {
+                // Convertir le code module du menu vers le code collection
+                const collectionCode = MENU_TO_COLLECTION[item.module];
 
-            if (collectionCode) {
-                // Verifier si la collection est active dans la structure
-                if (!currentStructure.modules_actifs.includes(collectionCode)) {
-                    return false;
+                if (collectionCode) {
+                    // Verifier si la collection est active dans la structure
+                    if (!structureModules.includes(collectionCode)) {
+                        return false;
+                    }
                 }
+                // Les modules non-collection (scanner, reservations, etc.) passent
             }
-            // Les modules non-collection (scanner, reservations, etc.) passent
         }
 
         return true;

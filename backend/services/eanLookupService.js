@@ -527,15 +527,42 @@ class BNFProvider extends BaseProvider {
       return matches;
     };
 
-    const title = getValue('title');
-    if (!title) return null;
+    const rawTitle = getValue('title');
+    if (!rawTitle) return null;
 
-    // Auteurs (creator)
+    // Parser le titre BNF pour extraire titre, sous-titre et contributeurs
+    const { titre, sousTitre, contributeurs } = this.parseBNFTitle(rawTitle);
+
+    // Auteurs depuis dc:creator
     const creators = getAllValues('creator');
+    const auteursFromCreator = creators.map(c => {
+      const parsed = this.parseAuthorName(c);
+      let role = 'auteur';
+      if (/Traducteur/i.test(c)) role = 'traducteur';
+      else if (/Illustrateur|Dessinateur/i.test(c)) role = 'illustrateur';
+      else if (/Sc[ée]nariste/i.test(c)) role = 'scenariste';
+      else if (/Coloriste/i.test(c)) role = 'coloriste';
+      return { ...parsed, role };
+    });
+
+    // Fusionner contributeurs du titre et du creator
+    const allContributeurs = [...auteursFromCreator];
+    for (const contrib of contributeurs) {
+      const exists = allContributeurs.some(a =>
+        a.nom.toLowerCase() === contrib.nom.toLowerCase() &&
+        (!a.prenom || !contrib.prenom || a.prenom.toLowerCase() === contrib.prenom.toLowerCase())
+      );
+      if (!exists) {
+        allContributeurs.push(contrib);
+      }
+    }
+
+    const editeurFromTitle = contributeurs.find(c => c.role === 'editeur');
+    const auteursList = allContributeurs.filter(c => c.role !== 'editeur');
 
     // Editeur et date depuis publisher
     const publishers = getAllValues('publisher');
-    let editeur = null;
+    let editeur = editeurFromTitle?.nom || null;
     let annee = null;
 
     for (const pub of publishers) {
@@ -544,10 +571,8 @@ class BNFProvider extends BaseProvider {
         for (const part of parts) {
           if (/^\d{4}$/.test(part)) {
             annee = part;
-          } else if (part.length > 3 && !/^[A-Z][a-z]+$/.test(part)) {
-            if (!editeur || part.length > editeur.length) {
-              editeur = part;
-            }
+          } else if (!editeur && part.length > 3 && !/^[A-Z][a-z]+$/.test(part)) {
+            editeur = part;
           }
         }
       }
@@ -594,8 +619,9 @@ class BNFProvider extends BaseProvider {
 
     return {
       provider: 'bnf',
-      titre: title,
-      auteurs: creators,
+      titre: titre,
+      sous_titre: sousTitre || null,
+      auteurs: auteursList,
       editeur: editeur,
       annee_publication: annee,
       isbn: foundIsbn,
@@ -606,6 +632,138 @@ class BNFProvider extends BaseProvider {
       ark_id: arkId,
       url_bnf: arkId ? `https://data.bnf.fr/${arkId}` : null
     };
+  }
+
+  /**
+   * Parse le titre BNF pour extraire titre, sous-titre et contributeurs
+   * Format BNF: "Titre : sous-titre / auteur1 ; traduit par X ; [edite par] Y"
+   */
+  parseBNFTitle(rawTitle) {
+    if (!rawTitle) return { titre: '', sousTitre: '', contributeurs: [] };
+
+    let titre = rawTitle;
+    let sousTitre = '';
+    const contributeurs = [];
+
+    // 1. Separer la partie avant "/" (titre+soustitre) de la partie apres (contributeurs)
+    const slashIndex = rawTitle.indexOf(' / ');
+    let contributeursPart = '';
+
+    if (slashIndex > -1) {
+      titre = rawTitle.substring(0, slashIndex).trim();
+      contributeursPart = rawTitle.substring(slashIndex + 3).trim();
+    }
+
+    // 2. Separer titre et sous-titre (souvent separes par " : ")
+    const colonIndex = titre.indexOf(' : ');
+    if (colonIndex > -1) {
+      sousTitre = titre.substring(colonIndex + 3).trim();
+      titre = titre.substring(0, colonIndex).trim();
+    }
+
+    // 3. Parser les contributeurs (separes par " ; ")
+    if (contributeursPart) {
+      const parts = contributeursPart.split(/\s*;\s*/);
+
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+
+        // Detecter editeur: "[édité par] Marvel" ou "[ed. par] X"
+        const editeurMatch = trimmed.match(/^\[(?:[ée]dit[ée]|ed\.?)\s+par\]\s*(.+)$/i);
+        if (editeurMatch) {
+          contributeurs.push({
+            nom: editeurMatch[1].trim(),
+            role: 'editeur'
+          });
+          continue;
+        }
+
+        // Detecter traducteur: "traduit de l'anglais par X" ou "trad. par X"
+        const traducteurMatch = trimmed.match(/(?:traduit|trad\.?)\s+(?:de\s+[^p]+\s+)?par\s+(.+)$/i);
+        if (traducteurMatch) {
+          contributeurs.push({
+            ...this.parseAuthorName(traducteurMatch[1].trim()),
+            role: 'traducteur'
+          });
+          continue;
+        }
+
+        // Detecter illustrateur: "illustrations de X" ou "dessins de X"
+        const illustrateurMatch = trimmed.match(/(?:illustrations?|dessins?|dessin[ée])\s+(?:de|par)\s+(.+)$/i);
+        if (illustrateurMatch) {
+          contributeurs.push({
+            ...this.parseAuthorName(illustrateurMatch[1].trim()),
+            role: 'illustrateur'
+          });
+          continue;
+        }
+
+        // Detecter scenariste: "scenario de X"
+        const scenaristeMatch = trimmed.match(/sc[ée]nario\s+(?:de|par)\s+(.+)$/i);
+        if (scenaristeMatch) {
+          contributeurs.push({
+            ...this.parseAuthorName(scenaristeMatch[1].trim()),
+            role: 'scenariste'
+          });
+          continue;
+        }
+
+        // Detecter coloriste: "couleurs de X"
+        const coloristeMatch = trimmed.match(/couleurs?\s+(?:de|par)\s+(.+)$/i);
+        if (coloristeMatch) {
+          contributeurs.push({
+            ...this.parseAuthorName(coloristeMatch[1].trim()),
+            role: 'coloriste'
+          });
+          continue;
+        }
+
+        // Sinon, c'est probablement un auteur
+        contributeurs.push({
+          ...this.parseAuthorName(trimmed),
+          role: 'auteur'
+        });
+      }
+    }
+
+    return { titre, sousTitre, contributeurs };
+  }
+
+  /**
+   * Parse un nom d'auteur BNF
+   * Formats: "Nom, Prenom (dates)" ou "Prenom Nom (dates)"
+   */
+  parseAuthorName(rawName) {
+    if (!rawName) return { nom: '', prenom: '' };
+
+    let name = rawName;
+
+    // Supprimer les dates entre parentheses "(1970-....)" ou "(1945-2020)"
+    name = name.replace(/\s*\(\d{4}(?:-(?:\d{4}|\.{3,4}))?\)\s*/g, '').trim();
+
+    // Supprimer suffixes de role BNF "Auteur du texte", "Illustrateur", etc.
+    name = name.replace(/\.\s*(?:Auteur[^,]*|Illustrateur[^,]*|Traducteur[^,]*|Sc[ée]nariste[^,]*|Dessinateur[^,]*)$/i, '').trim();
+
+    // Si format "Nom, Prenom"
+    if (name.includes(',')) {
+      const parts = name.split(',').map(p => p.trim());
+      return {
+        nom: parts[0],
+        prenom: parts.slice(1).join(' ').trim()
+      };
+    }
+
+    // Sinon format "Prenom Nom" - le dernier mot est le nom
+    const words = name.split(/\s+/);
+    if (words.length >= 2) {
+      return {
+        nom: words[words.length - 1],
+        prenom: words.slice(0, -1).join(' ')
+      };
+    }
+
+    return { nom: name, prenom: '' };
   }
 
   parseXML(xml, isbn = null) {
@@ -626,15 +784,45 @@ class BNFProvider extends BaseProvider {
       return matches;
     };
 
-    const title = getValue('title');
-    if (!title) return null;
+    const rawTitle = getValue('title');
+    if (!rawTitle) return null;
 
-    // Auteurs (creator)
+    // Parser le titre BNF pour extraire titre, sous-titre et contributeurs
+    const { titre, sousTitre, contributeurs } = this.parseBNFTitle(rawTitle);
+
+    // Auteurs depuis dc:creator (format BNF: "Nom, Prenom (dates). Role")
     const creators = getAllValues('creator');
+    const auteursFromCreator = creators.map(c => {
+      const parsed = this.parseAuthorName(c);
+      // Detecter le role depuis le suffixe BNF
+      let role = 'auteur';
+      if (/Traducteur/i.test(c)) role = 'traducteur';
+      else if (/Illustrateur|Dessinateur/i.test(c)) role = 'illustrateur';
+      else if (/Sc[ée]nariste/i.test(c)) role = 'scenariste';
+      else if (/Coloriste/i.test(c)) role = 'coloriste';
+      return { ...parsed, role };
+    });
+
+    // Fusionner contributeurs du titre et du creator (eviter doublons)
+    const allContributeurs = [...auteursFromCreator];
+    for (const contrib of contributeurs) {
+      // Verifier si deja present
+      const exists = allContributeurs.some(a =>
+        a.nom.toLowerCase() === contrib.nom.toLowerCase() &&
+        (!a.prenom || !contrib.prenom || a.prenom.toLowerCase() === contrib.prenom.toLowerCase())
+      );
+      if (!exists) {
+        allContributeurs.push(contrib);
+      }
+    }
+
+    // Separer les auteurs/contributeurs de l'editeur extrait du titre
+    const editeurFromTitle = contributeurs.find(c => c.role === 'editeur');
+    const auteursList = allContributeurs.filter(c => c.role !== 'editeur');
 
     // Editeur et date depuis publisher
     const publishers = getAllValues('publisher');
-    let editeur = null;
+    let editeur = editeurFromTitle?.nom || null;
     let annee = null;
 
     for (const pub of publishers) {
@@ -645,11 +833,9 @@ class BNFProvider extends BaseProvider {
         for (const part of parts) {
           if (/^\d{4}$/.test(part)) {
             annee = part;
-          } else if (part.length > 3 && !/^[A-Z][a-z]+$/.test(part)) {
+          } else if (!editeur && part.length > 3 && !/^[A-Z][a-z]+$/.test(part)) {
             // Probablement l'editeur (pas juste un nom de ville)
-            if (!editeur || part.length > editeur.length) {
-              editeur = part;
-            }
+            editeur = part;
           }
         }
       }
@@ -696,8 +882,9 @@ class BNFProvider extends BaseProvider {
 
     return {
       provider: 'bnf',
-      titre: title,
-      auteurs: creators,
+      titre: titre,
+      sous_titre: sousTitre || null,
+      auteurs: auteursList, // Array d'objets {nom, prenom, role}
       editeur: editeur,
       annee_publication: annee,
       isbn: foundIsbn,
