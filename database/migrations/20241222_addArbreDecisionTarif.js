@@ -466,6 +466,20 @@ async function up() {
     });
     console.log('Colonne chemin_arbre_json ajoutee a cotisations');
   }
+
+  if (!cotisationsCols.arbre_decision_id) {
+    await queryInterface.addColumn('cotisations', 'arbre_decision_id', {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'arbres_decision_tarif',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    });
+    console.log('Colonne arbre_decision_id ajoutee a cotisations');
+  }
 }
 
 async function down() {
@@ -475,6 +489,9 @@ async function down() {
 
   // Remove columns from cotisations
   const cotisationsCols = await queryInterface.describeTable('cotisations');
+  if (cotisationsCols.arbre_decision_id) {
+    await queryInterface.removeColumn('cotisations', 'arbre_decision_id');
+  }
   if (cotisationsCols.arbre_version) {
     await queryInterface.removeColumn('cotisations', 'arbre_version');
   }

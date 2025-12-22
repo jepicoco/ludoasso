@@ -31,7 +31,7 @@ class ArbreDecisionService {
    * @param {number} arbreId - ID de l'arbre
    * @param {Object} utilisateur - Utilisateur avec ses donnees
    * @param {Object} context - Contexte (dateCotisation, structureId)
-   * @returns {Object} { reductions, chemin, totalReductions }
+   * @returns {Object} { reductions, chemin, totalReductions, trace }
    */
   async evaluerArbre(arbreId, utilisateur, context = {}) {
     const arbre = await ArbreDecision.findByPk(arbreId);
@@ -41,18 +41,19 @@ class ArbreDecisionService {
 
     const structure = arbre.arbre_json;
     if (!structure.noeuds || structure.noeuds.length === 0) {
-      return { reductions: [], chemin: [], totalReductions: 0 };
+      return { reductions: [], chemin: [], totalReductions: 0, trace: [] };
     }
 
     const reductions = [];
     const chemin = [];
+    const trace = [];  // Trace detaillee de l'evaluation
     let totalReductions = 0;
 
     // Trier les noeuds par ordre
     const noeuds = [...structure.noeuds].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
 
     for (const noeud of noeuds) {
-      const resultat = await this.evaluerNoeud(noeud, utilisateur, context);
+      const resultat = await this.evaluerNoeud(noeud, utilisateur, context, trace);
 
       if (resultat) {
         chemin.push(...resultat.chemin);
@@ -61,7 +62,7 @@ class ArbreDecisionService {
       }
     }
 
-    return { reductions, chemin, totalReductions };
+    return { reductions, chemin, totalReductions, trace };
   }
 
   /**
@@ -69,14 +70,34 @@ class ArbreDecisionService {
    * @param {Object} noeud - Noeud a evaluer
    * @param {Object} utilisateur - Utilisateur
    * @param {Object} context - Contexte
+   * @param {Array} trace - Tableau pour tracer l'evaluation
    * @returns {Object|null} { reductions, chemin, totalReductions }
    */
-  async evaluerNoeud(noeud, utilisateur, context) {
-    const brancheMatch = await this.trouverBrancheMatch(noeud, utilisateur, context);
+  async evaluerNoeud(noeud, utilisateur, context, trace = []) {
+    const traceNoeud = {
+      noeud_id: noeud.id,
+      noeud_type: noeud.type,
+      branches_testees: [],
+      branche_selectionnee: null,
+      reduction: null,
+      enfants: []
+    };
+
+    // Tester chaque branche et enregistrer le resultat
+    const { brancheMatch, branchesTestees } = await this.trouverBrancheMatchAvecTrace(noeud, utilisateur, context);
+    traceNoeud.branches_testees = branchesTestees;
 
     if (!brancheMatch) {
+      traceNoeud.branche_selectionnee = null;
+      trace.push(traceNoeud);
       return null;
     }
+
+    traceNoeud.branche_selectionnee = {
+      id: brancheMatch.id,
+      code: brancheMatch.code,
+      libelle: brancheMatch.libelle
+    };
 
     const reductions = [];
     const chemin = [];
@@ -98,7 +119,7 @@ class ArbreDecisionService {
         context.montantBase || 0
       );
 
-      reductions.push({
+      const reductionInfo = {
         operation_id: brancheMatch.reduction.operation_id,
         type_source: noeud.type,
         branche_code: brancheMatch.code,
@@ -106,15 +127,25 @@ class ArbreDecisionService {
         type_calcul: brancheMatch.reduction.type_calcul,
         valeur: brancheMatch.reduction.valeur,
         montant_reduction: montantReduction
-      });
+      };
 
+      reductions.push(reductionInfo);
       totalReductions += montantReduction;
+
+      traceNoeud.reduction = {
+        type_calcul: brancheMatch.reduction.type_calcul,
+        valeur: brancheMatch.reduction.valeur,
+        montant: montantReduction
+      };
     }
 
     // Evaluer les sous-conditions (enfants) de cette branche
     if (brancheMatch.enfants && brancheMatch.enfants.length > 0) {
       for (const enfant of brancheMatch.enfants) {
-        const resultatEnfant = await this.evaluerNoeud(enfant, utilisateur, context);
+        const traceEnfants = [];
+        const resultatEnfant = await this.evaluerNoeud(enfant, utilisateur, context, traceEnfants);
+
+        traceNoeud.enfants.push(...traceEnfants);
 
         if (resultatEnfant) {
           chemin.push(...resultatEnfant.chemin);
@@ -124,7 +155,44 @@ class ArbreDecisionService {
       }
     }
 
+    trace.push(traceNoeud);
     return { reductions, chemin, totalReductions };
+  }
+
+  /**
+   * Trouve la branche qui match et retourne aussi les branches testees
+   */
+  async trouverBrancheMatchAvecTrace(noeud, utilisateur, context) {
+    const branchesTestees = [];
+
+    if (!noeud.branches || noeud.branches.length === 0) {
+      return { brancheMatch: null, branchesTestees };
+    }
+
+    for (const branche of noeud.branches) {
+      const { match, details } = await this.matchConditionAvecDetails(noeud.type, branche.condition, utilisateur, context);
+
+      branchesTestees.push({
+        id: branche.id,
+        code: branche.code,
+        libelle: branche.libelle,
+        condition: branche.condition,
+        match,
+        details
+      });
+
+      if (match) {
+        return { brancheMatch: branche, branchesTestees };
+      }
+    }
+
+    // Derniere branche par defaut si aucune condition explicite
+    const derniereBranche = noeud.branches[noeud.branches.length - 1];
+    if (derniereBranche.condition?.type === 'autre' || derniereBranche.condition?.type === 'default') {
+      return { brancheMatch: derniereBranche, branchesTestees };
+    }
+
+    return { brancheMatch: null, branchesTestees };
   }
 
   /**
@@ -198,6 +266,37 @@ class ArbreDecisionService {
       default:
         logger.warn(`Type de condition inconnu: ${type}`);
         return false;
+    }
+  }
+
+  /**
+   * Verifie si une condition match et retourne les details
+   * @returns {Object} { match: boolean, details: string }
+   */
+  async matchConditionAvecDetails(type, condition, utilisateur, context) {
+    if (!condition) {
+      return { match: false, details: 'Pas de condition definie' };
+    }
+
+    if (condition.type === 'autre' || condition.type === 'default') {
+      return { match: true, details: 'Branche par defaut' };
+    }
+
+    switch (type) {
+      case 'COMMUNE':
+        return await this.matchCommuneAvecDetails(condition, utilisateur, context);
+      case 'QF':
+        return this.matchQFAvecDetails(condition, utilisateur);
+      case 'AGE':
+        return this.matchAgeAvecDetails(condition, utilisateur, context.dateCotisation);
+      case 'FIDELITE':
+        return await this.matchFideliteAvecDetails(condition, utilisateur);
+      case 'MULTI_INSCRIPTIONS':
+        return await this.matchMultiInscriptionsAvecDetails(condition, utilisateur, context);
+      case 'STATUT_SOCIAL':
+        return this.matchStatutSocialAvecDetails(condition, utilisateur);
+      default:
+        return { match: false, details: `Type inconnu: ${type}` };
     }
   }
 
@@ -415,6 +514,242 @@ class ArbreDecisionService {
     }
 
     return false;
+  }
+
+  // ============================================================
+  // METHODES AVEC DETAILS (pour trace)
+  // ============================================================
+
+  async matchCommuneAvecDetails(condition, utilisateur, context) {
+    const communeId = utilisateur.commune_id;
+    if (!communeId) {
+      return { match: false, details: `Commune non definie (commune_id: null)` };
+    }
+
+    // Match par communaute de communes
+    if (condition.type === 'communaute' && condition.id) {
+      const membre = await CommunauteCommunesMembre.findOne({
+        where: {
+          communaute_id: condition.id,
+          commune_id: communeId
+        }
+      });
+      const match = !!membre;
+      return {
+        match,
+        details: `Commune ${communeId} ${match ? 'fait partie' : 'ne fait pas partie'} de la communaute ${condition.id}`
+      };
+    }
+
+    // Match par liste de communes
+    if (condition.type === 'communes' && condition.ids) {
+      const match = condition.ids.includes(communeId);
+      return {
+        match,
+        details: `Commune ${communeId} ${match ? 'dans' : 'hors de'} la liste [${condition.ids.join(', ')}]`
+      };
+    }
+
+    // Match par commune specifique
+    if (condition.commune_id) {
+      const match = communeId === condition.commune_id;
+      return {
+        match,
+        details: `Commune ${communeId} ${match ? '=' : '!='} ${condition.commune_id}`
+      };
+    }
+
+    return { match: false, details: 'Condition commune invalide' };
+  }
+
+  matchQFAvecDetails(condition, utilisateur) {
+    const qf = utilisateur.quotient_familial;
+    if (qf === null || qf === undefined) {
+      return { match: false, details: `QF non defini (quotient_familial: null)` };
+    }
+
+    const borneMin = condition.borne_min !== undefined ? condition.borne_min : condition.min;
+    const borneMax = condition.borne_max !== undefined ? condition.borne_max : condition.max;
+
+    let match = false;
+    let conditionStr = '';
+
+    if (borneMin !== undefined && borneMax !== undefined) {
+      match = qf >= borneMin && qf <= borneMax;
+      conditionStr = `${borneMin} <= QF <= ${borneMax}`;
+    } else if (borneMin !== undefined) {
+      match = qf >= borneMin;
+      conditionStr = `QF >= ${borneMin}`;
+    } else if (borneMax !== undefined) {
+      match = qf <= borneMax;
+      conditionStr = `QF <= ${borneMax}`;
+    }
+
+    return {
+      match,
+      details: `QF=${qf}, condition: ${conditionStr} => ${match ? 'OK' : 'NON'}`
+    };
+  }
+
+  matchAgeAvecDetails(condition, utilisateur, dateCotisation = new Date()) {
+    const dateNaissance = utilisateur.date_naissance;
+    if (!dateNaissance) {
+      return { match: false, details: `Date de naissance non definie` };
+    }
+
+    const age = this.calculerAge(dateNaissance, dateCotisation);
+    const { operateur, valeur, min, max } = condition;
+
+    let match = false;
+    let conditionStr = '';
+
+    switch (operateur) {
+      case '<':
+        match = age < valeur;
+        conditionStr = `age < ${valeur}`;
+        break;
+      case '<=':
+        match = age <= valeur;
+        conditionStr = `age <= ${valeur}`;
+        break;
+      case '>':
+        match = age > valeur;
+        conditionStr = `age > ${valeur}`;
+        break;
+      case '>=':
+        match = age >= valeur;
+        conditionStr = `age >= ${valeur}`;
+        break;
+      case '=':
+      case '==':
+        match = age === valeur;
+        conditionStr = `age = ${valeur}`;
+        break;
+      case 'entre':
+        match = age >= min && age <= max;
+        conditionStr = `${min} <= age <= ${max}`;
+        break;
+      default:
+        if (min !== undefined && max !== undefined) {
+          match = age >= min && age <= max;
+          conditionStr = `${min} <= age <= ${max}`;
+        } else if (min !== undefined) {
+          match = age >= min;
+          conditionStr = `age >= ${min}`;
+        } else if (max !== undefined) {
+          match = age <= max;
+          conditionStr = `age <= ${max}`;
+        }
+    }
+
+    return {
+      match,
+      details: `Age=${age} ans, condition: ${conditionStr} => ${match ? 'OK' : 'NON'}`
+    };
+  }
+
+  async matchFideliteAvecDetails(condition, utilisateur) {
+    if (!utilisateur.id) {
+      return { match: false, details: `ID utilisateur non defini (simulation)` };
+    }
+
+    const premiereCotisation = await Cotisation.findOne({
+      where: { utilisateur_id: utilisateur.id },
+      order: [['date_debut', 'ASC']]
+    });
+
+    if (!premiereCotisation) {
+      return { match: false, details: `Aucune cotisation trouvee` };
+    }
+
+    const anneesAnciennete = Math.floor(
+      (new Date() - new Date(premiereCotisation.date_debut)) / (365.25 * 24 * 60 * 60 * 1000)
+    );
+
+    const min = condition.annees_min !== undefined ? condition.annees_min : condition.min;
+    const max = condition.annees_max !== undefined ? condition.annees_max : condition.max;
+
+    let match = false;
+    let conditionStr = '';
+
+    if (min !== undefined && max !== undefined) {
+      match = anneesAnciennete >= min && anneesAnciennete <= max;
+      conditionStr = `${min} <= anciennete <= ${max}`;
+    } else if (min !== undefined) {
+      match = anneesAnciennete >= min;
+      conditionStr = `anciennete >= ${min}`;
+    } else if (max !== undefined) {
+      match = anneesAnciennete <= max;
+      conditionStr = `anciennete <= ${max}`;
+    }
+
+    return {
+      match,
+      details: `Anciennete=${anneesAnciennete} ans, condition: ${conditionStr} => ${match ? 'OK' : 'NON'}`
+    };
+  }
+
+  async matchMultiInscriptionsAvecDetails(condition, utilisateur, context) {
+    const familleId = utilisateur.famille_id;
+    if (!familleId) {
+      return { match: false, details: `Pas de famille definie (famille_id: null)` };
+    }
+
+    const nbInscrits = await Cotisation.count({
+      include: [{
+        model: Utilisateur,
+        as: 'utilisateur',
+        where: { famille_id: familleId }
+      }],
+      where: {
+        statut: 'active',
+        date_fin: { [Op.gte]: new Date() }
+      }
+    });
+
+    const min = condition.nb_inscrits_min !== undefined ? condition.nb_inscrits_min : condition.min;
+    const max = condition.nb_inscrits_max !== undefined ? condition.nb_inscrits_max : condition.max;
+
+    let match = false;
+    let conditionStr = '';
+
+    if (min !== undefined && max !== undefined) {
+      match = nbInscrits >= min && nbInscrits <= max;
+      conditionStr = `${min} <= nb_inscrits <= ${max}`;
+    } else if (min !== undefined) {
+      match = nbInscrits >= min;
+      conditionStr = `nb_inscrits >= ${min}`;
+    }
+
+    return {
+      match,
+      details: `Nb inscrits famille=${nbInscrits}, condition: ${conditionStr} => ${match ? 'OK' : 'NON'}`
+    };
+  }
+
+  matchStatutSocialAvecDetails(condition, utilisateur) {
+    const statutUtilisateur = utilisateur.statut_social;
+    if (!statutUtilisateur) {
+      return { match: false, details: `Statut social non defini (statut_social: null)` };
+    }
+
+    if (condition.statuts && Array.isArray(condition.statuts)) {
+      const match = condition.statuts.includes(statutUtilisateur);
+      return {
+        match,
+        details: `Statut "${statutUtilisateur}" ${match ? 'dans' : 'hors de'} [${condition.statuts.join(', ')}]`
+      };
+    }
+
+    if (condition.statut) {
+      const match = statutUtilisateur === condition.statut;
+      return {
+        match,
+        details: `Statut "${statutUtilisateur}" ${match ? '=' : '!='} "${condition.statut}"`
+      };
+    }
+
+    return { match: false, details: 'Condition statut invalide' };
   }
 
   // ============================================================

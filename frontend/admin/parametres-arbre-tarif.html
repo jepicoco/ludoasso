@@ -174,7 +174,7 @@
 
   <!-- Modal Test -->
   <div class="modal fade" id="modal-test" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title"><i class="bi bi-play-circle me-2"></i>Tester l'arbre de decision</h5>
@@ -182,7 +182,7 @@
         </div>
         <div class="modal-body">
           <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-5">
               <h6>Donnees de test</h6>
               <div class="mb-3">
                 <label class="form-label">Age</label>
@@ -193,12 +193,15 @@
                 <input type="number" class="form-control" id="test-qf" value="800">
               </div>
               <div class="mb-3">
-                <label class="form-label">Commune</label>
-                <select class="form-select" id="test-commune">
-                  <option value="">Aucune</option>
-                  <option value="agglo">Dans l'agglo</option>
-                  <option value="hors">Hors agglo</option>
-                </select>
+                <label class="form-label">Commune (recherche par CP ou nom)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="test-commune-search" placeholder="74140 ou Sciez...">
+                  <button class="btn btn-outline-secondary" type="button" id="btn-search-commune">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+                <input type="hidden" id="test-commune-id">
+                <div id="test-commune-result" class="small text-muted mt-1"></div>
               </div>
               <div class="mb-3">
                 <label class="form-label">Statut social</label>
@@ -222,9 +225,9 @@
                 <i class="bi bi-play-fill"></i> Lancer le test
               </button>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-7">
               <h6>Resultat</h6>
-              <div id="test-resultat" class="bg-light p-3 rounded">
+              <div id="test-resultat" class="bg-light p-3 rounded" style="max-height: 500px; overflow-y: auto;">
                 <p class="text-muted text-center">Cliquez sur "Lancer le test" pour voir le resultat</p>
               </div>
             </div>

@@ -239,7 +239,9 @@ exports.simulerArbre = async (req, res) => {
         total_reductions: resultat.totalReductions,
         montant_final: Math.max(0, montant - resultat.totalReductions),
         reductions: resultat.reductions,
-        chemin: resultat.chemin
+        chemin: resultat.chemin,
+        trace: resultat.trace,  // Trace detaillee de l'evaluation
+        utilisateur_teste: utilisateur  // Donnees utilisees pour debug
       }
     });
 

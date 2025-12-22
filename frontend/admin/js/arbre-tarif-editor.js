@@ -11,9 +11,12 @@ class ArbreTarifEditor {
     this.operationsComptables = [];
     this.communes = [];
     this.communautes = [];
+    this.baremesQF = [];
     this.montantBase = 0;
     this.hasChanges = false;
     this.noeudEnEdition = null;
+    this.baremesQFRefreshInterval = null;
+    this.baremesQFInitialCount = 0;
 
     this.init();
   }
@@ -28,6 +31,7 @@ class ArbreTarifEditor {
         this.chargerTypesCondition(),
         this.chargerOperationsComptables(),
         this.chargerReferentiels(),
+        this.chargerBaremesQF(),
         this.chargerArbre()
       ]);
 
@@ -81,6 +85,82 @@ class ArbreTarifEditor {
       this.communes = [];
       this.communautes = [];
     }
+  }
+
+  async chargerBaremesQF() {
+    try {
+      const response = await apiAdmin.get('/parametres/baremes-qf');
+      this.baremesQF = response?.data || response || [];
+      this.baremesQFInitialCount = this.baremesQF.length;
+    } catch (error) {
+      console.error('Erreur chargement baremes QF:', error);
+      this.baremesQF = [];
+    }
+  }
+
+  async rafraichirBaremesQF() {
+    try {
+      const response = await apiAdmin.get('/parametres/baremes-qf');
+      const nouveauxBaremes = response?.data || response || [];
+
+      // Verifier si un nouveau bareme a ete ajoute
+      if (nouveauxBaremes.length > this.baremesQFInitialCount) {
+        // Arreter le rafraichissement
+        this.stopBaremesQFRefresh();
+
+        // Mettre a jour la liste
+        this.baremesQF = nouveauxBaremes;
+
+        // Mettre a jour le select dans le DOM si visible
+        this.updateBaremesQFSelect();
+
+        this.showSuccess('Nouveau bareme QF detecte !');
+      }
+    } catch (error) {
+      console.error('Erreur rafraichissement baremes QF:', error);
+    }
+  }
+
+  startBaremesQFRefresh() {
+    // Ne pas demarrer si deja en cours
+    if (this.baremesQFRefreshInterval) return;
+
+    // Memoriser le nombre actuel pour detecter les nouveaux
+    this.baremesQFInitialCount = this.baremesQF.length;
+
+    // Rafraichir toutes les 15 secondes
+    this.baremesQFRefreshInterval = setInterval(() => {
+      this.rafraichirBaremesQF();
+    }, 15000);
+  }
+
+  stopBaremesQFRefresh() {
+    if (this.baremesQFRefreshInterval) {
+      clearInterval(this.baremesQFRefreshInterval);
+      this.baremesQFRefreshInterval = null;
+    }
+  }
+
+  updateBaremesQFSelect() {
+    // Mettre a jour tous les selects de baremes QF dans le DOM
+    const selects = document.querySelectorAll('.condition-qf-bareme');
+    selects.forEach(select => {
+      const currentValue = select.value;
+
+      // Regenerer les options
+      let optionsHtml = '<option value="">-- Selectionner un bareme --</option>';
+      this.baremesQF.forEach(b => {
+        const selected = b.id.toString() === currentValue ? 'selected' : '';
+        optionsHtml += `<option value="${b.id}" ${selected}>${this.escapeHtml(b.libelle)} (${b.tranches?.length || 0} tranches)</option>`;
+      });
+
+      select.innerHTML = optionsHtml;
+    });
+
+    // Cacher l'indicateur de surveillance
+    document.querySelectorAll('.condition-qf-refresh-status').forEach(el => {
+      el.style.display = 'none';
+    });
   }
 
   async chargerArbre() {
@@ -227,6 +307,9 @@ class ArbreTarifEditor {
 
     // Avant de quitter la page
     window.addEventListener('beforeunload', (e) => {
+      // Nettoyer l'intervalle de rafraichissement des baremes QF
+      this.stopBaremesQFRefresh();
+
       if (this.hasChanges) {
         e.preventDefault();
         e.returnValue = '';
@@ -251,6 +334,81 @@ class ArbreTarifEditor {
     document.getElementById('json-editor').addEventListener('input', (e) => {
       this.validerJsonEnTempsReel(e.target.value);
     });
+
+    // Recherche commune par CP ou nom
+    document.getElementById('btn-search-commune').addEventListener('click', () => {
+      this.rechercherCommune();
+    });
+
+    // Recherche au Enter dans le champ
+    document.getElementById('test-commune-search').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.rechercherCommune();
+      }
+    });
+  }
+
+  rechercherCommune() {
+    const searchInput = document.getElementById('test-commune-search');
+    const resultDiv = document.getElementById('test-commune-result');
+    const hiddenInput = document.getElementById('test-commune-id');
+    const search = searchInput.value.trim().toLowerCase();
+
+    if (!search) {
+      resultDiv.innerHTML = '';
+      hiddenInput.value = '';
+      return;
+    }
+
+    // Rechercher par CP (exact) ou par nom (contient)
+    const isPostalCode = /^\d{5}$/.test(search);
+    let matches = [];
+
+    if (isPostalCode) {
+      matches = this.communes.filter(c => c.code_postal === search);
+    } else {
+      matches = this.communes.filter(c =>
+        c.nom?.toLowerCase().includes(search) ||
+        c.code_postal?.includes(search)
+      );
+    }
+
+    if (matches.length === 0) {
+      resultDiv.innerHTML = '<span class="text-warning">Aucune commune trouvee</span>';
+      hiddenInput.value = '';
+    } else if (matches.length === 1) {
+      // Une seule correspondance : selection automatique
+      const c = matches[0];
+      hiddenInput.value = c.id;
+      resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${c.nom} (${c.code_postal})</span>`;
+    } else {
+      // Plusieurs correspondances : afficher une liste cliquable
+      hiddenInput.value = '';
+      let html = `<div class="text-info mb-1">${matches.length} communes trouvees :</div>`;
+      html += '<div class="list-group list-group-flush" style="max-height: 150px; overflow-y: auto;">';
+      matches.slice(0, 20).forEach(c => {
+        html += `<button type="button" class="list-group-item list-group-item-action py-1 px-2" data-commune-id="${c.id}" data-commune-nom="${this.escapeHtml(c.nom)}" data-commune-cp="${c.code_postal}">
+          ${c.nom} (${c.code_postal})
+        </button>`;
+      });
+      if (matches.length > 20) {
+        html += `<div class="list-group-item text-muted py-1">... et ${matches.length - 20} autres</div>`;
+      }
+      html += '</div>';
+      resultDiv.innerHTML = html;
+
+      // Attacher les evenements de clic
+      resultDiv.querySelectorAll('[data-commune-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.communeId;
+          const nom = btn.dataset.communeNom;
+          const cp = btn.dataset.communeCp;
+          hiddenInput.value = id;
+          resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${nom} (${cp})</span>`;
+        });
+      });
+    }
   }
 
   // ============================================================
@@ -404,7 +562,8 @@ class ArbreTarifEditor {
     nodeWrapper.appendChild(branchesContainer);
 
     // Attacher les evenements
-    card.querySelector('.btn-edit').addEventListener('click', () => {
+    card.querySelector('.btn-edit').addEventListener('click', (e) => {
+      e.stopPropagation();
       this.ouvrirModalEdition(noeud);
     });
 
@@ -952,25 +1111,74 @@ class ArbreTarifEditor {
   }
 
   ouvrirEditionEnfant(noeudId, brancheId, enfantIndex) {
-    // Trouver l'enfant dans l'arbre
-    const noeud = this.arbre.arbre_json.noeuds.find(n => n.id === noeudId);
-    if (!noeud) return;
+    // Trouver l'enfant dans l'arbre - recherche récursive
+    const resultat = this.trouverEnfantRecursif(noeudId, brancheId, enfantIndex);
+    if (!resultat) return;
 
-    const branche = noeud.branches.find(b => b.id === brancheId);
-    if (!branche || !branche.enfants || !branche.enfants[enfantIndex]) return;
-
-    const enfant = branche.enfants[enfantIndex];
+    const { enfant, chemin } = resultat;
 
     // Stocker le contexte
     this.enfantEnEdition = {
       noeudId,
       brancheId,
       enfant,
-      enfantIndex
+      enfantIndex,
+      chemin  // Garder le chemin complet pour la mise à jour
     };
 
     // Ouvrir le modal
     this.ouvrirModalEnfantDirect(enfant);
+  }
+
+  /**
+   * Recherche récursive d'un enfant dans l'arbre
+   * Parcourt les noeuds, branches et enfants imbriqués
+   */
+  trouverEnfantRecursif(noeudId, brancheId, enfantIndex) {
+    // D'abord chercher dans les noeuds principaux
+    const noeud = this.arbre.arbre_json.noeuds.find(n => n.id === noeudId);
+    if (!noeud) return null;
+
+    // Chercher la branche dans le noeud principal
+    const brancheDirecte = noeud.branches?.find(b => b.id === brancheId);
+    if (brancheDirecte && brancheDirecte.enfants && brancheDirecte.enfants[enfantIndex]) {
+      return {
+        enfant: brancheDirecte.enfants[enfantIndex],
+        chemin: { noeudId, brancheId, enfantIndex, niveau: 1 }
+      };
+    }
+
+    // Sinon, chercher récursivement dans les enfants des branches
+    for (const branche of noeud.branches || []) {
+      const resultat = this.chercherDansEnfants(branche.enfants || [], brancheId, enfantIndex, [{ noeudId, brancheId: branche.id }]);
+      if (resultat) return resultat;
+    }
+
+    return null;
+  }
+
+  /**
+   * Recherche dans les enfants imbriqués
+   */
+  chercherDansEnfants(enfants, brancheIdCible, enfantIndexCible, chemin) {
+    for (const enfant of enfants) {
+      for (const branche of enfant.branches || []) {
+        // Est-ce la branche qu'on cherche?
+        if (branche.id === brancheIdCible && branche.enfants && branche.enfants[enfantIndexCible]) {
+          return {
+            enfant: branche.enfants[enfantIndexCible],
+            chemin: [...chemin, { brancheId: branche.id, enfantIndex: enfantIndexCible }]
+          };
+        }
+
+        // Sinon chercher plus profond
+        if (branche.enfants && branche.enfants.length > 0) {
+          const resultat = this.chercherDansEnfants(branche.enfants, brancheIdCible, enfantIndexCible, [...chemin, { brancheId: branche.id }]);
+          if (resultat) return resultat;
+        }
+      }
+    }
+    return null;
   }
 
   supprimerEnfant(noeudId, brancheId, enfantIndex) {
@@ -1379,38 +1587,220 @@ class ArbreTarifEditor {
   }
 
   renderQFConditionEditor(condition, index) {
+    const modeSelection = condition?.mode || 'bareme';
+    const baremeId = condition?.bareme_id || '';
     const operateur = condition?.operateur || '<=';
     const valeur = condition?.valeur || '';
     const min = condition?.min || '';
     const max = condition?.max || '';
 
+    // Options pour les baremes
+    const hasBaremes = this.baremesQF && this.baremesQF.length > 0;
+    const baremesOptions = hasBaremes
+      ? this.baremesQF.map(b =>
+          `<option value="${b.id}" ${baremeId == b.id ? 'selected' : ''}>${this.escapeHtml(b.libelle)} (${b.tranches?.length || 0} tranches)</option>`
+        ).join('')
+      : '';
+
+    // Affichage du bareme selectionne (tranches)
+    const baremeSelectionne = hasBaremes && baremeId ? this.baremesQF.find(b => b.id == baremeId) : null;
+    const tranchesInfo = baremeSelectionne && baremeSelectionne.tranches && baremeSelectionne.tranches.length > 0
+      ? `<div class="mt-2 small text-muted">
+          <strong>Tranches:</strong>
+          ${baremeSelectionne.tranches.map(t => `${t.borne_min || 0}-${t.borne_max || '+'}: -${t.valeur || 0}${t.type_calcul === 'pourcentage' ? '%' : 'EUR'}`).join(' | ')}
+        </div>`
+      : '';
+
+    const showBaremeMode = modeSelection === 'bareme';
+    const showManuelMode = modeSelection === 'manuel';
+
     return `
       <div class="row g-2">
-        <div class="col-md-4">
-          <label class="form-label small">Operateur</label>
-          <select class="form-select form-select-sm condition-qf-operateur" onchange="window.arbreEditor.toggleQFInputs(this)">
-            <option value="<=" ${operateur === '<=' ? 'selected' : ''}>Jusqu'a (inclus)</option>
-            <option value="<" ${operateur === '<' ? 'selected' : ''}>Moins de</option>
-            <option value=">=" ${operateur === '>=' ? 'selected' : ''}>A partir de (inclus)</option>
-            <option value=">" ${operateur === '>' ? 'selected' : ''}>Plus de</option>
-            <option value="entre" ${operateur === 'entre' ? 'selected' : ''}>Entre (bornes)</option>
-            <option value="null" ${operateur === 'null' ? 'selected' : ''}>Non renseigne</option>
-          </select>
+        <div class="col-12 mb-2">
+          <label class="form-label small">Mode de selection</label>
+          <div class="btn-group btn-group-sm w-100" role="group">
+            <input type="radio" class="btn-check" name="qfMode_${index}" id="qfModeBareme_${index}"
+                   value="bareme" ${showBaremeMode ? 'checked' : ''} onchange="window.arbreEditor.toggleQFMode(this)">
+            <label class="btn btn-outline-primary" for="qfModeBareme_${index}">
+              <i class="bi bi-table me-1"></i>Utiliser un bareme
+            </label>
+            <input type="radio" class="btn-check" name="qfMode_${index}" id="qfModeManuel_${index}"
+                   value="manuel" ${showManuelMode ? 'checked' : ''} onchange="window.arbreEditor.toggleQFMode(this)">
+            <label class="btn btn-outline-secondary" for="qfModeManuel_${index}">
+              <i class="bi bi-pencil me-1"></i>Saisie manuelle
+            </label>
+          </div>
         </div>
-        <div class="col-md-4 condition-qf-valeur-container" ${['entre', 'null'].includes(operateur) ? 'style="display:none"' : ''}>
-          <label class="form-label small">QF</label>
-          <input type="number" class="form-control form-control-sm condition-qf-valeur" value="${valeur}" min="0">
+
+        <!-- Mode Bareme -->
+        <div class="col-12 condition-qf-bareme-container" ${!showBaremeMode ? 'style="display:none"' : ''}>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+              <label class="form-label small">Bareme de quotient familial</label>
+              <select class="form-select form-select-sm condition-qf-bareme" onchange="window.arbreEditor.onBaremeQFChange(this)">
+                <option value="">-- Selectionner un bareme --</option>
+                ${baremesOptions}
+              </select>
+              ${!hasBaremes ? '<div class="text-warning small mt-1"><i class="bi bi-exclamation-triangle"></i> Aucun bareme configure</div>' : ''}
+              <div class="condition-qf-tranches-info">${tranchesInfo}</div>
+            </div>
+            <div class="col-md-3">
+              <button type="button" class="btn btn-primary btn-sm w-100 condition-qf-appliquer-btn"
+                      onclick="window.arbreEditor.appliquerBaremeQF(this)" ${!baremeId ? 'disabled' : ''}>
+                <i class="bi bi-arrow-down-circle me-1"></i>Appliquer
+              </button>
+            </div>
+            <div class="col-md-3">
+              <a href="parametres-baremes-qf.html" target="_blank"
+                 class="btn btn-outline-success btn-sm w-100"
+                 onclick="window.arbreEditor.onCreerBaremeClick()">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau
+              </a>
+              <div class="condition-qf-refresh-status small text-muted mt-1 text-center" style="display:none">
+                <i class="bi bi-arrow-repeat spin"></i> Surveillance...
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="col-md-4 condition-qf-min-container" ${operateur !== 'entre' ? 'style="display:none"' : ''}>
-          <label class="form-label small">QF min</label>
-          <input type="number" class="form-control form-control-sm condition-qf-min" value="${min}" min="0">
-        </div>
-        <div class="col-md-4 condition-qf-max-container" ${operateur !== 'entre' ? 'style="display:none"' : ''}>
-          <label class="form-label small">QF max</label>
-          <input type="number" class="form-control form-control-sm condition-qf-max" value="${max}" min="0">
+
+        <!-- Mode Manuel -->
+        <div class="col-12 condition-qf-manuel-container" ${!showManuelMode ? 'style="display:none"' : ''}>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label small">Operateur</label>
+              <select class="form-select form-select-sm condition-qf-operateur" onchange="window.arbreEditor.toggleQFInputs(this)">
+                <option value="<=" ${operateur === '<=' ? 'selected' : ''}>Jusqu'a (inclus)</option>
+                <option value="<" ${operateur === '<' ? 'selected' : ''}>Moins de</option>
+                <option value=">=" ${operateur === '>=' ? 'selected' : ''}>A partir de (inclus)</option>
+                <option value=">" ${operateur === '>' ? 'selected' : ''}>Plus de</option>
+                <option value="entre" ${operateur === 'entre' ? 'selected' : ''}>Entre (bornes)</option>
+                <option value="null" ${operateur === 'null' ? 'selected' : ''}>Non renseigne</option>
+              </select>
+            </div>
+            <div class="col-md-4 condition-qf-valeur-container" ${['entre', 'null'].includes(operateur) ? 'style="display:none"' : ''}>
+              <label class="form-label small">QF</label>
+              <input type="number" class="form-control form-control-sm condition-qf-valeur" value="${valeur}" min="0">
+            </div>
+            <div class="col-md-4 condition-qf-min-container" ${operateur !== 'entre' ? 'style="display:none"' : ''}>
+              <label class="form-label small">QF min</label>
+              <input type="number" class="form-control form-control-sm condition-qf-min" value="${min}" min="0">
+            </div>
+            <div class="col-md-4 condition-qf-max-container" ${operateur !== 'entre' ? 'style="display:none"' : ''}>
+              <label class="form-label small">QF max</label>
+              <input type="number" class="form-control form-control-sm condition-qf-max" value="${max}" min="0">
+            </div>
+          </div>
         </div>
       </div>
     `;
+  }
+
+  toggleQFMode(radioElement) {
+    const container = radioElement.closest('.condition-editor-container');
+    const mode = radioElement.value;
+    const baremeContainer = container.querySelector('.condition-qf-bareme-container');
+    const manuelContainer = container.querySelector('.condition-qf-manuel-container');
+
+    if (mode === 'bareme') {
+      baremeContainer.style.display = '';
+      manuelContainer.style.display = 'none';
+    } else {
+      baremeContainer.style.display = 'none';
+      manuelContainer.style.display = '';
+    }
+  }
+
+  onBaremeQFChange(selectElement) {
+    const container = selectElement.closest('.condition-editor-container');
+    const baremeId = selectElement.value;
+    const tranchesInfoEl = container.querySelector('.condition-qf-tranches-info');
+    const appliquerBtn = container.querySelector('.condition-qf-appliquer-btn');
+
+    // Activer/desactiver le bouton Appliquer
+    if (appliquerBtn) {
+      appliquerBtn.disabled = !baremeId;
+    }
+
+    if (!baremeId) {
+      tranchesInfoEl.innerHTML = '';
+      return;
+    }
+
+    const bareme = this.baremesQF?.find(b => b.id == baremeId);
+    if (bareme && bareme.tranches && bareme.tranches.length > 0) {
+      tranchesInfoEl.innerHTML = `
+        <div class="mt-2 small text-muted">
+          <strong>Tranches:</strong>
+          ${bareme.tranches.map(t => `${t.borne_min || 0}-${t.borne_max || '+'}: -${t.valeur || 0}${t.type_calcul === 'pourcentage' ? '%' : 'EUR'}`).join(' | ')}
+        </div>
+      `;
+    } else {
+      tranchesInfoEl.innerHTML = '<div class="mt-2 small text-muted">Aucune tranche configuree</div>';
+    }
+  }
+
+  appliquerBaremeQF(buttonElement) {
+    const container = buttonElement.closest('.condition-editor-container');
+    const baremeSelect = container.querySelector('.condition-qf-bareme');
+    const baremeId = baremeSelect?.value;
+
+    if (!baremeId) {
+      this.showError('Veuillez selectionner un bareme');
+      return;
+    }
+
+    const bareme = this.baremesQF?.find(b => b.id == baremeId);
+    if (!bareme || !bareme.tranches || bareme.tranches.length === 0) {
+      this.showError('Ce bareme n\'a pas de tranches configurees');
+      return;
+    }
+
+    // Verifier qu'on a un noeud en edition
+    if (!this.noeudEnEdition) {
+      this.showError('Aucun noeud en edition');
+      return;
+    }
+
+    // Generer les branches a partir des tranches
+    const nouvellesBranches = bareme.tranches.map((tranche, index) => {
+      const borneMax = tranche.borne_max || 99999;
+      const borneMin = tranche.borne_min || 0;
+
+      return {
+        id: `branch_qf_${Date.now()}_${index}`,
+        code: `QF_${borneMin}_${borneMax}`,
+        libelle: tranche.libelle || `QF ${borneMin} - ${borneMax === 99999 ? '+' : borneMax}`,
+        condition: {
+          mode: 'manuel',
+          operateur: 'entre',
+          min: borneMin,
+          max: borneMax
+        },
+        reduction: tranche.valeur > 0 ? {
+          type_calcul: tranche.type_calcul || 'fixe',
+          valeur: tranche.valeur
+        } : null,
+        enfants: []
+      };
+    });
+
+    // Mettre a jour le noeud en edition
+    this.noeudEnEdition.branches = nouvellesBranches;
+
+    // Re-afficher les branches dans la modale pour permettre l'edition
+    this.renderBranchesModal(nouvellesBranches);
+
+    this.showSuccess(`${nouvellesBranches.length} branches generees depuis le bareme "${bareme.libelle}"`);
+  }
+
+  onCreerBaremeClick() {
+    // Demarrer le rafraichissement automatique
+    this.startBaremesQFRefresh();
+
+    // Afficher l'indicateur de surveillance
+    document.querySelectorAll('.condition-qf-refresh-status').forEach(el => {
+      el.style.display = '';
+    });
   }
 
   toggleQFInputs(selectElement) {
@@ -1566,7 +1956,7 @@ class ArbreTarifEditor {
       case 'AGE':
         return { operateur: '<', valeur: 18 };
       case 'QF':
-        return { operateur: '<=', valeur: 400 };
+        return { mode: 'bareme', bareme_id: null };
       case 'FIDELITE':
         return { operateur: '>=', annees: 1 };
       case 'MULTI_INSCRIPTIONS':
@@ -1768,21 +2158,41 @@ class ArbreTarifEditor {
   }
 
   extractQFCondition(container) {
+    // Determiner le mode (bareme ou manuel)
+    const baremeRadio = container.querySelector('input[type="radio"][value="bareme"]');
+    const mode = baremeRadio?.checked ? 'bareme' : 'manuel';
+
+    if (mode === 'bareme') {
+      const baremeSelect = container.querySelector('.condition-qf-bareme');
+      const baremeId = baremeSelect?.value;
+
+      if (baremeId) {
+        return {
+          mode: 'bareme',
+          bareme_id: parseInt(baremeId)
+        };
+      }
+      // Pas de bareme selectionne, retourner une condition vide
+      return { mode: 'bareme', bareme_id: null };
+    }
+
+    // Mode manuel
     const operateurSelect = container.querySelector('.condition-qf-operateur');
     const valeurInput = container.querySelector('.condition-qf-valeur');
     const minInput = container.querySelector('.condition-qf-min');
     const maxInput = container.querySelector('.condition-qf-max');
 
-    if (!operateurSelect) return { operateur: '<=', valeur: 400 };
+    if (!operateurSelect) return { mode: 'manuel', operateur: '<=', valeur: 400 };
 
     const operateur = operateurSelect.value;
 
     if (operateur === 'null') {
-      return { operateur: 'null' };
+      return { mode: 'manuel', operateur: 'null' };
     }
 
     if (operateur === 'entre') {
       return {
+        mode: 'manuel',
         operateur: 'entre',
         min: parseInt(minInput?.value) || 0,
         max: parseInt(maxInput?.value) || 9999
@@ -1790,6 +2200,7 @@ class ArbreTarifEditor {
     }
 
     return {
+      mode: 'manuel',
       operateur: operateur,
       valeur: parseInt(valeurInput?.value) || 0
     };
@@ -1924,7 +2335,7 @@ class ArbreTarifEditor {
   async lancerTest() {
     const age = parseInt(document.getElementById('test-age').value) || 35;
     const qf = parseInt(document.getElementById('test-qf').value) || null;
-    const commune = document.getElementById('test-commune').value;
+    const communeId = document.getElementById('test-commune-id').value;
     const statut = document.getElementById('test-statut').value;
     const anciennete = parseInt(document.getElementById('test-anciennete').value) || 0;
     const nbInscrits = parseInt(document.getElementById('test-nb-inscrits').value) || 1;
@@ -1936,7 +2347,7 @@ class ArbreTarifEditor {
     const utilisateurData = {
       date_naissance: dateNaissance.toISOString().split('T')[0],
       quotient_familial: qf,
-      commune_id: commune === 'agglo' ? 1 : (commune === 'hors' ? 999 : null),
+      commune_id: communeId ? parseInt(communeId) : null,
       statut_social: statut || null,
       // Ces champs sont simules cote serveur normalement
       _anciennete: anciennete,
@@ -1951,42 +2362,64 @@ class ArbreTarifEditor {
 
       const container = document.getElementById('test-resultat');
 
-      container.innerHTML = `
+      const reductions = data.reductions || [];
+      const trace = data.trace || [];
+      const utilisateurTeste = data.utilisateur_teste || {};
+
+      // Affichage du resultat
+      let html = `
         <div class="mb-3">
-          <div class="h4 text-primary">${data.montant_final} EUR</div>
+          <div class="h4 ${data.total_reductions > 0 ? 'text-success' : 'text-primary'}">${data.montant_final ?? this.montantBase} EUR</div>
           <div class="text-muted">Montant final</div>
         </div>
-        <hr>
-        <div class="row">
+        <div class="row mb-3">
           <div class="col-6">
-            <div>Montant de base</div>
-            <div class="fw-bold">${data.montant_base} EUR</div>
+            <small class="text-muted">Base</small>
+            <div class="fw-bold">${data.montant_base ?? this.montantBase} EUR</div>
           </div>
           <div class="col-6">
-            <div>Total reductions</div>
-            <div class="fw-bold text-success">-${data.total_reductions} EUR</div>
+            <small class="text-muted">Reductions</small>
+            <div class="fw-bold text-success">-${data.total_reductions ?? 0} EUR</div>
           </div>
         </div>
-        ${data.reductions.length > 0 ? `
+      `;
+
+      // Donnees utilisateur testees
+      html += `
+        <div class="mb-3 p-2 bg-light rounded small">
+          <strong>Donnees testees:</strong><br>
+          Age: ${utilisateurTeste.date_naissance ? this.calculerAgeFromDate(utilisateurTeste.date_naissance) + ' ans' : 'N/A'}
+          | QF: ${utilisateurTeste.quotient_familial ?? 'N/A'}
+          | Commune: ${utilisateurTeste.commune_id ?? 'N/A'}
+          | Statut: ${utilisateurTeste.statut_social || 'N/A'}
+        </div>
+      `;
+
+      // Trace detaillee noeud par noeud
+      if (trace.length > 0) {
+        html += '<hr><h6><i class="bi bi-list-check me-1"></i>Evaluation noeud par noeud</h6>';
+        html += this.renderTraceNoeuds(trace);
+      } else {
+        html += '<div class="text-warning small">Aucun noeud evalue (arbre vide?)</div>';
+      }
+
+      // Resume des reductions
+      if (reductions.length > 0) {
+        html += `
           <hr>
-          <h6>Detail des reductions</h6>
-          <ul class="list-unstyled">
-            ${data.reductions.map(r => `
+          <h6 class="text-success"><i class="bi bi-piggy-bank me-1"></i>Reductions appliquees</h6>
+          <ul class="list-unstyled mb-0">
+            ${reductions.map(r => `
               <li class="d-flex justify-content-between">
-                <span>${r.branche_libelle}</span>
-                <span class="text-success">-${r.montant_reduction} EUR</span>
+                <span>${this.escapeHtml(r.branche_libelle || r.type_source)}</span>
+                <span class="text-success fw-bold">-${r.montant_reduction} EUR</span>
               </li>
             `).join('')}
           </ul>
-        ` : ''}
-        ${data.chemin.length > 0 ? `
-          <hr>
-          <h6>Chemin parcouru</h6>
-          <ol class="small">
-            ${data.chemin.map(c => `<li>${c.noeud_type}: ${c.branche_libelle}</li>`).join('')}
-          </ol>
-        ` : ''}
-      `;
+        `;
+      }
+
+      container.innerHTML = html;
 
       // Mettre en surbrillance le chemin dans l'arbre
       if (data.chemin && data.chemin.length > 0) {
@@ -2017,6 +2450,75 @@ class ArbreTarifEditor {
       document.getElementById('test-resultat').innerHTML =
         '<div class="text-danger">Erreur lors du test</div>';
     }
+  }
+
+  // ============================================================
+  // HELPERS POUR TEST
+  // ============================================================
+
+  renderTraceNoeuds(trace, niveau = 0) {
+    let html = '';
+    const indent = niveau * 15;
+
+    for (const t of trace) {
+      const typeInfo = this.typesCondition.find(tc => tc.code === t.noeud_type) || {};
+      const hasReduction = t.reduction && t.reduction.montant > 0;
+      const brancheSelectionnee = t.branche_selectionnee;
+
+      html += `<div class="mb-2 p-2 border rounded" style="margin-left: ${indent}px; border-left: 3px solid ${typeInfo.couleur || '#6c757d'} !important;">`;
+
+      // En-tete du noeud
+      html += `<div class="d-flex justify-content-between align-items-center mb-1">
+        <strong><i class="bi ${typeInfo.icone || 'bi-question'} me-1"></i>${typeInfo.libelle || t.noeud_type}</strong>
+        ${brancheSelectionnee
+          ? `<span class="badge bg-success"><i class="bi bi-check"></i> ${this.escapeHtml(brancheSelectionnee.libelle)}</span>`
+          : '<span class="badge bg-secondary">Aucune branche</span>'}
+      </div>`;
+
+      // Branches testees
+      if (t.branches_testees && t.branches_testees.length > 0) {
+        html += '<div class="small">';
+        for (const b of t.branches_testees) {
+          const isSelected = brancheSelectionnee && b.id === brancheSelectionnee.id;
+          const icon = b.match ? 'bi-check-circle text-success' : 'bi-x-circle text-danger';
+          html += `<div class="${isSelected ? 'fw-bold' : 'text-muted'}">
+            <i class="bi ${icon} me-1"></i>
+            ${this.escapeHtml(b.libelle || b.code)}
+            ${b.details ? `<span class="text-muted ms-1">(${this.escapeHtml(b.details)})</span>` : ''}
+          </div>`;
+        }
+        html += '</div>';
+      }
+
+      // Reduction appliquee
+      if (hasReduction) {
+        html += `<div class="mt-1 text-success small fw-bold">
+          <i class="bi bi-arrow-right me-1"></i>Reduction: -${t.reduction.montant} EUR
+          (${t.reduction.type_calcul === 'pourcentage' ? t.reduction.valeur + '%' : t.reduction.valeur + ' EUR fixe'})
+        </div>`;
+      }
+
+      // Enfants (recursif)
+      if (t.enfants && t.enfants.length > 0) {
+        html += this.renderTraceNoeuds(t.enfants, niveau + 1);
+      }
+
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  calculerAgeFromDate(dateNaissance) {
+    if (!dateNaissance) return null;
+    const naissance = new Date(dateNaissance);
+    const aujourdhui = new Date();
+    let age = aujourdhui.getFullYear() - naissance.getFullYear();
+    const moisDiff = aujourdhui.getMonth() - naissance.getMonth();
+    if (moisDiff < 0 || (moisDiff === 0 && aujourdhui.getDate() < naissance.getDate())) {
+      age--;
+    }
+    return age;
   }
 
   // ============================================================
