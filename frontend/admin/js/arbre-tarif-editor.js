@@ -449,22 +449,21 @@ class ArbreTarifEditor {
     label.innerHTML = `
       <span class="branch-name">${this.escapeHtml(branche.libelle || branche.code)}</span>
       <span class="branch-reduction ${!reduction ? 'no-reduction' : ''}">${reductionText || '(base)'}</span>
-      ${!this.arbre?.verrouille ? `
-        <button class="tree-branch-add" title="Ajouter sous-condition">
-          <i class="bi bi-plus"></i>
-        </button>
-      ` : ''}
     `;
 
     branchWrapper.appendChild(label);
 
-    // Bouton d'ajout de sous-condition
-    const addBtn = label.querySelector('.tree-branch-add');
-    if (addBtn) {
+    // Bouton d'ajout de sous-condition (hors du label pour layout horizontal)
+    if (!this.arbre?.verrouille) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'tree-branch-add';
+      addBtn.title = 'Ajouter sous-condition';
+      addBtn.innerHTML = '<i class="bi bi-plus"></i>';
       addBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.ouvrirModalAjoutEnfant(noeudId, branche.id);
       });
+      branchWrapper.appendChild(addBtn);
     }
 
     // Si la branche a des enfants (sous-conditions), les afficher
