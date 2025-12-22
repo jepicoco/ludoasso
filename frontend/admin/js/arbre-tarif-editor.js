@@ -23,6 +23,11 @@ class ArbreTarifEditor {
 
   async init() {
     try {
+      // Initialiser le template admin (navbar, sidebar)
+      if (typeof initTemplate === 'function') {
+        await initTemplate('parametres');
+      }
+
       // Mode d'affichage (visuel ou JSON)
       this.modeAffichage = 'visuel';
 
