@@ -930,6 +930,9 @@ class ArbreTarifEditor {
     badge.querySelector('i').className = `bi ${typeInfo.icone || 'bi-question'}`;
     badge.querySelector('span').textContent = typeInfo.libelle || enfant.type;
 
+    // Important: mettre a jour noeudEnEdition pour que ajouterBrancheModal utilise le bon type
+    this.noeudEnEdition = enfant;
+
     // Render les branches de l'enfant
     const container = document.getElementById('modal-branches-container');
     container.innerHTML = '';
