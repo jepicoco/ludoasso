@@ -11,128 +11,134 @@
   <link rel="stylesheet" href="css/arbre-tarif.css">
 </head>
 <body>
-  <div id="app-container">
-    <!-- Sidebar generee par admin-template.js -->
-  </div>
+  <!-- Navigation (generee par JS) -->
+  <nav id="admin-navbar"></nav>
 
-  <main id="main-content" class="main-content">
-    <div class="container-fluid py-4">
-      <!-- En-tete -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-1">
-              <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
-              <li class="breadcrumb-item"><a href="parametres-tarification.html">Tarification</a></li>
-              <li class="breadcrumb-item active" id="breadcrumb-tarif">Arbre de decision</li>
-            </ol>
-          </nav>
-          <h1 class="h3 mb-0" id="page-title">Editeur d'arbre de decision</h1>
-        </div>
-        <div>
-          <button type="button" class="btn btn-outline-secondary me-2" id="btn-tester">
-            <i class="bi bi-play-circle"></i> Tester
-          </button>
-          <button type="button" class="btn btn-primary" id="btn-enregistrer" disabled>
-            <i class="bi bi-check-lg"></i> Enregistrer
-          </button>
-        </div>
-      </div>
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (generee par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
-      <!-- Alerte verrouillage -->
-      <div class="alert alert-warning d-none" id="alert-verrouille">
-        <div class="d-flex align-items-center justify-content-between">
+      <!-- Main Content -->
+      <div class="col-md-10 px-4">
+        <!-- En-tete -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <i class="bi bi-lock-fill me-2"></i>
-            <strong>Arbre verrouille</strong> - Des cotisations utilisent cet arbre.
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres-tarification.html">Tarification</a></li>
+                <li class="breadcrumb-item active" id="breadcrumb-tarif">Arbre de decision</li>
+              </ol>
+            </nav>
+            <h1 class="h3 mb-0" id="page-title">Editeur d'arbre de decision</h1>
           </div>
-          <button type="button" class="btn btn-sm btn-warning" id="btn-deverrouiller">
-            <i class="bi bi-unlock"></i> Deverrouiller pour modification
-          </button>
+          <div>
+            <button type="button" class="btn btn-outline-secondary me-2" id="btn-tester">
+              <i class="bi bi-play-circle"></i> Tester
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-enregistrer" disabled>
+              <i class="bi bi-check-lg"></i> Enregistrer
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Barre d'outils -->
-      <div class="toolbar-row mb-3">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div class="d-flex align-items-center gap-3">
-            <div class="dropdown">
-              <button class="btn btn-success dropdown-toggle" type="button" id="dropdown-ajouter" data-bs-toggle="dropdown">
-                <i class="bi bi-plus-lg"></i> Ajouter condition
+        <!-- Alerte verrouillage -->
+        <div class="alert alert-warning d-none" id="alert-verrouille">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <i class="bi bi-lock-fill me-2"></i>
+              <strong>Arbre verrouille</strong> - Des cotisations utilisent cet arbre.
+            </div>
+            <button type="button" class="btn btn-sm btn-warning" id="btn-deverrouiller">
+              <i class="bi bi-unlock"></i> Deverrouiller pour modification
+            </button>
+          </div>
+        </div>
+
+        <!-- Barre d'outils -->
+        <div class="toolbar-row mb-3">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <div class="dropdown">
+                <button class="btn btn-success dropdown-toggle" type="button" id="dropdown-ajouter" data-bs-toggle="dropdown">
+                  <i class="bi bi-plus-lg"></i> Ajouter condition
+                </button>
+                <ul class="dropdown-menu" id="menu-types-condition">
+                  <!-- Rempli dynamiquement -->
+                </ul>
+              </div>
+
+              <div class="vr"></div>
+
+              <label class="form-label mb-0 me-2">Mode d'affichage:</label>
+              <select class="form-select form-select-sm" id="select-mode-affichage" style="width: auto;">
+                <option value="minimum">A partir de X EUR</option>
+                <option value="maximum">X EUR* (reductions possibles)</option>
+              </select>
+
+              <div class="vr"></div>
+
+              <div class="text-muted">
+                <span id="label-montant-base">Montant de base: <strong>0 EUR</strong></span>
+                <span class="ms-3" id="label-bornes">Bornes: <strong>0 EUR - 0 EUR</strong></span>
+              </div>
+            </div>
+
+            <!-- Toggle Vue/JSON -->
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-outline-secondary active" id="btn-vue-visuelle">
+                <i class="bi bi-diagram-3"></i> Visuel
               </button>
-              <ul class="dropdown-menu" id="menu-types-condition">
-                <!-- Rempli dynamiquement -->
-              </ul>
-            </div>
-
-            <div class="vr"></div>
-
-            <label class="form-label mb-0 me-2">Mode d'affichage:</label>
-            <select class="form-select form-select-sm" id="select-mode-affichage" style="width: auto;">
-              <option value="minimum">A partir de X EUR</option>
-              <option value="maximum">X EUR* (reductions possibles)</option>
-            </select>
-
-            <div class="vr"></div>
-
-            <div class="text-muted">
-              <span id="label-montant-base">Montant de base: <strong>0 EUR</strong></span>
-              <span class="ms-3" id="label-bornes">Bornes: <strong>0 EUR - 0 EUR</strong></span>
+              <button type="button" class="btn btn-outline-secondary" id="btn-vue-json">
+                <i class="bi bi-code-slash"></i> JSON
+              </button>
             </div>
           </div>
+        </div>
 
-          <!-- Toggle Vue/JSON -->
-          <div class="btn-group" role="group">
-            <button type="button" class="btn btn-outline-secondary active" id="btn-vue-visuelle">
-              <i class="bi bi-diagram-3"></i> Visuel
-            </button>
-            <button type="button" class="btn btn-outline-secondary" id="btn-vue-json">
-              <i class="bi bi-code-slash"></i> JSON
+        <!-- Zone de l'arbre (mode visuel) -->
+        <div class="arbre-container" id="arbre-container">
+          <div class="arbre-vide text-center py-5" id="arbre-vide">
+            <i class="bi bi-diagram-3 display-1 text-muted"></i>
+            <p class="text-muted mt-3">Aucune condition definie</p>
+            <p class="text-muted">Cliquez sur "Ajouter condition" pour commencer</p>
+          </div>
+
+          <div class="arbre-tree" id="arbre-tree">
+            <!-- Arbre genere dynamiquement -->
+          </div>
+        </div>
+
+        <!-- Zone JSON (mode edition) -->
+        <div class="json-container d-none" id="json-container">
+          <div class="mb-2">
+            <small class="text-muted">Editez le JSON directement. Attention: les modifications invalides seront rejetees.</small>
+          </div>
+          <textarea class="form-control font-monospace" id="json-editor" rows="20" spellcheck="false"></textarea>
+          <div class="mt-2 d-flex justify-content-between align-items-center">
+            <div id="json-validation-status"></div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-appliquer-json">
+              <i class="bi bi-check-lg"></i> Appliquer le JSON
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Zone de l'arbre (mode visuel) -->
-      <div class="arbre-container" id="arbre-container">
-        <div class="arbre-vide text-center py-5" id="arbre-vide">
-          <i class="bi bi-diagram-3 display-1 text-muted"></i>
-          <p class="text-muted mt-3">Aucune condition definie</p>
-          <p class="text-muted">Cliquez sur "Ajouter condition" pour commencer</p>
-        </div>
-
-        <div class="arbre-tree" id="arbre-tree">
-          <!-- Arbre genere dynamiquement -->
-        </div>
-      </div>
-
-      <!-- Zone JSON (mode edition) -->
-      <div class="json-container d-none" id="json-container">
-        <div class="mb-2">
-          <small class="text-muted">Editez le JSON directement. Attention: les modifications invalides seront rejetees.</small>
-        </div>
-        <textarea class="form-control font-monospace" id="json-editor" rows="20" spellcheck="false"></textarea>
-        <div class="mt-2 d-flex justify-content-between align-items-center">
-          <div id="json-validation-status"></div>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-appliquer-json">
-            <i class="bi bi-check-lg"></i> Appliquer le JSON
-          </button>
-        </div>
-      </div>
-
-      <!-- Palette des types de condition -->
-      <div class="card mt-4">
-        <div class="card-header">
-          <h6 class="mb-0"><i class="bi bi-palette me-2"></i>Criteres disponibles</h6>
-        </div>
-        <div class="card-body">
-          <div class="d-flex flex-wrap gap-2" id="palette-criteres">
-            <!-- Genere dynamiquement -->
+        <!-- Palette des types de condition -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h6 class="mb-0"><i class="bi bi-palette me-2"></i>Criteres disponibles</h6>
+          </div>
+          <div class="card-body">
+            <div class="d-flex flex-wrap gap-2" id="palette-criteres">
+              <!-- Genere dynamiquement -->
+            </div>
           </div>
         </div>
+
       </div>
     </div>
-  </main>
+  </div>
 
   <!-- Modal Edition Noeud -->
   <div class="modal fade" id="modal-edition-noeud" tabindex="-1">
@@ -255,6 +261,8 @@
   <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="/vendor/leader-line/leader-line.min.js"></script>
   <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
   <script src="js/arbre-tarif-renderer.js"></script>
   <script src="js/arbre-tarif-editor.js"></script>
