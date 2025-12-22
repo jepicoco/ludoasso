@@ -305,34 +305,23 @@ class ArbreTarifEditor {
     // Trier par ordre
     const noeudsOrdonnes = [...noeuds].sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
 
-    // Calculer les bornes pour le resultat
-    const bornes = this.calculerBornesLocales();
-
-    // Construire l'arbre vertical
+    // Construire l'arbre horizontal
     // 1. Noeud de depart
     const startNode = this.createTreeStartNode();
     container.appendChild(startNode);
 
-    // 2. Pour chaque noeud condition
-    noeudsOrdonnes.forEach((noeud, index) => {
-      // Connecteur (fleche) avant le noeud
-      const connector = document.createElement('div');
-      connector.className = 'tree-connector';
-      container.appendChild(connector);
+    // 2. Connecteur vers la premiere condition
+    const connector = document.createElement('div');
+    connector.className = 'tree-connector';
+    container.appendChild(connector);
 
-      // Noeud condition
-      const typeInfo = this.typesCondition.find(t => t.code === noeud.type) || {};
-      const nodeElement = this.renderTreeNode(noeud, typeInfo, index);
-      container.appendChild(nodeElement);
-    });
-
-    // 3. Connecteur et noeud de resultat final
-    const finalConnector = document.createElement('div');
-    finalConnector.className = 'tree-connector';
-    container.appendChild(finalConnector);
-
-    const resultNode = this.createTreeResultNode(bornes);
-    container.appendChild(resultNode);
+    // 3. Rendu des conditions avec leurs branches et resultats
+    const nodeElement = this.renderTreeNode(noeudsOrdonnes[0],
+      this.typesCondition.find(t => t.code === noeudsOrdonnes[0].type) || {},
+      0,
+      noeudsOrdonnes.slice(1) // Noeuds suivants pour evaluation cumulative
+    );
+    container.appendChild(nodeElement);
   }
 
   createTreeStartNode() {
@@ -368,7 +357,7 @@ class ArbreTarifEditor {
     return node;
   }
 
-  renderTreeNode(noeud, typeInfo, index) {
+  renderTreeNode(noeud, typeInfo, index, noeudsRestants = [], reductionCumulee = 0) {
     const nodeWrapper = document.createElement('div');
     nodeWrapper.className = 'tree-node';
 
@@ -405,7 +394,7 @@ class ArbreTarifEditor {
     branchesContainer.className = 'tree-branches';
 
     branches.forEach((branche, brancheIndex) => {
-      const brancheEl = this.renderTreeBranch(branche, noeud.id, brancheIndex);
+      const brancheEl = this.renderTreeBranch(branche, noeud.id, brancheIndex, noeudsRestants, reductionCumulee);
       branchesContainer.appendChild(brancheEl);
     });
 
@@ -428,20 +417,25 @@ class ArbreTarifEditor {
     return nodeWrapper;
   }
 
-  renderTreeBranch(branche, noeudId, brancheIndex) {
+  renderTreeBranch(branche, noeudId, brancheIndex, noeudsRestants = [], reductionCumulee = 0) {
     const branchWrapper = document.createElement('div');
     branchWrapper.className = 'tree-branch';
 
-    // Label de la branche avec reduction
+    // Calculer la reduction de cette branche
     const reduction = branche.reduction;
+    let reductionBranche = 0;
     let reductionText = '';
     if (reduction) {
       if (reduction.type_calcul === 'pourcentage') {
+        reductionBranche = this.montantBase * reduction.valeur / 100;
         reductionText = `-${reduction.valeur}%`;
       } else {
+        reductionBranche = reduction.valeur;
         reductionText = `-${reduction.valeur} EUR`;
       }
     }
+
+    const nouvelleCumulee = reductionCumulee + reductionBranche;
 
     const label = document.createElement('div');
     label.className = 'tree-branch-label';
@@ -475,15 +469,46 @@ class ArbreTarifEditor {
         branchWrapper.appendChild(connector);
 
         // Carte enfant
-        const enfantCard = this.renderTreeChild(enfant, noeudId, branche.id, enfantIndex);
+        const enfantCard = this.renderTreeChild(enfant, noeudId, branche.id, enfantIndex, noeudsRestants, nouvelleCumulee);
         branchWrapper.appendChild(enfantCard);
       });
+    } else if (noeudsRestants.length > 0) {
+      // S'il y a d'autres conditions a evaluer, les afficher
+      const connector = document.createElement('div');
+      connector.className = 'tree-connector short';
+      branchWrapper.appendChild(connector);
+
+      const nextNoeud = noeudsRestants[0];
+      const nextTypeInfo = this.typesCondition.find(t => t.code === nextNoeud.type) || {};
+      const nextNodeEl = this.renderTreeNode(nextNoeud, nextTypeInfo, 1, noeudsRestants.slice(1), nouvelleCumulee);
+      branchWrapper.appendChild(nextNodeEl);
+    } else {
+      // Sinon, afficher le resultat final pour cette branche
+      const connector = document.createElement('div');
+      connector.className = 'tree-connector short';
+      branchWrapper.appendChild(connector);
+
+      const montantFinal = Math.max(0, this.montantBase - nouvelleCumulee);
+      const resultNode = this.createBranchResultNode(montantFinal);
+      branchWrapper.appendChild(resultNode);
     }
 
     return branchWrapper;
   }
 
-  renderTreeChild(enfant, noeudId, brancheId, enfantIndex) {
+  createBranchResultNode(montant) {
+    const node = document.createElement('div');
+    node.className = 'tree-result';
+    node.innerHTML = `
+      <div class="tree-result-node">
+        <i class="bi bi-tag-fill"></i>
+        ${montant} EUR
+      </div>
+    `;
+    return node;
+  }
+
+  renderTreeChild(enfant, noeudId, brancheId, enfantIndex, noeudsRestants = [], reductionCumulee = 0) {
     const typeInfo = this.typesCondition.find(t => t.code === enfant.type) || {};
     const branches = enfant.branches || [];
 
@@ -514,7 +539,7 @@ class ArbreTarifEditor {
       </div>
     `;
 
-    // Branches de l'enfant
+    // Branches de l'enfant avec resultat par branche
     const branchesContainer = document.createElement('div');
     branchesContainer.className = 'tree-branches';
 
@@ -522,19 +547,60 @@ class ArbreTarifEditor {
       const branchEl = document.createElement('div');
       branchEl.className = 'tree-branch';
 
+      // Calculer la reduction de cette branche
+      let reductionBranche = 0;
       let redText = '(base)';
       if (b.reduction) {
-        redText = b.reduction.type_calcul === 'pourcentage'
-          ? `-${b.reduction.valeur}%`
-          : `-${b.reduction.valeur} EUR`;
+        if (b.reduction.type_calcul === 'pourcentage') {
+          reductionBranche = this.montantBase * b.reduction.valeur / 100;
+          redText = `-${b.reduction.valeur}%`;
+        } else {
+          reductionBranche = b.reduction.valeur;
+          redText = `-${b.reduction.valeur} EUR`;
+        }
       }
 
-      branchEl.innerHTML = `
-        <div class="tree-branch-label">
-          <span class="branch-name">${this.escapeHtml(b.libelle || b.code)}</span>
-          <span class="branch-reduction ${!b.reduction ? 'no-reduction' : ''}">${redText}</span>
-        </div>
+      const nouvelleCumulee = reductionCumulee + reductionBranche;
+
+      // Label de la branche
+      const label = document.createElement('div');
+      label.className = 'tree-branch-label';
+      label.innerHTML = `
+        <span class="branch-name">${this.escapeHtml(b.libelle || b.code)}</span>
+        <span class="branch-reduction ${!b.reduction ? 'no-reduction' : ''}">${redText}</span>
       `;
+      branchEl.appendChild(label);
+
+      // Si cette branche a ses propres enfants (sous-sous-conditions)
+      if (b.enfants && b.enfants.length > 0) {
+        b.enfants.forEach((sousEnfant, sousEnfantIndex) => {
+          const connector = document.createElement('div');
+          connector.className = 'tree-connector short';
+          branchEl.appendChild(connector);
+
+          const sousEnfantCard = this.renderTreeChild(sousEnfant, noeudId, b.id, sousEnfantIndex, noeudsRestants, nouvelleCumulee);
+          branchEl.appendChild(sousEnfantCard);
+        });
+      } else if (noeudsRestants.length > 0) {
+        // S'il y a d'autres conditions a evaluer
+        const connector = document.createElement('div');
+        connector.className = 'tree-connector short';
+        branchEl.appendChild(connector);
+
+        const nextNoeud = noeudsRestants[0];
+        const nextTypeInfo = this.typesCondition.find(t => t.code === nextNoeud.type) || {};
+        const nextNodeEl = this.renderTreeNode(nextNoeud, nextTypeInfo, 1, noeudsRestants.slice(1), nouvelleCumulee);
+        branchEl.appendChild(nextNodeEl);
+      } else {
+        // Sinon, afficher le resultat final pour cette branche
+        const connector = document.createElement('div');
+        connector.className = 'tree-connector short';
+        branchEl.appendChild(connector);
+
+        const montantFinal = Math.max(0, this.montantBase - nouvelleCumulee);
+        const resultNode = this.createBranchResultNode(montantFinal);
+        branchEl.appendChild(resultNode);
+      }
 
       branchesContainer.appendChild(branchEl);
     });
