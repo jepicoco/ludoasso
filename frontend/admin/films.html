@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion des Films - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -106,6 +115,22 @@
     .type-badge.type-complexite { background-color: #dc3545; }
     .type-badge.type-duree { background-color: #20c997; }
     .type-badge.type-autre { background-color: #6c757d; }
+
+    /* TomSelect - option de creation */
+    .ts-dropdown .create {
+      padding: 8px 12px;
+      color: #198754;
+      font-style: italic;
+      border-top: 1px dashed #dee2e6;
+      background: #f8f9fa;
+    }
+    .ts-dropdown .create:hover {
+      background: #198754;
+      color: white;
+    }
+    .ts-dropdown .create strong {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -1151,42 +1176,104 @@
 
     // ========== Tom-Select initialization ==========
 
+    // Helper pour creer un nouveau referentiel via TomSelect
+    async function createReferentielFilm(type, input, callback) {
+      try {
+        let result;
+        const nom = input.trim();
+
+        if (type === 'genre') {
+          result = await filmsAPI.createGenre({ nom, actif: true });
+          refCache.genres.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'theme') {
+          result = await referentielsAPI.createTheme({ nom, actif: true });
+          refCache.themes.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'langue') {
+          result = await referentielsAPI.createLangue({ nom, actif: true });
+          refCache.langues.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'realisateur') {
+          result = await filmsAPI.createRealisateur({ nom, actif: true });
+          refCache.realisateurs.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'studio') {
+          result = await filmsAPI.createStudio({ nom, actif: true });
+          refCache.studios.push(result);
+          callback({ value: result.id, text: result.nom });
+        }
+
+        showToast(`"${nom}" cree avec succes`, 'success');
+      } catch (error) {
+        console.error(`Erreur creation ${type}:`, error);
+        showToast(`Erreur: ${error.message}`, 'error');
+        callback();
+      }
+    }
+
     function initTomSelects() {
       tsGenres = new TomSelect('#select_genres', {
         plugins: ['remove_button'],
-        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom })),
+        create: (input, callback) => createReferentielFilm('genre', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsThemes = new TomSelect('#select_themes', {
         plugins: ['remove_button'],
-        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom })),
+        create: (input, callback) => createReferentielFilm('theme', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsLangues = new TomSelect('#select_langues', {
         plugins: ['remove_button'],
-        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') })),
+        create: (input, callback) => createReferentielFilm('langue', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsSousTitres = new TomSelect('#select_soustitres', {
         plugins: ['remove_button'],
-        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') })),
+        create: (input, callback) => createReferentielFilm('langue', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsRealisateurs = new TomSelect('#select_realisateurs', {
         plugins: ['remove_button'],
-        create: true,
-        createOnBlur: true,
         options: refCache.realisateurs.map(r => ({
           value: r.id,
           text: r.prenom ? `${r.prenom} ${r.nom}` : r.nom
-        }))
+        })),
+        create: (input, callback) => createReferentielFilm('realisateur', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsStudios = new TomSelect('#select_studios', {
         plugins: ['remove_button'],
-        create: true,
+        options: refCache.studios.map(s => ({ value: s.id, text: s.nom })),
+        create: (input, callback) => createReferentielFilm('studio', input, callback),
         createOnBlur: true,
-        options: refCache.studios.map(s => ({ value: s.id, text: s.nom }))
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
     }
 
@@ -2226,7 +2313,7 @@
         );
       } catch (err) {
         console.error('Camera error:', err);
-        alert('Impossible d\'acceder a la camera: ' + err);
+        showToast('Impossible d\'acceder a la camera: ' + err, 'error')
         document.getElementById('cameraPlaceholder').classList.remove('d-none');
         document.getElementById('cameraPreview').classList.add('d-none');
       }
@@ -2255,7 +2342,7 @@
     async function doLookup() {
       const input = document.getElementById('lookupInput').value.trim();
       if (!input) {
-        alert('Veuillez saisir un code EAN ou un titre de film');
+        showToast('Veuillez saisir un code EAN ou un titre de film', 'warning')
         return;
       }
 

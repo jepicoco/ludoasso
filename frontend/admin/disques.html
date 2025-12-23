@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion des Disques - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -103,6 +112,22 @@
     .type-badge.type-complexite { background-color: #dc3545; }
     .type-badge.type-duree { background-color: #20c997; }
     .type-badge.type-autre { background-color: #6c757d; }
+
+    /* TomSelect - option de creation */
+    .ts-dropdown .create {
+      padding: 8px 12px;
+      color: #198754;
+      font-style: italic;
+      border-top: 1px dashed #dee2e6;
+      background: #f8f9fa;
+    }
+    .ts-dropdown .create:hover {
+      background: #198754;
+      color: white;
+    }
+    .ts-dropdown .create strong {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -728,16 +753,48 @@
       });
     }
 
+    // Helper pour creer un nouveau referentiel via TomSelect
+    async function createReferentielDisque(type, input, callback) {
+      try {
+        let result;
+        const nom = input.trim();
+
+        if (type === 'genre') {
+          result = await disquesAPI.createGenre({ nom, actif: true });
+          refCache.genres.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'label') {
+          result = await disquesAPI.createLabel({ nom, actif: true });
+          refCache.labels.push(result);
+          callback({ value: result.id, text: result.nom });
+        }
+
+        showToast(`"${nom}" cree avec succes`, 'success');
+      } catch (error) {
+        console.error(`Erreur creation ${type}:`, error);
+        showToast(`Erreur: ${error.message}`, 'error');
+        callback();
+      }
+    }
+
     function initTomSelects() {
       tsGenres = new TomSelect('#select_genres', {
         plugins: ['remove_button'],
-        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom })),
+        create: (input, callback) => createReferentielDisque('genre', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsLabel = new TomSelect('#select_label', {
-        create: true,
+        options: refCache.labels.map(l => ({ value: l.id, text: l.nom })),
+        create: (input, callback) => createReferentielDisque('label', input, callback),
         createOnBlur: true,
-        options: refCache.labels.map(l => ({ value: l.id, text: l.nom }))
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
     }
 
@@ -1637,7 +1694,7 @@
     async function doLookup() {
       const input = document.getElementById('lookupInput').value.trim();
       if (!input) {
-        alert('Veuillez saisir un code EAN ou un titre d\'album');
+        showToast('Veuillez saisir un code EAN ou un titre d\'album', 'warning')
         return;
       }
 
@@ -1762,7 +1819,7 @@
         );
       } catch (err) {
         console.error('Camera error:', err);
-        alert('Impossible d\'acceder a la camera: ' + err);
+        showToast('Impossible d\'acceder a la camera: ' + err, 'error')
         document.getElementById('cameraSection').classList.add('d-none');
       }
     }

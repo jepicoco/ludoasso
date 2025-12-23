@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cles API - Parametres - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -449,7 +458,7 @@
         document.getElementById('modalCleTitle').textContent = 'Modifier la Cle API';
         modalCle.show();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -458,7 +467,7 @@
       const nom = document.getElementById('cleNom').value.trim();
 
       if (!nom) {
-        alert('Le nom est requis');
+        showToast('Le nom est requis', 'info')
         return;
       }
 
@@ -508,7 +517,7 @@
 
         await chargerCles();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -519,7 +528,7 @@
         if (!response.success) throw new Error(response.message);
         await chargerCles();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -533,7 +542,7 @@
         if (!response.success) throw new Error(response.message);
         await chargerCles();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -580,14 +589,14 @@
 
         modalDetails.show();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
     function copierCle() {
       const cle = document.getElementById('nouvelleCle').textContent;
       navigator.clipboard.writeText(cle).then(() => {
-        alert('Cle copiee dans le presse-papier');
+        showToast('Cle copiee dans le presse-papier', 'success')
       });
     }
 

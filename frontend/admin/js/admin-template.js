@@ -265,13 +265,11 @@ async function loadUserStructures() {
             const savedStructureId = localStorage.getItem('selectedStructureId');
             if (savedStructureId && window.USER_STRUCTURES.find(s => s.id === parseInt(savedStructureId))) {
                 window.CURRENT_STRUCTURE_ID = parseInt(savedStructureId);
-            } else if (window.USER_STRUCTURES.length === 1) {
-                // Si une seule structure, la selectionner automatiquement
+            } else if (window.USER_STRUCTURES.length > 0) {
+                // Selectionner automatiquement la premiere structure
+                // (necessaire pour les operations d'ecriture qui requierent X-Structure-Id)
                 window.CURRENT_STRUCTURE_ID = window.USER_STRUCTURES[0].id;
                 localStorage.setItem('selectedStructureId', window.CURRENT_STRUCTURE_ID);
-            } else if (window.IS_ADMIN_GLOBAL) {
-                // Admin global: par defaut pas de filtre (toutes structures)
-                window.CURRENT_STRUCTURE_ID = null;
             }
 
             return window.USER_STRUCTURES;

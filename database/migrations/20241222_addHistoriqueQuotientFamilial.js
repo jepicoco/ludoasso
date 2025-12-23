@@ -94,9 +94,9 @@ async function up() {
   // Index
   await queryInterface.addIndex('historique_quotient_familial', ['utilisateur_id']);
   await queryInterface.addIndex('historique_quotient_familial', ['date_debut', 'date_fin']);
+  // Note: MySQL ne supporte pas les index partiels (WHERE), utiliser un index standard
   await queryInterface.addIndex('historique_quotient_familial', ['utilisateur_id', 'date_fin'], {
-    name: 'idx_hqf_user_current',
-    where: { date_fin: null }
+    name: 'idx_hqf_user_current'
   });
 
   console.log('Index crees');

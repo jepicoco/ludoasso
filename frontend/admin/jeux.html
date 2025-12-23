@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion des Jeux - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -80,6 +89,22 @@
     .type-badge.type-complexite { background-color: #dc3545; }
     .type-badge.type-duree { background-color: #20c997; }
     .type-badge.type-autre { background-color: #6c757d; }
+
+    /* TomSelect - option de creation */
+    .ts-dropdown .create {
+      padding: 8px 12px;
+      color: #198754;
+      font-style: italic;
+      border-top: 1px dashed #dee2e6;
+      background: #f8f9fa;
+    }
+    .ts-dropdown .create:hover {
+      background: #198754;
+      color: white;
+    }
+    .ts-dropdown .create strong {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -1127,30 +1152,80 @@
 
     // ========== Tom-Select initialization ==========
 
+    // Helper pour creer un nouveau referentiel via TomSelect
+    async function createReferentiel(type, input, callback) {
+      try {
+        let result;
+        const nom = input.trim();
+
+        if (type === 'categorie') {
+          result = await referentielsAPI.createCategorie({ nom, actif: true });
+          refCache.categories.push(result);
+          callback({ value: result.id, text: result.nom, color: result.couleur || '#6c757d' });
+        } else if (type === 'theme') {
+          result = await referentielsAPI.createTheme({ nom, actif: true });
+          refCache.themes.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'mecanisme') {
+          result = await referentielsAPI.createMecanisme({ nom, actif: true });
+          refCache.mecanismes.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'langue') {
+          result = await referentielsAPI.createLangue({ nom, actif: true });
+          refCache.langues.push(result);
+          callback({ value: result.id, text: result.nom });
+        }
+
+        showToast(`"${nom}" cree avec succes`, 'success');
+      } catch (error) {
+        console.error(`Erreur creation ${type}:`, error);
+        showToast(`Erreur: ${error.message}`, 'error');
+        callback();
+      }
+    }
+
     function initTomSelects() {
-      // Multi-selects
+      // Multi-selects avec creation
       tsCategories = new TomSelect('#select_categories', {
         plugins: ['remove_button'],
         options: refCache.categories.map(c => ({ value: c.id, text: c.nom, color: c.couleur })),
+        create: (input, callback) => createReferentiel('categorie', input, callback),
+        createOnBlur: true,
         render: {
           option: (data, escape) => `<div><span class="badge me-2" style="background-color:${data.color || '#6c757d'}">&nbsp;</span>${escape(data.text)}</div>`,
-          item: (data, escape) => `<div class="badge me-1" style="background-color:${data.color || '#6c757d'}">${escape(data.text)}</div>`
+          item: (data, escape) => `<div class="badge me-1" style="background-color:${data.color || '#6c757d'}">${escape(data.text)}</div>`,
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
         }
       });
 
       tsThemes = new TomSelect('#select_themes', {
         plugins: ['remove_button'],
-        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom })),
+        create: (input, callback) => createReferentiel('theme', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsMecanismes = new TomSelect('#select_mecanismes', {
         plugins: ['remove_button'],
-        options: refCache.mecanismes.map(m => ({ value: m.id, text: m.nom }))
+        options: refCache.mecanismes.map(m => ({ value: m.id, text: m.nom })),
+        create: (input, callback) => createReferentiel('mecanisme', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsLangues = new TomSelect('#select_langues', {
         plugins: ['remove_button'],
-        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') })),
+        create: (input, callback) => createReferentiel('langue', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsEditeurs = new TomSelect('#select_editeurs', {
@@ -1363,7 +1438,7 @@
         }
         modalInstance.show();
       } catch (error) {
-        alert('Erreur lors du chargement du jeu: ' + error.message);
+        showToast('Erreur lors du chargement du jeu: ' + error.message, 'error')
       }
     }
 
@@ -1675,16 +1750,16 @@
 
         if (!id) {
           await jeuxAPI.create(formData);
-          alert('Jeu cree avec succes !');
+          showToast('Jeu cree avec succes !', 'success')
         } else {
           await jeuxAPI.update(id, formData);
-          alert('Jeu modifie avec succes !');
+          showToast('Jeu modifie avec succes !', 'success')
         }
 
         closeModal();
         loadJeux();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Enregistrer';
@@ -1968,7 +2043,7 @@
       // Si input fourni (depuis scanner), sinon prendre du champ manuel
       const input = scannerInput || document.getElementById('lookupInput').value.trim();
       if (!input) {
-        alert('Veuillez saisir un code EAN ou un titre de jeu');
+        showToast('Veuillez saisir un code EAN ou un titre de jeu', 'warning')
         return;
       }
 

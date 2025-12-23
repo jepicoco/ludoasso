@@ -44,7 +44,7 @@ async function loadStructure() {
 
   } catch (error) {
     console.error('Erreur chargement structure:', error);
-    alert('Erreur lors du chargement des paramètres: ' + error.message);
+    showToast('Erreur lors du chargement des paramètres: ' + error.message, 'error')
   }
 }
 
@@ -85,10 +85,10 @@ async function saveStructure(event) {
       body: JSON.stringify(formData)
     });
 
-    alert('Paramètres enregistrés avec succès');
+    showToast('Paramètres enregistrés avec succès', 'success')
   } catch (error) {
     console.error('Erreur sauvegarde structure:', error);
-    alert('Erreur lors de l\'enregistrement: ' + error.message);
+    showToast('Erreur lors de l\'enregistrement: ' + error.message, 'success')
   }
 }
 
@@ -224,7 +224,7 @@ function initSortable() {
         });
       } catch (error) {
         console.error('Erreur réorganisation:', error);
-        alert('Erreur lors de la réorganisation');
+        showToast('Erreur lors de la réorganisation', 'error')
         loadModesPaiement(); // Recharger en cas d'erreur
       }
     }
@@ -271,7 +271,7 @@ async function loadModePaiementForEdit(id) {
 
   } catch (error) {
     console.error('Erreur chargement mode:', error);
-    alert('Erreur lors du chargement du mode de paiement');
+    showToast('Erreur lors du chargement du mode de paiement', 'error')
   }
 }
 
@@ -309,7 +309,7 @@ async function saveModePaiement(event) {
     loadModesPaiement();
   } catch (error) {
     console.error('Erreur sauvegarde mode:', error);
-    alert('Erreur lors de l\'enregistrement: ' + error.message);
+    showToast('Erreur lors de l\'enregistrement: ' + error.message, 'success')
   }
 }
 
@@ -329,7 +329,7 @@ async function toggleModePaiement(id) {
     loadModesPaiement();
   } catch (error) {
     console.error('Erreur toggle mode:', error);
-    alert('Erreur: ' + error.message);
+    showToast('Erreur: ' + error.message, 'error')
   }
 }
 
@@ -345,7 +345,7 @@ async function deleteModePaiement(id) {
     loadModesPaiement();
   } catch (error) {
     console.error('Erreur suppression mode:', error);
-    alert('Erreur: ' + error.message);
+    showToast('Erreur: ' + error.message, 'error')
   }
 }
 

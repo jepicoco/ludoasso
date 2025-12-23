@@ -2,6 +2,77 @@
  * API Client for Ludothèque Admin Interface
  */
 
+// ============ TOAST NOTIFICATIONS ============
+
+/**
+ * Affiche une notification toast (utilise SweetAlert2 si disponible, sinon fallback)
+ * @param {string} message - Message a afficher
+ * @param {string} type - Type: 'success', 'error', 'warning', 'info' (defaut: 'info')
+ * @param {number} duration - Duree en ms (defaut: 3000)
+ */
+function showToast(message, type = 'info', duration = 3000) {
+  // Mapping des types pour SweetAlert2
+  const iconMap = {
+    success: 'success',
+    error: 'error',
+    warning: 'warning',
+    info: 'info',
+    danger: 'error' // Alias Bootstrap
+  };
+
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: iconMap[type] || 'info',
+      title: message,
+      showConfirmButton: false,
+      timer: duration,
+      timerProgressBar: true
+    });
+  } else {
+    // Fallback si SweetAlert2 n'est pas charge
+    console.log(`[${type.toUpperCase()}] ${message}`);
+  }
+}
+
+/**
+ * Toast de succes
+ */
+function showSuccessToast(message, duration = 3000) {
+  showToast(message, 'success', duration);
+}
+
+/**
+ * Toast d'erreur
+ */
+function showErrorToast(message, duration = 4000) {
+  showToast(message, 'error', duration);
+}
+
+/**
+ * Toast d'avertissement
+ */
+function showWarningToast(message, duration = 3500) {
+  showToast(message, 'warning', duration);
+}
+
+/**
+ * Toast d'information
+ */
+function showInfoToast(message, duration = 3000) {
+  showToast(message, 'info', duration);
+}
+
+// Export global pour utilisation dans les pages
+window.showToast = showToast;
+window.showSuccessToast = showSuccessToast;
+window.showErrorToast = showErrorToast;
+window.showWarningToast = showWarningToast;
+window.showInfoToast = showInfoToast;
+
+// ============ API CONFIGURATION ============
+
 // Detecte automatiquement l'URL de l'API selon l'environnement
 const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000/api'
@@ -965,6 +1036,28 @@ const livresAPI = {
 
   async getStats() {
     return await apiRequest('/livres/stats');
+  },
+
+  // CRUD pour les referentiels
+  async createGenre(data) {
+    return await apiRequest('/livres/referentiels/genres', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createCollection(data) {
+    return await apiRequest('/livres/referentiels/collections', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createEditeur(data) {
+    return await apiRequest('/livres/referentiels/editeurs', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 };
 
@@ -1130,6 +1223,13 @@ const disquesAPI = {
 
   async createLabel(data) {
     return await apiRequest('/disques/referentiels/labels', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createGenre(data) {
+    return await apiRequest('/disques/referentiels/genres', {
       method: 'POST',
       body: JSON.stringify(data)
     });

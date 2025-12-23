@@ -770,6 +770,6 @@ function showToast(message, type = 'info') {
       timerProgressBar: true
     });
   } else {
-    alert(message);
+    showToast(message, 'info')
   }
 }

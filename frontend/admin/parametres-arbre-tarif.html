@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editeur Arbre de Decision - Liberteko Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -273,7 +282,7 @@
       const tarifId = urlParams.get('tarif_id');
 
       if (!tarifId) {
-        alert('Aucun tarif specifie. Retour a la liste.');
+        showToast('Aucun tarif specifie. Retour a la liste.', 'info')
         window.location.href = 'parametres-tarification.html';
         return;
       }

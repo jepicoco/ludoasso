@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>APIs Externes - Parametres - Liberteko Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -595,7 +604,7 @@
         document.getElementById('modalConfigTitle').textContent = `Modifier: ${config.libelle}`;
         modalConfig.show();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -647,7 +656,7 @@
         modalConfig.hide();
         await loadConfigs();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -656,7 +665,7 @@
         await apiRequest(`/parametres/apis-externes/${id}/toggle`, { method: 'PATCH' });
         await loadConfigs();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -667,7 +676,7 @@
         await apiRequest(`/parametres/apis-externes/${id}`, { method: 'DELETE' });
         await loadConfigs();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
 
@@ -765,7 +774,7 @@
 
         modalStats.show();
       } catch (error) {
-        alert('Erreur: ' + error.message);
+        showToast('Erreur: ' + error.message, 'error')
       }
     }
   </script>

@@ -134,6 +134,21 @@ const updateUserDisplay = (user) => {
 };
 
 /**
+ * Immediate auth check (before DOMContentLoaded)
+ * Redirects immediately if no token, preventing flash of protected content
+ */
+(function() {
+  const isLoginPage = window.location.pathname.includes('login.html');
+  if (!isLoginPage && !localStorage.getItem('authToken')) {
+    // Pas de token, rediriger immédiatement sans attendre le DOM
+    window.location.replace('/admin/login.html');
+  } else if (!isLoginPage) {
+    // Token présent, afficher le contenu (était masqué par CSS .auth-pending)
+    document.documentElement.classList.remove('auth-pending');
+  }
+})();
+
+/**
  * Initialize auth on page load
  */
 document.addEventListener('DOMContentLoaded', async () => {

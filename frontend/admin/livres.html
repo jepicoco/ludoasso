@@ -1,7 +1,16 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="auth-pending">
 <head>
   <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion des Livres - Ludothèque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
@@ -95,6 +104,22 @@
     .type-badge.type-complexite { background-color: #dc3545; }
     .type-badge.type-duree { background-color: #20c997; }
     .type-badge.type-autre { background-color: #6c757d; }
+
+    /* TomSelect - option de creation */
+    .ts-dropdown .create {
+      padding: 8px 12px;
+      color: #198754;
+      font-style: italic;
+      border-top: 1px dashed #dee2e6;
+      background: #f8f9fa;
+    }
+    .ts-dropdown .create:hover {
+      background: #198754;
+      color: white;
+    }
+    .ts-dropdown .create strong {
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -963,31 +988,91 @@
       });
     }
 
+    // Helper pour creer un nouveau referentiel via TomSelect
+    async function createReferentielLivre(type, input, callback) {
+      try {
+        let result;
+        const nom = input.trim();
+
+        if (type === 'genre') {
+          result = await livresAPI.createGenre({ nom, actif: true });
+          refCache.genres.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'theme') {
+          result = await referentielsAPI.createTheme({ nom, actif: true });
+          refCache.themes.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'langue') {
+          result = await referentielsAPI.createLangue({ nom, actif: true });
+          refCache.langues.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'editeur') {
+          result = await livresAPI.createEditeur({ nom, actif: true });
+          refCache.editeurs.push(result);
+          callback({ value: result.id, text: result.nom });
+        } else if (type === 'collection') {
+          result = await livresAPI.createCollection({ nom, actif: true });
+          refCache.collections.push(result);
+          callback({ value: result.id, text: result.nom });
+        }
+
+        showToast(`"${nom}" cree avec succes`, 'success');
+      } catch (error) {
+        console.error(`Erreur creation ${type}:`, error);
+        showToast(`Erreur: ${error.message}`, 'error');
+        callback();
+      }
+    }
+
     function initTomSelects() {
       tsGenres = new TomSelect('#select_genres', {
         plugins: ['remove_button'],
-        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom })),
+        create: (input, callback) => createReferentielLivre('genre', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsThemes = new TomSelect('#select_themes', {
         plugins: ['remove_button'],
-        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom })),
+        create: (input, callback) => createReferentielLivre('theme', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsLangues = new TomSelect('#select_langues', {
         plugins: ['remove_button'],
-        options: refCache.langues.map(l => ({ value: l.id, text: l.nom }))
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom })),
+        create: (input, callback) => createReferentielLivre('langue', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsEditeurs = new TomSelect('#select_editeurs', {
         plugins: ['remove_button'],
-        create: true,
-        options: refCache.editeurs.map(e => ({ value: e.id, text: e.nom }))
+        options: refCache.editeurs.map(e => ({ value: e.id, text: e.nom })),
+        create: (input, callback) => createReferentielLivre('editeur', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
 
       tsCollection = new TomSelect('#select_collection', {
         options: [{ value: '', text: '-- Aucune --' }, ...refCache.collections.map(c => ({ value: c.id, text: c.nom }))],
-        allowEmptyOption: true
+        allowEmptyOption: true,
+        create: (input, callback) => createReferentielLivre('collection', input, callback),
+        createOnBlur: true,
+        render: {
+          option_create: (data, escape) => `<div class="create">Ajouter <strong>${escape(data.input)}</strong>...</div>`
+        }
       });
     }
 

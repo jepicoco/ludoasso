@@ -140,7 +140,7 @@ function initSortableCodes() {
         });
       } catch (error) {
         console.error('Erreur réorganisation:', error);
-        alert('Erreur lors de la réorganisation');
+        showToast('Erreur lors de la réorganisation', 'error')
         loadCodesReduction();
       }
     }
@@ -192,7 +192,7 @@ async function loadCodeReductionForEdit(id) {
     updateCodeTypeHelp();
   } catch (error) {
     console.error('Erreur chargement code:', error);
-    alert('Erreur lors du chargement du code de réduction');
+    showToast('Erreur lors du chargement du code de réduction', 'error')
   }
 }
 
@@ -258,7 +258,7 @@ async function saveCodeReduction(event) {
     loadCodesReduction();
   } catch (error) {
     console.error('Erreur sauvegarde code:', error);
-    alert('Erreur lors de l\'enregistrement: ' + error.message);
+    showToast('Erreur lors de l\'enregistrement: ' + error.message, 'success')
   }
 }
 
@@ -280,7 +280,7 @@ async function toggleCodeReduction(id) {
     loadCodesReduction();
   } catch (error) {
     console.error('Erreur toggle code:', error);
-    alert('Erreur: ' + error.message);
+    showToast('Erreur: ' + error.message, 'error')
   }
 }
 
@@ -297,7 +297,7 @@ async function deleteCodeReduction(id) {
     loadCodesReduction();
   } catch (error) {
     console.error('Erreur suppression code:', error);
-    alert('Erreur: ' + error.message);
+    showToast('Erreur: ' + error.message, 'error')
   }
 }
 

@@ -1074,7 +1074,7 @@ function playSound(type) {
 
 async function switchCamera() {
   if (cameras.length < 2) {
-    alert('Une seule camera disponible');
+    showToast('Une seule camera disponible', 'warning')
     return;
   }
 
@@ -1096,7 +1096,7 @@ async function submitManualCode() {
   const code = document.getElementById('manual-code').value.trim().toUpperCase();
 
   if (!code) {
-    alert('Veuillez saisir un code-barre');
+    showToast('Veuillez saisir un code-barre', 'warning')
     return;
   }
 

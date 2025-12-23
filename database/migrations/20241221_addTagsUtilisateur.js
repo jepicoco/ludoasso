@@ -109,8 +109,8 @@ async function up() {
       },
       date_attribution: {
         type: sequelize.Sequelize.DATEONLY,
-        allowNull: false,
-        defaultValue: sequelize.Sequelize.literal('CURRENT_DATE')
+        allowNull: false
+        // Default géré par le modèle Sequelize (hooks)
       },
       created_at: {
         type: sequelize.Sequelize.DATE,

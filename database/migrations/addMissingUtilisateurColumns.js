@@ -28,7 +28,8 @@ async function migrate() {
   const columnsToAdd = [
     {
       name: 'date_adhesion',
-      sql: `ADD COLUMN date_adhesion DATE NOT NULL DEFAULT (CURDATE()) COMMENT 'Date d\\'adhesion'`
+      sql: `ADD COLUMN date_adhesion DATE NOT NULL COMMENT 'Date d\\'adhesion'`
+      // Note: Default value managed by application layer (Sequelize model)
     },
     {
       name: 'date_fin_adhesion',
