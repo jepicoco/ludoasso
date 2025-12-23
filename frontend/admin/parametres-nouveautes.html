@@ -193,7 +193,6 @@
   <script>
     const API_URL = '/api';
     let saveTimeout = null;
-    let currentParams = {};
     let isLoading = false; // Flag pour eviter auto-save pendant le chargement
 
     const MODULES = [
@@ -268,13 +267,14 @@
       const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
       const structureId = window.CURRENT_STRUCTURE_ID;
 
-      // Si plusieurs structures et aucune selectionnee, afficher l'alerte
+      // Si plusieurs structures et aucune selectionnee, afficher l'alerte et ne rien charger
       if (hasMultipleStructures && !structureId) {
         document.getElementById('noStructureAlert').classList.remove('d-none');
-      } else {
-        document.getElementById('noStructureAlert').classList.add('d-none');
+        document.getElementById('modulesContainer').innerHTML = '';
+        return;
       }
 
+      document.getElementById('noStructureAlert').classList.add('d-none');
       renderModules();
       loadConfig();
     }
@@ -391,32 +391,38 @@
       }
     }
 
-    // Load config - depuis la structure selectionnee ou globale
+    // Load config - depuis la structure selectionnee
     async function loadConfig() {
       isLoading = true; // Eviter auto-save pendant le chargement
       try {
         const structureId = window.CURRENT_STRUCTURE_ID;
 
-        // Charger les parametres globaux (pour compatibilite)
-        const globalResponse = await fetch(`${API_URL}/parametres/front`, {
-          headers: getHeaders()
-        });
-        if (!globalResponse.ok) throw new Error('Erreur chargement parametres globaux');
-        const globalParams = await globalResponse.json();
+        // Determiner l'ID de structure a utiliser
+        // En mono-structure, utiliser la seule structure disponible
+        const effectiveStructureId = structureId ||
+          (window.USER_STRUCTURES?.length === 1 ? window.USER_STRUCTURES[0].id : null);
 
-        // Charger les parametres de la structure si une structure est selectionnee
-        let structureParams = {};
-        if (structureId) {
-          const structResponse = await fetch(`${API_URL}/structures/${structureId}/parametres-front`, {
-            headers: getHeaders()
-          });
-          if (structResponse.ok) {
-            structureParams = await structResponse.json();
-          }
+        if (!effectiveStructureId) {
+          // Pas de structure - ne devrait pas arriver car checkStructureAndLoad filtre ce cas
+          return;
         }
 
-        // Stocker pour la sauvegarde
-        currentParams = { global: globalParams, structure: structureParams };
+        // Charger les parametres de la structure
+        const response = await fetch(`${API_URL}/structures/${effectiveStructureId}/parametres-front`, {
+          headers: getHeaders()
+        });
+
+        let structureParams = {};
+        if (response.ok) {
+          structureParams = await response.json();
+        } else if (response.status === 404) {
+          // Parametres non encore crees pour cette structure - utiliser les valeurs par defaut
+          console.info('Parametres structure non trouves, utilisation des valeurs par defaut');
+        } else {
+          // Autre erreur
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Erreur ${response.status}`);
+        }
 
         // Obtenir les modules actifs de la structure
         const structureModules = getStructureModules();
@@ -433,8 +439,7 @@
           const nouveauteActive = structureParams[`nouveaute_active_${mod.id}`] !== undefined
             ? structureParams[`nouveaute_active_${mod.id}`]
             : true; // Par defaut actif
-          const duree = structureParams[`nouveaute_duree_${mod.id}`]
-            || mod.defaultDuree;
+          const duree = structureParams[`nouveaute_duree_${mod.id}`] || mod.defaultDuree;
 
           document.getElementById(`active-${mod.id}`).checked = nouveauteActive;
           toggleModule(mod.id, nouveauteActive);
@@ -444,19 +449,8 @@
           document.getElementById(`duree-${mod.id}-text`).textContent = duree;
         });
 
-        // Si multi-structure et aucune structure selectionnee, mettre en lecture seule
-        const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
-        if (hasMultipleStructures && !structureId) {
-          document.querySelectorAll('#modulesContainer input').forEach(input => {
-            input.disabled = true;
-          });
-          document.querySelectorAll('#modulesContainer .module-card').forEach(card => {
-            card.style.opacity = '0.7';
-          });
-        }
-
       } catch (error) {
-        console.error('Erreur:', error);
+        console.error('Erreur chargement:', error);
         showSaveIndicator('error', 'Erreur de chargement');
       } finally {
         isLoading = false; // Reactiver l'auto-save
@@ -473,8 +467,11 @@
     async function saveConfig() {
       const structureId = window.CURRENT_STRUCTURE_ID;
 
-      // Si pas de structure selectionnee et multi-structure, ne pas sauvegarder
-      if (!structureId && window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1) {
+      // Determiner l'ID de structure a utiliser (meme logique que loadConfig)
+      const effectiveStructureId = structureId ||
+        (window.USER_STRUCTURES?.length === 1 ? window.USER_STRUCTURES[0].id : null);
+
+      if (!effectiveStructureId) {
         showSaveIndicator('error', 'Selectionnez une structure');
         return;
       }
@@ -490,30 +487,29 @@
         // Skip si module non actif dans la structure
         if (!structureModules.includes(mod.code)) return;
 
-        data[`nouveaute_active_${mod.id}`] = document.getElementById(`active-${mod.id}`).checked;
-        data[`nouveaute_duree_${mod.id}`] = parseInt(document.getElementById(`duree-${mod.id}`).value);
+        const activeEl = document.getElementById(`active-${mod.id}`);
+        const dureeEl = document.getElementById(`duree-${mod.id}`);
+        if (!activeEl || !dureeEl) return;
+
+        data[`nouveaute_active_${mod.id}`] = activeEl.checked;
+        data[`nouveaute_duree_${mod.id}`] = parseInt(dureeEl.value) || mod.defaultDuree;
       });
 
+      if (Object.keys(data).length === 0) {
+        showSaveIndicator('error', 'Aucune donnee a sauvegarder');
+        return;
+      }
+
       try {
-        // Sauvegarder dans les parametres de la structure
-        const url = structureId
-          ? `${API_URL}/structures/${structureId}/parametres-front`
-          : `${API_URL}/parametres/front`;
-
-        if (Object.keys(data).length === 0) {
-          showSaveIndicator('error', 'Aucune donnee a sauvegarder');
-          return;
-        }
-
-        const response = await fetch(url, {
+        const response = await fetch(`${API_URL}/structures/${effectiveStructureId}/parametres-front`, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify(data)
         });
 
         if (!response.ok) {
-          const responseData = await response.json();
-          throw new Error(responseData.error || 'Erreur sauvegarde');
+          const responseData = await response.json().catch(() => ({}));
+          throw new Error(responseData.error || `Erreur ${response.status}`);
         }
 
         showSaveIndicator('saved');
