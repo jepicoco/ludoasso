@@ -194,6 +194,7 @@
     const API_URL = '/api';
     let saveTimeout = null;
     let currentParams = {};
+    let isLoading = false; // Flag pour eviter auto-save pendant le chargement
 
     const MODULES = [
       { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', defaultDuree: 60 },
@@ -225,12 +226,10 @@
       // Si plusieurs structures et aucune selectionnee, afficher l'alerte
       if (hasMultipleStructures && !structureId) {
         document.getElementById('noStructureAlert').classList.remove('d-none');
-        document.getElementById('modulesContainer').innerHTML = '';
-        return;
+      } else {
+        document.getElementById('noStructureAlert').classList.add('d-none');
       }
 
-      // Structure selectionnee ou mono-structure
-      document.getElementById('noStructureAlert').classList.add('d-none');
       renderModules();
       loadConfig();
     }
@@ -322,11 +321,15 @@
         config.querySelectorAll('input').forEach(input => input.disabled = true);
       }
 
-      scheduleAutoSave();
+      // Ne pas sauvegarder pendant le chargement initial
+      if (!isLoading) {
+        scheduleAutoSave();
+      }
     }
 
     // Load config - depuis la structure selectionnee ou globale
     async function loadConfig() {
+      isLoading = true; // Eviter auto-save pendant le chargement
       try {
         const structureId = window.CURRENT_STRUCTURE_ID;
 
@@ -383,9 +386,22 @@
           document.getElementById(`duree-${mod.id}-text`).textContent = duree;
         });
 
+        // Si multi-structure et aucune structure selectionnee, mettre en lecture seule
+        const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+        if (hasMultipleStructures && !structureId) {
+          document.querySelectorAll('#modulesContainer input').forEach(input => {
+            input.disabled = true;
+          });
+          document.querySelectorAll('#modulesContainer .module-card').forEach(card => {
+            card.style.opacity = '0.7';
+          });
+        }
+
       } catch (error) {
         console.error('Erreur:', error);
         showSaveIndicator('error', 'Erreur de chargement');
+      } finally {
+        isLoading = false; // Reactiver l'auto-save
       }
     }
 
