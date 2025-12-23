@@ -245,7 +245,7 @@ function renderOrganisations() {
   }).join('');
 }
 
-function showModalOrganisation(id = null) {
+async function showModalOrganisation(id = null) {
   const modal = new bootstrap.Modal(document.getElementById('modalOrganisation'));
   const form = document.getElementById('form-organisation');
   form.reset();
@@ -255,6 +255,11 @@ function showModalOrganisation(id = null) {
   if (firstTab) {
     new bootstrap.Tab(firstTab).show();
   }
+
+  // Reinitialiser les donnees barcode
+  currentEditingOrgId = id;
+  currentOrgBarcodeGroups = [];
+  currentOrgBarcodeConfig = {};
 
   if (id) {
     const org = organisations.find(o => o.id === id);
@@ -307,8 +312,8 @@ function showModalOrganisation(id = null) {
     document.getElementById('organisation_email_connector').value = org.configuration_email_id || '';
     document.getElementById('organisation_sms_connector').value = org.configuration_sms_id || '';
 
-    // Codes-barres (JSON par module)
-    setGestionCodesBarres(org.gestion_codes_barres);
+    // Charger les donnees codes-barres depuis l'API
+    await loadBarcodeData(id);
   } else {
     document.getElementById('modalOrganisationTitle').textContent = 'Nouvelle organisation';
     document.getElementById('organisation_id').value = '';
@@ -316,13 +321,10 @@ function showModalOrganisation(id = null) {
     document.getElementById('organisation_type').value = 'association';
     document.getElementById('organisation_pays').value = 'FR';
     document.getElementById('organisation_regime_tva').value = 'non_assujetti';
-
-    // Codes-barres: par defaut "organisation" pour tous les modules
-    setGestionCodesBarres({});
   }
 
-  // Charger les groupes existants pour l'auto-completion
-  loadGroupesExistants();
+  // Appliquer les donnees codes-barres au formulaire
+  setBarcodeFormData();
 
   // Adapter les champs selon le type
   adaptFieldsToType();
@@ -379,10 +381,7 @@ async function handleOrganisationSubmit(e) {
 
     // Connecteurs
     configuration_email_id: emailConnectorValue ? parseInt(emailConnectorValue) : null,
-    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null,
-
-    // Codes-barres (JSON par module)
-    gestion_codes_barres: getGestionCodesBarres()
+    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null
   };
 
   try {
@@ -403,6 +402,12 @@ async function handleOrganisationSubmit(e) {
       const error = await response.json();
       throw new Error(error.error || `Erreur HTTP ${response.status}`);
     }
+
+    const savedOrg = await response.json();
+    const orgId = id || savedOrg.id;
+
+    // Sauvegarder la configuration des codes-barres (les groupes sont globaux, deja crees)
+    await saveBarcodeConfig(orgId);
 
     bootstrap.Modal.getInstance(document.getElementById('modalOrganisation')).hide();
     await loadOrganisations();
@@ -498,18 +503,203 @@ async function toggleOrganisation(id) {
 // ==================== GESTION CODES-BARRES ====================
 
 const MODULES_CODES_BARRES = ['utilisateur', 'jeu', 'livre', 'film', 'disque'];
+let tsBarcodeGroups = null;
+let currentOrgBarcodeGroups = [];
+let currentOrgBarcodeConfig = {};
+let currentEditingOrgId = null;
 
 /**
  * Applique une valeur a tous les modules
  */
 function applyToAllModules(value) {
   MODULES_CODES_BARRES.forEach(module => {
-    if (value === 'organisation') {
-      document.getElementById(`gestion_${module}_org`).checked = true;
-      document.getElementById(`groupe_${module}`).value = '';
-    } else if (value === 'structure') {
-      document.getElementById(`gestion_${module}_str`).checked = true;
-      document.getElementById(`groupe_${module}`).value = '';
+    const select = document.getElementById(`gestion_${module}`);
+    if (select) {
+      select.value = value;
+    }
+  });
+}
+
+/**
+ * Initialise TomSelect pour les groupes de codes-barres (globaux)
+ */
+function initBarcodeGroupsTomSelect() {
+  const selectEl = document.getElementById('select_barcode_groups');
+  if (!selectEl) return;
+
+  // Detruire l'instance existante si elle existe
+  if (tsBarcodeGroups) {
+    tsBarcodeGroups.destroy();
+  }
+
+  tsBarcodeGroups = new TomSelect(selectEl, {
+    plugins: ['remove_button'],
+    persist: false,
+    create: async (input, callback) => {
+      const code = input.trim().toUpperCase();
+      if (!code || code === 'ORGANISATION' || code === 'STRUCTURE') {
+        callback();
+        return;
+      }
+
+      // Creer le groupe via l'API (global)
+      try {
+        const token = getAuthToken();
+        const response = await fetch('/api/organisations/barcode-groups', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ code })
+        });
+
+        if (response.ok) {
+          const newGroup = await response.json();
+          currentOrgBarcodeGroups.push(newGroup);
+          updateModuleSelects();
+          callback({ value: newGroup.id, text: newGroup.code });
+        } else {
+          const err = await response.json();
+          Swal.fire({ icon: 'error', title: 'Erreur', text: err.error || 'Erreur creation groupe' });
+          callback();
+        }
+      } catch (error) {
+        console.error('Erreur creation groupe:', error);
+        callback();
+      }
+    },
+    createOnBlur: true,
+    render: {
+      option_create: (data, escape) => `<div class="create">Creer le groupe : <strong>${escape(data.input.toUpperCase())}</strong></div>`,
+      item: (data, escape) => `<div class="badge bg-success me-1">${escape(data.text)}</div>`
+    },
+    onDelete: async (values) => {
+      // Supprimer les groupes via l'API (global)
+      for (const value of values) {
+        const group = currentOrgBarcodeGroups.find(g => g.id == value);
+        if (group) {
+          try {
+            const token = getAuthToken();
+            const response = await fetch(`/api/organisations/barcode-groups/${group.id}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+              const err = await response.json();
+              Swal.fire({ icon: 'error', title: 'Erreur', text: err.error || 'Erreur suppression groupe' });
+              return false;
+            }
+          } catch (error) {
+            console.error('Erreur suppression groupe:', error);
+            return false;
+          }
+        }
+        // Supprimer localement
+        currentOrgBarcodeGroups = currentOrgBarcodeGroups.filter(g => g.id != value);
+      }
+      updateModuleSelects();
+      return true;
+    }
+  });
+}
+
+/**
+ * Met a jour les selects de modules avec les groupes disponibles
+ */
+function updateModuleSelects() {
+  MODULES_CODES_BARRES.forEach(module => {
+    const select = document.getElementById(`gestion_${module}`);
+    if (!select) return;
+
+    const currentValue = select.value;
+
+    // Garder les options de base
+    select.innerHTML = `
+      <option value="organisation">Organisation (centralise)</option>
+      <option value="structure">Structure (par site)</option>
+    `;
+
+    // Ajouter les groupes
+    currentOrgBarcodeGroups.forEach(group => {
+      const option = document.createElement('option');
+      option.value = `groupe:${group.id}`;
+      option.textContent = `Groupe: ${group.code}`;
+      select.appendChild(option);
+    });
+
+    // Restaurer la valeur si possible
+    if (currentValue && Array.from(select.options).some(o => o.value === currentValue)) {
+      select.value = currentValue;
+    }
+  });
+}
+
+/**
+ * Charge les groupes (globaux) et config d'une organisation
+ */
+async function loadBarcodeData(orgId) {
+  try {
+    const token = getAuthToken();
+
+    // Les groupes sont globaux - toujours les charger
+    const groupsResponse = await fetch('/api/organisations/barcode-groups', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    currentOrgBarcodeGroups = groupsResponse.ok ? await groupsResponse.json() : [];
+
+    // La config est specifique a l'organisation
+    if (orgId) {
+      const configResponse = await fetch(`/api/organisations/${orgId}/barcode-config`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      currentOrgBarcodeConfig = configResponse.ok ? await configResponse.json() : {};
+    } else {
+      currentOrgBarcodeConfig = {};
+    }
+  } catch (error) {
+    console.error('Erreur chargement barcode data:', error);
+    currentOrgBarcodeGroups = [];
+    currentOrgBarcodeConfig = {};
+  }
+}
+
+/**
+ * Remplit le formulaire avec les donnees de codes-barres
+ */
+function setBarcodeFormData() {
+  // Initialiser TomSelect
+  initBarcodeGroupsTomSelect();
+
+  // Remplir le TomSelect avec les groupes existants
+  if (tsBarcodeGroups) {
+    tsBarcodeGroups.clear();
+    tsBarcodeGroups.clearOptions();
+
+    currentOrgBarcodeGroups.forEach(group => {
+      tsBarcodeGroups.addOption({ value: group.id, text: group.code });
+      tsBarcodeGroups.addItem(group.id);
+    });
+  }
+
+  // Mettre a jour les selects de modules
+  updateModuleSelects();
+
+  // Appliquer la config
+  MODULES_CODES_BARRES.forEach(module => {
+    const select = document.getElementById(`gestion_${module}`);
+    if (!select) return;
+
+    const config = currentOrgBarcodeConfig[module];
+    if (config) {
+      if (config.type_gestion === 'groupe' && config.groupe_id) {
+        select.value = `groupe:${config.groupe_id}`;
+      } else {
+        select.value = config.type_gestion;
+      }
+    } else {
+      select.value = 'organisation';
     }
   });
 }
@@ -517,29 +707,19 @@ function applyToAllModules(value) {
 /**
  * Recupere la configuration des codes-barres depuis le formulaire
  */
-function getGestionCodesBarres() {
+function getBarcodeConfig() {
   const config = {};
 
   MODULES_CODES_BARRES.forEach(module => {
-    const orgRadio = document.getElementById(`gestion_${module}_org`);
-    const strRadio = document.getElementById(`gestion_${module}_str`);
-    const grpRadio = document.getElementById(`gestion_${module}_grp`);
-    const grpInput = document.getElementById(`groupe_${module}`);
+    const select = document.getElementById(`gestion_${module}`);
+    if (!select) return;
 
-    if (orgRadio && orgRadio.checked) {
-      config[module] = 'organisation';
-    } else if (strRadio && strRadio.checked) {
-      config[module] = 'structure';
-    } else if (grpRadio && grpRadio.checked && grpInput) {
-      const groupeName = grpInput.value.trim().toUpperCase();
-      // Valider que le nom de groupe n'est pas un mot reserve
-      if (groupeName && groupeName !== 'ORGANISATION' && groupeName !== 'STRUCTURE') {
-        config[module] = groupeName;
-      } else {
-        config[module] = 'organisation'; // Fallback
-      }
+    const value = select.value;
+    if (value.startsWith('groupe:')) {
+      const groupeId = parseInt(value.replace('groupe:', ''));
+      config[module] = { type_gestion: 'groupe', groupe_id: groupeId };
     } else {
-      config[module] = 'organisation'; // Default
+      config[module] = { type_gestion: value, groupe_id: null };
     }
   });
 
@@ -547,74 +727,32 @@ function getGestionCodesBarres() {
 }
 
 /**
- * Remplit le formulaire avec la configuration des codes-barres
+ * Sauvegarde la configuration des codes-barres
  */
-function setGestionCodesBarres(config) {
-  if (!config || typeof config !== 'object') {
-    config = {};
-  }
+async function saveBarcodeConfig(orgId) {
+  if (!orgId) return;
 
-  MODULES_CODES_BARRES.forEach(module => {
-    const value = config[module] || 'organisation';
-    const orgRadio = document.getElementById(`gestion_${module}_org`);
-    const strRadio = document.getElementById(`gestion_${module}_str`);
-    const grpRadio = document.getElementById(`gestion_${module}_grp`);
-    const grpInput = document.getElementById(`groupe_${module}`);
-
-    if (!orgRadio || !strRadio || !grpRadio || !grpInput) return;
-
-    if (value === 'organisation') {
-      orgRadio.checked = true;
-      grpInput.value = '';
-    } else if (value === 'structure') {
-      strRadio.checked = true;
-      grpInput.value = '';
-    } else {
-      // C'est un nom de groupe
-      grpRadio.checked = true;
-      grpInput.value = value;
-    }
-  });
-}
-
-/**
- * Charge les noms de groupes existants pour l'auto-completion
- */
-async function loadGroupesExistants() {
   try {
     const token = getAuthToken();
-    const response = await fetch('/api/organisations', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const config = getBarcodeConfig();
+
+    await fetch(`/api/organisations/${orgId}/barcode-config`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(config)
     });
-
-    if (!response.ok) return;
-
-    const orgs = await response.json();
-    const groupes = new Set();
-
-    // Extraire tous les noms de groupes uniques
-    orgs.forEach(org => {
-      if (org.gestion_codes_barres && typeof org.gestion_codes_barres === 'object') {
-        Object.values(org.gestion_codes_barres).forEach(value => {
-          if (value && value !== 'organisation' && value !== 'structure') {
-            groupes.add(value.toUpperCase());
-          }
-        });
-      }
-    });
-
-    // Remplir le datalist
-    const datalist = document.getElementById('groupes-existants');
-    if (datalist) {
-      datalist.innerHTML = Array.from(groupes)
-        .sort()
-        .map(g => `<option value="${escapeHtml(g)}">`)
-        .join('');
-    }
   } catch (error) {
-    console.error('Erreur chargement groupes:', error);
+    console.error('Erreur sauvegarde barcode config:', error);
   }
 }
+
+// Anciennes fonctions pour compatibilite (deprecated)
+function getGestionCodesBarres() { return {}; }
+function setGestionCodesBarres(config) { }
+function loadGroupesExistants() { }
 
 // ==================== UTILITAIRES ====================
 

@@ -17,6 +17,7 @@
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <link href="css/admin-style.css" rel="stylesheet">
+  <link href="/vendor/tom-select/tom-select.bootstrap5.min.css" rel="stylesheet">
   <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
   <style>
     .organisation-card {
@@ -56,6 +57,21 @@
     }
     .stat-card .stat-icon {
       font-size: 2rem;
+    }
+    /* TomSelect - option de creation */
+    .ts-dropdown .create {
+      padding: 8px 12px;
+      color: #198754;
+      font-style: italic;
+      border-top: 1px dashed #dee2e6;
+      background: #f8f9fa;
+    }
+    .ts-dropdown .create:hover {
+      background: #198754;
+      color: white;
+    }
+    .ts-dropdown .create strong {
+      font-weight: 600;
       opacity: 0.7;
     }
     .nav-tabs .nav-link {
@@ -475,6 +491,25 @@
                     </div>
                   </div>
 
+                  <!-- Gestion des groupes -->
+                  <div class="col-12">
+                    <div class="card border-success">
+                      <div class="card-header bg-success bg-opacity-10 py-2">
+                        <div class="d-flex align-items-center">
+                          <i class="bi bi-collection me-2 text-success"></i>
+                          <strong>Groupes de codes-barres</strong>
+                        </div>
+                      </div>
+                      <div class="card-body py-3">
+                        <label class="form-label small text-muted mb-2">
+                          Groupes partages entre toutes les organisations. Tapez un code et appuyez sur Entree pour creer.
+                        </label>
+                        <select id="select_barcode_groups" multiple placeholder="Ex: SISAM, ZIK1, FILF..."></select>
+                        <div class="form-text">Les groupes sont globaux et disponibles dans toutes les organisations.</div>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- Appliquer a tous -->
                   <div class="col-12">
                     <div class="card bg-light border-0">
@@ -506,23 +541,10 @@
                             </div>
                           </div>
                           <div class="col-md-9">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_utilisateur" id="gestion_utilisateur_org" value="organisation" checked>
-                                <label class="form-check-label small" for="gestion_utilisateur_org">Organisation</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_utilisateur" id="gestion_utilisateur_str" value="structure">
-                                <label class="form-check-label small" for="gestion_utilisateur_str">Structure</label>
-                              </div>
-                              <div class="form-check form-check-inline d-flex align-items-center gap-1">
-                                <input class="form-check-input" type="radio" name="gestion_utilisateur" id="gestion_utilisateur_grp" value="groupe">
-                                <label class="form-check-label small" for="gestion_utilisateur_grp">Groupe:</label>
-                                <input type="text" class="form-control form-control-sm" id="groupe_utilisateur"
-                                       placeholder="Ex: SISAM" style="width: 120px;" list="groupes-existants"
-                                       onfocus="document.getElementById('gestion_utilisateur_grp').checked = true;">
-                              </div>
-                            </div>
+                            <select class="form-select form-select-sm gestion-module-select" id="gestion_utilisateur" style="max-width: 250px;">
+                              <option value="organisation">Organisation (centralise)</option>
+                              <option value="structure">Structure (par site)</option>
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -543,23 +565,10 @@
                             </div>
                           </div>
                           <div class="col-md-9">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_jeu" id="gestion_jeu_org" value="organisation" checked>
-                                <label class="form-check-label small" for="gestion_jeu_org">Organisation</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_jeu" id="gestion_jeu_str" value="structure">
-                                <label class="form-check-label small" for="gestion_jeu_str">Structure</label>
-                              </div>
-                              <div class="form-check form-check-inline d-flex align-items-center gap-1">
-                                <input class="form-check-input" type="radio" name="gestion_jeu" id="gestion_jeu_grp" value="groupe">
-                                <label class="form-check-label small" for="gestion_jeu_grp">Groupe:</label>
-                                <input type="text" class="form-control form-control-sm" id="groupe_jeu"
-                                       placeholder="Ex: SISAM" style="width: 120px;" list="groupes-existants"
-                                       onfocus="document.getElementById('gestion_jeu_grp').checked = true;">
-                              </div>
-                            </div>
+                            <select class="form-select form-select-sm gestion-module-select" id="gestion_jeu" style="max-width: 250px;">
+                              <option value="organisation">Organisation (centralise)</option>
+                              <option value="structure">Structure (par site)</option>
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -580,23 +589,10 @@
                             </div>
                           </div>
                           <div class="col-md-9">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_livre" id="gestion_livre_org" value="organisation" checked>
-                                <label class="form-check-label small" for="gestion_livre_org">Organisation</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_livre" id="gestion_livre_str" value="structure">
-                                <label class="form-check-label small" for="gestion_livre_str">Structure</label>
-                              </div>
-                              <div class="form-check form-check-inline d-flex align-items-center gap-1">
-                                <input class="form-check-input" type="radio" name="gestion_livre" id="gestion_livre_grp" value="groupe">
-                                <label class="form-check-label small" for="gestion_livre_grp">Groupe:</label>
-                                <input type="text" class="form-control form-control-sm" id="groupe_livre"
-                                       placeholder="Ex: SISAM" style="width: 120px;" list="groupes-existants"
-                                       onfocus="document.getElementById('gestion_livre_grp').checked = true;">
-                              </div>
-                            </div>
+                            <select class="form-select form-select-sm gestion-module-select" id="gestion_livre" style="max-width: 250px;">
+                              <option value="organisation">Organisation (centralise)</option>
+                              <option value="structure">Structure (par site)</option>
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -617,23 +613,10 @@
                             </div>
                           </div>
                           <div class="col-md-9">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_film" id="gestion_film_org" value="organisation" checked>
-                                <label class="form-check-label small" for="gestion_film_org">Organisation</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_film" id="gestion_film_str" value="structure">
-                                <label class="form-check-label small" for="gestion_film_str">Structure</label>
-                              </div>
-                              <div class="form-check form-check-inline d-flex align-items-center gap-1">
-                                <input class="form-check-input" type="radio" name="gestion_film" id="gestion_film_grp" value="groupe">
-                                <label class="form-check-label small" for="gestion_film_grp">Groupe:</label>
-                                <input type="text" class="form-control form-control-sm" id="groupe_film"
-                                       placeholder="Ex: SISAM" style="width: 120px;" list="groupes-existants"
-                                       onfocus="document.getElementById('gestion_film_grp').checked = true;">
-                              </div>
-                            </div>
+                            <select class="form-select form-select-sm gestion-module-select" id="gestion_film" style="max-width: 250px;">
+                              <option value="organisation">Organisation (centralise)</option>
+                              <option value="structure">Structure (par site)</option>
+                            </select>
                           </div>
                         </div>
                       </div>
@@ -654,31 +637,15 @@
                             </div>
                           </div>
                           <div class="col-md-9">
-                            <div class="d-flex align-items-center gap-3 flex-wrap">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_disque" id="gestion_disque_org" value="organisation" checked>
-                                <label class="form-check-label small" for="gestion_disque_org">Organisation</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="radio" name="gestion_disque" id="gestion_disque_str" value="structure">
-                                <label class="form-check-label small" for="gestion_disque_str">Structure</label>
-                              </div>
-                              <div class="form-check form-check-inline d-flex align-items-center gap-1">
-                                <input class="form-check-input" type="radio" name="gestion_disque" id="gestion_disque_grp" value="groupe">
-                                <label class="form-check-label small" for="gestion_disque_grp">Groupe:</label>
-                                <input type="text" class="form-control form-control-sm" id="groupe_disque"
-                                       placeholder="Ex: SISAM" style="width: 120px;" list="groupes-existants"
-                                       onfocus="document.getElementById('gestion_disque_grp').checked = true;">
-                              </div>
-                            </div>
+                            <select class="form-select form-select-sm gestion-module-select" id="gestion_disque" style="max-width: 250px;">
+                              <option value="organisation">Organisation (centralise)</option>
+                              <option value="structure">Structure (par site)</option>
+                            </select>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Datalist pour auto-completion des groupes -->
-                  <datalist id="groupes-existants"></datalist>
 
                   <div class="col-12 mt-2">
                     <div class="alert alert-warning mb-0 small">
@@ -706,6 +673,7 @@
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
   <script src="js/parametres-nav.js"></script>
+  <script src="/vendor/tom-select/tom-select.complete.min.js"></script>
   <script src="js/organisations.js"></script>
   <script>
     initTemplate('parametres');

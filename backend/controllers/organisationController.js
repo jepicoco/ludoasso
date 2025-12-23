@@ -5,7 +5,7 @@
  * (association, collectivite, entreprise)
  */
 
-const { Organisation, Structure, ConfigurationEmail, ConfigurationSMS } = require('../models');
+const { Organisation, Structure, ConfigurationEmail, ConfigurationSMS, OrganisationBarcodeGroup, OrganisationBarcodeConfig } = require('../models');
 const logger = require('../utils/logger');
 
 /**
@@ -382,5 +382,234 @@ exports.getConnecteurs = async (req, res) => {
   } catch (error) {
     logger.error('Erreur get connecteurs:', error);
     res.status(500).json({ error: 'Erreur lors de la recuperation des connecteurs' });
+  }
+};
+
+// ========================================
+// Barcode Groups (globaux - partages entre toutes les organisations)
+// ========================================
+
+/**
+ * Liste tous les groupes de codes-barres (globaux)
+ * Route: GET /api/organisations/barcode-groups
+ * Route legacy: GET /api/organisations/:id/barcode-groups (retourne aussi tous les groupes)
+ */
+exports.getBarcodeGroups = async (req, res) => {
+  try {
+    const groups = await OrganisationBarcodeGroup.findAll({
+      order: [['code', 'ASC']]
+    });
+
+    res.json(groups);
+  } catch (error) {
+    logger.error('Erreur get barcode groups:', error);
+    res.status(500).json({ error: 'Erreur lors de la recuperation des groupes' });
+  }
+};
+
+/**
+ * Cree un nouveau groupe de codes-barres (global)
+ * Route: POST /api/organisations/barcode-groups
+ * Route legacy: POST /api/organisations/:id/barcode-groups
+ */
+exports.createBarcodeGroup = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    // Validation
+    if (!code || code.trim() === '') {
+      return res.status(400).json({ error: 'Le code est obligatoire' });
+    }
+
+    const codeClean = code.trim().toUpperCase();
+
+    // Verifier unicite globale
+    const existing = await OrganisationBarcodeGroup.findOne({
+      where: { code: codeClean }
+    });
+    if (existing) {
+      return res.status(400).json({ error: 'Ce code de groupe existe deja' });
+    }
+
+    const group = await OrganisationBarcodeGroup.create({
+      organisation_id: null, // Global
+      code: codeClean
+    });
+
+    logger.info(`Barcode group cree (global): ${codeClean}`);
+
+    res.status(201).json(group);
+  } catch (error) {
+    logger.error('Erreur creation barcode group:', error);
+    res.status(500).json({ error: 'Erreur lors de la creation du groupe' });
+  }
+};
+
+/**
+ * Supprime un groupe de codes-barres
+ * Route: DELETE /api/organisations/barcode-groups/:groupId
+ * Route legacy: DELETE /api/organisations/:orgId/barcode-groups/:groupId
+ */
+exports.deleteBarcodeGroup = async (req, res) => {
+  try {
+    const { groupId, orgId } = req.params;
+    const id = groupId || orgId; // Support both route formats
+
+    const group = await OrganisationBarcodeGroup.findByPk(id);
+
+    if (!group) {
+      return res.status(404).json({ error: 'Groupe non trouve' });
+    }
+
+    // Verifier qu'aucune config n'utilise ce groupe
+    const configsUsingGroup = await OrganisationBarcodeConfig.count({
+      where: { groupe_id: id }
+    });
+
+    if (configsUsingGroup > 0) {
+      return res.status(400).json({
+        error: 'Ce groupe est utilise par une ou plusieurs configurations. Modifiez les configurations avant de supprimer le groupe.'
+      });
+    }
+
+    await group.destroy();
+
+    logger.info(`Barcode group supprime: ${group.code}`);
+
+    res.json({ message: 'Groupe supprime', id });
+  } catch (error) {
+    logger.error('Erreur suppression barcode group:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression du groupe' });
+  }
+};
+
+// ========================================
+// Barcode Config
+// ========================================
+
+const MODULES = ['utilisateur', 'jeu', 'livre', 'film', 'disque'];
+
+/**
+ * Recupere la configuration des codes-barres par module
+ */
+exports.getBarcodeConfig = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verifier que l'organisation existe
+    const organisation = await Organisation.findByPk(id);
+    if (!organisation) {
+      return res.status(404).json({ error: 'Organisation non trouvee' });
+    }
+
+    // Recuperer les configs existantes
+    const configs = await OrganisationBarcodeConfig.findAll({
+      where: { organisation_id: id },
+      include: [{
+        model: OrganisationBarcodeGroup,
+        as: 'groupe',
+        attributes: ['id', 'code']
+      }]
+    });
+
+    // Creer un objet avec tous les modules (par defaut 'organisation')
+    const result = {};
+    MODULES.forEach(module => {
+      const config = configs.find(c => c.module === module);
+      result[module] = config ? {
+        type_gestion: config.type_gestion,
+        groupe_id: config.groupe_id,
+        groupe_code: config.groupe?.code || null
+      } : {
+        type_gestion: 'organisation',
+        groupe_id: null,
+        groupe_code: null
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Erreur get barcode config:', error);
+    res.status(500).json({ error: 'Erreur lors de la recuperation de la configuration' });
+  }
+};
+
+/**
+ * Met a jour la configuration des codes-barres
+ * Body: { module: { type_gestion, groupe_id }, ... }
+ */
+exports.updateBarcodeConfig = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const configData = req.body;
+
+    // Verifier que l'organisation existe
+    const organisation = await Organisation.findByPk(id);
+    if (!organisation) {
+      return res.status(404).json({ error: 'Organisation non trouvee' });
+    }
+
+    // Traiter chaque module
+    for (const module of MODULES) {
+      if (configData[module]) {
+        const { type_gestion, groupe_id } = configData[module];
+
+        // Validation
+        if (!['organisation', 'structure', 'groupe'].includes(type_gestion)) {
+          return res.status(400).json({
+            error: `Type de gestion invalide pour ${module}: ${type_gestion}`
+          });
+        }
+
+        // Si type groupe, verifier que le groupe existe (les groupes sont globaux)
+        if (type_gestion === 'groupe' && groupe_id) {
+          const groupExists = await OrganisationBarcodeGroup.findByPk(groupe_id);
+          if (!groupExists) {
+            return res.status(400).json({
+              error: `Groupe ${groupe_id} non trouve pour ${module}`
+            });
+          }
+        }
+
+        // Upsert la config
+        await OrganisationBarcodeConfig.upsert({
+          organisation_id: parseInt(id),
+          module,
+          type_gestion,
+          groupe_id: type_gestion === 'groupe' ? groupe_id : null
+        });
+      }
+    }
+
+    logger.info(`Barcode config mise a jour pour org ${id}`);
+
+    // Retourner la config mise a jour
+    const configs = await OrganisationBarcodeConfig.findAll({
+      where: { organisation_id: id },
+      include: [{
+        model: OrganisationBarcodeGroup,
+        as: 'groupe',
+        attributes: ['id', 'code']
+      }]
+    });
+
+    const result = {};
+    MODULES.forEach(module => {
+      const config = configs.find(c => c.module === module);
+      result[module] = config ? {
+        type_gestion: config.type_gestion,
+        groupe_id: config.groupe_id,
+        groupe_code: config.groupe?.code || null
+      } : {
+        type_gestion: 'organisation',
+        groupe_id: null,
+        groupe_code: null
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    logger.error('Erreur update barcode config:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise a jour de la configuration' });
   }
 };

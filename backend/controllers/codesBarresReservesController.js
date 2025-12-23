@@ -19,15 +19,29 @@ const validateModule = (module) => {
 };
 
 /**
+ * Extraire le contexte depuis la requete (query params)
+ */
+const extractContext = (req) => {
+  const { organisation_id, structure_id, groupe_id } = req.query;
+  return {
+    organisation_id: organisation_id ? parseInt(organisation_id) : null,
+    structure_id: structure_id ? parseInt(structure_id) : null,
+    groupe_id: groupe_id ? parseInt(groupe_id) : null
+  };
+};
+
+/**
  * GET /api/codes-barres-reserves/parametres/:module
  * Obtenir les parametres de format pour un module
+ * Query params: organisation_id, structure_id, groupe_id
  */
 exports.getParametres = async (req, res) => {
   try {
     const { module } = req.params;
     validateModule(module);
 
-    const params = await codeBarreService.getParametres(module);
+    const context = extractContext(req);
+    const params = await codeBarreService.getParametres(module, context);
 
     res.json({
       success: true,
@@ -39,7 +53,10 @@ exports.getParametres = async (req, res) => {
         current_sequence: params.current_sequence,
         current_period: params.current_period,
         griller_annules: params.griller_annules,
-        format_locked: params.format_locked
+        format_locked: params.format_locked,
+        organisation_id: params.organisation_id,
+        structure_id: params.structure_id,
+        groupe_id: params.groupe_id
       }
     });
   } catch (error) {
@@ -54,12 +71,14 @@ exports.getParametres = async (req, res) => {
 /**
  * PUT /api/codes-barres-reserves/parametres/:module
  * Mettre a jour les parametres de format
+ * Query params: organisation_id, structure_id, groupe_id
  */
 exports.updateParametres = async (req, res) => {
   try {
     const { module } = req.params;
     validateModule(module);
 
+    const context = extractContext(req);
     const { format_pattern, prefix, sequence_reset, griller_annules } = req.body;
 
     const params = await codeBarreService.updateParametres(module, {
@@ -67,11 +86,12 @@ exports.updateParametres = async (req, res) => {
       prefix,
       sequence_reset,
       griller_annules
-    });
+    }, context);
 
     logger.info(`Parametres codes-barres mis a jour pour ${module}`, {
       userId: req.user?.id,
-      module
+      module,
+      context
     });
 
     res.json({
@@ -82,7 +102,10 @@ exports.updateParametres = async (req, res) => {
         prefix: params.prefix,
         sequence_reset: params.sequence_reset,
         griller_annules: params.griller_annules,
-        format_locked: params.format_locked
+        format_locked: params.format_locked,
+        organisation_id: params.organisation_id,
+        structure_id: params.structure_id,
+        groupe_id: params.groupe_id
       }
     });
   } catch (error) {
@@ -121,20 +144,26 @@ exports.generatePreview = async (req, res) => {
 /**
  * GET /api/codes-barres-reserves/parametres
  * Obtenir les parametres de tous les modules
+ * Query params: organisation_id, structure_id, groupe_id
  */
 exports.getAllParametres = async (req, res) => {
   try {
+    const context = extractContext(req);
     const parametres = {};
 
     for (const module of VALID_MODULES) {
-      const params = await codeBarreService.getParametres(module);
+      const params = await codeBarreService.getParametres(module, context);
       parametres[module] = {
         format_pattern: params.format_pattern,
         prefix: params.prefix,
         sequence_reset: params.sequence_reset,
         current_sequence: params.current_sequence,
+        current_period: params.current_period,
         griller_annules: params.griller_annules,
-        format_locked: params.format_locked
+        format_locked: params.format_locked,
+        organisation_id: params.organisation_id,
+        structure_id: params.structure_id,
+        groupe_id: params.groupe_id
       };
     }
 

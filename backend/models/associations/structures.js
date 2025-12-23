@@ -26,7 +26,9 @@ function setupStructuresAssociations(models) {
     GroupeFrontendStructure,
     ParametresFrontStructure,
     StructureConnecteurCategorie,
-    StructureConnecteurEvenement
+    StructureConnecteurEvenement,
+    OrganisationBarcodeGroup,
+    OrganisationBarcodeConfig
   } = models;
 
   // ========================================
@@ -363,6 +365,45 @@ function setupStructuresAssociations(models) {
     foreignKey: 'event_trigger_code',
     targetKey: 'code',
     as: 'eventTrigger'
+  });
+
+  // ========================================
+  // Organisation <-> BarcodeGroup
+  // ========================================
+
+  Organisation.hasMany(OrganisationBarcodeGroup, {
+    foreignKey: 'organisation_id',
+    as: 'barcodeGroups'
+  });
+
+  OrganisationBarcodeGroup.belongsTo(Organisation, {
+    foreignKey: 'organisation_id',
+    as: 'organisation'
+  });
+
+  // ========================================
+  // Organisation <-> BarcodeConfig
+  // ========================================
+
+  Organisation.hasMany(OrganisationBarcodeConfig, {
+    foreignKey: 'organisation_id',
+    as: 'barcodeConfigs'
+  });
+
+  OrganisationBarcodeConfig.belongsTo(Organisation, {
+    foreignKey: 'organisation_id',
+    as: 'organisation'
+  });
+
+  // BarcodeConfig <-> BarcodeGroup
+  OrganisationBarcodeConfig.belongsTo(OrganisationBarcodeGroup, {
+    foreignKey: 'groupe_id',
+    as: 'groupe'
+  });
+
+  OrganisationBarcodeGroup.hasMany(OrganisationBarcodeConfig, {
+    foreignKey: 'groupe_id',
+    as: 'configs'
   });
 }
 

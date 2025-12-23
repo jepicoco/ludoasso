@@ -210,24 +210,99 @@
           </a>
         </div>
 
-        <!-- Message si aucune structure selectionnee (mode structure uniquement) -->
-        <div class="alert alert-warning d-none" id="noStructureAlert">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu en haut de page pour configurer les codes-barres.
-          <br><small class="text-muted">En mode "gestion par structure", les parametres sont specifiques a chaque structure.</small>
+        <!-- Selecteur de contexte -->
+        <div class="card mb-4" id="context-selector-card">
+          <div class="card-header py-2">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-funnel me-2"></i>
+              <strong>Charger la configuration</strong>
+            </div>
+          </div>
+          <div class="card-body py-3">
+            <div class="row g-3 align-items-end">
+              <!-- Type de chargement -->
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Charger par</label>
+                <select class="form-select" id="load-type-select">
+                  <option value="organisation" selected>Organisation</option>
+                  <option value="structure">Structure</option>
+                  <option value="groupe">Groupe</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Organisation (visible par defaut) -->
+              <div class="col-md-4" id="org-select-container">
+                <label class="form-label small text-muted mb-1">Organisation</label>
+                <select class="form-select" id="organisation-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Structure (cache par defaut) -->
+              <div class="col-md-4" id="structure-select-container" style="display: none;">
+                <label class="form-label small text-muted mb-1">Structure</label>
+                <select class="form-select" id="structure-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Groupe (cache par defaut) -->
+              <div class="col-md-4" id="groupe-select-container" style="display: none;">
+                <label class="form-label small text-muted mb-1">Groupe</label>
+                <select class="form-select" id="groupe-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Info -->
+              <div class="col-md-5">
+                <div class="alert alert-light border py-2 mb-0 small" id="context-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <span id="context-info-text">Selectionnez un type puis un element pour voir les modules concernes.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Badge des modules concernes -->
+            <div class="mt-3" id="modules-filter-info" style="display: none;">
+              <span class="text-muted small me-2">Modules geres par ce contexte :</span>
+              <span id="modules-badges"></span>
+            </div>
+          </div>
         </div>
 
-        <!-- Mode de gestion des codes-barres par module (toujours visible une fois charge) -->
-        <div id="gestion-mode-banner" class="card mb-4" style="display: none;">
+        <!-- Configuration des modes de gestion par module -->
+        <div id="gestion-mode-config" class="card mb-4" style="display: none;">
           <div class="card-header d-flex justify-content-between align-items-center py-2">
             <div class="d-flex align-items-center">
-              <i class="bi bi-upc-scan me-2"></i>
-              <strong>Configuration des codes-barres</strong>
+              <i class="bi bi-diagram-3 me-2"></i>
+              <strong>Mode de gestion par module</strong>
               <span class="text-muted ms-2 small" id="gestion-org-name"></span>
             </div>
-            <a href="#" id="gestion-mode-link" class="btn btn-sm btn-outline-secondary" style="display: none;">
-              <i class="bi bi-pencil me-1"></i>Modifier
-            </a>
+            <button type="button" class="btn btn-sm btn-primary" id="btn-save-gestion" disabled>
+              <i class="bi bi-check-lg me-1"></i>Enregistrer
+            </button>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Pour chaque module, choisissez comment les codes-barres sont geres :
+              <strong>Organisation</strong> (centralise),
+              <strong>Structure</strong> (par site), ou
+              <strong>Groupe</strong> (par portail public).
+            </p>
+            <div class="row g-3" id="gestion-modules-config">
+              <!-- Genere par JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Apercu de la configuration actuelle -->
+        <div id="gestion-mode-preview" class="card mb-4" style="display: none;">
+          <div class="card-header py-2">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-eye me-2"></i>
+              <strong>Apercu de la configuration</strong>
+            </div>
           </div>
           <div class="card-body py-2">
             <div class="row g-2" id="gestion-modules-list">
@@ -236,8 +311,8 @@
           </div>
         </div>
 
-        <!-- Loading -->
-        <div class="text-center py-5" id="loadingContainer">
+        <!-- Loading (cache par defaut, affiche lors du changement d'organisation) -->
+        <div class="text-center py-5" id="loadingContainer" style="display: none;">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Chargement...</span>
           </div>
@@ -381,171 +456,727 @@
     let stats = {};
     let tokens = [];
     let originalValues = {}; // Pour tracker les changements
-    let organisationInfo = null;
+
+    // Donnees pour la gestion des organisations
+    let organisations = [];
+    let structures = [];
+    let barcodeGroups = []; // Groupes de codes-barres globaux
+    let barcodeConfig = {}; // Config par module (pour l'org selectionnee)
+    let selectedOrganisation = null;
+    let barcodeConfigOriginal = {};
+
+    // Contexte de chargement actuel
+    let currentLoadType = 'organisation'; // organisation | structure | groupe
+    let currentContextId = null;
+    let currentContextName = '';
+    let filteredModules = []; // Modules filtres selon le contexte
+
+    /**
+     * Genere les query params pour le contexte actuel
+     * Retourne les params selon le module et sa config de gestion
+     */
+    function getContextQueryParams(moduleId) {
+      if (!selectedOrganisation || !barcodeConfig[moduleId]) return '';
+
+      const config = barcodeConfig[moduleId];
+      const type = config.type_gestion;
+
+      if (type === 'organisation') {
+        return `?organisation_id=${selectedOrganisation.id}`;
+      } else if (type === 'structure' && currentLoadType === 'structure' && currentContextId) {
+        return `?structure_id=${currentContextId}`;
+      } else if (type === 'groupe' && config.groupe_id) {
+        return `?groupe_id=${config.groupe_id}`;
+      }
+
+      // Fallback : organisation
+      return `?organisation_id=${selectedOrganisation.id}`;
+    }
+
+    /**
+     * Genere les query params pour tous les modules du contexte actuel
+     */
+    function getContextQueryParamsForAll() {
+      if (!selectedOrganisation) return '';
+
+      if (currentLoadType === 'organisation') {
+        return `?organisation_id=${selectedOrganisation.id}`;
+      } else if (currentLoadType === 'structure' && currentContextId) {
+        return `?structure_id=${currentContextId}`;
+      } else if (currentLoadType === 'groupe' && currentContextId) {
+        return `?groupe_id=${currentContextId}`;
+      }
+
+      return '';
+    }
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', async () => {
       await initTemplate('parametres');
-      renderSubNav('configuration', 'codes-barres');
-      await checkStructureAndLoad();
-    });
 
-    // Ecouter les changements de structure
-    window.addEventListener('structureChanged', () => {
-      checkStructureAndLoad();
+      // Verifier que l'utilisateur est admin
+      const userRole = localStorage.getItem('userRole');
+      if (userRole !== 'administrateur') {
+        window.location.replace('/admin/parametres.html#outils');
+        return;
+      }
+
+      renderSubNav('configuration', 'codes-barres');
+
+      // Charger les donnees initiales
+      await loadInitialData();
+
+      // Evenements
+      document.getElementById('load-type-select').addEventListener('change', onLoadTypeChange);
+      document.getElementById('organisation-select').addEventListener('change', onOrganisationChange);
+      document.getElementById('structure-select').addEventListener('change', onStructureChange);
+      document.getElementById('groupe-select').addEventListener('change', onGroupeChange);
+      document.getElementById('btn-save-gestion').addEventListener('click', saveGestionConfig);
     });
 
     /**
-     * Verifie si une structure est selectionnee et charge les donnees
+     * Charge les donnees initiales (organisations, structures, groupes)
      */
-    async function checkStructureAndLoad() {
-      const loadingContainer = document.getElementById('loadingContainer');
-      const mainContent = document.getElementById('mainContent');
-      const noStructureAlert = document.getElementById('noStructureAlert');
-
-      // Afficher le loader
-      loadingContainer.style.display = 'block';
-      mainContent.style.display = 'none';
-      noStructureAlert.classList.add('d-none');
-
+    async function loadInitialData() {
       try {
-        // D'abord charger le mode de gestion
-        await loadGestionMode();
+        const [orgsResponse, structuresResponse, groupsResponse] = await Promise.all([
+          apiGet('/api/organisations'),
+          apiGet('/api/structures'),
+          apiGet('/api/organisations/barcode-groups')
+        ]);
 
-        // Verifier si on a besoin d'une structure selectionnee
-        // (si au moins un module est en mode "structure")
-        const gestionConfig = organisationInfo?.gestion_codes_barres || {};
-        const hasStructureMode = Object.values(gestionConfig).includes('structure');
+        organisations = Array.isArray(orgsResponse) ? orgsResponse : [];
+        structures = Array.isArray(structuresResponse) ? structuresResponse : [];
+        barcodeGroups = Array.isArray(groupsResponse) ? groupsResponse : [];
 
-        if (hasStructureMode) {
-          const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
-          const structureId = window.CURRENT_STRUCTURE_ID;
+        // Remplir les selects
+        populateOrganisationSelect();
+        populateStructureSelect();
+        populateGroupeSelect();
 
-          if (hasMultipleStructures && !structureId) {
-            loadingContainer.style.display = 'none';
-            noStructureAlert.classList.remove('d-none');
-            // La banniere est deja affichee par loadGestionMode()
-            return;
-          }
+        // Si une seule organisation, la selectionner automatiquement
+        if (organisations.length === 1) {
+          document.getElementById('organisation-select').value = organisations[0].id;
+          setTimeout(() => onOrganisationChange(), 100);
         }
 
-        // Charger les donnees
+      } catch (error) {
+        console.error('Erreur chargement donnees initiales:', error);
+        alert('Erreur lors du chargement des donnees');
+      }
+    }
+
+    function populateOrganisationSelect() {
+      const select = document.getElementById('organisation-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      organisations.forEach(org => {
+        const option = document.createElement('option');
+        option.value = org.id;
+        option.textContent = org.nom;
+        select.appendChild(option);
+      });
+    }
+
+    function populateStructureSelect() {
+      const select = document.getElementById('structure-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      structures.forEach(struct => {
+        const option = document.createElement('option');
+        option.value = struct.id;
+        option.textContent = `${struct.nom} (${struct.code})`;
+        select.appendChild(option);
+      });
+    }
+
+    function populateGroupeSelect() {
+      const select = document.getElementById('groupe-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      barcodeGroups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.code;
+        select.appendChild(option);
+      });
+    }
+
+    /**
+     * Quand le type de chargement change
+     */
+    function onLoadTypeChange() {
+      const loadType = document.getElementById('load-type-select').value;
+      currentLoadType = loadType;
+
+      // Masquer tous les selecteurs
+      document.getElementById('org-select-container').style.display = 'none';
+      document.getElementById('structure-select-container').style.display = 'none';
+      document.getElementById('groupe-select-container').style.display = 'none';
+
+      // Afficher le bon selecteur
+      if (loadType === 'organisation') {
+        document.getElementById('org-select-container').style.display = 'block';
+      } else if (loadType === 'structure') {
+        document.getElementById('structure-select-container').style.display = 'block';
+      } else if (loadType === 'groupe') {
+        document.getElementById('groupe-select-container').style.display = 'block';
+      }
+
+      // Reinitialiser
+      resetContext();
+    }
+
+    function resetContext() {
+      currentContextId = null;
+      currentContextName = '';
+      filteredModules = [];
+
+      document.getElementById('modules-filter-info').style.display = 'none';
+      document.getElementById('gestion-mode-config').style.display = 'none';
+      document.getElementById('gestion-mode-preview').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'none';
+
+      updateContextInfo('Selectionnez un element pour voir les modules concernes.');
+    }
+
+    function updateContextInfo(text) {
+      document.getElementById('context-info-text').textContent = text;
+    }
+
+    /**
+     * Charge les groupes et config d'une organisation
+     */
+    async function loadBarcodeData(orgId) {
+      const configResponse = await apiGet(`/api/organisations/${orgId}/barcode-config`);
+      barcodeConfig = configResponse || {};
+      barcodeConfigOriginal = JSON.parse(JSON.stringify(barcodeConfig));
+    }
+
+    /**
+     * Filtre les modules selon le contexte
+     */
+    function filterModulesByContext(loadType, contextId) {
+      if (!barcodeConfig || !selectedOrganisation) return [];
+
+      const filtered = [];
+
+      MODULES.forEach(module => {
+        const config = barcodeConfig[module.id];
+        if (!config) return;
+
+        if (loadType === 'organisation' && config.type_gestion === 'organisation') {
+          filtered.push(module.id);
+        } else if (loadType === 'structure' && config.type_gestion === 'structure') {
+          filtered.push(module.id);
+        } else if (loadType === 'groupe' && config.type_gestion === 'groupe' && config.groupe_id == contextId) {
+          filtered.push(module.id);
+        }
+      });
+
+      return filtered;
+    }
+
+    /**
+     * Affiche les badges des modules filtres
+     */
+    function renderModulesBadges() {
+      const container = document.getElementById('modules-badges');
+      const info = document.getElementById('modules-filter-info');
+
+      if (filteredModules.length === 0) {
+        info.style.display = 'none';
+        return;
+      }
+
+      info.style.display = 'block';
+
+      const moduleColors = {
+        utilisateur: 'primary',
+        jeu: 'purple',
+        livre: 'success',
+        film: 'warning',
+        disque: 'danger'
+      };
+
+      container.innerHTML = filteredModules.map(modId => {
+        const mod = MODULES.find(m => m.id === modId);
+        const color = moduleColors[modId] || 'secondary';
+        return `<span class="badge bg-${color} me-1"><i class="bi ${mod.icon} me-1"></i>${mod.label}</span>`;
+      }).join('');
+    }
+
+    /**
+     * Quand une organisation est selectionnee
+     */
+    let isLoading = false;
+
+    async function onOrganisationChange() {
+      if (isLoading) return;
+
+      const select = document.getElementById('organisation-select');
+      const orgId = select.value;
+
+      if (!orgId) {
+        resetContext();
+        return;
+      }
+
+      selectedOrganisation = organisations.find(o => o.id == orgId);
+      if (!selectedOrganisation) return;
+
+      currentContextId = orgId;
+      currentContextName = selectedOrganisation.nom;
+
+      await loadContextData('organisation', orgId);
+    }
+
+    /**
+     * Quand une structure est selectionnee
+     */
+    async function onStructureChange() {
+      if (isLoading) return;
+
+      const select = document.getElementById('structure-select');
+      const structId = select.value;
+
+      if (!structId) {
+        resetContext();
+        return;
+      }
+
+      const struct = structures.find(s => s.id == structId);
+      if (!struct) return;
+
+      // Trouver l'organisation parente
+      selectedOrganisation = organisations.find(o => o.id == struct.organisation_id);
+      if (!selectedOrganisation) {
+        updateContextInfo('Structure sans organisation parente');
+        return;
+      }
+
+      currentContextId = structId;
+      currentContextName = struct.nom;
+
+      await loadContextData('structure', structId);
+    }
+
+    /**
+     * Quand un groupe est selectionne
+     */
+    async function onGroupeChange() {
+      if (isLoading) return;
+
+      const select = document.getElementById('groupe-select');
+      const groupeId = select.value;
+
+      if (!groupeId) {
+        resetContext();
+        return;
+      }
+
+      const groupe = barcodeGroups.find(g => g.id == groupeId);
+      if (!groupe) return;
+
+      currentContextId = groupeId;
+      currentContextName = groupe.code;
+
+      // Pour les groupes, on doit trouver quelle organisation l'utilise
+      // On va charger la config de chaque organisation pour trouver les modules
+      await loadContextDataForGroupe(groupeId, groupe.code);
+    }
+
+    /**
+     * Charge les donnees pour un contexte organisation ou structure
+     */
+    async function loadContextData(loadType, contextId) {
+      isLoading = true;
+      const loadingContainer = document.getElementById('loadingContainer');
+      const mainContent = document.getElementById('mainContent');
+      const configCard = document.getElementById('gestion-mode-config');
+      const previewCard = document.getElementById('gestion-mode-preview');
+
+      loadingContainer.style.display = 'block';
+      mainContent.style.display = 'none';
+
+      try {
+        // Pour structure, on charge la config de son organisation parente
+        const orgId = loadType === 'structure'
+          ? structures.find(s => s.id == contextId)?.organisation_id
+          : contextId;
+
+        if (!orgId) throw new Error('Organisation non trouvee');
+
+        selectedOrganisation = organisations.find(o => o.id == orgId);
+        await loadBarcodeData(orgId);
+
+        // Filtrer les modules
+        filteredModules = filterModulesByContext(loadType, contextId);
+
+        if (filteredModules.length === 0) {
+          updateContextInfo(`Aucun module n'est gere par ${loadType === 'organisation' ? 'organisation' : 'structure'} pour "${currentContextName}".`);
+          loadingContainer.style.display = 'none';
+          renderModulesBadges();
+          return;
+        }
+
+        updateContextInfo(`${filteredModules.length} module(s) gere(s) par ${loadType} pour "${currentContextName}".`);
+        renderModulesBadges();
+
+        // Afficher le nom de l'organisation
+        document.getElementById('gestion-org-name').textContent = `(${selectedOrganisation.nom})`;
+
+        // Afficher le formulaire de configuration (uniquement pour type organisation)
+        if (loadType === 'organisation') {
+          renderGestionConfigForm();
+          configCard.style.display = 'block';
+          renderGestionPreview();
+          previewCard.style.display = 'block';
+        } else {
+          configCard.style.display = 'none';
+          previewCard.style.display = 'none';
+        }
+
+        // Charger les donnees des codes-barres
         await loadTokens();
         await loadParametres();
         await loadStats();
         initTabs();
-        initModuleCards();
+        initModuleCards(); // Filtre integre
         initDragAndDrop();
 
-        // Afficher le contenu
         loadingContainer.style.display = 'none';
         mainContent.style.display = 'block';
+
       } catch (error) {
-        console.error('Erreur chargement:', error);
+        console.error('Erreur chargement contexte:', error);
         loadingContainer.style.display = 'none';
-        mainContent.style.display = 'block';
+        updateContextInfo('Erreur lors du chargement.');
+      } finally {
+        isLoading = false;
       }
     }
 
-    // Charger le mode de gestion des codes-barres depuis l'organisation
-    async function loadGestionMode() {
-      try {
-        // Recuperer l'organisation courante (via la structure courante)
-        const structureId = window.CURRENT_STRUCTURE_ID;
+    /**
+     * Charge les donnees pour un groupe (doit trouver quelles orgs l'utilisent)
+     */
+    async function loadContextDataForGroupe(groupeId, groupeCode) {
+      isLoading = true;
+      const loadingContainer = document.getElementById('loadingContainer');
+      const mainContent = document.getElementById('mainContent');
+      const configCard = document.getElementById('gestion-mode-config');
+      const previewCard = document.getElementById('gestion-mode-preview');
 
-        if (structureId) {
-          // Charger la structure pour obtenir l'organisation (incluse dans la reponse)
-          const structure = await apiGet(`/api/structures/${structureId}`);
-          if (structure && structure.organisation) {
-            organisationInfo = structure.organisation;
-          }
-        } else {
-          // Pas de structure selectionnee, utiliser la premiere structure disponible
-          const structures = window.USER_STRUCTURES;
-          if (structures && structures.length > 0) {
-            // Utiliser l'organisation de la premiere structure
-            if (structures[0].organisation) {
-              organisationInfo = structures[0].organisation;
-            } else if (structures[0].organisation_id) {
-              // Charger la structure complete pour avoir l'organisation
-              const structure = await apiGet(`/api/structures/${structures[0].id}`);
-              if (structure && structure.organisation) {
-                organisationInfo = structure.organisation;
+      loadingContainer.style.display = 'block';
+      mainContent.style.display = 'none';
+      configCard.style.display = 'none';
+      previewCard.style.display = 'none';
+
+      try {
+        // Trouver les organisations qui utilisent ce groupe
+        let foundOrg = null;
+        filteredModules = [];
+
+        for (const org of organisations) {
+          const configResponse = await apiGet(`/api/organisations/${org.id}/barcode-config`);
+
+          MODULES.forEach(module => {
+            const config = configResponse[module.id];
+            if (config && config.type_gestion === 'groupe' && config.groupe_id == groupeId) {
+              if (!foundOrg) foundOrg = org;
+              if (!filteredModules.includes(module.id)) {
+                filteredModules.push(module.id);
               }
             }
+          });
+
+          if (foundOrg) {
+            barcodeConfig = configResponse;
+            break;
           }
         }
-      } catch (error) {
-        console.error('Erreur chargement mode gestion:', error);
-      }
 
-      // Toujours afficher la banniere (meme en cas d'erreur)
-      renderGestionModeBanner();
+        if (!foundOrg || filteredModules.length === 0) {
+          updateContextInfo(`Le groupe "${groupeCode}" n'est utilise par aucun module.`);
+          loadingContainer.style.display = 'none';
+          renderModulesBadges();
+          return;
+        }
+
+        selectedOrganisation = foundOrg;
+        barcodeConfigOriginal = JSON.parse(JSON.stringify(barcodeConfig));
+
+        updateContextInfo(`${filteredModules.length} module(s) gere(s) par le groupe "${groupeCode}" (${foundOrg.nom}).`);
+        renderModulesBadges();
+
+        document.getElementById('gestion-org-name').textContent = `(${selectedOrganisation.nom})`;
+
+        // Charger les donnees des codes-barres
+        await loadTokens();
+        await loadParametres();
+        await loadStats();
+        initTabs();
+        initModuleCards(); // Filtre integre
+        initDragAndDrop();
+
+        loadingContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+
+      } catch (error) {
+        console.error('Erreur chargement groupe:', error);
+        loadingContainer.style.display = 'none';
+        updateContextInfo('Erreur lors du chargement.');
+      } finally {
+        isLoading = false;
+      }
     }
 
-    // Configuration des modules pour l'affichage
-    const MODULES_CONFIG = {
-      utilisateur: { label: 'Usagers', icon: 'bi-person-badge', color: '#0d6efd' },
-      jeu: { label: 'Jeux', icon: 'bi-dice-5', color: '#6f42c1' },
-      livre: { label: 'Livres', icon: 'bi-book', color: '#20c997' },
-      film: { label: 'Films', icon: 'bi-film', color: '#fd7e14' },
-      disque: { label: 'Disques', icon: 'bi-disc', color: '#e83e8c' }
-    };
+    /**
+     * Affiche le formulaire de configuration des modes de gestion
+     */
+    function renderGestionConfigForm() {
+      const container = document.getElementById('gestion-modules-config');
 
-    // Afficher la banniere du mode de gestion par module
-    function renderGestionModeBanner() {
-      const banner = document.getElementById('gestion-mode-banner');
-      if (!organisationInfo) {
-        // Pas d'organisation trouvee - afficher un message
-        banner.style.display = 'block';
-        document.getElementById('gestion-org-name').textContent = '';
-        document.getElementById('gestion-modules-list').innerHTML = `
-          <div class="col-12">
-            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Aucune organisation configuree</span>
+      container.innerHTML = MODULES.map(module => {
+        const config = barcodeConfig[module.id] || { type_gestion: 'organisation', groupe_id: null };
+        const mode = config.type_gestion;
+        const selectedGroupId = config.groupe_id;
+
+        return `
+          <div class="col-md-6 col-lg-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="module-icon ${module.colorClass} me-2">
+                    <i class="bi ${module.icon}"></i>
+                  </div>
+                  <h6 class="mb-0">${module.label}</h6>
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label small">Mode de gestion</label>
+                  <select class="form-select form-select-sm gestion-mode-select" data-module="${module.id}">
+                    <option value="organisation" ${mode === 'organisation' ? 'selected' : ''}>Organisation (centralise)</option>
+                    <option value="structure" ${mode === 'structure' ? 'selected' : ''}>Structure (par site)</option>
+                    <option value="groupe" ${mode === 'groupe' ? 'selected' : ''}>Groupe</option>
+                  </select>
+                </div>
+
+                <div class="groupe-select-container" data-module="${module.id}" style="display: ${mode === 'groupe' ? 'block' : 'none'};">
+                  <label class="form-label small">Groupe</label>
+                  <div class="input-group input-group-sm">
+                    <select class="form-select form-select-sm groupe-select" data-module="${module.id}">
+                      <option value="">-- Choisir un groupe --</option>
+                      ${barcodeGroups.map(g => `
+                        <option value="${g.id}" ${selectedGroupId == g.id ? 'selected' : ''}>${g.code}</option>
+                      `).join('')}
+                    </select>
+                    <button type="button" class="btn btn-outline-secondary btn-add-group" data-module="${module.id}" title="Ajouter un groupe">
+                      <i class="bi bi-plus-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         `;
-        document.getElementById('gestion-mode-link').style.display = 'none';
-        return;
+      }).join('');
+
+      // Ajouter les evenements
+      container.querySelectorAll('.gestion-mode-select').forEach(select => {
+        select.addEventListener('change', onGestionModeChange);
+      });
+
+      container.querySelectorAll('.groupe-select').forEach(select => {
+        select.addEventListener('change', onGroupeSelectChange);
+      });
+
+      container.querySelectorAll('.btn-add-group').forEach(btn => {
+        btn.addEventListener('click', onAddGroupClick);
+      });
+
+      updateSaveButton();
+    }
+
+    /**
+     * Ajouter un groupe a la volee
+     */
+    async function onAddGroupClick(e) {
+      const moduleId = e.currentTarget.dataset.module;
+      const code = prompt('Entrez le code du nouveau groupe (ex: ZIK1, FILF):');
+
+      if (!code || code.trim() === '') return;
+
+      try {
+        const response = await fetch(`/api/organisations/${selectedOrganisation.id}/barcode-groups`, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ code: code.trim() })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          alert(err.error || 'Erreur lors de la creation du groupe');
+          return;
+        }
+
+        const newGroup = await response.json();
+        barcodeGroups.push(newGroup);
+
+        // Mettre a jour tous les selects de groupes
+        document.querySelectorAll('.groupe-select').forEach(select => {
+          const option = document.createElement('option');
+          option.value = newGroup.id;
+          option.textContent = newGroup.code;
+          select.appendChild(option);
+        });
+
+        // Selectionner le nouveau groupe dans le module concerne
+        const targetSelect = document.querySelector(`.groupe-select[data-module="${moduleId}"]`);
+        if (targetSelect) {
+          targetSelect.value = newGroup.id;
+          onGroupeSelectChange({ target: targetSelect });
+        }
+
+      } catch (error) {
+        console.error('Erreur creation groupe:', error);
+        alert('Erreur lors de la creation du groupe');
       }
+    }
 
-      const userRole = localStorage.getItem('userRole') || 'usager';
-      const isAdmin = userRole === 'administrateur';
+    /**
+     * Quand le mode de gestion change pour un module
+     */
+    function onGestionModeChange(e) {
+      const moduleId = e.target.dataset.module;
+      const mode = e.target.value;
 
-      // Afficher le nom de l'organisation
-      const orgName = document.getElementById('gestion-org-name');
-      orgName.textContent = `(${organisationInfo.nom})`;
+      // Afficher/masquer le select des groupes
+      const groupeContainer = document.querySelector(`.groupe-select-container[data-module="${moduleId}"]`);
+      groupeContainer.style.display = mode === 'groupe' ? 'block' : 'none';
 
-      // Configurer la banniere
-      banner.style.display = 'block';
+      // Mettre a jour la config
+      updateGestionConfig();
+    }
 
-      // Generer la liste des modules
-      const gestionConfig = organisationInfo.gestion_codes_barres || {};
-      const modulesList = document.getElementById('gestion-modules-list');
+    /**
+     * Quand la selection de groupes change
+     */
+    function onGroupeSelectChange(e) {
+      updateGestionConfig();
+    }
 
-      modulesList.innerHTML = Object.entries(MODULES_CONFIG).map(([moduleId, config]) => {
-        const value = gestionConfig[moduleId] || 'organisation';
+    /**
+     * Met a jour la configuration en memoire
+     */
+    function updateGestionConfig() {
+      if (!selectedOrganisation) return;
+
+      MODULES.forEach(module => {
+        const modeSelect = document.querySelector(`.gestion-mode-select[data-module="${module.id}"]`);
+        const groupeSelect = document.querySelector(`.groupe-select[data-module="${module.id}"]`);
+
+        const mode = modeSelect.value;
+        const groupeId = groupeSelect?.value ? parseInt(groupeSelect.value) : null;
+
+        barcodeConfig[module.id] = {
+          type_gestion: mode,
+          groupe_id: mode === 'groupe' ? groupeId : null,
+          groupe_code: mode === 'groupe' && groupeId ? barcodeGroups.find(g => g.id == groupeId)?.code : null
+        };
+      });
+
+      // Mettre a jour l'apercu
+      renderGestionPreview();
+      updateSaveButton();
+    }
+
+    /**
+     * Met a jour le bouton de sauvegarde
+     */
+    function updateSaveButton() {
+      const btn = document.getElementById('btn-save-gestion');
+      const currentConfig = JSON.stringify(barcodeConfig);
+      const originalConfig = JSON.stringify(barcodeConfigOriginal);
+
+      btn.disabled = currentConfig === originalConfig;
+    }
+
+    /**
+     * Sauvegarde la configuration de gestion
+     */
+    async function saveGestionConfig() {
+      if (!selectedOrganisation) return;
+
+      const btn = document.getElementById('btn-save-gestion');
+      const originalHtml = btn.innerHTML;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enregistrement...';
+
+        await apiPut(`/api/organisations/${selectedOrganisation.id}/barcode-config`, barcodeConfig);
+
+        // Mettre a jour l'original
+        barcodeConfigOriginal = JSON.parse(JSON.stringify(barcodeConfig));
+
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Enregistre !';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-success');
+
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-primary');
+          updateSaveButton();
+        }, 2000);
+
+      } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        alert('Erreur lors de la sauvegarde: ' + error.message);
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      }
+    }
+
+    /**
+     * Affiche l'apercu de la configuration actuelle
+     */
+    function renderGestionPreview() {
+      const container = document.getElementById('gestion-modules-list');
+
+      container.innerHTML = MODULES.map(module => {
+        const config = barcodeConfig[module.id] || { type_gestion: 'organisation' };
+        const mode = config.type_gestion;
+        const groupeCode = config.groupe_code;
+
         let badgeClass, badgeIcon, badgeText;
 
-        if (value === 'organisation') {
+        if (mode === 'organisation') {
           badgeClass = 'bg-primary';
           badgeIcon = 'bi-building-gear';
           badgeText = 'Organisation';
-        } else if (value === 'structure') {
+        } else if (mode === 'structure') {
           badgeClass = 'bg-secondary';
           badgeIcon = 'bi-diagram-3';
           badgeText = 'Structure';
         } else {
-          // Groupe
           badgeClass = 'bg-success';
           badgeIcon = 'bi-link-45deg';
-          badgeText = `Groupe : ${value}`;
+          badgeText = groupeCode || '(aucun)';
         }
+
+        // Couleurs par module
+        const moduleColors = {
+          utilisateur: '#0d6efd',
+          jeu: '#6f42c1',
+          livre: '#20c997',
+          film: '#fd7e14',
+          disque: '#e83e8c'
+        };
 
         return `
           <div class="col-auto">
             <div class="d-flex align-items-center gap-2 px-2 py-1 rounded" style="background: rgba(0,0,0,0.03);">
-              <i class="bi ${config.icon}" style="color: ${config.color};"></i>
-              <span class="small">${config.label}:</span>
+              <i class="bi ${module.icon}" style="color: ${moduleColors[module.id]};"></i>
+              <span class="small">${module.label}:</span>
               <span class="badge ${badgeClass} small">
                 <i class="bi ${badgeIcon} me-1"></i>${badgeText}
               </span>
@@ -553,15 +1184,6 @@
           </div>
         `;
       }).join('');
-
-      // Lien de modification (admin uniquement)
-      const link = document.getElementById('gestion-mode-link');
-      if (isAdmin && organisationInfo.id) {
-        link.href = `organisations.html?edit=${organisationInfo.id}`;
-        link.style.display = 'inline-flex';
-      } else {
-        link.style.display = 'none';
-      }
     }
 
     // Charger les tokens
@@ -653,15 +1275,22 @@
       });
     }
 
-    // Charger les parametres
+    // Charger les parametres selon le contexte
     async function loadParametres() {
       try {
-        const response = await apiGet(`${API_BASE}/parametres`);
-        if (response.success) {
-          parametres = response.parametres;
-          // Stocker les valeurs originales
-          originalValues = JSON.parse(JSON.stringify(parametres));
+        // Pour chaque module filtre, charger ses parametres avec le bon contexte
+        parametres = {};
+
+        for (const moduleId of filteredModules) {
+          const queryParams = getContextQueryParams(moduleId);
+          const response = await apiGet(`${API_BASE}/parametres/${moduleId}${queryParams}`);
+          if (response.success) {
+            parametres[moduleId] = response.parametres;
+          }
         }
+
+        // Stocker les valeurs originales
+        originalValues = JSON.parse(JSON.stringify(parametres));
       } catch (error) {
         console.error('Erreur chargement parametres:', error);
         showToast('Erreur lors du chargement des parametres', 'error')
@@ -684,7 +1313,23 @@
     // Afficher les cartes modules avec formulaires integres
     function initModuleCards() {
       const container = document.getElementById('modules-container');
-      container.innerHTML = MODULES.map(m => {
+
+      // Filtrer les modules selon le contexte actuel
+      const modulesToShow = filteredModules.length > 0
+        ? MODULES.filter(m => filteredModules.includes(m.id))
+        : MODULES;
+
+      if (modulesToShow.length === 0) {
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted"></i>
+            <p class="text-muted mt-3">Aucun module a configurer pour ce contexte.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = modulesToShow.map(m => {
         const p = parametres[m.id] || {};
         const locked = p.format_locked;
         const lockedClass = locked ? 'locked' : '';
@@ -834,7 +1479,7 @@
       return code;
     }
 
-    // Sauvegarder un module
+    // Sauvegarder un module avec son contexte
     async function saveModule(moduleId) {
       const data = {
         prefix: document.getElementById(`prefix-${moduleId}`).value,
@@ -851,7 +1496,9 @@
       showSaveIndicator('saving');
 
       try {
-        const response = await apiPut(`${API_BASE}/parametres/${moduleId}`, data);
+        // Ajouter les query params du contexte
+        const queryParams = getContextQueryParams(moduleId);
+        const response = await apiPut(`${API_BASE}/parametres/${moduleId}${queryParams}`, data);
 
         if (response.success) {
           parametres[moduleId] = response.parametres;
@@ -874,9 +1521,15 @@
 
     // Afficher les stats
     function renderStats() {
+      // Filtrer les stats selon les modules filtres
+      const modulesToShow = filteredModules.length > 0
+        ? MODULES.filter(m => filteredModules.includes(m.id))
+        : MODULES;
+
       let totalCodes = 0, totalUtilises = 0, totalDisponibles = 0, totalLots = 0;
 
-      Object.values(stats).forEach(s => {
+      modulesToShow.forEach(m => {
+        const s = stats[m.id] || {};
         totalCodes += s.total_codes || 0;
         totalUtilises += s.total_utilises || 0;
         totalDisponibles += s.total_disponibles || 0;
@@ -930,7 +1583,7 @@
         </div>
       `;
 
-      document.getElementById('stats-table').innerHTML = MODULES.map(m => {
+      document.getElementById('stats-table').innerHTML = modulesToShow.map(m => {
         const s = stats[m.id] || {};
         return `
           <tr>

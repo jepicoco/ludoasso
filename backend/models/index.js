@@ -229,6 +229,8 @@ const GroupeFrontendStructureModel = require('./GroupeFrontendStructure');
 const ParametresFrontStructureModel = require('./ParametresFrontStructure');
 const StructureConnecteurCategorieModel = require('./StructureConnecteurCategorie');
 const StructureConnecteurEvenementModel = require('./StructureConnecteurEvenement');
+const OrganisationBarcodeGroupModel = require('./OrganisationBarcodeGroup');
+const OrganisationBarcodeConfigModel = require('./OrganisationBarcodeConfig');
 
 // ============================================================
 // Initialize models
@@ -459,6 +461,8 @@ const GroupeFrontendStructure = GroupeFrontendStructureModel(sequelize);
 const ParametresFrontStructure = ParametresFrontStructureModel(sequelize);
 const StructureConnecteurCategorie = StructureConnecteurCategorieModel(sequelize);
 const StructureConnecteurEvenement = StructureConnecteurEvenementModel(sequelize);
+const OrganisationBarcodeGroup = OrganisationBarcodeGroupModel(sequelize);
+const OrganisationBarcodeConfig = OrganisationBarcodeConfigModel(sequelize);
 
 // ============================================================
 // Define associations via modular files
@@ -612,6 +616,8 @@ const models = {
   ParametresFrontStructure,
   StructureConnecteurCategorie,
   StructureConnecteurEvenement,
+  OrganisationBarcodeGroup,
+  OrganisationBarcodeConfig,
   ConfigurationEmail,
   ConfigurationSMS,
   EventTrigger,
@@ -836,6 +842,8 @@ module.exports = {
   ParametresFrontStructure,
   StructureConnecteurCategorie,
   StructureConnecteurEvenement,
+  OrganisationBarcodeGroup,
+  OrganisationBarcodeConfig,
   // Tags Utilisateur
   TagUtilisateur,
   UtilisateurTag

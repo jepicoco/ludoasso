@@ -9,8 +9,23 @@ module.exports = (sequelize) => {
     },
     module: {
       type: DataTypes.ENUM('utilisateur', 'jeu', 'livre', 'film', 'disque'),
-      allowNull: false,
-      unique: true
+      allowNull: false
+      // unique: false - la combinaison (module, organisation_id, structure_id, groupe_id) est unique
+    },
+    organisation_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'organisations', key: 'id' }
+    },
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'structures', key: 'id' }
+    },
+    groupe_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: { model: 'organisation_barcode_groups', key: 'id' }
     },
     format_pattern: {
       type: DataTypes.STRING(255),
@@ -84,17 +99,76 @@ module.exports = (sequelize) => {
     disque: 'DSQ'
   };
 
-  // Methode statique pour obtenir ou creer les parametres d'un module
-  ParametresCodesBarres.getOrCreateForModule = async function(module) {
-    let params = await this.findOne({ where: { module } });
+  /**
+   * Obtenir ou creer les parametres d'un module selon le contexte
+   * @param {string} module - Le module (utilisateur, jeu, livre, film, disque)
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
+   */
+  ParametresCodesBarres.getOrCreateForModule = async function(module, context = {}) {
+    const { organisation_id = null, structure_id = null, groupe_id = null } = context;
+
+    // Construire la clause where selon le contexte
+    const where = { module };
+    if (organisation_id) {
+      where.organisation_id = organisation_id;
+      where.structure_id = null;
+      where.groupe_id = null;
+    } else if (structure_id) {
+      where.organisation_id = null;
+      where.structure_id = structure_id;
+      where.groupe_id = null;
+    } else if (groupe_id) {
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = groupe_id;
+    } else {
+      // Fallback: parametres globaux (ancien comportement)
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = null;
+    }
+
+    let params = await this.findOne({ where });
     if (!params) {
       params = await this.create({
         module,
+        organisation_id: organisation_id || null,
+        structure_id: structure_id || null,
+        groupe_id: groupe_id || null,
         prefix: this.DEFAULT_PREFIXES[module] || module.toUpperCase().substring(0, 3),
         format_pattern: '{PREFIX}{NUMERO_SEQUENCE_8}'
       });
     }
     return params;
+  };
+
+  /**
+   * Obtenir tous les parametres pour un contexte donne
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
+   */
+  ParametresCodesBarres.getAllForContext = async function(context = {}) {
+    const { organisation_id = null, structure_id = null, groupe_id = null } = context;
+
+    const where = {};
+    if (organisation_id) {
+      where.organisation_id = organisation_id;
+      where.structure_id = null;
+      where.groupe_id = null;
+    } else if (structure_id) {
+      where.organisation_id = null;
+      where.structure_id = structure_id;
+      where.groupe_id = null;
+    } else if (groupe_id) {
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = groupe_id;
+    } else {
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = null;
+    }
+
+    return this.findAll({ where });
   };
 
   // Methode pour obtenir la periode courante selon le type de reset

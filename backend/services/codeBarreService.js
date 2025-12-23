@@ -38,16 +38,21 @@ const ENTITY_ID_FIELDS = {
 class CodeBarreService {
   /**
    * Obtenir les parametres de format pour un module
+   * @param {string} module - Le module (utilisateur, jeu, livre, film, disque)
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
    */
-  async getParametres(module) {
-    return await ParametresCodesBarres.getOrCreateForModule(module);
+  async getParametres(module, context = {}) {
+    return await ParametresCodesBarres.getOrCreateForModule(module, context);
   }
 
   /**
    * Mettre a jour les parametres de format
+   * @param {string} module - Le module
+   * @param {Object} data - Les donnees a mettre a jour
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
    */
-  async updateParametres(module, data) {
-    const params = await this.getParametres(module);
+  async updateParametres(module, data, context = {}) {
+    const params = await this.getParametres(module, context);
 
     // Verifier si le format est verrouille
     if (params.format_locked) {
@@ -77,9 +82,11 @@ class CodeBarreService {
 
   /**
    * Generer un apercu du format
+   * @param {string} module - Le module
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
    */
-  async generatePreview(module) {
-    const params = await this.getParametres(module);
+  async generatePreview(module, context = {}) {
+    const params = await this.getParametres(module, context);
     return params.getPreview();
   }
 

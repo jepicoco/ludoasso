@@ -8,8 +8,8 @@ const controller = require('../controllers/codesBarresReservesController');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/checkRole');
 
-// Roles autorises pour la gestion des codes-barres
-const ADMIN_ROLES = ['administrateur', 'gestionnaire'];
+// Roles autorises pour la gestion des codes-barres (admin uniquement)
+const ADMIN_ROLES = ['administrateur'];
 
 // ============================================
 // Routes publiques (pour validation depuis formulaires)

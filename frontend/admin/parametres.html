@@ -807,6 +807,21 @@
                 </a>
               </div>
 
+              <!-- Codes-barres reserves - Admin uniquement -->
+              <div class="col-md-6 col-lg-4" id="card-codes-barres">
+                <a href="parametres-codes-barres.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #0dcaf0;">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-upc-scan text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Codes-barres reserves</h5>
+                      <p class="text-muted mb-0">Configuration des plages de codes-barres par module</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
               <!-- Holodeck (Modules) - Admin uniquement -->
               <div class="col-md-6 col-lg-4" id="holodeck-card">
                 <a href="parametres-holodeck.html" class="text-decoration-none">
@@ -1109,6 +1124,9 @@
 
         const migrationsCard = document.getElementById('card-migrations');
         if (migrationsCard) migrationsCard.style.display = 'none';
+
+        const codesBarresCard = document.getElementById('card-codes-barres');
+        if (codesBarresCard) codesBarresCard.style.display = 'none';
       }
     }
 
