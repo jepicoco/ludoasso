@@ -339,6 +339,132 @@ module.exports = (sequelize) => {
       comment: 'Reservations actives (discotheque)'
     },
 
+    // === Prolongations par module ===
+    // Ludotheque
+    prolongation_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations actives (ludotheque)'
+    },
+    prolongation_jours_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 14,
+      comment: 'Jours par prolongation (ludotheque)'
+    },
+    prolongation_auto_max_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Prolongations auto max (ludotheque)'
+    },
+    prolongation_manuelle_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Demandes manuelles autorisees (ludotheque)'
+    },
+    prolongation_msg_reservation_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Avertissement reservation (ludotheque)'
+    },
+    // Bibliotheque
+    prolongation_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations actives (bibliotheque)'
+    },
+    prolongation_jours_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 14,
+      comment: 'Jours par prolongation (bibliotheque)'
+    },
+    prolongation_auto_max_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Prolongations auto max (bibliotheque)'
+    },
+    prolongation_manuelle_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Demandes manuelles autorisees (bibliotheque)'
+    },
+    prolongation_msg_reservation_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Avertissement reservation (bibliotheque)'
+    },
+    // Filmotheque
+    prolongation_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations actives (filmotheque)'
+    },
+    prolongation_jours_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 7,
+      comment: 'Jours par prolongation (filmotheque)'
+    },
+    prolongation_auto_max_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Prolongations auto max (filmotheque)'
+    },
+    prolongation_manuelle_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Demandes manuelles autorisees (filmotheque)'
+    },
+    prolongation_msg_reservation_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Avertissement reservation (filmotheque)'
+    },
+    // Discotheque
+    prolongation_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Prolongations actives (discotheque)'
+    },
+    prolongation_jours_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 7,
+      comment: 'Jours par prolongation (discotheque)'
+    },
+    prolongation_auto_max_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Prolongations auto max (discotheque)'
+    },
+    prolongation_manuelle_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Demandes manuelles autorisees (discotheque)'
+    },
+    prolongation_msg_reservation_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Avertissement reservation (discotheque)'
+    },
+
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

@@ -4,7 +4,7 @@
  */
 
 const crypto = require('crypto');
-const { ParametresFront } = require('../models');
+const { ParametresFront, ParametresFrontStructure } = require('../models');
 
 /**
  * Genere une cle aleatoire pour le bypass de maintenance
@@ -14,12 +14,67 @@ const generateMaintenanceKey = () => {
 };
 
 /**
+ * Helper: Get or create ParametresFrontStructure for a given structure_id
+ */
+async function getOrCreateStructureParams(structureId) {
+  if (!structureId) {
+    return null;
+  }
+
+  let params = await ParametresFrontStructure.findOne({
+    where: { structure_id: structureId }
+  });
+
+  if (!params) {
+    params = await ParametresFrontStructure.create({
+      structure_id: structureId
+    });
+  }
+
+  return params;
+}
+
+/**
  * Recuperer tous les parametres front
+ * Si X-Structure-Id est fourni, fusionne les parametres globaux avec ceux de la structure
  */
 exports.getParametres = async (req, res) => {
   try {
-    const parametres = await ParametresFront.getParametres();
-    res.json(parametres);
+    const structureId = req.headers['x-structure-id'];
+    const parametresGlobaux = await ParametresFront.getParametres();
+
+    // Si pas de structure specifiee, retourner les parametres globaux
+    if (!structureId) {
+      return res.json(parametresGlobaux);
+    }
+
+    // Recuperer les parametres de la structure
+    const paramsStructure = await getOrCreateStructureParams(parseInt(structureId));
+
+    // Fusionner: parametres globaux + surcharges de la structure
+    // Les parametres de prolongation par module viennent de la structure
+    const merged = { ...parametresGlobaux.toJSON() };
+
+    // Surcharger avec les parametres de prolongation de la structure
+    const prolongationFields = [
+      'prolongation_active_ludotheque', 'prolongation_jours_ludotheque', 'prolongation_auto_max_ludotheque',
+      'prolongation_manuelle_ludotheque', 'prolongation_msg_reservation_ludotheque',
+      'prolongation_active_bibliotheque', 'prolongation_jours_bibliotheque', 'prolongation_auto_max_bibliotheque',
+      'prolongation_manuelle_bibliotheque', 'prolongation_msg_reservation_bibliotheque',
+      'prolongation_active_filmotheque', 'prolongation_jours_filmotheque', 'prolongation_auto_max_filmotheque',
+      'prolongation_manuelle_filmotheque', 'prolongation_msg_reservation_filmotheque',
+      'prolongation_active_discotheque', 'prolongation_jours_discotheque', 'prolongation_auto_max_discotheque',
+      'prolongation_manuelle_discotheque', 'prolongation_msg_reservation_discotheque'
+    ];
+
+    for (const field of prolongationFields) {
+      if (paramsStructure[field] !== undefined && paramsStructure[field] !== null) {
+        merged[field] = paramsStructure[field];
+      }
+    }
+
+    merged.structure_id = parseInt(structureId);
+    res.json(merged);
   } catch (error) {
     console.error('Erreur getParametres front:', error);
     res.status(500).json({ error: 'Erreur lors de la recuperation des parametres' });
@@ -41,9 +96,11 @@ exports.getParametresPublics = async (req, res) => {
 
 /**
  * Mettre a jour les parametres front
+ * Si X-Structure-Id est fourni, les parametres de prolongation sont sauvegardes dans ParametresFrontStructure
  */
 exports.updateParametres = async (req, res) => {
   try {
+    const structureId = req.headers['x-structure-id'];
     const {
       // Identite
       nom_site, logo_url, favicon_url,
@@ -89,6 +146,51 @@ exports.updateParametres = async (req, res) => {
       charte_otp_preference
     } = req.body;
 
+    // Si structure specifiee, sauvegarder les parametres de prolongation dans ParametresFrontStructure
+    if (structureId) {
+      const paramsStructure = await getOrCreateStructureParams(parseInt(structureId));
+      const structureUpdates = {};
+
+      // Prolongations - Ludotheque
+      if (prolongation_jours_ludotheque !== undefined) structureUpdates.prolongation_jours_ludotheque = prolongation_jours_ludotheque;
+      if (prolongation_auto_max_ludotheque !== undefined) structureUpdates.prolongation_auto_max_ludotheque = prolongation_auto_max_ludotheque;
+      if (prolongation_manuelle_ludotheque !== undefined) structureUpdates.prolongation_manuelle_ludotheque = prolongation_manuelle_ludotheque;
+      if (prolongation_msg_reservation_ludotheque !== undefined) structureUpdates.prolongation_msg_reservation_ludotheque = prolongation_msg_reservation_ludotheque;
+      if (prolongation_active_ludotheque !== undefined) structureUpdates.prolongation_active_ludotheque = prolongation_active_ludotheque;
+
+      // Prolongations - Bibliotheque
+      if (prolongation_jours_bibliotheque !== undefined) structureUpdates.prolongation_jours_bibliotheque = prolongation_jours_bibliotheque;
+      if (prolongation_auto_max_bibliotheque !== undefined) structureUpdates.prolongation_auto_max_bibliotheque = prolongation_auto_max_bibliotheque;
+      if (prolongation_manuelle_bibliotheque !== undefined) structureUpdates.prolongation_manuelle_bibliotheque = prolongation_manuelle_bibliotheque;
+      if (prolongation_msg_reservation_bibliotheque !== undefined) structureUpdates.prolongation_msg_reservation_bibliotheque = prolongation_msg_reservation_bibliotheque;
+      if (prolongation_active_bibliotheque !== undefined) structureUpdates.prolongation_active_bibliotheque = prolongation_active_bibliotheque;
+
+      // Prolongations - Filmotheque
+      if (prolongation_jours_filmotheque !== undefined) structureUpdates.prolongation_jours_filmotheque = prolongation_jours_filmotheque;
+      if (prolongation_auto_max_filmotheque !== undefined) structureUpdates.prolongation_auto_max_filmotheque = prolongation_auto_max_filmotheque;
+      if (prolongation_manuelle_filmotheque !== undefined) structureUpdates.prolongation_manuelle_filmotheque = prolongation_manuelle_filmotheque;
+      if (prolongation_msg_reservation_filmotheque !== undefined) structureUpdates.prolongation_msg_reservation_filmotheque = prolongation_msg_reservation_filmotheque;
+      if (prolongation_active_filmotheque !== undefined) structureUpdates.prolongation_active_filmotheque = prolongation_active_filmotheque;
+
+      // Prolongations - Discotheque
+      if (prolongation_jours_discotheque !== undefined) structureUpdates.prolongation_jours_discotheque = prolongation_jours_discotheque;
+      if (prolongation_auto_max_discotheque !== undefined) structureUpdates.prolongation_auto_max_discotheque = prolongation_auto_max_discotheque;
+      if (prolongation_manuelle_discotheque !== undefined) structureUpdates.prolongation_manuelle_discotheque = prolongation_manuelle_discotheque;
+      if (prolongation_msg_reservation_discotheque !== undefined) structureUpdates.prolongation_msg_reservation_discotheque = prolongation_msg_reservation_discotheque;
+      if (prolongation_active_discotheque !== undefined) structureUpdates.prolongation_active_discotheque = prolongation_active_discotheque;
+
+      if (Object.keys(structureUpdates).length > 0) {
+        await paramsStructure.update(structureUpdates);
+      }
+
+      // Retourner les parametres fusionnes
+      const parametresGlobaux = await ParametresFront.getParametres();
+      const merged = { ...parametresGlobaux.toJSON(), ...paramsStructure.toJSON() };
+      merged.structure_id = parseInt(structureId);
+      return res.json(merged);
+    }
+
+    // Sinon, comportement normal: mise a jour des parametres globaux
     let parametres = await ParametresFront.findOne();
 
     if (!parametres) {
