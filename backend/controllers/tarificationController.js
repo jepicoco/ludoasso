@@ -55,6 +55,60 @@ exports.simulerCotisation = async (req, res) => {
 };
 
 /**
+ * Créer une cotisation avec le calcul complet (arbre de décision inclus)
+ * POST /api/tarification/creer
+ */
+exports.creerCotisation = async (req, res) => {
+  try {
+    const {
+      utilisateur_id,
+      tarif_cotisation_id,
+      date_cotisation,
+      date_paiement,
+      mode_paiement,
+      mode_paiement_id,
+      reference_paiement,
+      notes,
+      code_reduction_id,
+      structure_id
+    } = req.body;
+
+    if (!utilisateur_id || !tarif_cotisation_id) {
+      return res.status(400).json({
+        error: 'utilisateur_id et tarif_cotisation_id requis'
+      });
+    }
+
+    const cotisation = await tarifCalculService.creerCotisation(
+      utilisateur_id,
+      tarif_cotisation_id,
+      {
+        dateCotisation: date_cotisation,
+        datePaiement: date_paiement,
+        modePaiement: mode_paiement,
+        modePaiementId: mode_paiement_id,
+        referencePaiement: reference_paiement,
+        notes,
+        codeReductionId: code_reduction_id,
+        structureId: structure_id || req.structureId
+      }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: cotisation
+    });
+
+  } catch (error) {
+    logger.error(`Erreur création cotisation: ${error.message}`);
+    res.status(500).json({
+      error: 'Erreur lors de la création de la cotisation',
+      message: error.message
+    });
+  }
+};
+
+/**
  * Récupérer les tarifs disponibles pour un utilisateur
  * GET /api/tarification/tarifs-disponibles/:utilisateurId
  */

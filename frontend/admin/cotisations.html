@@ -293,6 +293,13 @@
                                     </div>
                                     <div id="ageInfo" class="text-muted small"></div>
                                 </div>
+
+                                <!-- Zone arbre de décision -->
+                                <div id="arbreDecisionSection" style="display:none;" class="mt-3 pt-3 border-top">
+                                    <h6 class="text-info mb-2"><i class="bi bi-diagram-3"></i> Arbre de décision</h6>
+                                    <div id="arbreDecisionInfo" class="small text-muted mb-2"></div>
+                                    <div id="arbreCheminList"></div>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -1138,7 +1145,15 @@
                     'handicap': 'Handicap',
                     'age': 'Âge',
                     'code_reduction': 'Code promo',
-                    'manuel': 'Manuel'
+                    'manuel': 'Manuel',
+                    // Types arbre de décision
+                    'ARBRE_COMMUNE': 'Commune (arbre)',
+                    'ARBRE_QF': 'Quotient familial (arbre)',
+                    'ARBRE_AGE': 'Âge (arbre)',
+                    'ARBRE_FIDELITE': 'Fidélité (arbre)',
+                    'ARBRE_MULTI_INSCRIPTIONS': 'Multi-inscriptions (arbre)',
+                    'ARBRE_TAG': 'Tag (arbre)',
+                    'ARBRE_STATUT_SOCIAL': 'Statut social (arbre)'
                 };
 
                 reductionsList.innerHTML = sim.reductions.map(r => `
@@ -1171,6 +1186,41 @@
                 document.getElementById('ageInfo').textContent = ageInfo;
             } else {
                 typeTarifSection.style.display = 'none';
+            }
+
+            // Section arbre de décision
+            const arbreDecisionSection = document.getElementById('arbreDecisionSection');
+            if (sim.arbre_decision || sim.chemin_arbre) {
+                arbreDecisionSection.style.display = 'block';
+                const arbreInfo = document.getElementById('arbreDecisionInfo');
+                const arbreCheminList = document.getElementById('arbreCheminList');
+
+                // Info arbre
+                if (sim.arbre_decision) {
+                    let infoHtml = `Version ${sim.arbre_decision.version}`;
+                    if (sim.arbre_decision.verrouille) {
+                        infoHtml += ' <span class="badge bg-secondary"><i class="bi bi-lock"></i> Verrouillé</span>';
+                    }
+                    arbreInfo.innerHTML = infoHtml;
+                }
+
+                // Chemin parcouru
+                if (sim.chemin_arbre && sim.chemin_arbre.length > 0) {
+                    arbreCheminList.innerHTML = sim.chemin_arbre.map((etape, index) => `
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="badge bg-light text-dark me-2">${index + 1}</span>
+                            <span class="text-muted small">
+                                <strong>${etape.noeud_type}</strong>:
+                                ${etape.branche_libelle}
+                                ${etape.reduction ? `<span class="text-success">(-${etape.reduction} €)</span>` : ''}
+                            </span>
+                        </div>
+                    `).join('');
+                } else {
+                    arbreCheminList.innerHTML = '<span class="text-muted small">Aucune branche correspondante</span>';
+                }
+            } else {
+                arbreDecisionSection.style.display = 'none';
             }
         }
 
@@ -1208,6 +1258,7 @@
             document.getElementById('qfSection').style.display = 'none';
             document.getElementById('reductionsSection').style.display = 'none';
             document.getElementById('typeTarifSection').style.display = 'none';
+            document.getElementById('arbreDecisionSection').style.display = 'none';
 
             detailsDiv.innerHTML = `
                 <div class="row g-2">
@@ -1313,9 +1364,19 @@
             }
 
             try {
-                await apiRequest('/cotisations', {
+                // Utiliser la route tarification/creer pour le calcul complet avec arbre de décision
+                const result = await apiRequest('/tarification/creer', {
                     method: 'POST',
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        utilisateur_id: data.adherent_id,
+                        tarif_cotisation_id: data.tarif_cotisation_id,
+                        date_cotisation: data.date_debut,
+                        date_paiement: data.date_paiement,
+                        mode_paiement_id: data.mode_paiement_id,
+                        reference_paiement: data.reference_paiement,
+                        notes: data.notes,
+                        code_reduction_id: data.code_reduction_id
+                    })
                 });
 
                 showAlert('Cotisation créée avec succès', 'success');
@@ -1364,7 +1425,15 @@
                             'handicap': 'Handicap',
                             'age': 'Âge',
                             'code_reduction': 'Code promo',
-                            'manuel': 'Manuel'
+                            'manuel': 'Manuel',
+                            // Types arbre de décision
+                            'ARBRE_COMMUNE': 'Commune (arbre)',
+                            'ARBRE_QF': 'Quotient familial (arbre)',
+                            'ARBRE_AGE': 'Âge (arbre)',
+                            'ARBRE_FIDELITE': 'Fidélité (arbre)',
+                            'ARBRE_MULTI_INSCRIPTIONS': 'Multi-inscriptions (arbre)',
+                            'ARBRE_TAG': 'Tag (arbre)',
+                            'ARBRE_STATUT_SOCIAL': 'Statut social (arbre)'
                         };
 
                         reductionsHtml = `
@@ -1470,6 +1539,24 @@
                         <tr>
                             <th>Notes:</th>
                             <td>${cot.notes}</td>
+                        </tr>
+                        ` : ''}
+                        ${cot.arbre_decision_id ? `
+                        <tr>
+                            <th>Arbre de décision:</th>
+                            <td>
+                                <span class="badge bg-info"><i class="bi bi-diagram-3"></i> Version ${cot.arbre_version || '?'}</span>
+                                ${cot.chemin_arbre_json && cot.chemin_arbre_json.length > 0 ? `
+                                    <div class="mt-2 small">
+                                        ${cot.chemin_arbre_json.map((etape, i) => `
+                                            <div class="text-muted">
+                                                <span class="badge bg-light text-dark">${i + 1}</span>
+                                                <strong>${etape.noeud_type}</strong>: ${etape.branche_libelle}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </td>
                         </tr>
                         ` : ''}
                     </table>

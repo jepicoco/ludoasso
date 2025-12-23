@@ -208,6 +208,28 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       allowNull: true,
       comment: 'Détail complet du calcul pour audit'
+    },
+    // === Champs arbre de décision ===
+    arbre_decision_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'arbres_decision_tarif',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'ID de l\'arbre de décision utilisé pour le calcul'
+    },
+    arbre_version: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Version de l\'arbre de décision au moment du calcul'
+    },
+    chemin_arbre_json: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Chemin suivi dans l\'arbre de décision (pour audit)'
     }
   }, {
     tableName: 'cotisations',

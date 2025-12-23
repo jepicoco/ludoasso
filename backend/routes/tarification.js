@@ -22,6 +22,14 @@ router.post('/simuler',
   tarificationController.simulerCotisation
 );
 
+// Créer une cotisation avec calcul complet (arbre de décision inclus)
+router.post('/creer',
+  verifyToken,
+  structureContext({ required: true }),
+  checkRole(['gestionnaire', 'comptable', 'administrateur']),
+  tarificationController.creerCotisation
+);
+
 // Tarifs disponibles pour un utilisateur
 router.get('/tarifs-disponibles/:utilisateurId',
   verifyToken,

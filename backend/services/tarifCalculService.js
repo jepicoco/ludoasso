@@ -7,9 +7,10 @@ const {
   Utilisateur, TarifCotisation, TypeTarif, TarifTypeTarif,
   ConfigurationQuotientFamilial, TrancheQuotientFamilial,
   RegleReduction, HistoriqueQuotientFamilial, Cotisation,
-  CotisationReduction, Commune, sequelize
+  CotisationReduction, Commune, ArbreDecision, sequelize
 } = require('../models');
 const quotientFamilialService = require('./quotientFamilialService');
+const arbreDecisionService = require('./arbreDecisionService');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
 
@@ -309,9 +310,82 @@ async function simulerCotisation(utilisateurId, tarifCotisationId, options = {})
     anneesAnciennete: calculerAnciennete(utilisateur.date_premiere_adhesion, dateCotisation)
   };
 
-  // 8. Collecter et appliquer les règles de réduction
+  // 8. Collecter et appliquer les règles de réduction (ancien système)
   const reglesApplicables = await collecterReglesApplicables(utilisateur, contexteReduction);
   const resultatReductions = appliquerReductions(montantBase, reglesApplicables, contexteReduction);
+
+  // 8.5 Evaluer l'arbre de décision si un existe pour ce tarif
+  let arbreInfo = null;
+  let reductionsArbre = [];
+  let cheminArbre = [];
+  let traceArbre = [];
+
+  try {
+    const arbre = await arbreDecisionService.getArbreByTarif(tarifCotisationId);
+
+    if (arbre && arbre.arbre_json?.noeuds?.length > 0) {
+      // Préparer les données utilisateur pour l'évaluation
+      const utilisateurPourArbre = {
+        ...utilisateur.toJSON ? utilisateur.toJSON() : utilisateur,
+        commune_id: utilisateur.commune_prise_en_charge_id || utilisateur.commune_id,
+        quotient_familial: qfInfo.quotient_familial,
+        date_naissance: utilisateur.date_naissance,
+        date_premiere_adhesion: utilisateur.date_premiere_adhesion,
+        tags: utilisateur.tags || []
+      };
+
+      const contexteArbre = {
+        montantBase: resultatReductions.montantFinal, // Appliquer sur le montant après règles
+        dateCotisation,
+        structureId
+      };
+
+      const resultatArbre = await arbreDecisionService.evaluerArbre(
+        arbre.id,
+        utilisateurPourArbre,
+        contexteArbre
+      );
+
+      if (resultatArbre.reductions?.length > 0) {
+        // Convertir les réductions de l'arbre au format attendu
+        reductionsArbre = resultatArbre.reductions.map((r, index) => ({
+          regle_reduction_id: null,
+          arbre_decision_id: arbre.id,
+          type_source: `ARBRE_${r.type_source}`,
+          libelle: r.branche_libelle || `Réduction ${r.type_source}`,
+          type_calcul: r.type_calcul,
+          valeur: parseFloat(r.valeur),
+          montant_reduction: r.montant_reduction,
+          ordre_application: resultatReductions.reductions.length + index + 1,
+          base_calcul: contexteArbre.montantBase,
+          contexte_json: {
+            arbre_id: arbre.id,
+            branche_code: r.branche_code,
+            type_source: r.type_source
+          }
+        }));
+
+        cheminArbre = resultatArbre.chemin;
+        traceArbre = resultatArbre.trace;
+      }
+
+      arbreInfo = {
+        id: arbre.id,
+        version: arbre.version,
+        verrouille: arbre.verrouille,
+        mode_affichage: arbre.mode_affichage
+      };
+    }
+  } catch (error) {
+    logger.warn(`Erreur évaluation arbre pour tarif ${tarifCotisationId}: ${error.message}`);
+    // Continuer sans l'arbre en cas d'erreur
+  }
+
+  // Fusionner les réductions
+  const toutesReductions = [...resultatReductions.reductions, ...reductionsArbre];
+  const totalReductionsArbre = reductionsArbre.reduce((sum, r) => sum + r.montant_reduction, 0);
+  const totalReductionsFinal = resultatReductions.totalReductions + totalReductionsArbre;
+  const montantFinal = Math.max(0, montantBase - totalReductionsFinal);
 
   // 9. Construire le résultat
   const resultat = {
@@ -339,15 +413,19 @@ async function simulerCotisation(utilisateurId, tarifCotisationId, options = {})
     calcul: {
       tarif_base: montantTarif,
       montant_apres_qf: montantBase,
-      total_reductions: resultatReductions.totalReductions,
-      montant_final: resultatReductions.montantFinal
+      total_reductions: totalReductionsFinal,
+      montant_final: montantFinal
     },
     tranche_qf: trancheQF,
-    reductions: resultatReductions.reductions,
+    reductions: toutesReductions,
     commune: utilisateur.communePriseEnCharge || utilisateur.communeResidence ? {
       id: (utilisateur.communePriseEnCharge || utilisateur.communeResidence).id,
       nom: (utilisateur.communePriseEnCharge || utilisateur.communeResidence).nom
-    } : null
+    } : null,
+    // Informations sur l'arbre de décision
+    arbre_decision: arbreInfo,
+    chemin_arbre: cheminArbre.length > 0 ? cheminArbre : null,
+    trace_arbre: traceArbre.length > 0 ? traceArbre : null
   };
 
   // Détails pour audit si demandé
@@ -362,6 +440,8 @@ async function simulerCotisation(utilisateurId, tarifCotisationId, options = {})
         libelle: r.libelle,
         type_source: r.type_source
       })),
+      arbre_decision_id: arbreInfo?.id,
+      arbre_version: arbreInfo?.version,
       contexte: contexteReduction
     };
   }
@@ -441,7 +521,11 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
       tranche_qf_id: simulation.tranche_qf?.id,
       commune_id_snapshot: simulation.commune?.id,
       age_snapshot: simulation.utilisateur.age,
-      detail_calcul_json: simulation.detail_calcul
+      detail_calcul_json: simulation.detail_calcul,
+      // Champs arbre de décision
+      arbre_decision_id: simulation.arbre_decision?.id || null,
+      arbre_version: simulation.arbre_decision?.version || null,
+      chemin_arbre_json: simulation.chemin_arbre || null
     }, { transaction });
 
     // 4. Créer les réductions liées
@@ -479,10 +563,22 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
 
     await transaction.commit();
 
+    // 7. Verrouiller l'arbre de décision s'il a été utilisé
+    if (simulation.arbre_decision?.id) {
+      try {
+        await arbreDecisionService.verrouillerArbre(simulation.arbre_decision.id);
+        logger.info(`Arbre de décision ${simulation.arbre_decision.id} verrouillé`);
+      } catch (error) {
+        logger.warn(`Erreur verrouillage arbre: ${error.message}`);
+        // Ne pas bloquer la création de la cotisation
+      }
+    }
+
     logger.info(`Cotisation créée: ${cotisation.id}`, {
       utilisateurId,
       montant: cotisation.montant_paye,
-      reductions: simulation.reductions.length
+      reductions: simulation.reductions.length,
+      arbreId: simulation.arbre_decision?.id
     });
 
     // 7. Recharger avec relations
