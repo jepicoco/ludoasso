@@ -7,6 +7,15 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true
     },
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'ID de la structure (null = global)',
+      references: {
+        model: 'structures',
+        key: 'id'
+      }
+    },
     module: {
       type: DataTypes.ENUM('ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'),
       allowNull: false,
@@ -41,7 +50,8 @@ module.exports = (sequelize) => {
     indexes: [
       {
         unique: true,
-        fields: ['module', 'genre_id']
+        name: 'idx_limite_reservation_genre_unique',
+        fields: ['structure_id', 'module', 'genre_id']
       }
     ]
   });

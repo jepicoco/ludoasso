@@ -83,9 +83,12 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
     const globalParams = await ParametresFront.getParametres();
     const moduleReservationsActif = globalParams.module_reservations !== false;
 
-    // Recuperer toutes les limites par genre (globales pour l'instant)
-    // TODO: Ajouter structure_id a LimiteReservationGenre pour filtrage par structure
+    // Recuperer les limites par genre pour cette structure
+    const genreWhereClause = structureId
+      ? { structure_id: parseInt(structureId) }
+      : { structure_id: null };
     const limitesGenre = await LimiteReservationGenre.findAll({
+      where: genreWhereClause,
       order: [['module', 'ASC'], ['genre_nom', 'ASC']]
     });
 
@@ -207,6 +210,7 @@ router.get('/genres/:module', verifyToken, checkRole(['administrateur', 'gestion
 router.get('/genres-disponibles/:module', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
     const { module } = req.params;
+    const structureId = req.headers['x-structure-id'];
 
     if (!GENRE_MODELS[module]) {
       return res.status(400).json({
@@ -224,9 +228,12 @@ router.get('/genres-disponibles/:module', verifyToken, checkRole(['administrateu
       order: [['nom', 'ASC']]
     });
 
-    // Recuperer les genres deja configures
+    // Recuperer les genres deja configures pour cette structure
+    const whereClause = structureId
+      ? { module, structure_id: parseInt(structureId) }
+      : { module, structure_id: null };
     const limitesExistantes = await LimiteReservationGenre.findAll({
-      where: { module },
+      where: whereClause,
       attributes: ['genre_id']
     });
 
@@ -256,6 +263,7 @@ router.get('/genres-disponibles/:module', verifyToken, checkRole(['administrateu
 router.post('/genres', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
     const { module, genre_id, limite_max } = req.body;
+    const structureId = req.headers['x-structure-id'];
 
     if (!module || !genre_id || limite_max === undefined) {
       return res.status(400).json({
@@ -282,9 +290,12 @@ router.post('/genres', verifyToken, checkRole(['administrateur', 'gestionnaire']
       });
     }
 
-    // Verifier qu'il n'existe pas deja
+    // Verifier qu'il n'existe pas deja pour cette structure
+    const whereClause = structureId
+      ? { module, genre_id, structure_id: parseInt(structureId) }
+      : { module, genre_id, structure_id: null };
     const existante = await LimiteReservationGenre.findOne({
-      where: { module, genre_id }
+      where: whereClause
     });
 
     if (existante) {
@@ -296,6 +307,7 @@ router.post('/genres', verifyToken, checkRole(['administrateur', 'gestionnaire']
 
     // Creer la limite
     const limite = await LimiteReservationGenre.create({
+      structure_id: structureId ? parseInt(structureId) : null,
       module,
       genre_id,
       genre_nom: genre.nom,
