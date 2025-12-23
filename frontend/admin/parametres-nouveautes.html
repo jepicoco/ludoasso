@@ -197,11 +197,56 @@
     let isLoading = false; // Flag pour eviter auto-save pendant le chargement
 
     const MODULES = [
-      { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', defaultDuree: 60 },
-      { id: 'bibliotheque', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', defaultDuree: 30 },
-      { id: 'filmotheque', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', defaultDuree: 45 },
-      { id: 'discotheque', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', defaultDuree: 10 }
+      { id: 'ludotheque', code: 'jeux', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', defaultDuree: 60 },
+      { id: 'bibliotheque', code: 'livres', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', defaultDuree: 30 },
+      { id: 'filmotheque', code: 'films', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', defaultDuree: 45 },
+      { id: 'discotheque', code: 'disques', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', defaultDuree: 10 }
     ];
+
+    // Helper pour parser modules_actifs (peut etre string JSON ou array)
+    function parseModulesActifs(modules) {
+      if (!modules) return [];
+      if (Array.isArray(modules)) return modules;
+      if (typeof modules === 'string') {
+        try {
+          const parsed = JSON.parse(modules);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
+
+    /**
+     * Obtenir les modules actifs pour la structure courante
+     * @returns {Array} Liste des codes de collection actifs (jeux, livres, films, disques)
+     */
+    function getStructureModules() {
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      // Si pas de structure selectionnee
+      if (!structureId) {
+        // Admin global ou mono-structure : union de tous les modules
+        if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+          return ['jeux', 'livres', 'films', 'disques']; // Tous par defaut
+        }
+        if (window.USER_STRUCTURES.length === 1) {
+          return parseModulesActifs(window.USER_STRUCTURES[0].modules_actifs);
+        }
+        // Multi-structure sans selection : union des modules
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+          const mods = parseModulesActifs(s.modules_actifs);
+          mods.forEach(m => allModules.add(m));
+        });
+        return Array.from(allModules);
+      }
+
+      // Structure selectionnee : ses modules
+      const currentStructure = window.USER_STRUCTURES?.find(s => s.id === structureId);
+      return parseModulesActifs(currentStructure?.modules_actifs);
+    }
 
     // Init template et navigation
     initTemplate('parametres');
@@ -361,14 +406,18 @@
 
         // Stocker pour la sauvegarde
         currentParams = { global: globalParams, structure: structureParams };
-        console.log('Loaded params:', currentParams);
+
+        // Obtenir les modules actifs de la structure
+        const structureModules = getStructureModules();
+        console.log('Structure modules:', structureModules);
 
         MODULES.forEach(mod => {
-          const moduleActif = globalParams[`module_${mod.id}`];
+          // Verifier si le module est actif dans la structure (par code de collection)
+          const moduleActif = structureModules.includes(mod.code);
           const card = document.getElementById(`card-${mod.id}`);
           const badge = document.getElementById(`badge-module-${mod.id}`);
 
-          // Module actif/inactif dans le systeme
+          // Module actif/inactif dans la structure
           if (!moduleActif) {
             card.classList.add('disabled');
             badge.className = 'badge bg-secondary me-2';
@@ -379,12 +428,11 @@
           badge.className = 'badge bg-success me-2';
           badge.textContent = 'Module actif';
 
-          // Utiliser les parametres structure si disponibles, sinon les globaux
+          // Utiliser les parametres structure si disponibles, sinon valeurs par defaut
           const nouveauteActive = structureParams[`nouveaute_active_${mod.id}`] !== undefined
             ? structureParams[`nouveaute_active_${mod.id}`]
-            : (globalParams[`nouveaute_active_${mod.id}`] !== false);
+            : true; // Par defaut actif
           const duree = structureParams[`nouveaute_duree_${mod.id}`]
-            || globalParams[`nouveaute_duree_${mod.id}`]
             || mod.defaultDuree;
 
           document.getElementById(`active-${mod.id}`).checked = nouveauteActive;
@@ -434,9 +482,12 @@
 
       const data = {};
 
+      // Obtenir les modules actifs de la structure
+      const structureModules = getStructureModules();
+
       MODULES.forEach(mod => {
-        // Skip si module non actif dans le systeme
-        if (!currentParams.global || !currentParams.global[`module_${mod.id}`]) return;
+        // Skip si module non actif dans la structure
+        if (!structureModules.includes(mod.code)) return;
 
         data[`nouveaute_active_${mod.id}`] = document.getElementById(`active-${mod.id}`).checked;
         data[`nouveaute_duree_${mod.id}`] = parseInt(document.getElementById(`duree-${mod.id}`).value);
