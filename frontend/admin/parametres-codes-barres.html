@@ -452,12 +452,10 @@
       try {
         // Recuperer l'organisation courante (via la structure courante)
         const structureId = window.CURRENT_STRUCTURE_ID;
-        console.log('loadGestionMode - structureId:', structureId, 'USER_STRUCTURES:', window.USER_STRUCTURES);
 
         if (structureId) {
           // Charger la structure pour obtenir l'organisation (incluse dans la reponse)
           const structure = await apiGet(`/api/structures/${structureId}`);
-          console.log('loadGestionMode - structure loaded:', structure);
           if (structure && structure.organisation) {
             organisationInfo = structure.organisation;
           }
@@ -465,21 +463,18 @@
           // Pas de structure selectionnee, utiliser la premiere structure disponible
           const structures = window.USER_STRUCTURES;
           if (structures && structures.length > 0) {
-            console.log('loadGestionMode - using first structure:', structures[0]);
             // Utiliser l'organisation de la premiere structure
             if (structures[0].organisation) {
               organisationInfo = structures[0].organisation;
             } else if (structures[0].organisation_id) {
               // Charger la structure complete pour avoir l'organisation
               const structure = await apiGet(`/api/structures/${structures[0].id}`);
-              console.log('loadGestionMode - loaded full structure:', structure);
               if (structure && structure.organisation) {
                 organisationInfo = structure.organisation;
               }
             }
           }
         }
-        console.log('loadGestionMode - final organisationInfo:', organisationInfo);
       } catch (error) {
         console.error('Erreur chargement mode gestion:', error);
       }
