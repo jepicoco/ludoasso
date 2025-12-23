@@ -336,6 +336,100 @@
         </div>
     </div>
 
+    <!-- Modal Scan Usager (cotisation rapide) -->
+    <div class="modal fade" id="scanUsagerModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i>Cotisation Usager</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Colonne gauche: Infos usager -->
+                        <div class="col-md-5">
+                            <div class="card h-100">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Informations</h6>
+                                    <span id="scanUsagerStatut" class="badge"></span>
+                                </div>
+                                <div class="card-body" id="scanUsagerInfos">
+                                    <!-- Rempli dynamiquement -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Colonne droite: Cotisations et tarifs -->
+                        <div class="col-md-7">
+                            <!-- Cotisations en cours -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="bi bi-receipt me-2"></i>Cotisations en cours</h6>
+                                </div>
+                                <div class="card-body p-2" id="scanUsagerCotisations" style="max-height: 150px; overflow-y: auto;">
+                                    <!-- Rempli dynamiquement -->
+                                </div>
+                            </div>
+                            <!-- Nouvelle cotisation -->
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Ajouter une cotisation</h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Code de réduction -->
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                                        <input type="text" class="form-control" id="scanCodeReduction" placeholder="Code de réduction (optionnel)">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="appliquerCodeReductionScan()">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </div>
+                                    <div id="scanCodeReductionInfo" class="mb-3"></div>
+                                    <!-- Cartes tarifs -->
+                                    <div id="scanTarifsCards" class="row g-2">
+                                        <!-- Rempli dynamiquement -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto"><i class="bi bi-upc-scan"></i> Scannez un code-barre pour changer d'usager</small>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Récapitulatif Cotisation -->
+    <div class="modal fade" id="recapCotisationModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Cotisation créée</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="recapCotisationContent">
+                    <!-- Rempli dynamiquement -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="imprimerRecuCotisation()">
+                        <i class="bi bi-printer"></i> Imprimer le reçu
+                    </button>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="fermerRecapEtContinuer()">
+                        <i class="bi bi-arrow-right"></i> Continuer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicateur de scan actif -->
+    <div id="scanIndicator" class="position-fixed bottom-0 end-0 m-3 p-2 bg-primary text-white rounded shadow d-flex align-items-center" style="display: none !important;">
+        <i class="bi bi-upc-scan me-2 fs-5"></i>
+        <span>Scanner actif</span>
+    </div>
+
     <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="js/api-admin.js"></script>
     <script src="js/auth-admin.js"></script>
@@ -1632,6 +1726,467 @@
         document.getElementById('searchAdherent').addEventListener('input', () => {
             displayCotisations(cotisationsCache);
         });
+
+        // ==================== BARCODE SCANNER ====================
+        let barcodeBuffer = '';
+        let barcodeTimeout = null;
+        let scanUsagerActuel = null;
+        let scanCodeReductionActuel = null;
+        let scanSimulationsCache = {};
+        let derniereCotisationCreee = null;
+        let champsVisiblesCache = null;
+
+        // Initialiser l'écoute du scanner
+        document.addEventListener('keydown', handleBarcodeScanner);
+
+        // Afficher l'indicateur de scan
+        document.getElementById('scanIndicator').style.display = 'flex';
+
+        function handleBarcodeScanner(e) {
+            const isInputField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+            const scanCodeInput = document.getElementById('scanCodeReduction');
+
+            // Ignorer si on est dans le champ code réduction
+            if (document.activeElement === scanCodeInput) return;
+
+            if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+                e.preventDefault();
+                const code = barcodeBuffer.trim().toUpperCase();
+                barcodeBuffer = '';
+                clearTimeout(barcodeTimeout);
+                processBarcodeScan(code);
+                return;
+            }
+
+            if (e.key.length === 1 && /[a-zA-Z0-9\-]/.test(e.key)) {
+                if (!isInputField) e.preventDefault();
+                barcodeBuffer += e.key;
+                clearTimeout(barcodeTimeout);
+                barcodeTimeout = setTimeout(() => { barcodeBuffer = ''; }, 100);
+            }
+        }
+
+        async function processBarcodeScan(code) {
+            try {
+                const data = await barcodesAPI.scan(code);
+
+                if (data.type === 'adherent' || data.type === 'utilisateur') {
+                    const usager = data.adherent || data.utilisateur;
+                    await ouvrirModaleScanUsager(usager.id);
+                } else {
+                    showAlert(`Code-barre "${code}" n'est pas un usager`, 'warning');
+                }
+            } catch (error) {
+                showAlert(`Code-barre invalide: ${error.message}`, 'danger');
+            }
+        }
+
+        // ==================== MODAL SCAN USAGER ====================
+        async function ouvrirModaleScanUsager(usagerId) {
+            try {
+                // Charger les champs visibles pour le rôle actuel
+                await chargerChampsVisibles();
+
+                // Charger les infos de l'usager
+                const usager = await apiRequest(`/utilisateurs/${usagerId}`);
+                scanUsagerActuel = usager;
+                scanCodeReductionActuel = null;
+                scanSimulationsCache = {};
+
+                // Afficher les infos
+                afficherInfosUsager(usager);
+
+                // Charger les cotisations en cours
+                await chargerCotisationsUsager(usagerId);
+
+                // Charger et simuler les tarifs
+                await chargerEtSimulerTarifs(usagerId);
+
+                // Vider le champ code réduction
+                document.getElementById('scanCodeReduction').value = '';
+                document.getElementById('scanCodeReductionInfo').innerHTML = '';
+
+                // Ouvrir la modale
+                const modal = new bootstrap.Modal(document.getElementById('scanUsagerModal'));
+                modal.show();
+
+            } catch (error) {
+                showAlert(`Erreur chargement usager: ${error.message}`, 'danger');
+            }
+        }
+
+        async function chargerChampsVisibles() {
+            if (champsVisiblesCache) return;
+
+            try {
+                // Récupérer le rôle de l'utilisateur connecté
+                const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+                const role = userInfo.role || 'benevole';
+
+                const config = await apiRequest(`/parametres/acces-donnees/role/${role}`);
+                champsVisiblesCache = config.champsVisibles || ['nom', 'prenom'];
+            } catch (error) {
+                // Fallback: nom et prénom seulement
+                champsVisiblesCache = ['nom', 'prenom'];
+            }
+        }
+
+        function afficherInfosUsager(usager) {
+            const container = document.getElementById('scanUsagerInfos');
+            const statutBadge = document.getElementById('scanUsagerStatut');
+
+            // Badge statut
+            const statutClass = usager.statut === 'actif' ? 'success' : 'secondary';
+            statutBadge.className = `badge bg-${statutClass}`;
+            statutBadge.textContent = usager.statut;
+
+            // Construire le HTML des infos en fonction des droits
+            const champs = champsVisiblesCache || ['nom', 'prenom'];
+            let html = '<table class="table table-sm mb-0">';
+
+            // Nom et prénom (toujours visibles)
+            html += `<tr><th width="40%">Nom</th><td>${usager.nom || '-'} ${usager.prenom || ''}</td></tr>`;
+
+            // Date de naissance
+            if (champs.includes('date_naissance') && usager.date_naissance) {
+                const age = calculerAge(usager.date_naissance);
+                html += `<tr><th>Naissance</th><td>${formatDate(usager.date_naissance)} (${age} ans)</td></tr>`;
+            }
+
+            // Téléphone
+            if (champs.includes('telephone') && usager.telephone) {
+                html += `<tr><th>Téléphone</th><td>${usager.telephone}</td></tr>`;
+            }
+
+            // Email
+            if (champs.includes('email') && usager.email) {
+                html += `<tr><th>Email</th><td class="text-truncate" style="max-width:200px">${usager.email}</td></tr>`;
+            }
+
+            // Adresse
+            if (champs.includes('adresse') || champs.includes('code_postal') || champs.includes('ville')) {
+                let adresse = '';
+                if (champs.includes('adresse') && usager.adresse) adresse += usager.adresse;
+                if (champs.includes('code_postal') && usager.code_postal) adresse += (adresse ? '<br>' : '') + usager.code_postal;
+                if (champs.includes('ville') && usager.ville) adresse += (usager.code_postal ? ' ' : (adresse ? '<br>' : '')) + usager.ville;
+                if (adresse) {
+                    html += `<tr><th>Adresse</th><td>${adresse}</td></tr>`;
+                }
+            }
+
+            // Quotient Familial
+            if (usager.quotient_familial !== undefined && usager.quotient_familial !== null) {
+                html += `<tr><th>QF</th><td><span class="badge bg-info">${usager.quotient_familial}</span></td></tr>`;
+            }
+
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function calculerAge(dateNaissance) {
+            const naissance = new Date(dateNaissance);
+            const aujourdhui = new Date();
+            let age = aujourdhui.getFullYear() - naissance.getFullYear();
+            const moisDiff = aujourdhui.getMonth() - naissance.getMonth();
+            if (moisDiff < 0 || (moisDiff === 0 && aujourdhui.getDate() < naissance.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        async function chargerCotisationsUsager(usagerId) {
+            const container = document.getElementById('scanUsagerCotisations');
+
+            try {
+                const cotisations = await apiRequest(`/cotisations?adherent_id=${usagerId}&statut=en_cours`);
+
+                if (cotisations.length === 0) {
+                    container.innerHTML = '<div class="text-muted text-center py-2"><i class="bi bi-info-circle"></i> Aucune cotisation active</div>';
+                    return;
+                }
+
+                container.innerHTML = cotisations.map(cot => `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <div>
+                            <strong>${cot.tarif?.libelle || 'Tarif inconnu'}</strong>
+                            <small class="d-block text-muted">${formatDate(cot.periode_debut)} → ${formatDate(cot.periode_fin)}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-success">${parseFloat(cot.montant_paye).toFixed(2)} €</strong>
+                            ${formatStatutBadge(cot.statut)}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                container.innerHTML = `<div class="text-danger"><i class="bi bi-exclamation-triangle"></i> Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function chargerEtSimulerTarifs(usagerId) {
+            const container = document.getElementById('scanTarifsCards');
+            container.innerHTML = '<div class="col-12 text-center py-3"><div class="spinner-border spinner-border-sm"></div> Calcul des tarifs...</div>';
+
+            try {
+                // Charger les tarifs disponibles
+                const tarifs = await apiRequest('/tarifs-cotisation?actif=true&valide=true');
+
+                if (tarifs.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-muted text-center py-2">Aucun tarif disponible</div>';
+                    return;
+                }
+
+                // Simuler chaque tarif
+                const simulations = await Promise.all(tarifs.map(async (tarif) => {
+                    try {
+                        const result = await apiRequest('/tarification/simuler', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                utilisateur_id: usagerId,
+                                tarif_cotisation_id: tarif.id
+                            })
+                        });
+                        return { tarif, simulation: result.data, error: null };
+                    } catch (error) {
+                        return { tarif, simulation: null, error: error.message };
+                    }
+                }));
+
+                // Mettre en cache les simulations
+                simulations.forEach(s => {
+                    if (s.simulation) {
+                        scanSimulationsCache[s.tarif.id] = s.simulation;
+                    }
+                });
+
+                // Afficher les cartes
+                container.innerHTML = simulations.map(({ tarif, simulation, error }) => {
+                    if (error) {
+                        return `
+                            <div class="col-md-6">
+                                <div class="card border-danger h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="card-title mb-1">${tarif.libelle}</h6>
+                                        <small class="text-danger">${error}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    const montantOriginal = simulation.tarif?.montant_base_tarif || tarif.montant_base;
+                    const montantFinal = simulation.calcul?.montant_final ?? montantOriginal;
+                    const hasReduction = montantFinal < montantOriginal;
+                    const hasArbre = simulation.arbre_decision && simulation.chemin_arbre?.length > 0;
+
+                    return `
+                        <div class="col-md-6">
+                            <div class="card h-100 ${tarif.par_defaut ? 'border-primary' : ''}">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">${tarif.libelle}</h6>
+                                        ${tarif.par_defaut ? '<span class="badge bg-primary">Défaut</span>' : ''}
+                                    </div>
+                                    <div class="text-center mb-2">
+                                        <span class="fs-4 fw-bold ${hasReduction ? 'text-success' : ''}">${montantFinal.toFixed(2)} €</span>
+                                        ${hasReduction ? `<br><small class="text-muted text-decoration-line-through">${montantOriginal.toFixed(2)} €</small>` : ''}
+                                    </div>
+                                    ${hasArbre ? `<div class="small text-info mb-2"><i class="bi bi-diagram-3"></i> Arbre appliqué</div>` : ''}
+                                    ${simulation.reductions?.length > 0 ? `
+                                        <div class="small text-success mb-2">
+                                            <i class="bi bi-tags"></i> ${simulation.reductions.length} réduction(s)
+                                        </div>
+                                    ` : ''}
+                                    <button class="btn btn-sm btn-outline-primary w-100" onclick="choisirTarif(${tarif.id})">
+                                        <i class="bi bi-check-lg"></i> Choisir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                container.innerHTML = `<div class="col-12 text-danger"><i class="bi bi-exclamation-triangle"></i> Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function appliquerCodeReductionScan() {
+            const codeInput = document.getElementById('scanCodeReduction');
+            const infoDiv = document.getElementById('scanCodeReductionInfo');
+            const code = codeInput.value.trim().toUpperCase();
+
+            if (!code) {
+                scanCodeReductionActuel = null;
+                infoDiv.innerHTML = '';
+                // Recharger les tarifs sans code
+                if (scanUsagerActuel) {
+                    await chargerEtSimulerTarifs(scanUsagerActuel.id);
+                }
+                return;
+            }
+
+            try {
+                // Vérifier le code
+                const result = await apiRequest(`/parametres/codes-reduction/code/${code}`);
+
+                if (!result || !result.valide) {
+                    infoDiv.innerHTML = '<div class="alert alert-warning py-1 mb-0"><i class="bi bi-exclamation-triangle"></i> Code invalide ou expiré</div>';
+                    scanCodeReductionActuel = null;
+                    return;
+                }
+
+                scanCodeReductionActuel = result;
+                infoDiv.innerHTML = `
+                    <div class="alert alert-success py-1 mb-0">
+                        <i class="bi bi-check-circle"></i> <strong>${result.code}</strong>: ${result.description || 'Réduction appliquée'}
+                    </div>
+                `;
+
+                // Recharger les simulations avec le code de réduction
+                // Note: les codes de réduction sont appliqués côté serveur lors de la création
+                showAlert('Code de réduction appliqué. Le montant sera ajusté lors de la création.', 'info');
+
+            } catch (error) {
+                infoDiv.innerHTML = `<div class="alert alert-danger py-1 mb-0"><i class="bi bi-x-circle"></i> ${error.message}</div>`;
+                scanCodeReductionActuel = null;
+            }
+        }
+
+        async function choisirTarif(tarifId) {
+            if (!scanUsagerActuel) {
+                showAlert('Aucun usager sélectionné', 'warning');
+                return;
+            }
+
+            const simulation = scanSimulationsCache[tarifId];
+            if (!simulation) {
+                showAlert('Simulation non disponible pour ce tarif', 'warning');
+                return;
+            }
+
+            // Créer la cotisation
+            try {
+                const data = {
+                    utilisateur_id: scanUsagerActuel.id,
+                    tarif_cotisation_id: tarifId,
+                    mode_paiement: 'especes', // Par défaut
+                    date_paiement: new Date().toISOString().split('T')[0]
+                };
+
+                if (scanCodeReductionActuel) {
+                    data.code_reduction_id = scanCodeReductionActuel.id;
+                }
+
+                const result = await apiRequest('/tarification/creer', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+
+                derniereCotisationCreee = result.data;
+
+                // Afficher le récapitulatif
+                afficherRecapCotisation(result.data, simulation);
+
+                // Recharger les cotisations dans la modale scan
+                await chargerCotisationsUsager(scanUsagerActuel.id);
+
+                // Recharger la liste principale
+                loadCotisations();
+
+            } catch (error) {
+                showAlert(`Erreur création cotisation: ${error.message}`, 'danger');
+            }
+        }
+
+        function afficherRecapCotisation(cotisation, simulation) {
+            const container = document.getElementById('recapCotisationContent');
+
+            const usager = scanUsagerActuel;
+            const tarif = simulation?.tarif || cotisation.tarif || {};
+
+            container.innerHTML = `
+                <div class="text-center mb-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                </div>
+                <table class="table">
+                    <tr>
+                        <th>Usager</th>
+                        <td>${usager.nom} ${usager.prenom}</td>
+                    </tr>
+                    <tr>
+                        <th>Tarif</th>
+                        <td>${tarif.libelle || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                        <th>Période</th>
+                        <td>${formatDate(cotisation.periode_debut)} → ${formatDate(cotisation.periode_fin)}</td>
+                    </tr>
+                    <tr>
+                        <th>Montant payé</th>
+                        <td><strong class="text-success fs-4">${parseFloat(cotisation.montant_paye).toFixed(2)} €</strong></td>
+                    </tr>
+                    ${cotisation.reduction_appliquee > 0 || cotisation.total_reductions > 0 ? `
+                    <tr>
+                        <th>Réductions</th>
+                        <td class="text-success">-${(cotisation.reduction_appliquee || cotisation.total_reductions || 0).toFixed(2)} €</td>
+                    </tr>
+                    ` : ''}
+                    ${cotisation.arbre_decision_id ? `
+                    <tr>
+                        <th>Arbre décision</th>
+                        <td><span class="badge bg-info"><i class="bi bi-diagram-3"></i> v${cotisation.arbre_version || '?'}</span></td>
+                    </tr>
+                    ` : ''}
+                </table>
+            `;
+
+            // Ouvrir la modale récap
+            const recapModal = new bootstrap.Modal(document.getElementById('recapCotisationModal'));
+            recapModal.show();
+        }
+
+        async function imprimerRecuCotisation() {
+            if (!derniereCotisationCreee) {
+                showAlert('Aucune cotisation à imprimer', 'warning');
+                return;
+            }
+
+            try {
+                // Télécharger le PDF via fetch avec Authorization header
+                const token = getAuthToken();
+                const headers = {
+                    'Authorization': `Bearer ${token}`
+                };
+                const structureId = typeof getCurrentStructureId === 'function' ? getCurrentStructureId() : null;
+                if (structureId) {
+                    headers['X-Structure-Id'] = structureId.toString();
+                }
+                const response = await fetch(`${API_BASE_URL}/cotisations/${derniereCotisationCreee.id}/recu`, {
+                    method: 'GET',
+                    headers
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la génération du reçu');
+                }
+
+                // Créer un blob et l'ouvrir dans un nouvel onglet
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                window.open(blobUrl, '_blank');
+
+                // Nettoyer le blob URL après un délai
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+            } catch (error) {
+                showAlert(`Erreur impression: ${error.message}`, 'danger');
+            }
+        }
+
+        function fermerRecapEtContinuer() {
+            // Fermer la modale récap (fait automatiquement par data-bs-dismiss)
+            // La modale scan usager reste ouverte pour permettre d'autres cotisations
+        }
     </script>
 </body>
 </html>

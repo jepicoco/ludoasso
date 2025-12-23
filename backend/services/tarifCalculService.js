@@ -487,9 +487,33 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
   const transaction = await sequelize.transaction();
 
   try {
+    // 0. Charger le tarif pour calculer les dates de période
+    const tarif = await TarifCotisation.findByPk(tarifCotisationId);
+    if (!tarif) {
+      throw new Error(`Tarif ${tarifCotisationId} non trouvé`);
+    }
+
+    // Calculer les dates de période si non fournies
+    let dateDebut = data.periode_debut;
+    let dateFin = data.periode_fin;
+
+    if (!dateDebut || !dateFin) {
+      const dateRef = data.dateCotisation ? new Date(data.dateCotisation) : new Date();
+      const periode = tarif.calculerDatesPeriode(dateRef);
+
+      // Pour le prorata, on commence à la date de référence
+      if (tarif.type_montant === 'prorata') {
+        dateDebut = dateDebut || dateRef;
+        dateFin = dateFin || periode.dateFin;
+      } else {
+        dateDebut = dateDebut || periode.dateDebut;
+        dateFin = dateFin || periode.dateFin;
+      }
+    }
+
     // 1. Simuler le calcul
     const simulation = await simulerCotisation(utilisateurId, tarifCotisationId, {
-      dateCotisation: data.periode_debut || new Date(),
+      dateCotisation: dateDebut,
       structureId: data.structureId,
       inclureDetails: true
     });
@@ -501,8 +525,8 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
     const cotisation = await Cotisation.create({
       utilisateur_id: utilisateurId,
       tarif_cotisation_id: tarifCotisationId,
-      periode_debut: data.periode_debut,
-      periode_fin: data.periode_fin,
+      periode_debut: dateDebut,
+      periode_fin: dateFin,
       montant_base: simulation.calcul.tarif_base,
       reduction_appliquee: simulation.calcul.total_reductions,
       montant_paye: simulation.calcul.montant_final,
@@ -557,7 +581,7 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
 
     // 6. Mettre à jour la date de fin d'adhésion de l'utilisateur
     await Utilisateur.update(
-      { date_fin_adhesion: data.periode_fin },
+      { date_fin_adhesion: dateFin },
       { where: { id: utilisateurId }, transaction }
     );
 
@@ -591,7 +615,10 @@ async function creerCotisation(utilisateurId, tarifCotisationId, data, createdBy
     });
 
   } catch (error) {
-    await transaction.rollback();
+    // Rollback seulement si la transaction n'a pas été commitée
+    if (!transaction.finished) {
+      await transaction.rollback();
+    }
     logger.error(`Erreur création cotisation: ${error.message}`, { utilisateurId });
     throw error;
   }
