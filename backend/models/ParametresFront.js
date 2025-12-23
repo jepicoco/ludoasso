@@ -380,6 +380,108 @@ module.exports = (sequelize) => {
       comment: 'Afficher message si reserve (disques)'
     },
 
+    // === Parametres Reservations par module ===
+    // Ludotheque
+    limite_reservation_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite de reservations actives (jeux)'
+    },
+    limite_reservation_nouveaute_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (0=non reservable) (jeux)'
+    },
+    reservation_expiration_jours_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer apres notification (jeux)'
+    },
+    reservation_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (jeux)'
+    },
+    // Bibliotheque
+    limite_reservation_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite de reservations actives (livres)'
+    },
+    limite_reservation_nouveaute_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (0=non reservable) (livres)'
+    },
+    reservation_expiration_jours_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer apres notification (livres)'
+    },
+    reservation_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (livres)'
+    },
+    // Filmotheque
+    limite_reservation_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite de reservations actives (films)'
+    },
+    limite_reservation_nouveaute_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (0=non reservable) (films)'
+    },
+    reservation_expiration_jours_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer apres notification (films)'
+    },
+    reservation_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (films)'
+    },
+    // Discotheque
+    limite_reservation_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite de reservations actives (disques)'
+    },
+    limite_reservation_nouveaute_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (0=non reservable) (disques)'
+    },
+    reservation_expiration_jours_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer apres notification (disques)'
+    },
+    reservation_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (disques)'
+    },
+
     // === Parametres TVA par module ===
     tva_assujetti: {
       type: DataTypes.BOOLEAN,
