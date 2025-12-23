@@ -353,6 +353,7 @@
 
         // Stocker pour la sauvegarde
         currentParams = { global: globalParams, structure: structureParams };
+        console.log('Loaded params:', currentParams);
 
         MODULES.forEach(mod => {
           const moduleActif = globalParams[`module_${mod.id}`];
@@ -427,7 +428,7 @@
 
       MODULES.forEach(mod => {
         // Skip si module non actif dans le systeme
-        if (!currentParams.global[`module_${mod.id}`]) return;
+        if (!currentParams.global || !currentParams.global[`module_${mod.id}`]) return;
 
         data[`nouveaute_active_${mod.id}`] = document.getElementById(`active-${mod.id}`).checked;
         data[`nouveaute_duree_${mod.id}`] = parseInt(document.getElementById(`duree-${mod.id}`).value);
@@ -439,18 +440,32 @@
           ? `${API_URL}/structures/${structureId}/parametres-front`
           : `${API_URL}/parametres/front`;
 
+        console.log('Saving to:', url);
+        console.log('Data:', data);
+        console.log('Headers:', getHeaders());
+
+        if (Object.keys(data).length === 0) {
+          console.warn('No data to save!');
+          showSaveIndicator('error', 'Aucune donnee a sauvegarder');
+          return;
+        }
+
         const response = await fetch(url, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify(data)
         });
 
-        if (!response.ok) throw new Error('Erreur sauvegarde');
+        console.log('Response status:', response.status);
+        const responseData = await response.json();
+        console.log('Response data:', responseData);
+
+        if (!response.ok) throw new Error(responseData.error || 'Erreur sauvegarde');
 
         showSaveIndicator('saved');
       } catch (error) {
-        console.error('Erreur:', error);
-        showSaveIndicator('error', 'Erreur de sauvegarde');
+        console.error('Erreur sauvegarde:', error);
+        showSaveIndicator('error', error.message || 'Erreur de sauvegarde');
       }
     }
 
