@@ -183,12 +183,14 @@ exports.getAllParametres = async (req, res) => {
 /**
  * POST /api/codes-barres-reserves/lots/:module
  * Creer un nouveau lot de codes-barres
+ * Query params: organisation_id, structure_id, groupe_id
  */
 exports.createLot = async (req, res) => {
   try {
     const { module } = req.params;
     validateModule(module);
 
+    const context = extractContext(req);
     const { quantite } = req.body;
     const creatorId = req.user.id;
 
@@ -199,12 +201,13 @@ exports.createLot = async (req, res) => {
       });
     }
 
-    const result = await codeBarreService.reserveCodes(module, quantite, creatorId);
+    const result = await codeBarreService.reserveCodes(module, quantite, creatorId, context);
 
     logger.info(`Lot de ${quantite} codes-barres cree pour ${module}`, {
       userId: creatorId,
       module,
-      lotId: result.lot.id
+      lotId: result.lot.id,
+      context
     });
 
     res.status(201).json({

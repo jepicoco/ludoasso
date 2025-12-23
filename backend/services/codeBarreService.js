@@ -15,7 +15,7 @@ const {
   CodeBarreDisque,
   sequelize
 } = require('../models');
-const { Op } = require('sequelize');
+const { Op, Transaction } = require('sequelize');
 
 // Map des models de codes-barres par module
 const CODE_MODELS = {
@@ -125,6 +125,73 @@ class CodeBarreService {
   }
 
   /**
+   * Verifier et appliquer le reset de sequence dans une transaction
+   */
+  async checkAndResetSequenceInTransaction(params, transaction) {
+    if (params.sequence_reset === 'never') return params;
+
+    const currentPeriod = this.getCurrentPeriod(params.sequence_reset);
+    if (params.current_period !== currentPeriod) {
+      params.current_sequence = 0;
+      params.current_period = currentPeriod;
+      await params.save({ transaction });
+    }
+    return params;
+  }
+
+  /**
+   * Obtenir les parametres avec un lock FOR UPDATE (pour eviter les race conditions)
+   * @param {string} module - Le module
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
+   * @param {Transaction} transaction - La transaction Sequelize
+   */
+  async getParametresWithLock(module, context, transaction) {
+    const { organisation_id = null, structure_id = null, groupe_id = null } = context;
+
+    // Construire la clause where selon le contexte
+    const where = { module };
+    if (organisation_id) {
+      where.organisation_id = organisation_id;
+      where.structure_id = null;
+      where.groupe_id = null;
+    } else if (structure_id) {
+      where.organisation_id = null;
+      where.structure_id = structure_id;
+      where.groupe_id = null;
+    } else if (groupe_id) {
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = groupe_id;
+    } else {
+      // Fallback: parametres globaux
+      where.organisation_id = null;
+      where.structure_id = null;
+      where.groupe_id = null;
+    }
+
+    // Rechercher avec lock FOR UPDATE
+    let params = await ParametresCodesBarres.findOne({
+      where,
+      lock: transaction.LOCK.UPDATE,
+      transaction
+    });
+
+    // Si pas trouve, creer avec le contexte
+    if (!params) {
+      params = await ParametresCodesBarres.create({
+        module,
+        organisation_id: organisation_id || null,
+        structure_id: structure_id || null,
+        groupe_id: groupe_id || null,
+        prefix: ParametresCodesBarres.DEFAULT_PREFIXES[module] || module.toUpperCase().substring(0, 3),
+        format_pattern: '{PREFIX}{NUMERO_SEQUENCE_8}'
+      }, { transaction });
+    }
+
+    return params;
+  }
+
+  /**
    * Generer le prochain code-barre (sans le reserver)
    */
   async generateNextCode(module, sequence = null, date = new Date()) {
@@ -173,8 +240,12 @@ class CodeBarreService {
 
   /**
    * Reserver un ensemble de codes-barres (creer un lot)
+   * @param {string} module - Le module (utilisateur, jeu, livre, film, disque)
+   * @param {number} quantity - Nombre de codes a reserver
+   * @param {number} creatorId - ID de l'utilisateur createur
+   * @param {Object} context - Le contexte { organisation_id, structure_id, groupe_id }
    */
-  async reserveCodes(module, quantity, creatorId) {
+  async reserveCodes(module, quantity, creatorId, context = {}) {
     if (quantity < 1 || quantity > 1000) {
       throw new Error('La quantite doit etre entre 1 et 1000');
     }
@@ -184,13 +255,17 @@ class CodeBarreService {
       throw new Error(`Module inconnu: ${module}`);
     }
 
-    let params = await this.getParametres(module);
-    params = await this.checkAndResetSequence(params);
-
-    // Transaction pour garantir l'atomicite
-    const transaction = await sequelize.transaction();
+    // Transaction pour garantir l'atomicite avec niveau d'isolation SERIALIZABLE
+    // pour eviter les race conditions sur la sequence
+    const transaction = await sequelize.transaction({
+      isolationLevel: Transaction.ISOLATION_LEVELS.SERIALIZABLE
+    });
 
     try {
+      // Obtenir les parametres avec un lock FOR UPDATE pour eviter les race conditions
+      let params = await this.getParametresWithLock(module, context, transaction);
+      params = await this.checkAndResetSequenceInTransaction(params, transaction);
+
       const codes = [];
       let startSequence = params.current_sequence + 1;
       let currentSequence = startSequence;
