@@ -169,6 +169,14 @@
           <br><small class="text-muted">Les parametres de nouveautes sont specifiques a chaque structure.</small>
         </div>
 
+        <!-- Loading -->
+        <div class="text-center py-5 d-none" id="loadingContainer">
+          <div class="spinner-border text-danger" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2 text-muted">Chargement des parametres...</p>
+        </div>
+
         <div class="row g-4" id="modulesContainer">
           <!-- Modules generes par JS -->
         </div>
@@ -248,9 +256,8 @@
     }
 
     // Init template et navigation
-    initTemplate('parametres');
-
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('parametres');
       renderSubNav('configuration', 'nouveautes');
       checkStructureAndLoad();
     });
@@ -263,20 +270,34 @@
     /**
      * Verifie si une structure est selectionnee et charge les donnees
      */
-    function checkStructureAndLoad() {
+    async function checkStructureAndLoad() {
       const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
       const structureId = window.CURRENT_STRUCTURE_ID;
+
+      const loadingContainer = document.getElementById('loadingContainer');
+      const modulesContainer = document.getElementById('modulesContainer');
 
       // Si plusieurs structures et aucune selectionnee, afficher l'alerte et ne rien charger
       if (hasMultipleStructures && !structureId) {
         document.getElementById('noStructureAlert').classList.remove('d-none');
-        document.getElementById('modulesContainer').innerHTML = '';
+        loadingContainer.classList.add('d-none');
+        modulesContainer.innerHTML = '';
         return;
       }
 
       document.getElementById('noStructureAlert').classList.add('d-none');
+
+      // Afficher le loader et masquer les modules
+      loadingContainer.classList.remove('d-none');
+      modulesContainer.classList.add('d-none');
+
+      // Charger les donnees
       renderModules();
-      loadConfig();
+      await loadConfig();
+
+      // Masquer le loader et afficher les modules
+      loadingContainer.classList.add('d-none');
+      modulesContainer.classList.remove('d-none');
     }
 
     // Auth - avec header structure si selectionnee

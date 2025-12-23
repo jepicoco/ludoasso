@@ -137,20 +137,6 @@
       padding-top: 1rem;
       margin-top: 1rem;
     }
-    .global-toggle-section {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 1.5rem;
-      border-radius: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-    .global-toggle-section .form-check-input:checked {
-      background-color: #fff;
-      border-color: #fff;
-    }
-    .global-toggle-section .form-check-input:checked::before {
-      background-color: #667eea;
-    }
   </style>
 </head>
 <body>
@@ -179,20 +165,6 @@
           </div>
         </div>
 
-        <!-- Module global toggle -->
-        <div class="global-toggle-section">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h5 class="mb-1"><i class="bi bi-power me-2"></i>Module Reservations</h5>
-              <p class="mb-0 opacity-75">Activer ou desactiver globalement le systeme de reservations</p>
-            </div>
-            <div class="form-check form-switch form-switch-lg">
-              <input class="form-check-input" type="checkbox" id="globalModuleActive" style="width: 3rem; height: 1.5rem;"
-                     onchange="scheduleAutoSave()">
-            </div>
-          </div>
-        </div>
-
         <!-- Explication -->
         <div class="alert alert-info mb-4">
           <i class="bi bi-info-circle me-2"></i>
@@ -207,6 +179,21 @@
             <i class="bi bi-clock me-1"></i>
             <strong>Delai d'expiration :</strong> Apres notification, l'usager dispose de ce delai pour recuperer l'article reserve.
           </small>
+        </div>
+
+        <!-- Message si aucune structure selectionnee -->
+        <div class="alert alert-warning d-none" id="noStructureAlert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu en haut de page pour configurer les reservations.
+          <br><small class="text-muted">Les parametres de reservations sont specifiques a chaque structure.</small>
+        </div>
+
+        <!-- Loading -->
+        <div class="text-center py-5 d-none" id="loadingContainer">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2 text-muted">Chargement des parametres...</p>
         </div>
 
         <!-- Modules -->
@@ -268,19 +255,56 @@
     let saveTimeout = null;
     let currentParams = {};
     let limitesGenre = {};
-    let moduleReservationsActif = false;
 
     const MODULES = [
-      { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', genreLabel: 'Categories' },
-      { id: 'bibliotheque', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', genreLabel: 'Genres litteraires' },
-      { id: 'filmotheque', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', genreLabel: 'Genres de films' },
-      { id: 'discotheque', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', genreLabel: 'Genres musicaux' }
+      { id: 'ludotheque', code: 'jeux', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', genreLabel: 'Categories' },
+      { id: 'bibliotheque', code: 'livres', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', genreLabel: 'Genres litteraires' },
+      { id: 'filmotheque', code: 'films', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', genreLabel: 'Genres de films' },
+      { id: 'discotheque', code: 'disques', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', genreLabel: 'Genres musicaux' }
     ];
 
-    // Init template et navigation
-    initTemplate('parametres');
+    let isLoading = false;
 
+    // Helper pour parser modules_actifs (peut etre string JSON ou array)
+    function parseModulesActifs(modules) {
+      if (!modules) return [];
+      if (Array.isArray(modules)) return modules;
+      if (typeof modules === 'string') {
+        try {
+          const parsed = JSON.parse(modules);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
+
+    /**
+     * Obtenir les modules actifs pour la structure courante
+     */
+    function getStructureModules() {
+      const structureId = window.CURRENT_STRUCTURE_ID;
+      if (!structureId) {
+        if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+          return ['jeux', 'livres', 'films', 'disques'];
+        }
+        if (window.USER_STRUCTURES.length === 1) {
+          return parseModulesActifs(window.USER_STRUCTURES[0].modules_actifs);
+        }
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+          parseModulesActifs(s.modules_actifs).forEach(m => allModules.add(m));
+        });
+        return Array.from(allModules);
+      }
+      const currentStructure = window.USER_STRUCTURES?.find(s => s.id === structureId);
+      return parseModulesActifs(currentStructure?.modules_actifs);
+    }
+
+    // Init template et navigation
     document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('parametres');
       renderSubNav('configuration', 'reservations');
 
       // Verifier si le module reservations est actif dans le holodeck
@@ -302,22 +326,76 @@
         return;
       }
 
-      renderModules();
-      loadConfig();
+      checkStructureAndLoad();
     });
 
-    // Auth
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', () => {
+      checkStructureAndLoad();
+    });
+
+    /**
+     * Verifie si une structure est selectionnee et charge les donnees
+     */
+    async function checkStructureAndLoad() {
+      const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      const loadingContainer = document.getElementById('loadingContainer');
+      const modulesContainer = document.getElementById('modulesContainer');
+      const noStructureAlert = document.getElementById('noStructureAlert');
+
+      if (hasMultipleStructures && !structureId) {
+        noStructureAlert.classList.remove('d-none');
+        loadingContainer.classList.add('d-none');
+        modulesContainer.innerHTML = '';
+        return;
+      }
+
+      noStructureAlert.classList.add('d-none');
+      loadingContainer.classList.remove('d-none');
+      modulesContainer.classList.add('d-none');
+
+      renderModules();
+      await loadConfig();
+
+      loadingContainer.classList.add('d-none');
+      modulesContainer.classList.remove('d-none');
+    }
+
+    // Auth - avec header structure si selectionnee
     function getHeaders() {
-      return {
+      const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       };
+      if (window.CURRENT_STRUCTURE_ID) {
+        headers['X-Structure-Id'] = window.CURRENT_STRUCTURE_ID;
+      }
+      return headers;
     }
 
-    // Render modules cards
+    // Render modules cards - seulement les modules actifs de la structure
     function renderModules() {
       const container = document.getElementById('modulesContainer');
-      container.innerHTML = MODULES.map(mod => `
+      const structureModules = getStructureModules();
+
+      // Filtrer les modules actifs
+      const activeModules = MODULES.filter(mod => structureModules.includes(mod.code));
+
+      if (activeModules.length === 0) {
+        container.innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Aucun module de collection n'est actif pour cette structure.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = activeModules.map(mod => `
         <div class="col-lg-6">
           <div class="module-card p-3" id="card-${mod.id}">
             <div class="module-header">
@@ -397,8 +475,8 @@
         </div>
       `).join('');
 
-      // Bind range input events
-      MODULES.forEach(mod => {
+      // Bind range input events pour les modules rendus
+      activeModules.forEach(mod => {
         document.getElementById(`limite-${mod.id}`).addEventListener('input', (e) => {
           document.getElementById(`limite-${mod.id}-value`).textContent = e.target.value;
         });
@@ -413,6 +491,7 @@
 
     // Load config
     async function loadConfig() {
+      isLoading = true;
       try {
         const response = await fetch(`${API_URL}/parametres/limites-reservation`, {
           headers: getHeaders()
@@ -422,7 +501,6 @@
 
         const data = await response.json();
         currentParams = data.limitesGenerales || {};
-        moduleReservationsActif = data.moduleReservationsActif !== false;
         limitesGenre = {};
 
         // Organiser les limites par module
@@ -431,26 +509,15 @@
           limitesGenre[l.module].push(l);
         });
 
-        // Global module toggle
-        document.getElementById('globalModuleActive').checked = moduleReservationsActif;
-
-        // Charger aussi les parametres front pour savoir quels modules sont actifs
-        const frontResponse = await fetch(`${API_URL}/parametres/front`, {
-          headers: getHeaders()
-        });
-        const frontParams = await frontResponse.json();
+        // Obtenir les modules actifs de la structure
+        const structureModules = getStructureModules();
 
         MODULES.forEach(mod => {
-          const moduleActif = frontParams[`module_${mod.id}`];
+          // Skip si le module n'est pas actif dans la structure (pas rendu)
+          if (!structureModules.includes(mod.code)) return;
+
           const card = document.getElementById(`card-${mod.id}`);
-
-          // Module actif/inactif dans le systeme
-          if (!moduleActif) {
-            card.classList.add('disabled');
-            return;
-          }
-
-          card.classList.remove('disabled');
+          if (!card) return;
 
           // Valeurs
           const limites = currentParams[mod.id] || {};
@@ -469,6 +536,8 @@
       } catch (error) {
         console.error('Erreur:', error);
         showSaveIndicator('error', 'Erreur de chargement');
+      } finally {
+        isLoading = false;
       }
     }
 
@@ -586,6 +655,8 @@
 
     // Schedule auto save (debounce 800ms)
     function scheduleAutoSave() {
+      // Ne pas sauvegarder pendant le chargement initial
+      if (isLoading) return;
       if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveConfig, 800);
     }
@@ -596,9 +667,15 @@
 
       const limitesGenerales = {};
 
+      // Obtenir les modules actifs de la structure
+      const structureModules = getStructureModules();
+
       MODULES.forEach(mod => {
+        // Skip si module non actif dans la structure
+        if (!structureModules.includes(mod.code)) return;
+
         const card = document.getElementById(`card-${mod.id}`);
-        if (card.classList.contains('disabled')) return;
+        if (!card) return;
 
         limitesGenerales[mod.id] = {
           limite: parseInt(document.getElementById(`limite-${mod.id}`).value),
@@ -612,10 +689,7 @@
         const response = await fetch(`${API_URL}/parametres/limites-reservation`, {
           method: 'PUT',
           headers: getHeaders(),
-          body: JSON.stringify({
-            limitesGenerales,
-            moduleReservationsActif: document.getElementById('globalModuleActive').checked
-          })
+          body: JSON.stringify({ limitesGenerales })
         });
 
         if (!response.ok) throw new Error('Erreur sauvegarde');
