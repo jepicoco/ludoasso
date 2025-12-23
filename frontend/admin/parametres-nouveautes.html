@@ -334,11 +334,19 @@
         const structureId = window.CURRENT_STRUCTURE_ID;
 
         // Charger les parametres globaux pour les modules actifs
+        console.log('Fetching global params...');
         const globalResponse = await fetch(`${API_URL}/parametres/front`, {
           headers: getHeaders()
         });
-        if (!globalResponse.ok) throw new Error('Erreur chargement parametres globaux');
+        console.log('Global response status:', globalResponse.status);
+        if (!globalResponse.ok) {
+          const errText = await globalResponse.text();
+          console.error('Global params error:', errText);
+          throw new Error('Erreur chargement parametres globaux');
+        }
         const globalParams = await globalResponse.json();
+        console.log('Global params received:', globalParams);
+        console.log('module_ludotheque:', globalParams.module_ludotheque);
 
         // Charger les parametres de la structure si une structure est selectionnee
         let structureParams = {};
