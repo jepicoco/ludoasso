@@ -18,7 +18,8 @@ function setupExemplairesAssociations(models) {
     Disque,
     ExemplaireDisque,
     EmplacementDisque,
-    Emprunt
+    Emprunt,
+    Provenance
   } = models;
 
   // ========================================
@@ -33,6 +34,11 @@ function setupExemplairesAssociations(models) {
   ExemplaireJeu.belongsTo(Jeu, {
     foreignKey: 'jeu_id',
     as: 'jeu'
+  });
+
+  ExemplaireJeu.belongsTo(Provenance, {
+    foreignKey: 'provenance_id',
+    as: 'provenance'
   });
 
   // Jeu <-> JeuEan (EAN multiples par jeu)
@@ -80,6 +86,11 @@ function setupExemplairesAssociations(models) {
     as: 'livre'
   });
 
+  ExemplaireLivre.belongsTo(Provenance, {
+    foreignKey: 'provenance_id',
+    as: 'provenance'
+  });
+
   EmplacementLivre.hasMany(ExemplaireLivre, {
     foreignKey: 'emplacement_id',
     as: 'exemplaires'
@@ -114,6 +125,11 @@ function setupExemplairesAssociations(models) {
     as: 'film'
   });
 
+  ExemplaireFilm.belongsTo(Provenance, {
+    foreignKey: 'provenance_id',
+    as: 'provenance'
+  });
+
   EmplacementFilm.hasMany(ExemplaireFilm, {
     foreignKey: 'emplacement_id',
     as: 'exemplaires'
@@ -146,6 +162,11 @@ function setupExemplairesAssociations(models) {
   ExemplaireDisque.belongsTo(Disque, {
     foreignKey: 'disque_id',
     as: 'disque'
+  });
+
+  ExemplaireDisque.belongsTo(Provenance, {
+    foreignKey: 'provenance_id',
+    as: 'provenance'
   });
 
   EmplacementDisque.hasMany(ExemplaireDisque, {

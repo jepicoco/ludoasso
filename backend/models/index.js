@@ -113,6 +113,8 @@ const EcritureComptableModel = require('./EcritureComptable');
 const JournalComptableModel = require('./JournalComptable');
 const CompteComptableModel = require('./CompteComptable');
 const ParametrageComptableOperationModel = require('./ParametrageComptableOperation');
+const ProvenanceModel = require('./Provenance');
+const ProvenanceOperationComptableModel = require('./ProvenanceOperationComptable');
 const CompteEncaissementModePaiementModel = require('./CompteEncaissementModePaiement');
 
 // Import LLM Configuration (Recherche IA)
@@ -343,6 +345,8 @@ const EcritureComptable = EcritureComptableModel(sequelize);
 const JournalComptable = JournalComptableModel(sequelize);
 const CompteComptable = CompteComptableModel(sequelize);
 const ParametrageComptableOperation = ParametrageComptableOperationModel(sequelize);
+const Provenance = ProvenanceModel(sequelize);
+const ProvenanceOperationComptable = ProvenanceOperationComptableModel(sequelize);
 const CompteEncaissementModePaiement = CompteEncaissementModePaiementModel(sequelize);
 
 // Initialize LLM Configuration (Recherche IA)
@@ -553,6 +557,8 @@ const models = {
   EcritureComptable,
   CompteComptable,
   ParametrageComptableOperation,
+  Provenance,
+  ProvenanceOperationComptable,
   CompteEncaissementModePaiement,
   ModePaiement,
   RegroupementAnalytique,
@@ -739,6 +745,8 @@ module.exports = {
   JournalComptable,
   CompteComptable,
   ParametrageComptableOperation,
+  Provenance,
+  ProvenanceOperationComptable,
   CompteEncaissementModePaiement,
   // LLM Configuration (Recherche IA)
   ConfigurationLLM,

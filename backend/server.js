@@ -275,6 +275,7 @@ app.use('/api/codes-barres-reserves', require('./routes/codesBarresReserves'));
 app.use('/api/lookup', require('./routes/eanLookup'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
 app.use('/api/parametres/comptabilite', require('./routes/parametrageComptable'));
+app.use('/api/provenances', require('./routes/provenances'));
 app.use('/api/caisses', require('./routes/caisse'));
 app.use('/api/factures', require('./routes/factures'));
 app.use('/api/api-keys', require('./routes/apiKeys'));

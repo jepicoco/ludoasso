@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="fr" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provenances - Parametres - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <style>
+    .provenance-card {
+      border-left: 4px solid var(--border-color, #dee2e6);
+      transition: all 0.2s;
+    }
+    .provenance-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .provenance-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .badge-acquisition {
+      background-color: #d1e7dd;
+      color: #0f5132;
+    }
+    .badge-temporaire {
+      background-color: #fff3cd;
+      color: #664d03;
+    }
+    .config-indicator {
+      font-size: 0.75rem;
+    }
+    .config-indicator.configured {
+      color: #198754;
+    }
+    .config-indicator.not-configured {
+      color: #dc3545;
+    }
+    .drag-handle {
+      cursor: grab;
+      color: #adb5bd;
+    }
+    .drag-handle:hover {
+      color: #6c757d;
+    }
+    .sortable-ghost {
+      opacity: 0.4;
+      background: #f8f9fa;
+    }
+    .stat-badge {
+      font-size: 0.7rem;
+      padding: 0.2em 0.5em;
+    }
+    .structure-selector {
+      max-width: 300px;
+    }
+    .compte-input {
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar" class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light d-none d-md-block"></div>
+
+      <main class="col-md-10 px-4">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+          <div>
+            <h1 class="h3 mb-1">
+              <i class="bi bi-box-seam text-primary"></i>
+              Provenances des articles
+            </h1>
+            <p class="text-muted mb-0">
+              Gerez les types de provenance (achat, don, echange...) et leur parametrage comptable
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="showStats()">
+              <i class="bi bi-bar-chart"></i> Statistiques
+            </button>
+            <button class="btn btn-primary" onclick="showCreateModal()">
+              <i class="bi bi-plus-lg"></i> Nouvelle provenance
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="provenances-tab" data-bs-toggle="tab" data-bs-target="#provenances-pane" type="button" role="tab">
+              <i class="bi bi-list-ul"></i> Types de provenance
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comptabilite-tab" data-bs-toggle="tab" data-bs-target="#comptabilite-pane" type="button" role="tab">
+              <i class="bi bi-calculator"></i> Configuration comptable
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabsContent">
+          <!-- Onglet Types de provenance -->
+          <div class="tab-pane fade show active" id="provenances-pane" role="tabpanel">
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-info-circle"></i>
+              <strong>Note :</strong> Les provenances definissent comment un article est entre dans votre collection.
+              Glissez-deposez pour reordonner.
+            </div>
+
+            <div id="provenances-list" class="row g-3">
+              <!-- Loaded by JS -->
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-muted">Chargement...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Onglet Configuration comptable -->
+          <div class="tab-pane fade" id="comptabilite-pane" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="alert alert-info mb-0 flex-grow-1 me-3">
+                <i class="bi bi-info-circle"></i>
+                Configurez les comptes comptables associes a chaque type de provenance.
+                <span id="structure-info" class="fw-bold"></span>
+              </div>
+              <div class="structure-selector" id="structure-selector-container" style="display: none;">
+                <label class="form-label small mb-1">Structure :</label>
+                <select id="structure-select" class="form-select form-select-sm" onchange="loadComptabilite()">
+                  <option value="">Configuration globale</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle" id="comptabilite-table">
+                <thead class="table-light">
+                  <tr>
+                    <th style="width: 200px;">Provenance</th>
+                    <th style="width: 100px;">Journal</th>
+                    <th style="width: 150px;">Compte charge/produit</th>
+                    <th style="width: 150px;">Contrepartie</th>
+                    <th style="width: 150px;">Section analytique</th>
+                    <th style="width: 100px;">Prefixe</th>
+                    <th style="width: 80px;" class="text-center">Auto</th>
+                    <th style="width: 80px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="comptabilite-body">
+                  <tr>
+                    <td colspan="8" class="text-center py-4">
+                      <div class="spinner-border spinner-border-sm text-primary"></div>
+                      <span class="ms-2">Chargement...</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Creation/Edition Provenance -->
+  <div class="modal fade" id="provenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="provenanceModalTitle">Nouvelle provenance</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="provenanceForm">
+            <input type="hidden" id="prov_id">
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="prov_code" required pattern="[a-z0-9-]+" placeholder="ex: achat">
+                <div class="form-text">Minuscules, chiffres et tirets uniquement</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Libelle <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="prov_libelle" required placeholder="ex: Achat">
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="prov_description" rows="2" placeholder="Description optionnelle"></textarea>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Icone</label>
+                <div class="input-group">
+                  <span class="input-group-text" id="icon-preview"><i class="bi bi-box"></i></span>
+                  <input type="text" class="form-control" id="prov_icone" value="bi-box" placeholder="bi-cart" oninput="updateIconPreview()">
+                </div>
+                <div class="form-text"><a href="https://icons.getbootstrap.com/" target="_blank">Liste des icones</a></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Couleur</label>
+                <div class="input-group">
+                  <input type="color" class="form-control form-control-color" id="prov_couleur" value="#6c757d">
+                  <input type="text" class="form-control" id="prov_couleur_text" value="#6c757d" style="max-width: 100px;">
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="prov_est_acquisition" checked>
+                  <label class="form-check-label" for="prov_est_acquisition">
+                    Acquisition (propriete)
+                  </label>
+                </div>
+                <div class="form-text">L'article devient propriete de la structure</div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="prov_retour_prevu">
+                  <label class="form-check-label" for="prov_retour_prevu">
+                    Retour prevu
+                  </label>
+                </div>
+                <div class="form-text">L'article doit etre retourne (pret, depot)</div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label class="form-label">Ordre d'affichage</label>
+                <input type="number" class="form-control" id="prov_ordre" value="0" min="0">
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch mt-4">
+                  <input class="form-check-input" type="checkbox" id="prov_actif" checked>
+                  <label class="form-check-label" for="prov_actif">Actif</label>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveProvenance()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Configuration Comptable -->
+  <div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-calculator"></i>
+            Configuration comptable : <span id="config-provenance-name"></span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="configForm">
+            <input type="hidden" id="config_provenance_id">
+            <input type="hidden" id="config_structure_id">
+
+            <div class="alert alert-secondary mb-3">
+              <i class="bi bi-building"></i>
+              <span id="config-structure-info">Configuration globale (par defaut)</span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Journal comptable</label>
+                <input type="text" class="form-control compte-input" id="config_journal" placeholder="ACH, OD..." maxlength="10">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Compte charge/produit</label>
+                <input type="text" class="form-control compte-input" id="config_compte" placeholder="6061, 7713...">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Libelle compte</label>
+                <input type="text" class="form-control" id="config_compte_libelle" placeholder="Achats non stockes">
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label class="form-label">Compte contrepartie</label>
+                <input type="text" class="form-control compte-input" id="config_contrepartie" placeholder="401, 512...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Libelle contrepartie</label>
+                <input type="text" class="form-control" id="config_contrepartie_libelle" placeholder="Fournisseurs, Banque...">
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <label class="form-label">Section analytique</label>
+                <select class="form-select" id="config_section">
+                  <option value="">-- Aucune --</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Prefixe piece</label>
+                <input type="text" class="form-control compte-input" id="config_prefixe" placeholder="ENT" maxlength="10">
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="config_generer">
+                <label class="form-check-label" for="config_generer">
+                  <strong>Generer automatiquement les ecritures comptables</strong>
+                </label>
+              </div>
+              <div class="form-text">
+                Si active, une ecriture sera creee automatiquement lors de la saisie d'un bon d'entree avec cette provenance.
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveConfiguration()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Statistiques -->
+  <div class="modal fade" id="statsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bar-chart"></i> Statistiques d'utilisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="stats-content" class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let provenances = [];
+    let sectionsAnalytiques = [];
+    let structures = [];
+    let provenanceModal, configModal, statsModal;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSubNav('comptabilite', 'provenances');
+
+      provenanceModal = new bootstrap.Modal(document.getElementById('provenanceModal'));
+      configModal = new bootstrap.Modal(document.getElementById('configModal'));
+      statsModal = new bootstrap.Modal(document.getElementById('statsModal'));
+
+      // Sync couleur
+      document.getElementById('prov_couleur').addEventListener('input', (e) => {
+        document.getElementById('prov_couleur_text').value = e.target.value;
+      });
+      document.getElementById('prov_couleur_text').addEventListener('input', (e) => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+          document.getElementById('prov_couleur').value = e.target.value;
+        }
+      });
+
+      await loadProvenances();
+      await loadSectionsAnalytiques();
+      await loadStructures();
+
+      // Onglet comptabilite
+      document.getElementById('comptabilite-tab').addEventListener('shown.bs.tab', loadComptabilite);
+    });
+
+    // ============ Chargement des donnees ============
+
+    async function loadProvenances() {
+      try {
+        provenances = await provenancesAPI.getAll();
+        renderProvenances();
+      } catch (error) {
+        showErrorToast('Erreur chargement provenances');
+        console.error(error);
+      }
+    }
+
+    async function loadSectionsAnalytiques() {
+      try {
+        const response = await apiAdmin.get('/parametres/comptabilite/sections-analytiques');
+        sectionsAnalytiques = response || [];
+      } catch (error) {
+        console.error('Erreur chargement sections:', error);
+      }
+    }
+
+    async function loadStructures() {
+      try {
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'administrateur' && window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1) {
+          structures = window.USER_STRUCTURES;
+          const select = document.getElementById('structure-select');
+          structures.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.nom;
+            select.appendChild(opt);
+          });
+          document.getElementById('structure-selector-container').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Erreur chargement structures:', error);
+      }
+    }
+
+    // ============ Affichage provenances ============
+
+    function renderProvenances() {
+      const container = document.getElementById('provenances-list');
+
+      if (!provenances.length) {
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox display-4 text-muted"></i>
+            <p class="mt-3 text-muted">Aucune provenance configuree</p>
+            <button class="btn btn-primary" onclick="showCreateModal()">
+              <i class="bi bi-plus-lg"></i> Ajouter une provenance
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = provenances.map(prov => `
+        <div class="col-md-6 col-lg-4" data-id="${prov.id}">
+          <div class="card provenance-card h-100" style="border-left-color: ${prov.couleur || '#6c757d'}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center">
+                  <span class="drag-handle me-2" title="Glisser pour reordonner">
+                    <i class="bi bi-grip-vertical"></i>
+                  </span>
+                  <div class="provenance-icon me-3" style="background-color: ${prov.couleur}20; color: ${prov.couleur}">
+                    <i class="bi ${prov.icone || 'bi-box'}"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-0">${prov.libelle}</h6>
+                    <small class="text-muted"><code>${prov.code}</code></small>
+                  </div>
+                </div>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="editProvenance(${prov.id}); return false;">
+                      <i class="bi bi-pencil me-2"></i>Modifier
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" onclick="showConfigModal(${prov.id}); return false;">
+                      <i class="bi bi-calculator me-2"></i>Configuration comptable
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteProvenance(${prov.id}); return false;">
+                      <i class="bi bi-trash me-2"></i>Supprimer
+                    </a></li>
+                  </ul>
+                </div>
+              </div>
+
+              ${prov.description ? `<p class="small text-muted mb-2">${prov.description}</p>` : ''}
+
+              <div class="d-flex gap-1 flex-wrap">
+                ${prov.est_acquisition
+                  ? '<span class="badge badge-acquisition"><i class="bi bi-check-circle"></i> Acquisition</span>'
+                  : '<span class="badge badge-temporaire"><i class="bi bi-clock"></i> Temporaire</span>'}
+                ${prov.retour_prevu
+                  ? '<span class="badge bg-warning text-dark"><i class="bi bi-arrow-return-left"></i> Retour</span>'
+                  : ''}
+                ${!prov.actif
+                  ? '<span class="badge bg-secondary"><i class="bi bi-pause-circle"></i> Inactif</span>'
+                  : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Init drag & drop
+      if (typeof Sortable !== 'undefined') {
+        new Sortable(container, {
+          animation: 150,
+          handle: '.drag-handle',
+          ghostClass: 'sortable-ghost',
+          onEnd: async function() {
+            const ordre = [...container.querySelectorAll('[data-id]')].map((el, idx) => ({
+              id: parseInt(el.dataset.id),
+              ordre: idx
+            }));
+            try {
+              await provenancesAPI.updateOrdre(ordre);
+              showSuccessToast('Ordre mis a jour');
+            } catch (error) {
+              showErrorToast('Erreur mise a jour ordre');
+            }
+          }
+        });
+      }
+    }
+
+    // ============ CRUD Provenance ============
+
+    function showCreateModal() {
+      document.getElementById('provenanceModalTitle').textContent = 'Nouvelle provenance';
+      document.getElementById('provenanceForm').reset();
+      document.getElementById('prov_id').value = '';
+      document.getElementById('prov_icone').value = 'bi-box';
+      document.getElementById('prov_couleur').value = '#6c757d';
+      document.getElementById('prov_couleur_text').value = '#6c757d';
+      document.getElementById('prov_est_acquisition').checked = true;
+      document.getElementById('prov_retour_prevu').checked = false;
+      document.getElementById('prov_actif').checked = true;
+      updateIconPreview();
+      provenanceModal.show();
+    }
+
+    function editProvenance(id) {
+      const prov = provenances.find(p => p.id === id);
+      if (!prov) return;
+
+      document.getElementById('provenanceModalTitle').textContent = 'Modifier provenance';
+      document.getElementById('prov_id').value = prov.id;
+      document.getElementById('prov_code').value = prov.code;
+      document.getElementById('prov_libelle').value = prov.libelle;
+      document.getElementById('prov_description').value = prov.description || '';
+      document.getElementById('prov_icone').value = prov.icone || 'bi-box';
+      document.getElementById('prov_couleur').value = prov.couleur || '#6c757d';
+      document.getElementById('prov_couleur_text').value = prov.couleur || '#6c757d';
+      document.getElementById('prov_est_acquisition').checked = prov.est_acquisition;
+      document.getElementById('prov_retour_prevu').checked = prov.retour_prevu;
+      document.getElementById('prov_ordre').value = prov.ordre || 0;
+      document.getElementById('prov_actif').checked = prov.actif;
+      updateIconPreview();
+      provenanceModal.show();
+    }
+
+    async function saveProvenance() {
+      const id = document.getElementById('prov_id').value;
+      const data = {
+        code: document.getElementById('prov_code').value.toLowerCase().trim(),
+        libelle: document.getElementById('prov_libelle').value.trim(),
+        description: document.getElementById('prov_description').value.trim() || null,
+        icone: document.getElementById('prov_icone').value.trim() || 'bi-box',
+        couleur: document.getElementById('prov_couleur').value,
+        est_acquisition: document.getElementById('prov_est_acquisition').checked,
+        retour_prevu: document.getElementById('prov_retour_prevu').checked,
+        ordre: parseInt(document.getElementById('prov_ordre').value) || 0,
+        actif: document.getElementById('prov_actif').checked
+      };
+
+      if (!data.code || !data.libelle) {
+        showWarningToast('Code et libelle requis');
+        return;
+      }
+
+      try {
+        if (id) {
+          await provenancesAPI.update(id, data);
+          showSuccessToast('Provenance modifiee');
+        } else {
+          await provenancesAPI.create(data);
+          showSuccessToast('Provenance creee');
+        }
+        provenanceModal.hide();
+        await loadProvenances();
+      } catch (error) {
+        showErrorToast(error.message || 'Erreur enregistrement');
+      }
+    }
+
+    async function deleteProvenance(id) {
+      const prov = provenances.find(p => p.id === id);
+      if (!prov) return;
+
+      const result = await Swal.fire({
+        title: 'Supprimer cette provenance ?',
+        html: `<strong>${prov.libelle}</strong><br><small class="text-muted">${prov.code}</small>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Supprimer',
+        cancelButtonText: 'Annuler'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          await provenancesAPI.delete(id);
+          showSuccessToast('Provenance supprimee');
+          await loadProvenances();
+        } catch (error) {
+          showErrorToast(error.message || 'Erreur suppression');
+        }
+      }
+    }
+
+    function updateIconPreview() {
+      const iconClass = document.getElementById('prov_icone').value || 'bi-box';
+      document.getElementById('icon-preview').innerHTML = `<i class="bi ${iconClass}"></i>`;
+    }
+
+    // ============ Configuration comptable ============
+
+    async function loadComptabilite() {
+      const structureId = document.getElementById('structure-select').value || null;
+      const tbody = document.getElementById('comptabilite-body');
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-4">
+            <div class="spinner-border spinner-border-sm text-primary"></div>
+            <span class="ms-2">Chargement...</span>
+          </td>
+        </tr>
+      `;
+
+      try {
+        const config = await provenancesAPI.getConfiguration(structureId);
+
+        if (!config.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox"></i> Aucune provenance configuree
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = config.map(item => {
+          const prov = item.provenance;
+          const cfg = item.config;
+          const hasConfig = cfg && (cfg.compte_comptable || cfg.journal_code);
+
+          return `
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <span class="provenance-icon me-2" style="width:32px;height:32px;font-size:0.9rem;background-color:${prov.couleur}20;color:${prov.couleur}">
+                    <i class="bi ${prov.icone || 'bi-box'}"></i>
+                  </span>
+                  <div>
+                    <strong>${prov.libelle}</strong>
+                    <br><small class="text-muted">${prov.code}</small>
+                  </div>
+                </div>
+              </td>
+              <td><code>${cfg?.journal_code || '-'}</code></td>
+              <td>
+                <code>${cfg?.compte_comptable || '-'}</code>
+                ${cfg?.compte_libelle ? `<br><small class="text-muted">${cfg.compte_libelle}</small>` : ''}
+              </td>
+              <td>
+                <code>${cfg?.compte_contrepartie || '-'}</code>
+                ${cfg?.compte_contrepartie_libelle ? `<br><small class="text-muted">${cfg.compte_contrepartie_libelle}</small>` : ''}
+              </td>
+              <td>${cfg?.sectionAnalytique?.code || '-'}</td>
+              <td><code>${cfg?.prefixe_piece || 'ENT'}</code></td>
+              <td class="text-center">
+                ${cfg?.generer_ecritures
+                  ? '<i class="bi bi-check-circle-fill text-success"></i>'
+                  : '<i class="bi bi-x-circle text-muted"></i>'}
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="showConfigModal(${prov.id})" title="Configurer">
+                  <i class="bi bi-gear"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (error) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center py-4 text-danger">
+              <i class="bi bi-exclamation-triangle"></i> Erreur chargement
+            </td>
+          </tr>
+        `;
+        console.error(error);
+      }
+    }
+
+    function showConfigModal(provenanceId) {
+      const prov = provenances.find(p => p.id === provenanceId);
+      if (!prov) return;
+
+      const structureId = document.getElementById('structure-select').value || null;
+
+      document.getElementById('config-provenance-name').textContent = prov.libelle;
+      document.getElementById('config_provenance_id').value = provenanceId;
+      document.getElementById('config_structure_id').value = structureId || '';
+
+      if (structureId) {
+        const structure = structures.find(s => s.id == structureId);
+        document.getElementById('config-structure-info').textContent =
+          `Configuration pour : ${structure?.nom || 'Structure #' + structureId}`;
+      } else {
+        document.getElementById('config-structure-info').textContent =
+          'Configuration globale (par defaut pour toutes les structures)';
+      }
+
+      // Charger les sections analytiques
+      const selectSection = document.getElementById('config_section');
+      selectSection.innerHTML = '<option value="">-- Aucune --</option>';
+      sectionsAnalytiques.forEach(s => {
+        selectSection.innerHTML += `<option value="${s.id}">${s.code} - ${s.libelle}</option>`;
+      });
+
+      // Charger la configuration existante
+      loadConfigurationForModal(provenanceId, structureId);
+      configModal.show();
+    }
+
+    async function loadConfigurationForModal(provenanceId, structureId) {
+      try {
+        const cfg = await provenancesAPI.getConfigurationByProvenance(provenanceId, structureId);
+
+        document.getElementById('config_journal').value = cfg?.journal_code || '';
+        document.getElementById('config_compte').value = cfg?.compte_comptable || '';
+        document.getElementById('config_compte_libelle').value = cfg?.compte_libelle || '';
+        document.getElementById('config_contrepartie').value = cfg?.compte_contrepartie || '';
+        document.getElementById('config_contrepartie_libelle').value = cfg?.compte_contrepartie_libelle || '';
+        document.getElementById('config_section').value = cfg?.section_analytique_id || '';
+        document.getElementById('config_prefixe').value = cfg?.prefixe_piece || 'ENT';
+        document.getElementById('config_generer').checked = cfg?.generer_ecritures || false;
+      } catch (error) {
+        console.error('Erreur chargement config:', error);
+      }
+    }
+
+    async function saveConfiguration() {
+      const provenanceId = document.getElementById('config_provenance_id').value;
+      const structureId = document.getElementById('config_structure_id').value || null;
+
+      const data = {
+        journal_code: document.getElementById('config_journal').value.toUpperCase().trim() || null,
+        compte_comptable: document.getElementById('config_compte').value.trim() || null,
+        compte_libelle: document.getElementById('config_compte_libelle').value.trim() || null,
+        compte_contrepartie: document.getElementById('config_contrepartie').value.trim() || null,
+        compte_contrepartie_libelle: document.getElementById('config_contrepartie_libelle').value.trim() || null,
+        section_analytique_id: document.getElementById('config_section').value || null,
+        prefixe_piece: document.getElementById('config_prefixe').value.toUpperCase().trim() || 'ENT',
+        generer_ecritures: document.getElementById('config_generer').checked
+      };
+
+      try {
+        await provenancesAPI.updateConfiguration(provenanceId, structureId, data);
+        showSuccessToast('Configuration enregistree');
+        configModal.hide();
+        loadComptabilite();
+      } catch (error) {
+        showErrorToast(error.message || 'Erreur enregistrement');
+      }
+    }
+
+    // ============ Statistiques ============
+
+    async function showStats() {
+      statsModal.show();
+      const content = document.getElementById('stats-content');
+      content.innerHTML = '<div class="spinner-border text-primary"></div>';
+
+      try {
+        const stats = await provenancesAPI.getStats();
+
+        if (!stats.length) {
+          content.innerHTML = '<p class="text-muted">Aucune statistique disponible</p>';
+          return;
+        }
+
+        const total = stats.reduce((sum, s) => sum + s.total, 0);
+
+        content.innerHTML = `
+          <div class="mb-4">
+            <h5><i class="bi bi-box-seam"></i> Total: ${total} exemplaire(s)</h5>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Provenance</th>
+                  <th class="text-center">Jeux</th>
+                  <th class="text-center">Livres</th>
+                  <th class="text-center">Films</th>
+                  <th class="text-center">Disques</th>
+                  <th class="text-center"><strong>Total</strong></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${stats.map(s => `
+                  <tr>
+                    <td>
+                      <i class="bi ${s.provenance.icone}" style="color:${s.provenance.couleur}"></i>
+                      ${s.provenance.libelle}
+                    </td>
+                    <td class="text-center">${s.jeux || '-'}</td>
+                    <td class="text-center">${s.livres || '-'}</td>
+                    <td class="text-center">${s.films || '-'}</td>
+                    <td class="text-center">${s.disques || '-'}</td>
+                    <td class="text-center"><strong>${s.total}</strong></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      } catch (error) {
+        content.innerHTML = '<p class="text-danger">Erreur chargement statistiques</p>';
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>

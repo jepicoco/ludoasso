@@ -1360,3 +1360,125 @@ const exemplairesAPI = {
     });
   }
 };
+
+// ============ PROVENANCES API ============
+
+/**
+ * API pour la gestion des provenances d'articles
+ */
+const provenancesAPI = {
+  /**
+   * Liste toutes les provenances
+   * @param {Object} params - { actif: true/false }
+   */
+  async getAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/provenances${query ? '?' + query : ''}`);
+  },
+
+  /**
+   * Récupère une provenance par ID
+   */
+  async getById(id) {
+    return await apiRequest(`/provenances/${id}`);
+  },
+
+  /**
+   * Créer une nouvelle provenance
+   */
+  async create(data) {
+    return await apiRequest('/provenances', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Modifier une provenance
+   */
+  async update(id, data) {
+    return await apiRequest(`/provenances/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Supprimer une provenance
+   */
+  async delete(id) {
+    return await apiRequest(`/provenances/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Mettre à jour l'ordre des provenances (drag & drop)
+   * @param {Array} ordre - Array de { id, ordre }
+   */
+  async updateOrdre(ordre) {
+    return await apiRequest('/provenances/ordre', {
+      method: 'PUT',
+      body: JSON.stringify({ ordre })
+    });
+  },
+
+  /**
+   * Statistiques d'utilisation des provenances
+   */
+  async getStats() {
+    return await apiRequest('/provenances/stats');
+  },
+
+  // ---- Configuration comptable ----
+
+  /**
+   * Récupère toutes les configurations comptables pour une structure
+   * @param {number|null} structureId - ID structure ou null pour global
+   */
+  async getConfiguration(structureId = null) {
+    const endpoint = structureId
+      ? `/provenances/configuration/${structureId}`
+      : '/provenances/configuration';
+    return await apiRequest(endpoint);
+  },
+
+  /**
+   * Récupère la configuration comptable d'une provenance
+   * @param {number} provenanceId - ID de la provenance
+   * @param {number|null} structureId - ID structure ou null pour global
+   */
+  async getConfigurationByProvenance(provenanceId, structureId = null) {
+    const endpoint = structureId
+      ? `/provenances/${provenanceId}/configuration/${structureId}`
+      : `/provenances/${provenanceId}/configuration`;
+    return await apiRequest(endpoint);
+  },
+
+  /**
+   * Met à jour la configuration comptable d'une provenance
+   * @param {number} provenanceId - ID de la provenance
+   * @param {number|null} structureId - ID structure ou null pour global
+   * @param {Object} data - Configuration comptable
+   */
+  async updateConfiguration(provenanceId, structureId, data) {
+    const endpoint = structureId
+      ? `/provenances/${provenanceId}/configuration/${structureId}`
+      : `/provenances/${provenanceId}/configuration`;
+    return await apiRequest(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Supprime la configuration spécifique d'une structure
+   * @param {number} provenanceId - ID de la provenance
+   * @param {number} structureId - ID structure
+   */
+  async deleteConfiguration(provenanceId, structureId) {
+    return await apiRequest(`/provenances/${provenanceId}/configuration/${structureId}`, {
+      method: 'DELETE'
+    });
+  }
+};

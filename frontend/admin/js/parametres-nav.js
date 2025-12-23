@@ -34,6 +34,7 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-gear',
     tabId: 'configuration',
     pages: [
+      { id: 'themes', label: 'Themes', href: 'parametres-themes.html', icon: 'bi-palette' },
       { id: 'charte', label: 'Charte usager', href: 'parametres-charte.html', icon: 'bi-file-earmark-check' },
       { id: 'confidentialite', label: 'Confidentialite', href: 'parametres-confidentialite.html', icon: 'bi-shield-lock', adminOnly: true },
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
@@ -70,6 +71,7 @@ const PARAMETRES_CATEGORIES = {
       { id: 'tarification', label: 'Cotisations et tarifs', href: 'parametres-tarification.html', icon: 'bi-currency-euro' },
       { id: 'codes-reduction', label: 'Codes reduction', href: 'parametres-codes-reduction.html', icon: 'bi-ticket-perforated' },
       { id: 'comptes-bancaires', label: 'Comptes bancaires', href: 'parametres-comptes-bancaires.html', icon: 'bi-bank' },
+      { id: 'provenances', label: 'Provenances', href: 'parametres-provenances.html', icon: 'bi-box-seam' },
       { id: 'exports-comptables', label: 'Exports', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' },
       { id: 'parametrage-comptable', label: 'Parametrage', href: 'parametres-comptabilite.html', icon: 'bi-gear-wide-connected' }
     ]

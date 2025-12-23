@@ -281,7 +281,7 @@
     initTemplate('parametres');
 
     document.addEventListener('DOMContentLoaded', async () => {
-      renderSubNav('emprunts', 'reservations');
+      renderSubNav('configuration', 'reservations');
 
       // Verifier si le module reservations est actif dans le holodeck
       await loadActiveModules();
@@ -298,7 +298,7 @@
             </p>
           </div>
         `;
-        renderSubNav('emprunts', 'reservations');
+        renderSubNav('configuration', 'reservations');
         return;
       }
 

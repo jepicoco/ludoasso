@@ -20,6 +20,7 @@ const setupCharteAssociations = require('./charte');
 const setupStructuresAssociations = require('./structures');
 const setupTarificationAssociations = require('./tarification');
 const setupTagsUtilisateurAssociations = require('./tags-utilisateur');
+const setupProvenancesAssociations = require('./provenances');
 
 /**
  * Configure toutes les associations entre modeles
@@ -70,6 +71,9 @@ function setupAllAssociations(models) {
 
   // Tags Utilisateur (many-to-many)
   setupTagsUtilisateurAssociations(models);
+
+  // Provenances articles (achat, don, echange, etc.)
+  setupProvenancesAssociations(models);
 }
 
 module.exports = setupAllAssociations;
