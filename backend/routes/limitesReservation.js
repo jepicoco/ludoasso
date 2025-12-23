@@ -83,10 +83,9 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
     const globalParams = await ParametresFront.getParametres();
     const moduleReservationsActif = globalParams.module_reservations !== false;
 
-    // Recuperer toutes les limites par genre (filtrer par structure si fournie)
-    const whereClause = structureId ? { structure_id: parseInt(structureId) } : {};
+    // Recuperer toutes les limites par genre (globales pour l'instant)
+    // TODO: Ajouter structure_id a LimiteReservationGenre pour filtrage par structure
     const limitesGenre = await LimiteReservationGenre.findAll({
-      where: whereClause,
       order: [['module', 'ASC'], ['genre_nom', 'ASC']]
     });
 

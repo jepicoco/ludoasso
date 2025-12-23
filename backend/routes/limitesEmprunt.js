@@ -78,10 +78,9 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
       };
     }
 
-    // Récupérer toutes les limites par genre (filtrer par structure si fournie)
-    const whereClause = structureId ? { structure_id: parseInt(structureId) } : {};
+    // Récupérer toutes les limites par genre (globales pour l'instant)
+    // TODO: Ajouter structure_id à LimiteEmpruntGenre pour filtrage par structure
     const limitesGenre = await LimiteEmpruntGenre.findAll({
-      where: whereClause,
       order: [['module', 'ASC'], ['genre_nom', 'ASC']]
     });
 
