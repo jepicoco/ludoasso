@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const provenancesController = require('../controllers/provenancesController');
 const { verifyToken } = require('../middleware/auth');
-const checkRole = require('../middleware/checkRole');
+const { checkRole } = require('../middleware/checkRole');
 
 // Toutes les routes nécessitent une authentification
 router.use(verifyToken);
