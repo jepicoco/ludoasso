@@ -220,12 +220,12 @@
         return ['jeux', 'livres', 'films', 'disques']; // Default all
       }
 
-      const currentStructureId = localStorage.getItem('currentStructureId');
-      if (!currentStructureId) {
+      const structureId = window.CURRENT_STRUCTURE_ID;
+      if (!structureId) {
         return ['jeux', 'livres', 'films', 'disques'];
       }
 
-      const structure = window.USER_STRUCTURES.find(s => s.id == currentStructureId);
+      const structure = window.USER_STRUCTURES.find(s => s.id == structureId);
       if (!structure || !structure.modules_actifs) {
         return ['jeux', 'livres', 'films', 'disques'];
       }
@@ -252,14 +252,14 @@
       const configSection = document.getElementById('configSection');
 
       // Si multi-structure et aucune structure selectionnee
-      if (window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1) {
-        const currentStructureId = localStorage.getItem('currentStructureId');
-        if (!currentStructureId) {
-          noStructureAlert.classList.remove('d-none');
-          loadingContainer.classList.add('d-none');
-          configSection.classList.add('d-none');
-          return;
-        }
+      const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      if (hasMultipleStructures && !structureId) {
+        noStructureAlert.classList.remove('d-none');
+        loadingContainer.classList.add('d-none');
+        configSection.classList.add('d-none');
+        return;
       }
 
       noStructureAlert.classList.add('d-none');
@@ -279,9 +279,8 @@
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       };
-      const structureId = localStorage.getItem('currentStructureId');
-      if (structureId) {
-        headers['X-Structure-Id'] = structureId;
+      if (window.CURRENT_STRUCTURE_ID) {
+        headers['X-Structure-Id'] = window.CURRENT_STRUCTURE_ID;
       }
       return headers;
     }
