@@ -3053,6 +3053,12 @@
         exemplaireModalInstance = new bootstrap.Modal(document.getElementById('exemplaireModal'));
       }
       exemplaireModalInstance.show();
+
+      // Autofocus sur le champ code-barre après ouverture
+      document.getElementById('exemplaireModal').addEventListener('shown.bs.modal', function focusHandler() {
+        document.getElementById('exemplaire_code_barre').focus();
+        this.removeEventListener('shown.bs.modal', focusHandler);
+      });
     }
 
     // Remplir le select des emplacements
