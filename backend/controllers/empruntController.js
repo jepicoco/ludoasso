@@ -1,4 +1,4 @@
-const { Emprunt, Utilisateur, Jeu, Livre, Film, Disque, Reservation, sequelize } = require('../models');
+const { Emprunt, Utilisateur, Jeu, Livre, Film, Disque, Reservation, Structure, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -420,10 +420,23 @@ const retourEmprunt = async (req, res) => {
       nextReservation = await Reservation.getNextInQueue(itemType, item.id);
     }
 
+    // Verifier si le controle de retour est obligatoire pour cette structure
+    let controleObligatoire = true; // Par defaut
+    const structureId = emprunt.structure_id || 1;
+    const structure = await Structure.findByPk(structureId, { transaction });
+    if (structure && structure.controle_retour_obligatoire !== undefined) {
+      controleObligatoire = structure.controle_retour_obligatoire;
+    }
+
     // Mettre a jour le statut de l'article si present
-    // Si reservation en attente, garder en "reserve", sinon "disponible"
+    // Si controle obligatoire: mettre en 'en_controle' pour verification avant mise en rayon
+    // Sinon: comportement normal (reserve ou disponible)
     if (item) {
-      item.statut = nextReservation ? 'reserve' : 'disponible';
+      if (controleObligatoire) {
+        item.statut = 'en_controle';
+      } else {
+        item.statut = nextReservation ? 'reserve' : 'disponible';
+      }
       await item.save({ transaction });
     }
 
@@ -453,8 +466,13 @@ const retourEmprunt = async (req, res) => {
 
     // Construire la reponse
     const response = {
-      message: 'Article retourne avec succes',
-      emprunt: data
+      message: controleObligatoire
+        ? 'Article retourne - En attente de controle'
+        : 'Article retourne avec succes',
+      emprunt: data,
+      articleStatut: item ? item.statut : null,
+      enControle: controleObligatoire,
+      controleObligatoire
     };
 
     // Si une reservation est en attente, l'inclure dans la reponse

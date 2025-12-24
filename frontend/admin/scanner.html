@@ -569,6 +569,356 @@
       border-color: var(--scanner-success);
     }
 
+    /* Zone Retour Info */
+    .return-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .return-zone.active {
+      display: block;
+      border: 2px solid var(--scanner-success);
+    }
+
+    .return-zone.has-warning {
+      border-color: var(--scanner-warning);
+    }
+
+    .return-zone.has-error {
+      border-color: var(--scanner-error);
+    }
+
+    .return-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--scanner-accent);
+    }
+
+    .return-article-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .return-article-info {
+      flex: 1;
+    }
+
+    .return-article-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 1.1rem;
+    }
+
+    .return-article-info .return-dates {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .return-retard-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .return-retard-badge.ok {
+      background-color: var(--scanner-success);
+      color: #000;
+    }
+
+    .return-retard-badge.warning {
+      background-color: var(--scanner-warning);
+      color: #000;
+    }
+
+    .return-retard-badge.danger {
+      background-color: var(--scanner-error);
+      color: #fff;
+    }
+
+    .return-emprunteur {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background-color: var(--scanner-accent);
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .return-emprunteur .avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .return-emprunteur .info {
+      flex: 1;
+    }
+
+    .return-emprunteur .name {
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .return-emprunteur .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .return-emprunteur .badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+    }
+
+    .return-reservation-alert {
+      background-color: rgba(255, 193, 7, 0.15);
+      border: 1px solid var(--scanner-warning);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 15px;
+    }
+
+    .return-reservation-alert h6 {
+      margin: 0 0 10px 0;
+      color: var(--scanner-warning);
+      font-size: 0.9rem;
+    }
+
+    .return-reservation-choices {
+      display: flex;
+      gap: 10px;
+    }
+
+    .return-reservation-choices .btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+
+    /* Zone Usagers Session */
+    .session-zone {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .session-users-panel, .session-details-panel {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 15px;
+    }
+
+    .session-users-panel h5, .session-details-panel h5 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin: 0 0 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .session-users-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .session-user-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: var(--scanner-accent);
+    }
+
+    .session-user-item:hover {
+      background-color: #1a4a7a;
+    }
+
+    .session-user-item.active {
+      background-color: #1a4a7a;
+      border-left: 3px solid var(--scanner-success);
+    }
+
+    .session-user-item .status-icons {
+      display: flex;
+      gap: 2px;
+      font-size: 0.7rem;
+    }
+
+    .session-user-item .initials {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .session-user-item .user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-user-item .user-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-user-item .user-counts {
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .session-user-item .active-marker {
+      color: var(--scanner-success);
+      font-size: 0.8rem;
+    }
+
+    .status-icon {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-icon.ok { background-color: var(--scanner-success); }
+    .status-icon.warning { background-color: var(--scanner-warning); }
+    .status-icon.expired { background-color: var(--scanner-error); }
+    .status-icon.not-required { background-color: #555; }
+
+    .session-details-content {
+      font-size: 0.85rem;
+    }
+
+    .session-details-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--scanner-accent);
+    }
+
+    .session-details-header .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .session-details-header .info h4 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .session-details-header .info p {
+      margin: 0;
+      color: #888;
+      font-size: 0.8rem;
+    }
+
+    .session-details-section {
+      margin-bottom: 12px;
+    }
+
+    .session-details-section h6 {
+      font-size: 0.8rem;
+      color: #888;
+      margin: 0 0 6px 0;
+    }
+
+    .session-details-list {
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .session-details-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      background-color: var(--scanner-accent);
+      border-radius: 6px;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+    }
+
+    .session-details-item i {
+      font-size: 0.9rem;
+    }
+
+    .session-details-item .title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .session-details-item .retard {
+      color: var(--scanner-warning);
+      font-size: 0.75rem;
+    }
+
+    .session-details-item .retard.danger {
+      color: var(--scanner-error);
+    }
+
+    .session-empty {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      .session-zone {
+        grid-template-columns: 1fr;
+      }
+
+      .return-header {
+        flex-wrap: wrap;
+      }
+
+      .return-reservation-choices {
+        flex-direction: column;
+      }
+    }
+
     /* Fullscreen mode */
     body.fullscreen-mode {
       padding: 0;
@@ -768,6 +1118,149 @@
         font-size: 0.9rem;
       }
     }
+
+    /* Zone Controle (Mise en rayon) */
+    .control-zone {
+      background-color: var(--scanner-card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 2px solid #17a2b8;
+      display: none;
+    }
+
+    .control-zone.active {
+      display: block;
+    }
+
+    .control-zone h5 {
+      margin: 0 0 15px 0;
+      color: #17a2b8;
+      font-size: 0.95rem;
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--scanner-accent);
+    }
+
+    .control-article-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #17a2b8 0%, #20c9e0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .control-article-info {
+      flex: 1;
+    }
+
+    .control-article-info h4 {
+      margin: 0 0 4px 0;
+      font-size: 1.1rem;
+    }
+
+    .control-article-info .code {
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    .control-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .control-option-group label {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    .control-option-group select,
+    .control-option-group textarea {
+      width: 100%;
+      background-color: var(--scanner-accent);
+      border: 1px solid #444;
+      color: var(--scanner-text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .control-option-group select:focus,
+    .control-option-group textarea:focus {
+      outline: none;
+      border-color: #17a2b8;
+    }
+
+    .control-option-group textarea {
+      height: 60px;
+      resize: none;
+    }
+
+    .control-reservation-alert {
+      background-color: rgba(255, 193, 7, 0.15);
+      border: 1px solid var(--scanner-warning);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      color: var(--scanner-warning);
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .control-buttons .btn {
+      flex: 1;
+      padding: 12px;
+    }
+
+    .control-buttons .btn-mise-en-rayon {
+      background-color: #17a2b8;
+      border-color: #17a2b8;
+      color: #fff;
+    }
+
+    .control-buttons .btn-mise-en-rayon:hover {
+      background-color: #138496;
+      border-color: #117a8b;
+    }
+
+    .control-buttons .btn-reparation {
+      background-color: var(--scanner-warning);
+      border-color: var(--scanner-warning);
+      color: #000;
+    }
+
+    .control-buttons .btn-annuler {
+      background-color: transparent;
+      border: 1px solid #666;
+      color: var(--scanner-text);
+    }
+
+    @media (max-width: 768px) {
+      .control-options {
+        grid-template-columns: 1fr;
+      }
+
+      .control-buttons {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -802,6 +1295,124 @@
       <div id="reader"></div>
       <div class="scanner-status scanning" id="scanner-status">
         <i class="bi bi-camera-video"></i> En attente de scan...
+      </div>
+    </div>
+
+    <!-- Zone Dernier Retour (affichee lors d'un scan retour) -->
+    <div class="return-zone" id="return-zone">
+      <div class="return-header">
+        <div class="return-article-icon" id="return-article-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="return-article-info">
+          <h4 id="return-article-title">-</h4>
+          <div class="return-dates">
+            <span id="return-dates-info">-</span>
+          </div>
+        </div>
+        <div class="return-retard-badge ok" id="return-retard-badge">
+          A l'heure
+        </div>
+      </div>
+
+      <div class="return-emprunteur" id="return-emprunteur">
+        <div class="avatar" id="return-emprunteur-avatar">--</div>
+        <div class="info">
+          <div class="name" id="return-emprunteur-name">-</div>
+          <div class="badges" id="return-emprunteur-badges"></div>
+        </div>
+        <div>
+          <span class="badge bg-secondary" id="return-emprunts-restants">0 restants</span>
+        </div>
+      </div>
+
+      <div class="return-reservation-alert" id="return-reservation-alert" style="display: none;">
+        <h6><i class="bi bi-bookmark-star"></i> Article reserve</h6>
+        <p id="return-reservation-info" style="margin: 0 0 10px 0; font-size: 0.85rem;">-</p>
+        <div class="return-reservation-choices">
+          <button class="btn btn-outline-secondary" onclick="processReturn('rayon')">
+            <i class="bi bi-inbox"></i> Remettre en rayon
+          </button>
+          <button class="btn btn-warning" onclick="processReturn('cote')">
+            <i class="bi bi-bookmark-check"></i> Mettre de cote
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zone Controle (mise en rayon apres retour) -->
+    <div class="control-zone" id="control-zone">
+      <h5><i class="bi bi-clipboard-check"></i> Controle article - Mise en rayon</h5>
+
+      <div class="control-header">
+        <div class="control-article-icon" id="control-article-icon">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="control-article-info">
+          <h4 id="control-article-title">-</h4>
+          <div class="code" id="control-article-code">-</div>
+        </div>
+      </div>
+
+      <div class="control-options">
+        <div class="control-option-group">
+          <label><i class="bi bi-star"></i> Etat de l'article</label>
+          <select id="control-etat-select">
+            <option value="neuf">Neuf</option>
+            <option value="bon" selected>Bon</option>
+            <option value="use">Use</option>
+            <option value="abime">Abime</option>
+            <option value="incomplet">Incomplet</option>
+          </select>
+        </div>
+        <div class="control-option-group">
+          <label><i class="bi bi-chat-text"></i> Notes de controle</label>
+          <textarea id="control-notes" placeholder="Notes optionnelles..."></textarea>
+        </div>
+      </div>
+
+      <div class="control-reservation-alert" id="control-reservation-alert" style="display: none;">
+        <i class="bi bi-bookmark-star"></i> <span id="control-reservation-info">-</span>
+      </div>
+
+      <div class="control-buttons">
+        <button class="btn btn-annuler" onclick="hideControlZone()">
+          <i class="bi bi-x-lg"></i> Annuler
+        </button>
+        <button class="btn btn-reparation" onclick="sendToRepair()">
+          <i class="bi bi-tools"></i> Reparation
+        </button>
+        <button class="btn btn-mise-en-rayon" onclick="confirmMiseEnRayon()">
+          <i class="bi bi-box-arrow-in-down"></i> Mise en rayon
+        </button>
+      </div>
+    </div>
+
+    <!-- Zone Usagers Session (retours) -->
+    <div class="session-zone" id="session-zone" style="display: none;">
+      <div class="session-users-panel">
+        <h5>
+          <span><i class="bi bi-people"></i> Usagers session (<span id="session-users-count">0</span>)</span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearSessionUsers()" style="font-size: 0.7rem; padding: 2px 8px;">
+            <i class="bi bi-trash"></i>
+          </button>
+        </h5>
+        <div class="session-users-list" id="session-users-list">
+          <div class="session-empty">
+            <i class="bi bi-inbox"></i><br>
+            Aucun retour effectue
+          </div>
+        </div>
+      </div>
+
+      <div class="session-details-panel">
+        <h5><i class="bi bi-person-lines-fill"></i> Details usager</h5>
+        <div class="session-details-content" id="session-details-content">
+          <div class="session-empty">
+            <i class="bi bi-hand-index"></i><br>
+            Cliquez sur un usager
+          </div>
+        </div>
       </div>
     </div>
 

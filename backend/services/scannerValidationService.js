@@ -605,6 +605,7 @@ async function getUserStatus(utilisateurId, structureId) {
     adhesion: null,
     cotisation: null,
     limites: null,
+    empruntsEnCours: [],
     reservationsActives: []
   };
 
@@ -642,6 +643,38 @@ async function getUserStatus(utilisateurId, structureId) {
 
     // Limites
     status.limites = await getLimitsSummary(utilisateurId, structureId);
+
+    // Emprunts en cours
+    const emprunts = await Emprunt.findAll({
+      where: {
+        utilisateur_id: utilisateurId,
+        statut: 'en_cours'
+      },
+      include: [
+        { model: Jeu, as: 'jeu', attributes: ['id', 'titre'] },
+        { model: Livre, as: 'livre', attributes: ['id', 'titre'] },
+        { model: Film, as: 'film', attributes: ['id', 'titre'] },
+        { model: Disque, as: 'disque', attributes: ['id', 'titre'] }
+      ],
+      order: [['date_retour_prevue', 'ASC']]
+    });
+
+    const today = new Date();
+    status.empruntsEnCours = emprunts.map(e => {
+      const itemType = e.jeu_id ? 'jeu' : e.livre_id ? 'livre' : e.film_id ? 'film' : 'disque';
+      const item = e[itemType];
+      const retour = new Date(e.date_retour_prevue);
+      const retard = daysBetween(retour, today);
+
+      return {
+        id: e.id,
+        type: itemType,
+        titre: item?.titre || 'Article inconnu',
+        dateRetour: e.date_retour_prevue,
+        retardJours: retard > 0 ? retard : 0,
+        enRetard: retard > 0
+      };
+    });
 
     // Reservations actives
     const reservations = await Reservation.findAll({
@@ -703,10 +736,285 @@ function formatDate(date) {
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+/**
+ * Calcule le nombre de jours entre deux dates
+ */
+function daysBetween(date1, date2) {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  const diffTime = d2 - d1;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Recupere les informations completes pour un retour
+ * Utilise pour l'affichage fluide sans modal
+ */
+async function getReturnInfo(articleType, articleId, structureId) {
+  const result = {
+    found: false,
+    emprunt: null,
+    emprunteur: null,
+    empruntsEnCours: [],
+    reservations: [],
+    articleReservePar: null,
+    article: null
+  };
+
+  try {
+    const module = TYPE_TO_MODULE[articleType];
+    const config = MODULE_CONFIG[module];
+    if (!config) {
+      return result;
+    }
+
+    // Trouver l'emprunt en cours pour cet article
+    const foreignKey = config.foreignKey;
+    const emprunt = await Emprunt.findOne({
+      where: {
+        [foreignKey]: articleId,
+        statut: 'en_cours'
+      },
+      include: [{
+        model: Utilisateur,
+        as: 'utilisateur',
+        attributes: ['id', 'nom', 'prenom', 'email', 'statut', 'code_barre']
+      }]
+    });
+
+    if (!emprunt || !emprunt.utilisateur) {
+      return result;
+    }
+
+    result.found = true;
+    const utilisateur = emprunt.utilisateur;
+
+    // Charger l'article
+    const article = await config.model.findByPk(articleId);
+    result.article = {
+      id: article.id,
+      titre: article.titre,
+      type: articleType,
+      codeBarre: article.code_barre
+    };
+
+    // Calculer les infos de l'emprunt
+    const today = new Date();
+    const dateEmprunt = new Date(emprunt.date_emprunt);
+    const dateRetourPrevue = new Date(emprunt.date_retour_prevue);
+    const dureeJours = daysBetween(dateEmprunt, today);
+    const retardJours = daysBetween(dateRetourPrevue, today);
+
+    result.emprunt = {
+      id: emprunt.id,
+      dateEmprunt: emprunt.date_emprunt,
+      dateRetourPrevue: emprunt.date_retour_prevue,
+      dureeJours: dureeJours,
+      retardJours: retardJours > 0 ? retardJours : 0,
+      enRetard: retardJours > 0
+    };
+
+    // Charger la structure pour verifier cotisation/adhesion
+    const structure = await Structure.findByPk(structureId);
+
+    // Infos cotisation
+    let cotisationInfo = { valide: true, required: false, statut: 'not_required' };
+    if (structure && structure.cotisation_obligatoire) {
+      const cotisResult = await checkCotisation(utilisateur.id, structureId);
+      cotisationInfo = {
+        required: true,
+        valide: cotisResult.valide,
+        dateExpiration: cotisResult.dateExpiration,
+        joursRestants: cotisResult.joursRestants,
+        statut: cotisResult.valide
+          ? (cotisResult.joursRestants <= 30 ? 'warning' : 'ok')
+          : 'expired'
+      };
+    }
+
+    // Infos adhesion
+    let adhesionInfo = { required: false, valide: true, statut: 'not_required' };
+    if (structure && structure.adhesion_organisation_obligatoire && structure.organisation_id) {
+      const adhesionResult = await checkAdhesionOrganisation(utilisateur, structure);
+      adhesionInfo = {
+        required: true,
+        valide: adhesionResult.valide,
+        dateExpiration: adhesionResult.dateExpiration,
+        joursRestants: adhesionResult.joursRestants,
+        statut: adhesionResult.valide ? 'ok' : 'expired'
+      };
+    }
+
+    result.emprunteur = {
+      id: utilisateur.id,
+      nom: utilisateur.nom,
+      prenom: utilisateur.prenom,
+      email: utilisateur.email,
+      statut: utilisateur.statut,
+      codeBarre: utilisateur.code_barre,
+      cotisation: cotisationInfo,
+      adhesion: adhesionInfo
+    };
+
+    // Autres emprunts en cours de cet utilisateur (excluant celui-ci)
+    const autresEmprunts = await Emprunt.findAll({
+      where: {
+        utilisateur_id: utilisateur.id,
+        statut: 'en_cours',
+        id: { [Op.ne]: emprunt.id }
+      },
+      include: [
+        { model: Jeu, as: 'jeu', attributes: ['id', 'titre'] },
+        { model: Livre, as: 'livre', attributes: ['id', 'titre'] },
+        { model: Film, as: 'film', attributes: ['id', 'titre'] },
+        { model: Disque, as: 'disque', attributes: ['id', 'titre'] }
+      ],
+      order: [['date_retour_prevue', 'ASC']]
+    });
+
+    result.empruntsEnCours = autresEmprunts.map(e => {
+      const itemType = e.jeu_id ? 'jeu' : e.livre_id ? 'livre' : e.film_id ? 'film' : 'disque';
+      const item = e[itemType];
+      const retour = new Date(e.date_retour_prevue);
+      const retard = daysBetween(retour, today);
+
+      return {
+        id: e.id,
+        titre: item?.titre || 'Article inconnu',
+        type: itemType,
+        dateRetour: e.date_retour_prevue,
+        retardJours: retard > 0 ? retard : 0,
+        enRetard: retard > 0
+      };
+    });
+
+    // Reservations de cet utilisateur
+    const reservationsUser = await Reservation.findAll({
+      where: {
+        utilisateur_id: utilisateur.id,
+        statut: { [Op.in]: ['en_attente', 'prete'] }
+      },
+      include: [
+        { model: Jeu, as: 'jeu', attributes: ['id', 'titre'] },
+        { model: Livre, as: 'livre', attributes: ['id', 'titre'] },
+        { model: Film, as: 'film', attributes: ['id', 'titre'] },
+        { model: Disque, as: 'disque', attributes: ['id', 'titre'] }
+      ],
+      order: [['date_creation', 'ASC']]
+    });
+
+    result.reservations = reservationsUser.map(r => {
+      const itemType = r.jeu_id ? 'jeu' : r.livre_id ? 'livre' : r.film_id ? 'film' : 'disque';
+      const item = r[itemType];
+      return {
+        id: r.id,
+        titre: item?.titre || 'Article inconnu',
+        type: itemType,
+        position: r.position_queue || 1,
+        statut: r.statut
+      };
+    });
+
+    // Verifier si l'article retourne est reserve par quelqu'un d'autre
+    const reservationArticle = await Reservation.findOne({
+      where: {
+        [`${articleType}_id`]: articleId,
+        statut: { [Op.in]: ['en_attente', 'prete'] }
+      },
+      include: [{
+        model: Utilisateur,
+        as: 'utilisateur',
+        attributes: ['id', 'nom', 'prenom', 'email']
+      }],
+      order: [['position_queue', 'ASC'], ['date_creation', 'ASC']]
+    });
+
+    if (reservationArticle) {
+      result.articleReservePar = {
+        exists: true,
+        reservataire: {
+          id: reservationArticle.utilisateur?.id,
+          nom: reservationArticle.utilisateur?.nom,
+          prenom: reservationArticle.utilisateur?.prenom
+        },
+        reservationId: reservationArticle.id,
+        statut: reservationArticle.statut
+      };
+    } else {
+      result.articleReservePar = { exists: false };
+    }
+
+  } catch (error) {
+    console.error('[ScannerValidation] Erreur getReturnInfo:', error);
+  }
+
+  return result;
+}
+
+/**
+ * Recupere un resume compact d'un utilisateur pour la liste de session
+ */
+async function getUserSummary(utilisateurId, structureId) {
+  try {
+    const utilisateur = await Utilisateur.findByPk(utilisateurId);
+    if (!utilisateur) return null;
+
+    const structure = await Structure.findByPk(structureId);
+
+    // Cotisation
+    let cotisStatut = 'not_required';
+    if (structure && structure.cotisation_obligatoire) {
+      const cotis = await checkCotisation(utilisateurId, structureId);
+      cotisStatut = cotis.valide
+        ? (cotis.joursRestants <= 30 ? 'warning' : 'ok')
+        : 'expired';
+    }
+
+    // Adhesion
+    let adhesionStatut = 'not_required';
+    if (structure && structure.adhesion_organisation_obligatoire && structure.organisation_id) {
+      const adhesion = await checkAdhesionOrganisation(utilisateur, structure);
+      adhesionStatut = adhesion.valide ? 'ok' : 'expired';
+    }
+
+    // Compter emprunts en cours
+    const empruntsCount = await Emprunt.count({
+      where: {
+        utilisateur_id: utilisateurId,
+        statut: 'en_cours'
+      }
+    });
+
+    // Compter reservations
+    const reservationsCount = await Reservation.count({
+      where: {
+        utilisateur_id: utilisateurId,
+        statut: { [Op.in]: ['en_attente', 'prete'] }
+      }
+    });
+
+    return {
+      id: utilisateur.id,
+      nom: utilisateur.nom,
+      prenom: utilisateur.prenom,
+      initiales: (utilisateur.prenom[0] + utilisateur.nom[0]).toUpperCase(),
+      cotisationStatut: cotisStatut,
+      adhesionStatut: adhesionStatut,
+      empruntsCount,
+      reservationsCount
+    };
+  } catch (error) {
+    console.error('[ScannerValidation] Erreur getUserSummary:', error);
+    return null;
+  }
+}
+
 module.exports = {
   validateEmprunt,
   getLimitsSummary,
   getUserStatus,
+  getReturnInfo,
+  getUserSummary,
   checkCotisation,
   checkAdhesionOrganisation,
   checkReservation,

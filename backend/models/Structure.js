@@ -163,6 +163,12 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Si TRUE, adhesion a l\'organisation parente requise pour emprunter'
     },
+    controle_retour_obligatoire: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Si TRUE, les articles retournes passent par un etat de controle avant mise en rayon'
+    },
     actif: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

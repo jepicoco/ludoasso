@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const scannerValidationService = require('../services/scannerValidationService');
 const eventTriggerService = require('../services/eventTriggerService');
-const { Utilisateur, Reservation, Emprunt } = require('../models');
+const { Utilisateur, Reservation, Emprunt, Jeu, Livre, Film, Disque, Structure, ParametresFront } = require('../models');
 const { Op } = require('sequelize');
 const { verifyToken } = require('../middleware/auth');
 
@@ -90,6 +90,60 @@ router.get('/limits-summary/:utilisateurId', async (req, res) => {
     res.json(summary);
   } catch (error) {
     console.error('[Scanner] Erreur limits-summary:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/scanner/return-info/:articleType/:articleId
+ *
+ * Recupere les informations completes pour un retour
+ * (emprunteur, emprunt, autres emprunts, reservations, etc.)
+ */
+router.get('/return-info/:articleType/:articleId', async (req, res) => {
+  try {
+    const { articleType, articleId } = req.params;
+    const structureId = req.query.structure_id || req.structureId || 1;
+
+    if (!['jeu', 'livre', 'film', 'disque'].includes(articleType)) {
+      return res.status(400).json({ error: 'Type d\'article invalide' });
+    }
+
+    const info = await scannerValidationService.getReturnInfo(
+      articleType,
+      parseInt(articleId),
+      parseInt(structureId)
+    );
+
+    res.json(info);
+  } catch (error) {
+    console.error('[Scanner] Erreur return-info:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/scanner/user-summary/:utilisateurId
+ *
+ * Recupere un resume compact d'un utilisateur pour la liste de session
+ */
+router.get('/user-summary/:utilisateurId', async (req, res) => {
+  try {
+    const { utilisateurId } = req.params;
+    const structureId = req.query.structure_id || req.structureId || 1;
+
+    const summary = await scannerValidationService.getUserSummary(
+      parseInt(utilisateurId),
+      parseInt(structureId)
+    );
+
+    if (!summary) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    res.json(summary);
+  } catch (error) {
+    console.error('[Scanner] Erreur user-summary:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -320,6 +374,291 @@ router.post('/create-emprunt-with-validation', async (req, res) => {
 
   } catch (error) {
     console.error('[Scanner] Erreur create-emprunt:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/scanner/articles-en-controle
+ *
+ * Recupere la liste des articles en attente de controle
+ */
+router.get('/articles-en-controle', async (req, res) => {
+  try {
+    const structureId = req.query.structure_id || req.structureId || 1;
+    const articleType = req.query.type; // Optionnel: filtrer par type
+
+    const models = { jeu: Jeu, livre: Livre, film: Film, disque: Disque };
+    const typesToCheck = articleType ? [articleType] : ['jeu', 'livre', 'film', 'disque'];
+
+    const articles = [];
+
+    for (const type of typesToCheck) {
+      const model = models[type];
+      if (!model) continue;
+
+      const where = { statut: 'en_controle' };
+      if (structureId && structureId !== 'all') {
+        where.structure_id = structureId;
+      }
+
+      const items = await model.findAll({
+        where,
+        attributes: ['id', 'titre', 'code_barre', 'statut', 'etat', 'image_url'],
+        order: [['updated_at', 'DESC']],
+        limit: 50
+      });
+
+      items.forEach(item => {
+        articles.push({
+          id: item.id,
+          type,
+          titre: item.titre,
+          code_barre: item.code_barre,
+          etat: item.etat,
+          image_url: item.image_url
+        });
+      });
+    }
+
+    res.json({ articles, total: articles.length });
+  } catch (error) {
+    console.error('[Scanner] Erreur articles-en-controle:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/scanner/mise-en-rayon
+ *
+ * Valide le controle d'un article et le remet en rayon
+ * Gere les reservations en attente
+ *
+ * Body:
+ * - article_type: 'jeu' | 'livre' | 'film' | 'disque'
+ * - article_id: ID de l'article
+ * - nouvel_etat: (optionnel) nouveau etat physique
+ * - notes: (optionnel) notes de controle
+ * - envoyer_en_reparation: (optionnel) si true, envoyer en maintenance au lieu de disponible
+ */
+router.post('/mise-en-rayon', async (req, res) => {
+  try {
+    const {
+      article_type,
+      article_id,
+      nouvel_etat,
+      notes,
+      envoyer_en_reparation,
+      structure_id
+    } = req.body;
+
+    if (!article_type || !article_id) {
+      return res.status(400).json({
+        error: 'Parametres manquants: article_type et article_id requis'
+      });
+    }
+
+    const models = { jeu: Jeu, livre: Livre, film: Film, disque: Disque };
+    const model = models[article_type];
+
+    if (!model) {
+      return res.status(400).json({ error: 'Type d\'article invalide' });
+    }
+
+    const article = await model.findByPk(article_id);
+    if (!article) {
+      return res.status(404).json({ error: 'Article introuvable' });
+    }
+
+    // Verifier que l'article est bien en controle
+    if (article.statut !== 'en_controle') {
+      return res.status(400).json({
+        error: `L'article n'est pas en attente de controle (statut actuel: ${article.statut})`
+      });
+    }
+
+    // Si envoi en reparation demande
+    if (envoyer_en_reparation) {
+      article.statut = 'maintenance';
+      if (notes) {
+        article.notes = (article.notes || '') + `\n[${new Date().toISOString()}] Controle: ${notes}`;
+      }
+      if (nouvel_etat) {
+        article.etat = nouvel_etat;
+      }
+      await article.save();
+
+      return res.json({
+        success: true,
+        message: 'Article envoye en reparation',
+        articleStatut: 'maintenance',
+        article: {
+          id: article.id,
+          titre: article.titre,
+          statut: article.statut,
+          etat: article.etat
+        }
+      });
+    }
+
+    // Verifier s'il y a une reservation en attente
+    const nextReservation = await Reservation.getNextInQueue(article_type, article_id);
+
+    // Mettre a jour l'etat si specifie
+    if (nouvel_etat) {
+      article.etat = nouvel_etat;
+    }
+
+    // Ajouter les notes si specifiees
+    if (notes) {
+      article.notes = (article.notes || '') + `\n[${new Date().toISOString()}] Controle: ${notes}`;
+    }
+
+    // Determiner le nouveau statut
+    if (nextReservation) {
+      article.statut = 'reserve';
+
+      // Mettre a jour la reservation
+      const structId = structure_id || req.structureId || 1;
+      const params = await ParametresFront.getParametres();
+      const moduleMap = { jeu: 'ludotheque', livre: 'bibliotheque', film: 'filmotheque', disque: 'discotheque' };
+      const moduleName = moduleMap[article_type];
+      const joursExpiration = params[`reservation_expiration_jours_${moduleName}`] || 15;
+
+      const maintenant = new Date();
+      nextReservation.statut = 'prete';
+      nextReservation.date_notification = maintenant;
+      nextReservation.date_expiration = new Date(maintenant.getTime() + joursExpiration * 24 * 60 * 60 * 1000);
+      await nextReservation.save();
+
+      // Notifier le reservataire
+      try {
+        await eventTriggerService.triggerReservationPrete(
+          nextReservation,
+          nextReservation.utilisateur,
+          article
+        );
+      } catch (notifyError) {
+        console.error('[Scanner] Erreur notification reservation prete:', notifyError);
+      }
+    } else {
+      article.statut = 'disponible';
+    }
+
+    await article.save();
+
+    res.json({
+      success: true,
+      message: nextReservation
+        ? 'Article mis de cote pour reservation'
+        : 'Article remis en rayon',
+      articleStatut: article.statut,
+      article: {
+        id: article.id,
+        titre: article.titre,
+        statut: article.statut,
+        etat: article.etat
+      },
+      reservation: nextReservation ? {
+        id: nextReservation.id,
+        utilisateur_id: nextReservation.utilisateur_id,
+        date_expiration: nextReservation.date_expiration
+      } : null
+    });
+  } catch (error) {
+    console.error('[Scanner] Erreur mise-en-rayon:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/scanner/article-info/:articleType/:articleId
+ *
+ * Recupere les informations d'un article (pour le scan en mode controle)
+ */
+router.get('/article-info/:articleType/:articleId', async (req, res) => {
+  try {
+    const { articleType, articleId } = req.params;
+
+    const models = { jeu: Jeu, livre: Livre, film: Film, disque: Disque };
+    const model = models[articleType];
+
+    if (!model) {
+      return res.status(400).json({ error: 'Type d\'article invalide' });
+    }
+
+    const article = await model.findByPk(articleId);
+    if (!article) {
+      return res.status(404).json({ error: 'Article introuvable' });
+    }
+
+    // Verifier s'il y a une reservation
+    const nextReservation = await Reservation.getNextInQueue(articleType, articleId);
+
+    res.json({
+      article: {
+        id: article.id,
+        type: articleType,
+        titre: article.titre,
+        code_barre: article.code_barre,
+        statut: article.statut,
+        etat: article.etat,
+        image_url: article.image_url,
+        notes: article.notes
+      },
+      hasReservation: !!nextReservation,
+      reservation: nextReservation ? {
+        id: nextReservation.id,
+        utilisateur_id: nextReservation.utilisateur_id,
+        utilisateur: nextReservation.utilisateur ? {
+          id: nextReservation.utilisateur.id,
+          nom: nextReservation.utilisateur.nom,
+          prenom: nextReservation.utilisateur.prenom
+        } : null
+      } : null,
+      enControle: article.statut === 'en_controle'
+    });
+  } catch (error) {
+    console.error('[Scanner] Erreur article-info:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * GET /api/scanner/structure-settings
+ *
+ * Recupere les parametres de la structure pour le scanner
+ */
+router.get('/structure-settings', async (req, res) => {
+  try {
+    const structureId = req.query.structure_id || req.structureId || 1;
+
+    const structure = await Structure.findByPk(structureId, {
+      attributes: [
+        'id', 'nom',
+        'cotisation_obligatoire',
+        'adhesion_organisation_obligatoire',
+        'controle_retour_obligatoire'
+      ]
+    });
+
+    if (!structure) {
+      return res.json({
+        cotisation_obligatoire: true,
+        adhesion_organisation_obligatoire: false,
+        controle_retour_obligatoire: true
+      });
+    }
+
+    res.json({
+      id: structure.id,
+      nom: structure.nom,
+      cotisation_obligatoire: structure.cotisation_obligatoire ?? true,
+      adhesion_organisation_obligatoire: structure.adhesion_organisation_obligatoire ?? false,
+      controle_retour_obligatoire: structure.controle_retour_obligatoire ?? true
+    });
+  } catch (error) {
+    console.error('[Scanner] Erreur structure-settings:', error);
     res.status(500).json({ error: error.message });
   }
 });

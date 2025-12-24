@@ -411,6 +411,9 @@ async function handleArticleScan(response) {
   } else if (article.statut === 'reserve') {
     // Article reserve - verifier si l'adherent courant a une reservation prete
     await handleReservedArticle(article, articleType, response.code);
+  } else if (article.statut === 'en_controle') {
+    // Article en attente de controle - mise en rayon
+    await handleControlArticle(article, articleType, response.code);
   } else {
     playSound('error');
     flashZone('error');
@@ -460,6 +463,67 @@ async function handleReservedArticle(article, articleType, code) {
     updateStatus('Erreur: ' + (error.message || 'Erreur inconnue'), 'error');
     addToHistory('error', 'Erreur reservation', error.message || 'Erreur inconnue', code);
   }
+}
+
+/**
+ * Gere un article en statut 'en_controle' (mise en rayon apres retour)
+ */
+async function handleControlArticle(article, articleType, code) {
+  playSound('success');
+  flashZone('success');
+  updateStatus(`${getArticleTypeLabel(articleType)} en controle - Mise en rayon`, 'warning');
+
+  // Afficher la zone de controle
+  if (typeof displayControlZone === 'function') {
+    await displayControlZone(article, articleType);
+  } else {
+    // Fallback: mise en rayon directe sans zone de controle
+    try {
+      const result = await miseEnRayon(article.id, articleType);
+
+      if (result.success) {
+        playSound('success');
+        flashZone('success');
+        const statusLabel = result.articleStatut === 'reserve' ? 'Mis de cote (reservation)' : 'Remis en rayon';
+        updateStatus(`${article.titre} - ${statusLabel}`, 'success');
+        addToHistory('success', 'Mise en rayon', `${getArticleTypeLabel(articleType)}: ${article.titre}`, code);
+      }
+    } catch (error) {
+      console.error('[Scanner] Erreur mise en rayon:', error);
+      playSound('error');
+      updateStatus('Erreur mise en rayon: ' + error.message, 'error');
+      addToHistory('error', 'Erreur controle', error.message, code);
+    }
+  }
+}
+
+/**
+ * Effectue la mise en rayon d'un article en controle
+ */
+async function miseEnRayon(articleId, articleType, options = {}) {
+  const token = localStorage.getItem('token');
+  const response = await fetch('/api/scanner/mise-en-rayon', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      article_type: articleType,
+      article_id: articleId,
+      nouvel_etat: options.nouvelEtat,
+      notes: options.notes,
+      envoyer_en_reparation: options.envoyerEnReparation,
+      structure_id: currentStructureId
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Erreur mise en rayon');
+  }
+
+  return await response.json();
 }
 
 // Alias pour compatibilite avec l'ancien code
@@ -815,17 +879,63 @@ async function createEmprunt(article, articleType = 'jeu') {
 }
 
 /**
- * Effectue un retour avec feedback UI
+ * Effectue un retour avec feedback UI et affichage des informations
  * @param {Object} article - L'article a retourner
  * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
  */
 async function processRetour(article, articleType = 'jeu') {
   try {
-    // Construire le filtre avec le bon ID selon le type
+    // 1. Recuperer les infos de retour enrichies (si fonction disponible)
+    if (typeof fetchReturnInfo === 'function') {
+      const returnInfo = await fetchReturnInfo(articleType, article.id, currentStructureId);
+
+      if (returnInfo.found) {
+        // Afficher les infos dans la zone dediee
+        displayReturnInfo(returnInfo);
+
+        // Ajouter l'utilisateur a la liste de session
+        if (returnInfo.emprunteur?.id) {
+          await updateSessionUser(returnInfo.emprunteur.id, currentStructureId);
+
+          // Afficher ses details
+          const status = await fetchUserStatus(returnInfo.emprunteur.id, currentStructureId);
+          if (status) {
+            displaySessionUserDetails(status);
+          }
+        }
+
+        // Si reservation en attente, ne pas faire le retour automatiquement
+        // L'utilisateur choisira via les boutons de la zone
+        if (returnInfo.articleReservePar?.exists) {
+          playSound('success');
+          updateStatus(`Retour: ${article.titre} - Choix reservation`, 'warning');
+          return; // Attendre le choix via processReturn()
+        }
+
+        // Pas de reservation - faire le retour directement avec l'ID qu'on a deja
+        const empruntId = returnInfo.emprunt.id;
+        const adherentNom = `${returnInfo.emprunteur?.prenom || ''} ${returnInfo.emprunteur?.nom || ''}`;
+        const typeLabel = getArticleTypeLabel(articleType);
+
+        await empruntsAPI.return(empruntId);
+
+        playSound('success');
+        flashZone('success');
+        updateStatus(`Retour: ${article.titre}`, 'success');
+        addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.code_barre);
+
+        // Mettre a jour la liste de session
+        if (returnInfo.emprunteur?.id) {
+          updateSessionUser(returnInfo.emprunteur.id, currentStructureId, false);
+        }
+        return;
+      }
+    }
+
+    // 2. Fallback: proceder au retour sans les infos enrichies
     const filter = { statut: 'en_cours' };
     filter[`${articleType}_id`] = article.id;
 
-    // Trouver l'emprunt en cours pour cet article
     const emprunts = await empruntsAPI.getAll(filter);
 
     if (!emprunts.emprunts || emprunts.emprunts.length === 0) {
@@ -840,9 +950,8 @@ async function processRetour(article, articleType = 'jeu') {
 
     const typeLabel = getArticleTypeLabel(articleType);
 
-    // Verifier s'il y a une reservation en attente
+    // Verifier s'il y a une reservation en attente (fallback modal)
     if (response.hasReservation) {
-      // Afficher la modal de choix reservation
       showReservationChoiceModal(emprunt.id, article, articleType, response.reservation, adherentNom);
     } else {
       playSound('success');
@@ -857,6 +966,77 @@ async function processRetour(article, articleType = 'jeu') {
     flashZone('error');
     updateStatus('Erreur retour: ' + (error.message || 'Erreur inconnue'), 'error');
     addToHistory('error', 'Erreur retour', error.message || 'Erreur inconnue', article.code_barre);
+  }
+}
+
+/**
+ * Traite le retour apres choix de l'utilisateur (rayon ou cote)
+ * Appele par les boutons de la zone retour
+ */
+async function processReturn(choice) {
+  const returnInfo = typeof getReturnInfo === 'function' ? getReturnInfo() : null;
+
+  if (!returnInfo || !returnInfo.emprunt) {
+    console.error('[Scanner] Pas d\'info de retour disponible');
+    return;
+  }
+
+  try {
+    const article = returnInfo.article;
+    const empruntId = returnInfo.emprunt.id;
+    const adherentNom = `${returnInfo.emprunteur?.prenom || ''} ${returnInfo.emprunteur?.nom || ''}`;
+    const typeLabel = getArticleTypeLabel(article.type);
+
+    // Effectuer le retour
+    await empruntsAPI.return(empruntId);
+
+    // Gerer la reservation selon le choix
+    if (choice === 'cote' && returnInfo.articleReservePar?.exists) {
+      // Mettre de cote et notifier
+      const reservationId = returnInfo.articleReservePar.reservationId;
+      const reservataire = `${returnInfo.articleReservePar.reservataire?.prenom || ''} ${returnInfo.articleReservePar.reservataire?.nom || ''}`;
+
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`/api/reservations/${reservationId}/notify-ready`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (e) {
+        console.error('[Scanner] Erreur notification reservation:', e);
+      }
+
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Retour + Reservation notifiee`, 'success');
+      addToHistory('success', 'Retour + Reservation', `${typeLabel}: ${article.titre} mis de cote pour ${reservataire}`, article.codeBarre);
+    } else {
+      // Remettre en rayon
+      playSound('success');
+      flashZone('success');
+      updateStatus(`Retour: ${article.titre}`, 'success');
+      addToHistory('success', 'Retour', `${typeLabel}: ${article.titre} (${adherentNom})`, article.codeBarre);
+    }
+
+    // Masquer l'alerte reservation
+    const resaAlert = document.getElementById('return-reservation-alert');
+    if (resaAlert) {
+      resaAlert.style.display = 'none';
+    }
+
+    // Mettre a jour la liste de session
+    if (returnInfo.emprunteur?.id && typeof updateSessionUser === 'function') {
+      updateSessionUser(returnInfo.emprunteur.id, currentStructureId, false);
+    }
+
+  } catch (error) {
+    console.error('[Scanner] Erreur processReturn:', error);
+    playSound('error');
+    flashZone('error');
+    updateStatus('Erreur retour: ' + error.message, 'error');
   }
 }
 

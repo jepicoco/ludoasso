@@ -268,6 +268,7 @@ function showModalStructure(id = null) {
     // Conditions d'emprunt
     document.getElementById('structure_cotisation_obligatoire').checked = structure.cotisation_obligatoire !== false;
     document.getElementById('structure_adhesion_organisation_obligatoire').checked = structure.adhesion_organisation_obligatoire === true;
+    document.getElementById('structure_controle_retour_obligatoire').checked = structure.controle_retour_obligatoire !== false;
 
     // Afficher le lien vers config fine
     if (linkConfig) {
@@ -288,6 +289,7 @@ function showModalStructure(id = null) {
     // Conditions d'emprunt (valeurs par defaut)
     document.getElementById('structure_cotisation_obligatoire').checked = true;
     document.getElementById('structure_adhesion_organisation_obligatoire').checked = false;
+    document.getElementById('structure_controle_retour_obligatoire').checked = true;
 
     // Masquer le lien vers config fine (on ne peut pas y acceder avant sauvegarde)
     if (linkConfig) {
@@ -331,7 +333,8 @@ async function handleStructureSubmit(e) {
     configuration_email_id: emailConnectorValue ? parseInt(emailConnectorValue) : null,
     configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null,
     cotisation_obligatoire: document.getElementById('structure_cotisation_obligatoire').checked,
-    adhesion_organisation_obligatoire: document.getElementById('structure_adhesion_organisation_obligatoire').checked
+    adhesion_organisation_obligatoire: document.getElementById('structure_adhesion_organisation_obligatoire').checked,
+    controle_retour_obligatoire: document.getElementById('structure_controle_retour_obligatoire').checked
   };
 
   try {

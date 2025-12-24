@@ -76,7 +76,7 @@ module.exports = (sequelize) => {
       }
     },
     statut: {
-      type: DataTypes.ENUM('disponible', 'emprunte', 'maintenance', 'perdu', 'archive'),
+      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'en_controle', 'maintenance', 'perdu', 'archive'),
       defaultValue: 'disponible'
     },
     etat: {

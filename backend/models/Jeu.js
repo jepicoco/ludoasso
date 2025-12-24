@@ -164,7 +164,7 @@ module.exports = (sequelize) => {
     },
     // Gestion ludotheque
     statut: {
-      type: DataTypes.ENUM('disponible', 'emprunte', 'maintenance', 'perdu', 'archive'),
+      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'en_controle', 'maintenance', 'perdu', 'archive'),
       allowNull: false,
       defaultValue: 'disponible'
     },
@@ -323,7 +323,7 @@ module.exports = (sequelize) => {
   };
 
   Jeu.prototype.changerStatut = async function(nouveauStatut) {
-    const statutsValides = ['disponible', 'emprunte', 'maintenance', 'perdu', 'archive'];
+    const statutsValides = ['disponible', 'emprunte', 'reserve', 'en_controle', 'maintenance', 'perdu', 'archive'];
     if (!statutsValides.includes(nouveauStatut)) {
       throw new Error(`Statut invalide: ${nouveauStatut}`);
     }
