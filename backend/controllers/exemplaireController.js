@@ -506,11 +506,20 @@ exports.searchByEAN = async (req, res) => {
  * Obtenir les statistiques d'exemplaires pour un article
  * GET /api/:module/:articleId/exemplaires/stats
  */
+// Mapping module -> nom de table exemplaires
+const EXEMPLAIRE_TABLE_NAMES = {
+  jeu: 'exemplaires_jeux',
+  livre: 'exemplaires_livres',
+  film: 'exemplaires_films',
+  disque: 'exemplaires_disques'
+};
+
 exports.getExemplairesStats = async (req, res) => {
   try {
     const { module, articleId } = req.params;
     const ExemplaireModel = getExemplaireModel(module);
     const fkField = FK_FIELDS[module];
+    const tableName = EXEMPLAIRE_TABLE_NAMES[module];
 
     const [stats] = await sequelize.query(`
       SELECT
@@ -522,7 +531,7 @@ exports.getExemplairesStats = async (req, res) => {
         SUM(CASE WHEN statut = 'perdu' THEN 1 ELSE 0 END) as perdus,
         SUM(CASE WHEN statut = 'archive' THEN 1 ELSE 0 END) as archives,
         SUM(CASE WHEN code_barre IS NULL THEN 1 ELSE 0 END) as sans_code_barre
-      FROM exemplaires_${module}s
+      FROM ${tableName}
       WHERE ${fkField} = :articleId
     `, {
       replacements: { articleId },

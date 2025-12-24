@@ -734,7 +734,7 @@
   </div>
 
   <!-- Exemplaire Modal (Create/Edit) -->
-  <div class="modal fade" id="exemplaireModal" tabindex="-1">
+  <div class="modal fade" id="exemplaireModal" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-success text-white">
@@ -811,6 +811,77 @@
           <button type="button" class="btn btn-success" onclick="saveExemplaire()">
             <i class="bi bi-check-lg"></i> Enregistrer
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Gestion Exemplaires -->
+  <div class="modal fade" id="exemplairesListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="bi bi-boxes me-2"></i>Gestion des exemplaires</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <h6 id="exemplaires_article_titre" class="text-muted">-</h6>
+          </div>
+          <!-- Stats rapides -->
+          <div class="row text-center mb-3" id="exemplaires_modal_stats">
+            <div class="col-3">
+              <div class="card bg-light">
+                <div class="card-body py-2">
+                  <h4 class="mb-0 text-success" id="modal_stat_disponibles">-</h4>
+                  <small class="text-muted">Disponibles</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="card bg-light">
+                <div class="card-body py-2">
+                  <h4 class="mb-0 text-warning" id="modal_stat_empruntes">-</h4>
+                  <small class="text-muted">Empruntes</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="card bg-light">
+                <div class="card-body py-2">
+                  <h4 class="mb-0 text-info" id="modal_stat_maintenance">-</h4>
+                  <small class="text-muted">Maintenance</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-3">
+              <div class="card bg-light">
+                <div class="card-body py-2">
+                  <h4 class="mb-0" id="modal_stat_total">-</h4>
+                  <small class="text-muted">Total</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Liste des exemplaires</h6>
+            <button class="btn btn-sm btn-success" onclick="openCreateExemplaireModal()">
+              <i class="bi bi-plus-lg"></i> Ajouter
+            </button>
+          </div>
+
+          <!-- Liste -->
+          <div id="exemplaires_modal_list" style="max-height: 400px; overflow-y: auto;">
+            <div class="text-center py-3">
+              <div class="spinner-border spinner-border-sm"></div>
+              <span class="ms-2">Chargement...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
         </div>
       </div>
     </div>
@@ -1040,6 +1111,9 @@
                     <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editJeu(${jeu.id})" title="Modifier">
                       <i class="bi bi-pencil"></i>
                     </button>
+                    <button class="btn btn-outline-success" onclick="event.stopPropagation(); openExemplairesModal(${jeu.id}, '${escapeHtml(jeu.titre).replace(/'/g, "\\'")}')" title="Exemplaires">
+                      <i class="bi bi-boxes"></i>
+                    </button>
                     <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${jeu.id})" title="Imprimer">
                       <i class="bi bi-printer"></i>
                     </button>
@@ -1091,6 +1165,9 @@
                       </button>
                       <button class="btn btn-outline-secondary" onclick="event.stopPropagation(); editJeu(${jeu.id})" title="Modifier">
                         <i class="bi bi-pencil"></i>
+                      </button>
+                      <button class="btn btn-outline-success" onclick="event.stopPropagation(); openExemplairesModal(${jeu.id}, '${escapeHtml(jeu.titre).replace(/'/g, "\\'")}')" title="Exemplaires">
+                        <i class="bi bi-boxes"></i>
                       </button>
                       <button class="btn btn-outline-info" onclick="event.stopPropagation(); printLabel(${jeu.id})" title="Imprimer">
                         <i class="bi bi-printer"></i>
@@ -1453,25 +1530,8 @@
 
         const content = document.getElementById('viewJeuContent');
         content.innerHTML = `
-          <!-- Onglets -->
-          <ul class="nav nav-pills mb-3" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#view-tab-details" type="button">
-                <i class="bi bi-info-circle"></i> Details
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-exemplaires" type="button" id="view-tab-exemplaires-btn">
-                <i class="bi bi-boxes"></i> Exemplaires
-                <span class="badge bg-secondary ms-1" id="view_exemplaires_count">-</span>
-              </button>
-            </li>
-          </ul>
-
-          <!-- Contenu des onglets -->
-          <div class="tab-content">
-            <!-- Onglet Details -->
-            <div class="tab-pane fade show active" id="view-tab-details">
+          <!-- Contenu Details -->
+          <div id="view-tab-details">
               <div class="row">
                 <div class="col-md-4 text-center">
                   ${jeu.image_url
@@ -1558,62 +1618,6 @@
               <div id="thematiques-container-${id}" class="mt-3">
                 <!-- Thematiques IA chargees dynamiquement -->
               </div>
-            </div>
-
-            <!-- Onglet Exemplaires -->
-            <div class="tab-pane fade" id="view-tab-exemplaires">
-              <!-- Stats rapides -->
-              <div class="row text-center mb-3" id="exemplaires_stats">
-                <div class="col-3">
-                  <div class="card bg-light">
-                    <div class="card-body py-2">
-                      <h4 class="mb-0 text-success" id="stat_disponibles">-</h4>
-                      <small class="text-muted">Disponibles</small>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-3">
-                  <div class="card bg-light">
-                    <div class="card-body py-2">
-                      <h4 class="mb-0 text-warning" id="stat_empruntes">-</h4>
-                      <small class="text-muted">Empruntes</small>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-3">
-                  <div class="card bg-light">
-                    <div class="card-body py-2">
-                      <h4 class="mb-0 text-info" id="stat_maintenance">-</h4>
-                      <small class="text-muted">Maintenance</small>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-3">
-                  <div class="card bg-light">
-                    <div class="card-body py-2">
-                      <h4 class="mb-0" id="stat_total">-</h4>
-                      <small class="text-muted">Total</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Liste des exemplaires</h6>
-                <button class="btn btn-sm btn-success" onclick="openCreateExemplaireModal()">
-                  <i class="bi bi-plus-lg"></i> Ajouter
-                </button>
-              </div>
-
-              <!-- Liste -->
-              <div id="exemplaires_list" style="max-height: 350px; overflow-y: auto;">
-                <div class="text-center py-3">
-                  <div class="spinner-border spinner-border-sm"></div>
-                  <span class="ms-2">Cliquez sur l'onglet pour charger...</span>
-                </div>
-              </div>
-            </div>
           </div>
         `;
 
@@ -1621,17 +1625,6 @@
           if (viewModalInstance) viewModalInstance.hide();
           editJeu(id);
         };
-
-        // Setup lazy loading pour l'onglet Exemplaires
-        const exemplairesTab = document.getElementById('view-tab-exemplaires-btn');
-        if (exemplairesTab) {
-          exemplairesTab.addEventListener('shown.bs.tab', () => {
-            if (!exemplairesLoaded) {
-              loadExemplaires(id);
-              exemplairesLoaded = true;
-            }
-          });
-        }
 
         // Charger les thematiques IA si le module est actif
         if (typeof isModuleActive === 'function' && isModuleActive('recherche_ia')) {
@@ -2952,9 +2945,92 @@
     // ============================================
 
     // Charger les exemplaires d'un jeu
+    // === Modale Gestion des Exemplaires ===
+    let exemplairesListModalInstance = null;
+
+    async function openExemplairesModal(articleId, titre) {
+      currentArticleIdForExemplaires = articleId;
+
+      // Mettre le titre
+      document.getElementById('exemplaires_article_titre').textContent = titre || 'Jeu';
+
+      // Ouvrir la modale
+      if (!exemplairesListModalInstance) {
+        exemplairesListModalInstance = new bootstrap.Modal(document.getElementById('exemplairesListModal'));
+      }
+      exemplairesListModalInstance.show();
+
+      // Charger les exemplaires
+      await loadExemplairesModal(articleId);
+    }
+
+    async function loadExemplairesModal(articleId) {
+      currentArticleIdForExemplaires = articleId;
+      const container = document.getElementById('exemplaires_modal_list');
+
+      try {
+        container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>';
+
+        const [exemplaires, stats] = await Promise.all([
+          exemplairesAPI.getByArticle('jeux', articleId),
+          exemplairesAPI.getStats('jeux', articleId)
+        ]);
+
+        // Mettre a jour stats
+        document.getElementById('modal_stat_disponibles').textContent = stats.disponibles || 0;
+        document.getElementById('modal_stat_empruntes').textContent = stats.empruntes || 0;
+        document.getElementById('modal_stat_maintenance').textContent = stats.maintenance || 0;
+        document.getElementById('modal_stat_total').textContent = stats.total || 0;
+
+        // Rendre liste
+        const list = exemplaires.exemplaires || exemplaires;
+        if (!list || !list.length) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="bi bi-box-seam fs-1"></i>
+              <p class="mt-2">Aucun exemplaire pour ce jeu</p>
+              <button class="btn btn-sm btn-success" onclick="openCreateExemplaireModal()">
+                <i class="bi bi-plus"></i> Creer le premier exemplaire
+              </button>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = list.map(ex => `
+          <div class="card mb-2">
+            <div class="card-body py-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="badge bg-${getExemplaireStatutColor(ex.statut)} me-2">${getExemplaireStatutLabel(ex.statut)}</span>
+                  <strong>#${ex.numero_exemplaire || ex.id}</strong>
+                  ${ex.code_barre ? `<code class="ms-2">${ex.code_barre}</code>` : '<span class="text-muted ms-2 small"><i>Sans code-barre</i></span>'}
+                </div>
+                <div>
+                  <span class="badge bg-${getExemplaireEtatColor(ex.etat)}">${getExemplaireEtatLabel(ex.etat)}</span>
+                  <button class="btn btn-sm btn-outline-primary ms-2" onclick="editExemplaire(${ex.id})" title="Modifier">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  ${ex.statut !== 'emprunte' ? `
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteExemplaire(${ex.id})" title="Supprimer">
+                    <i class="bi bi-trash"></i>
+                  </button>` : ''}
+                </div>
+              </div>
+              ${ex.emplacement ? `<small class="text-muted"><i class="bi bi-geo-alt"></i> ${ex.emplacement.libelle || ex.emplacement.nom}</small>` : ''}
+              ${ex.notes ? `<small class="d-block text-muted fst-italic">${escapeHtml(ex.notes)}</small>` : ''}
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Erreur chargement exemplaires:', error);
+        container.innerHTML = `<div class="alert alert-danger">Erreur: ${error.message}</div>`;
+      }
+    }
+
     async function loadExemplaires(articleId) {
       currentArticleIdForExemplaires = articleId;
-      const container = document.getElementById('exemplaires_list');
+      const container = document.getElementById('exemplaires_list') || document.getElementById('exemplaires_modal_list');
 
       try {
         container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>';
@@ -3125,7 +3201,7 @@
           showToast('Exemplaire cree avec succes', 'success');
         }
         exemplaireModalInstance.hide();
-        loadExemplaires(currentArticleIdForExemplaires);
+        loadExemplairesModal(currentArticleIdForExemplaires);
       } catch (error) {
         console.error('Erreur sauvegarde exemplaire:', error);
         showToast('Erreur: ' + error.message, 'danger');
@@ -3139,7 +3215,7 @@
       try {
         await exemplairesAPI.delete('jeu', id);
         showToast('Exemplaire supprime', 'success');
-        loadExemplaires(currentArticleIdForExemplaires);
+        loadExemplairesModal(currentArticleIdForExemplaires);
       } catch (error) {
         console.error('Erreur suppression exemplaire:', error);
         showToast('Erreur: ' + error.message, 'danger');

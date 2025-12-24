@@ -303,8 +303,19 @@ const getModuleMapping = (module) => {
  * @returns {string|null} Code du module ou null
  */
 const getModuleFromRoute = (route) => {
+  // Accepter les formes plurielles (jeux, livres, films, disques)
   for (const [module, mapping] of Object.entries(MODULE_MAPPING)) {
     if (mapping.route === route) return module;
+  }
+  // Accepter aussi les formes singulières (jeu, livre, film, disque)
+  const SINGULAR_TO_MODULE = {
+    'jeu': 'ludotheque',
+    'livre': 'bibliotheque',
+    'film': 'filmotheque',
+    'disque': 'discotheque'
+  };
+  if (SINGULAR_TO_MODULE[route]) {
+    return SINGULAR_TO_MODULE[route];
   }
   return null;
 };
