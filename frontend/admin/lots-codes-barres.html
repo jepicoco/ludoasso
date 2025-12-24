@@ -147,10 +147,74 @@
             </nav>
             <h1 class="h3 mb-0"><i class="bi bi-printer me-2"></i>Lots Codes-Barres</h1>
           </div>
-          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createLotModal">
+          <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createLotModal" id="btn-new-lot" disabled>
             <i class="bi bi-plus-lg me-1"></i>Nouveau lot
           </button>
         </div>
+
+        <!-- Selecteur de contexte -->
+        <div class="card mb-4" id="context-selector-card">
+          <div class="card-header py-2">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-funnel me-2"></i>
+              <strong>Selectionner le contexte</strong>
+            </div>
+          </div>
+          <div class="card-body py-3">
+            <div class="row g-3 align-items-end">
+              <!-- Type de chargement -->
+              <div class="col-md-3">
+                <label class="form-label small text-muted mb-1">Charger par</label>
+                <select class="form-select" id="load-type-select">
+                  <option value="organisation" selected>Organisation</option>
+                  <option value="structure">Structure</option>
+                  <option value="groupe">Groupe</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Organisation (visible par defaut) -->
+              <div class="col-md-4" id="org-select-container">
+                <label class="form-label small text-muted mb-1">Organisation</label>
+                <select class="form-select" id="organisation-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Structure (cache par defaut) -->
+              <div class="col-md-4" id="structure-select-container" style="display: none;">
+                <label class="form-label small text-muted mb-1">Structure</label>
+                <select class="form-select" id="structure-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Selecteur Groupe (cache par defaut) -->
+              <div class="col-md-4" id="groupe-select-container" style="display: none;">
+                <label class="form-label small text-muted mb-1">Groupe</label>
+                <select class="form-select" id="groupe-select">
+                  <option value="">-- Choisir --</option>
+                </select>
+              </div>
+
+              <!-- Info -->
+              <div class="col-md-5">
+                <div class="alert alert-light border py-2 mb-0 small" id="context-info">
+                  <i class="bi bi-info-circle me-1"></i>
+                  <span id="context-info-text">Selectionnez un contexte pour voir les lots.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Badge des modules concernes -->
+            <div class="mt-3" id="modules-filter-info" style="display: none;">
+              <span class="text-muted small me-2">Modules geres par ce contexte :</span>
+              <span id="modules-badges"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenu principal (cache par defaut) -->
+        <div id="main-content" style="display: none;">
 
         <!-- Onglets modules -->
         <ul class="nav nav-tabs module-tabs mb-4" id="module-tabs">
@@ -222,6 +286,8 @@
         <nav id="pagination-container" class="mt-4" style="display: none;">
           <ul class="pagination justify-content-center" id="pagination"></ul>
         </nav>
+
+        </div><!-- Fin main-content -->
       </div>
     </div>
   </div>
@@ -366,6 +432,14 @@
 
     const API_BASE = '/api/codes-barres-reserves';
 
+    const MODULES = [
+      { id: 'utilisateur', label: 'Usagers', icon: 'bi-person-badge', colorClass: 'utilisateur' },
+      { id: 'jeu', label: 'Jeux', icon: 'bi-dice-5', colorClass: 'jeu' },
+      { id: 'livre', label: 'Livres', icon: 'bi-book', colorClass: 'livre' },
+      { id: 'film', label: 'Films', icon: 'bi-film', colorClass: 'film' },
+      { id: 'disque', label: 'Disques', icon: 'bi-disc', colorClass: 'disque' }
+    ];
+
     // Helper pour les appels API authentifies
     function getAuthHeaders() {
       const token = localStorage.getItem('authToken');
@@ -415,14 +489,449 @@
     let lots = [];
     let currentLotDetail = null;
 
+    // Donnees pour la gestion des organisations
+    let organisations = [];
+    let structures = [];
+    let barcodeGroups = [];
+    let barcodeConfig = {};
+    let selectedOrganisation = null;
+
+    // Contexte de chargement actuel
+    let currentLoadType = 'organisation';
+    let currentContextId = null;
+    let currentContextName = '';
+    let filteredModules = [];
+
     // Initialisation
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       initSubNav('general', 'codes-barres');
+
+      // Charger les donnees initiales
+      await loadInitialData();
+
+      // Evenements contexte
+      document.getElementById('load-type-select').addEventListener('change', onLoadTypeChange);
+      document.getElementById('organisation-select').addEventListener('change', onOrganisationChange);
+      document.getElementById('structure-select').addEventListener('change', onStructureChange);
+      document.getElementById('groupe-select').addEventListener('change', onGroupeChange);
+
       initModuleTabs();
       initFilters();
       initCreateForm();
-      loadLots();
     });
+
+    /**
+     * Charge les donnees initiales (organisations, structures, groupes)
+     */
+    async function loadInitialData() {
+      try {
+        const [orgsResponse, structuresResponse, groupsResponse] = await Promise.all([
+          apiGet('/api/organisations'),
+          apiGet('/api/structures'),
+          apiGet('/api/organisations/barcode-groups')
+        ]);
+
+        organisations = Array.isArray(orgsResponse) ? orgsResponse : [];
+        structures = Array.isArray(structuresResponse) ? structuresResponse : [];
+        barcodeGroups = Array.isArray(groupsResponse) ? groupsResponse : [];
+
+        // Remplir les selects
+        populateOrganisationSelect();
+        populateStructureSelect();
+        populateGroupeSelect();
+
+        // Si une seule organisation, la selectionner automatiquement
+        if (organisations.length === 1) {
+          document.getElementById('organisation-select').value = organisations[0].id;
+          setTimeout(() => onOrganisationChange(), 100);
+        }
+
+      } catch (error) {
+        console.error('Erreur chargement donnees initiales:', error);
+        showError('Erreur lors du chargement des donnees');
+      }
+    }
+
+    function populateOrganisationSelect() {
+      const select = document.getElementById('organisation-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      organisations.forEach(org => {
+        const option = document.createElement('option');
+        option.value = org.id;
+        option.textContent = org.nom;
+        select.appendChild(option);
+      });
+    }
+
+    function populateStructureSelect() {
+      const select = document.getElementById('structure-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      structures.forEach(struct => {
+        const option = document.createElement('option');
+        option.value = struct.id;
+        option.textContent = `${struct.nom} (${struct.code})`;
+        select.appendChild(option);
+      });
+    }
+
+    function populateGroupeSelect() {
+      const select = document.getElementById('groupe-select');
+      select.innerHTML = '<option value="">-- Choisir --</option>';
+      barcodeGroups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.code;
+        select.appendChild(option);
+      });
+    }
+
+    /**
+     * Quand le type de chargement change
+     */
+    function onLoadTypeChange() {
+      const loadType = document.getElementById('load-type-select').value;
+      currentLoadType = loadType;
+
+      // Masquer tous les selecteurs
+      document.getElementById('org-select-container').style.display = 'none';
+      document.getElementById('structure-select-container').style.display = 'none';
+      document.getElementById('groupe-select-container').style.display = 'none';
+
+      // Afficher le bon selecteur
+      if (loadType === 'organisation') {
+        document.getElementById('org-select-container').style.display = 'block';
+      } else if (loadType === 'structure') {
+        document.getElementById('structure-select-container').style.display = 'block';
+      } else if (loadType === 'groupe') {
+        document.getElementById('groupe-select-container').style.display = 'block';
+      }
+
+      // Reinitialiser
+      resetContext();
+    }
+
+    function resetContext() {
+      currentContextId = null;
+      currentContextName = '';
+      filteredModules = [];
+
+      document.getElementById('modules-filter-info').style.display = 'none';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('btn-new-lot').disabled = true;
+
+      updateContextInfo('Selectionnez un contexte pour voir les lots.');
+    }
+
+    function updateContextInfo(text) {
+      document.getElementById('context-info-text').textContent = text;
+    }
+
+    /**
+     * Charge les groupes et config d'une organisation
+     */
+    async function loadBarcodeConfig(orgId) {
+      const configResponse = await apiGet(`/api/organisations/${orgId}/barcode-config`);
+      barcodeConfig = configResponse || {};
+    }
+
+    /**
+     * Filtre les modules selon le contexte
+     */
+    function filterModulesByContext(loadType, contextId) {
+      if (!barcodeConfig || !selectedOrganisation) return [];
+
+      const filtered = [];
+
+      MODULES.forEach(module => {
+        const config = barcodeConfig[module.id];
+        if (!config) return;
+
+        if (loadType === 'organisation' && config.type_gestion === 'organisation') {
+          filtered.push(module.id);
+        } else if (loadType === 'structure' && config.type_gestion === 'structure') {
+          filtered.push(module.id);
+        } else if (loadType === 'groupe' && config.type_gestion === 'groupe' && config.groupe_id == contextId) {
+          filtered.push(module.id);
+        }
+      });
+
+      return filtered;
+    }
+
+    /**
+     * Affiche les badges des modules filtres
+     */
+    function renderModulesBadges() {
+      const container = document.getElementById('modules-badges');
+      const info = document.getElementById('modules-filter-info');
+
+      if (filteredModules.length === 0) {
+        info.style.display = 'none';
+        return;
+      }
+
+      info.style.display = 'block';
+
+      const moduleColors = {
+        utilisateur: 'primary',
+        jeu: 'purple',
+        livre: 'success',
+        film: 'warning',
+        disque: 'danger'
+      };
+
+      container.innerHTML = filteredModules.map(modId => {
+        const mod = MODULES.find(m => m.id === modId);
+        const color = moduleColors[modId] || 'secondary';
+        return `<span class="badge bg-${color} me-1"><i class="bi ${mod.icon} me-1"></i>${mod.label}</span>`;
+      }).join('');
+    }
+
+    /**
+     * Genere les query params pour le contexte actuel selon le module
+     */
+    function getContextQueryParams(moduleId) {
+      if (!selectedOrganisation || !barcodeConfig[moduleId]) return '';
+
+      const config = barcodeConfig[moduleId];
+      const type = config.type_gestion;
+
+      if (type === 'organisation') {
+        return `organisation_id=${selectedOrganisation.id}`;
+      } else if (type === 'structure' && currentLoadType === 'structure' && currentContextId) {
+        return `structure_id=${currentContextId}`;
+      } else if (type === 'groupe' && config.groupe_id) {
+        return `groupe_id=${config.groupe_id}`;
+      }
+
+      // Fallback : organisation
+      return `organisation_id=${selectedOrganisation.id}`;
+    }
+
+    /**
+     * Quand une organisation est selectionnee
+     */
+    async function onOrganisationChange() {
+      const select = document.getElementById('organisation-select');
+      const orgId = select.value;
+
+      if (!orgId) {
+        resetContext();
+        return;
+      }
+
+      selectedOrganisation = organisations.find(o => o.id == orgId);
+      if (!selectedOrganisation) return;
+
+      currentContextId = orgId;
+      currentContextName = selectedOrganisation.nom;
+
+      await loadContextData('organisation', orgId);
+    }
+
+    /**
+     * Quand une structure est selectionnee
+     */
+    async function onStructureChange() {
+      const select = document.getElementById('structure-select');
+      const structId = select.value;
+
+      if (!structId) {
+        resetContext();
+        return;
+      }
+
+      const struct = structures.find(s => s.id == structId);
+      if (!struct) return;
+
+      // Trouver l'organisation parente
+      selectedOrganisation = organisations.find(o => o.id == struct.organisation_id);
+      if (!selectedOrganisation) {
+        updateContextInfo('Structure sans organisation parente');
+        return;
+      }
+
+      currentContextId = structId;
+      currentContextName = struct.nom;
+
+      await loadContextData('structure', structId);
+    }
+
+    /**
+     * Quand un groupe est selectionne
+     */
+    async function onGroupeChange() {
+      const select = document.getElementById('groupe-select');
+      const groupeId = select.value;
+
+      if (!groupeId) {
+        resetContext();
+        return;
+      }
+
+      const groupe = barcodeGroups.find(g => g.id == groupeId);
+      if (!groupe) return;
+
+      currentContextId = groupeId;
+      currentContextName = groupe.code;
+
+      await loadContextDataForGroupe(groupeId, groupe.code);
+    }
+
+    /**
+     * Charge les donnees pour un contexte organisation ou structure
+     */
+    async function loadContextData(loadType, contextId) {
+      try {
+        // Pour structure, on charge la config de son organisation parente
+        const orgId = loadType === 'structure'
+          ? structures.find(s => s.id == contextId)?.organisation_id
+          : contextId;
+
+        if (!orgId) throw new Error('Organisation non trouvee');
+
+        selectedOrganisation = organisations.find(o => o.id == orgId);
+        await loadBarcodeConfig(orgId);
+
+        // Filtrer les modules
+        filteredModules = filterModulesByContext(loadType, contextId);
+
+        if (filteredModules.length === 0) {
+          updateContextInfo(`Aucun module n'est gere par ${loadType === 'organisation' ? 'organisation' : 'structure'} pour "${currentContextName}".`);
+          renderModulesBadges();
+          return;
+        }
+
+        updateContextInfo(`${filteredModules.length} module(s) gere(s) par ${loadType} pour "${currentContextName}".`);
+        renderModulesBadges();
+
+        // Afficher le contenu principal
+        document.getElementById('main-content').style.display = 'block';
+        document.getElementById('btn-new-lot').disabled = false;
+
+        // Mettre a jour les onglets modules
+        updateModuleTabs();
+
+        // Selectionner le premier module filtre
+        if (filteredModules.length > 0 && !filteredModules.includes(currentModule)) {
+          currentModule = filteredModules[0];
+        }
+
+        // Charger les lots
+        loadLots();
+
+      } catch (error) {
+        console.error('Erreur chargement contexte:', error);
+        updateContextInfo('Erreur lors du chargement.');
+      }
+    }
+
+    /**
+     * Charge les donnees pour un groupe
+     */
+    async function loadContextDataForGroupe(groupeId, groupeCode) {
+      try {
+        // Trouver les organisations qui utilisent ce groupe
+        let foundOrg = null;
+        filteredModules = [];
+
+        for (const org of organisations) {
+          const configResponse = await apiGet(`/api/organisations/${org.id}/barcode-config`);
+
+          MODULES.forEach(module => {
+            const config = configResponse[module.id];
+            if (config && config.type_gestion === 'groupe' && config.groupe_id == groupeId) {
+              if (!foundOrg) foundOrg = org;
+              if (!filteredModules.includes(module.id)) {
+                filteredModules.push(module.id);
+              }
+            }
+          });
+
+          if (foundOrg) {
+            barcodeConfig = configResponse;
+            break;
+          }
+        }
+
+        if (!foundOrg || filteredModules.length === 0) {
+          updateContextInfo(`Le groupe "${groupeCode}" n'est utilise par aucun module.`);
+          renderModulesBadges();
+          return;
+        }
+
+        selectedOrganisation = foundOrg;
+
+        updateContextInfo(`${filteredModules.length} module(s) gere(s) par le groupe "${groupeCode}" (${foundOrg.nom}).`);
+        renderModulesBadges();
+
+        // Afficher le contenu principal
+        document.getElementById('main-content').style.display = 'block';
+        document.getElementById('btn-new-lot').disabled = false;
+
+        // Mettre a jour les onglets modules
+        updateModuleTabs();
+
+        // Selectionner le premier module filtre
+        if (filteredModules.length > 0 && !filteredModules.includes(currentModule)) {
+          currentModule = filteredModules[0];
+        }
+
+        // Charger les lots
+        loadLots();
+
+      } catch (error) {
+        console.error('Erreur chargement groupe:', error);
+        updateContextInfo('Erreur lors du chargement.');
+      }
+    }
+
+    /**
+     * Met a jour les onglets modules pour n'afficher que ceux filtres
+     */
+    function updateModuleTabs() {
+      document.querySelectorAll('#module-tabs [data-module]').forEach(tab => {
+        const moduleId = tab.dataset.module;
+        const tabItem = tab.closest('.nav-item');
+
+        if (filteredModules.includes(moduleId)) {
+          tabItem.style.display = 'block';
+        } else {
+          tabItem.style.display = 'none';
+          tab.classList.remove('active');
+        }
+      });
+
+      // S'assurer qu'un onglet est actif
+      const activeTab = document.querySelector('#module-tabs [data-module].active');
+      if (!activeTab || !filteredModules.includes(activeTab.dataset.module)) {
+        const firstVisibleTab = document.querySelector(`#module-tabs [data-module="${filteredModules[0]}"]`);
+        if (firstVisibleTab) {
+          firstVisibleTab.classList.add('active');
+          currentModule = filteredModules[0];
+        }
+      }
+
+      // Mettre a jour le select du modal
+      updateCreateModalModules();
+    }
+
+    /**
+     * Met a jour le select des modules dans le modal de creation
+     */
+    function updateCreateModalModules() {
+      const select = document.getElementById('create-module');
+      select.innerHTML = '';
+
+      filteredModules.forEach(modId => {
+        const mod = MODULES.find(m => m.id === modId);
+        const option = document.createElement('option');
+        option.value = modId;
+        option.textContent = mod.label;
+        if (modId === currentModule) option.selected = true;
+        select.appendChild(option);
+      });
+    }
 
     // Onglets modules
     function initModuleTabs() {
@@ -460,10 +969,14 @@
       }, 300));
     }
 
-    // Charger les lots
+    // Charger les lots avec contexte
     async function loadLots() {
+      if (filteredModules.length === 0) return;
+
       try {
+        const contextParams = getContextQueryParams(currentModule);
         let url = `${API_BASE}/lots/${currentModule}?page=${currentPage}&limit=10`;
+        if (contextParams) url += `&${contextParams}`;
         if (currentStatut) url += `&statut=${currentStatut}`;
 
         const response = await apiGet(url);
@@ -622,7 +1135,11 @@
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creation...';
 
         try {
-          const response = await apiPost(`${API_BASE}/lots/${module}`, { quantite });
+          // Ajouter le contexte a l'URL
+          const contextParams = getContextQueryParams(module);
+          const url = `${API_BASE}/lots/${module}${contextParams ? '?' + contextParams : ''}`;
+
+          const response = await apiPost(url, { quantite });
 
           if (response.success) {
             bootstrap.Modal.getInstance(document.getElementById('createLotModal')).hide();
