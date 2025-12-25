@@ -379,10 +379,9 @@ const deleteUtilisateur = async (req, res) => {
     }
 
     // Check if utilisateur has active emprunts
-    // NOTE: Utilise 'adherent_id' pour compatibilite jusqu'a migration
     const activeEmprunts = await Emprunt.count({
       where: {
-        adherent_id: id,
+        utilisateur_id: id,
         statut: { [Op.in]: ['en_cours', 'en_retard'] }
       },
       transaction
@@ -397,15 +396,14 @@ const deleteUtilisateur = async (req, res) => {
     }
 
     // Trouver la derniere activite
-    // NOTE: Utilise 'adherent_id' pour compatibilite jusqu'a migration
     const [dernierEmprunt, derniereCotisation] = await Promise.all([
       Emprunt.findOne({
-        where: { adherent_id: id },
+        where: { utilisateur_id: id },
         order: [['date_emprunt', 'DESC']],
         transaction
       }),
       Cotisation.findOne({
-        where: { adherent_id: id },
+        where: { utilisateur_id: id },
         order: [['date_paiement', 'DESC']],
         transaction
       })
@@ -422,9 +420,8 @@ const deleteUtilisateur = async (req, res) => {
     }
 
     // Creer l'archive
-    // NOTE: Utilise 'adherent_id' pour compatibilite jusqu'a migration
     const archive = await UtilisateurArchive.create({
-      adherent_id: utilisateur.id,
+      utilisateur_id: utilisateur.id,
       code_barre: utilisateur.code_barre,
       civilite: utilisateur.civilite || null,
       nom: utilisateur.nom,
@@ -504,21 +501,20 @@ const getUtilisateurStats = async (req, res) => {
       });
     }
 
-    // NOTE: Utilise 'adherent_id' pour compatibilite jusqu'a migration
     const totalEmprunts = await Emprunt.count({
-      where: { adherent_id: id }
+      where: { utilisateur_id: id }
     });
 
     const empruntsEnCours = await Emprunt.count({
       where: {
-        adherent_id: id,
+        utilisateur_id: id,
         statut: 'en_cours'
       }
     });
 
     const empruntsEnRetard = await Emprunt.count({
       where: {
-        adherent_id: id,
+        utilisateur_id: id,
         statut: 'en_retard'
       }
     });
@@ -937,6 +933,144 @@ const rechercherDisponibles = async (req, res) => {
   }
 };
 
+// ========== Foyers (système étendu) ==========
+
+/**
+ * Get available relationship types
+ * GET /api/adherents/foyers/types-liens
+ */
+const getTypesLiensFamille = async (req, res) => {
+  try {
+    const types = familleService.getTypesLiens();
+    res.json(types);
+  } catch (error) {
+    console.error('Erreur getTypesLiensFamille:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Get foyers (households) of a user
+ * GET /api/adherents/:id/foyers
+ */
+const getFoyersUtilisateur = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const foyers = await familleService.getFoyersUtilisateur(id);
+    res.json({ foyers });
+  } catch (error) {
+    console.error('Erreur getFoyersUtilisateur:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Create a new foyer with user as main responsible
+ * POST /api/adherents/:id/foyers
+ */
+const creerFoyer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const options = {
+      ...req.body,
+      structure_id: req.structureId
+    };
+    const foyer = await familleService.creerFoyer(parseInt(id), options);
+    res.status(201).json(foyer);
+  } catch (error) {
+    console.error('Erreur creerFoyer:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Get members of a foyer
+ * GET /api/adherents/foyers/:foyerId/membres
+ */
+const getMembresFoyer = async (req, res) => {
+  try {
+    const { foyerId } = req.params;
+    const membres = await familleService.getMembresFoyer(foyerId);
+    res.json({ membres });
+  } catch (error) {
+    console.error('Erreur getMembresFoyer:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Add a member to a foyer
+ * POST /api/adherents/foyers/:foyerId/membres
+ */
+const ajouterMembreFoyer = async (req, res) => {
+  try {
+    const { foyerId } = req.params;
+    const { utilisateur_id, ...options } = req.body;
+    const membre = await familleService.ajouterMembreFoyer(
+      parseInt(foyerId),
+      parseInt(utilisateur_id),
+      options
+    );
+    res.status(201).json(membre);
+  } catch (error) {
+    console.error('Erreur ajouterMembreFoyer:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Remove a member from a foyer
+ * DELETE /api/adherents/foyers/:foyerId/membres/:utilisateurId
+ */
+const retirerMembreFoyer = async (req, res) => {
+  try {
+    const { foyerId, utilisateurId } = req.params;
+    await familleService.retirerMembreFoyer(
+      parseInt(foyerId),
+      parseInt(utilisateurId)
+    );
+    res.json({ success: true, message: 'Membre retiré du foyer' });
+  } catch (error) {
+    console.error('Erreur retirerMembreFoyer:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Update shared custody configuration
+ * PUT /api/adherents/foyers/membres/:membreId/garde
+ */
+const updateConfigGarde = async (req, res) => {
+  try {
+    const { membreId } = req.params;
+    const membre = await familleService.updateConfigGarde(parseInt(membreId), req.body);
+    res.json(membre);
+  } catch (error) {
+    console.error('Erreur updateConfigGarde:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * Copy data from a responsible to a member
+ * POST /api/adherents/:id/copier-donnees
+ */
+const copierDonneesResponsable = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { sourceId, typeLien } = req.body;
+    const membre = await familleService.copierDonneesResponsable(
+      parseInt(sourceId),
+      parseInt(id),
+      { typeLien }
+    );
+    res.json(membre);
+  } catch (error) {
+    console.error('Erreur copierDonneesResponsable:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Export avec alias pour compatibilite
 module.exports = {
   // Nouveaux noms
@@ -962,5 +1096,14 @@ module.exports = {
   ajouterEnfant,
   retirerEnfant,
   calculerCoutFamille,
-  rechercherDisponibles
+  rechercherDisponibles,
+  // Foyers (système étendu)
+  getTypesLiensFamille,
+  getFoyersUtilisateur,
+  creerFoyer,
+  getMembresFoyer,
+  ajouterMembreFoyer,
+  retirerMembreFoyer,
+  updateConfigGarde,
+  copierDonneesResponsable
 };

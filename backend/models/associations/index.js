@@ -23,6 +23,7 @@ const setupTagsUtilisateurAssociations = require('./tags-utilisateur');
 const setupProvenancesAssociations = require('./provenances');
 const setupDesherbageAssociations = require('./desherbage');
 const setupImportISOAssociations = require('./import-iso');
+const setupFoyersAssociations = require('./foyers');
 
 /**
  * Configure toutes les associations entre modeles
@@ -82,6 +83,9 @@ function setupAllAssociations(models) {
 
   // Import ISO (import livres BDP)
   setupImportISOAssociations(models);
+
+  // Foyers et relations familiales etendues
+  setupFoyersAssociations(models);
 }
 
 module.exports = setupAllAssociations;

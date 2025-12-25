@@ -241,6 +241,10 @@ const ArticleSortieModel = require('./ArticleSortie');
 const ImportSessionModel = require('./ImportSession');
 const LotBDPModel = require('./LotBDP');
 
+// Import Foyers et relations familiales etendues
+const FoyerModel = require('./Foyer');
+const MembreFoyerModel = require('./MembreFoyer');
+
 // ============================================================
 // Initialize models
 // ============================================================
@@ -482,6 +486,10 @@ const ArticleSortie = ArticleSortieModel(sequelize);
 const ImportSession = ImportSessionModel(sequelize);
 const LotBDP = LotBDPModel(sequelize);
 
+// Initialize Foyers et relations familiales etendues
+const Foyer = FoyerModel(sequelize);
+const MembreFoyer = MembreFoyerModel(sequelize);
+
 // ============================================================
 // Define associations via modular files
 // ============================================================
@@ -666,7 +674,11 @@ const models = {
 
   // Import ISO (import livres BDP)
   ImportSession,
-  LotBDP
+  LotBDP,
+
+  // Foyers et relations familiales etendues
+  Foyer,
+  MembreFoyer
 };
 
 // Setup all associations from modular files
@@ -880,5 +892,8 @@ module.exports = {
   ArticleSortie,
   // Import ISO (import livres BDP)
   ImportSession,
-  LotBDP
+  LotBDP,
+  // Foyers et relations familiales etendues
+  Foyer,
+  MembreFoyer
 };

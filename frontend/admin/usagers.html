@@ -989,12 +989,12 @@
     </div>
   </div>
 
-  <!-- Modal Lier Membre Famille -->
+  <!-- Modal Ajouter Membre au Foyer -->
   <div class="modal fade" id="lierMembreModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title"><i class="bi bi-people-fill"></i> Lier un membre de la famille</h5>
+          <h5 class="modal-title"><i class="bi bi-people-fill"></i> Ajouter un membre au foyer</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
@@ -1002,24 +1002,139 @@
           <div class="mb-3">
             <label class="form-label">Rechercher un usager existant</label>
             <input type="text" class="form-control" id="searchMembreFamille"
-                   placeholder="Nom, prenom, email..." onkeyup="rechercherMembresFamille()">
+                   placeholder="Nom, prenom, email ou code-barre..." onkeyup="rechercherMembresFamille()">
           </div>
 
           <!-- Resultats de recherche -->
           <div id="resultatsRechercheFamille" class="list-group mb-3" style="max-height: 200px; overflow-y: auto;">
           </div>
 
+          <!-- Membre selectionne -->
+          <div id="selectedMembreInfo" class="alert alert-success d-none mb-3">
+            <i class="bi bi-person-check"></i> <strong id="selectedMembreNom"></strong>
+            <button type="button" class="btn btn-sm btn-outline-danger float-end" onclick="clearSelectedMembre()">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
           <!-- Type de lien -->
-          <div class="mb-3">
-            <label class="form-label">Type de lien</label>
-            <select class="form-select" id="typeLienFamille">
-              <option value="parent">Parent</option>
-              <option value="tuteur">Tuteur legal</option>
-              <option value="autre">Autre responsable</option>
-            </select>
-            <small class="text-muted">
-              L'usager selectionne sera rattache comme "enfant" de l'usager actuellement consulte
-            </small>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Categorie de lien</label>
+              <select class="form-select" id="categorieLienFamille" onchange="updateTypesLien()">
+                <option value="">-- Choisir --</option>
+                <optgroup label="Liens adultes">
+                  <option value="conjoint">Conjoint(e)</option>
+                  <option value="parent">Parent/Responsable</option>
+                </optgroup>
+                <optgroup label="Liens enfants">
+                  <option value="enfant">Enfant</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Lien precis</label>
+              <select class="form-select" id="typeLienFamille" disabled>
+                <option value="">-- Choisir d'abord une categorie --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Options selon le type de lien -->
+          <div id="optionsLienAdulte" class="d-none border rounded p-3 mb-3 bg-light">
+            <h6><i class="bi bi-clipboard-check"></i> Donnees a copier</h6>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="copierAdresse" checked>
+              <label class="form-check-label" for="copierAdresse">
+                Copier l'adresse
+              </label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="copierQF" checked>
+              <label class="form-check-label" for="copierQF">
+                Copier le quotient familial (QF)
+              </label>
+            </div>
+          </div>
+
+          <div id="optionsLienEnfant" class="d-none border rounded p-3 mb-3 bg-light">
+            <h6><i class="bi bi-clipboard-check"></i> Options enfant</h6>
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" id="copierToutEnfant" checked>
+              <label class="form-check-label" for="copierToutEnfant">
+                Copier toutes les donnees (adresse, QF, telephone...)
+              </label>
+            </div>
+
+            <!-- Garde partagee -->
+            <div class="mt-3 border-top pt-3">
+              <h6><i class="bi bi-house-door-fill"></i> Garde partagee</h6>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" id="gardePartagee" onchange="toggleGardePartagee()">
+                <label class="form-check-label" for="gardePartagee">
+                  Cet enfant est en garde partagee (appartient a plusieurs foyers)
+                </label>
+              </div>
+
+              <div id="configGardePartagee" class="d-none mt-2">
+                <div class="row">
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label small">Pourcentage de garde</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="pourcentageGarde" min="0" max="100" value="50">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mb-2">
+                    <label class="form-label small">Semaines de garde</label>
+                    <select class="form-select" id="semainesGarde">
+                      <option value="">Non defini</option>
+                      <option value="paires">Semaines paires</option>
+                      <option value="impaires">Semaines impaires</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small">Jours de garde</label>
+                  <div class="d-flex flex-wrap gap-1">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeLundi" value="lundi">
+                      <label class="form-check-label small" for="gardeLundi">Lun</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeMardi" value="mardi">
+                      <label class="form-check-label small" for="gardeMardi">Mar</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeMercredi" value="mercredi">
+                      <label class="form-check-label small" for="gardeMercredi">Mer</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeJeudi" value="jeudi">
+                      <label class="form-check-label small" for="gardeJeudi">Jeu</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeVendredi" value="vendredi">
+                      <label class="form-check-label small" for="gardeVendredi">Ven</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeSamedi" value="samedi">
+                      <label class="form-check-label small" for="gardeSamedi">Sam</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="gardeDimanche" value="dimanche">
+                      <label class="form-check-label small" for="gardeDimanche">Dim</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="estFoyerPrincipal">
+                  <label class="form-check-label" for="estFoyerPrincipal">
+                    Ce foyer est le foyer principal de l'enfant
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <input type="hidden" id="selectedMembreFamilleId">
@@ -1027,7 +1142,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
           <button type="button" class="btn btn-primary" id="btnConfirmerLienFamille" disabled onclick="confirmerLienFamille()">
-            <i class="bi bi-link-45deg"></i> Lier
+            <i class="bi bi-link-45deg"></i> Ajouter au foyer
           </button>
         </div>
       </div>
@@ -1184,24 +1299,127 @@
     }
 
     // ============================================
-    // GESTION FAMILLE
+    // GESTION FAMILLE / FOYERS
     // ============================================
     let lierMembreModalInstance = null;
     // currentViewAdherentId est déjà déclaré dans adherents-view.js
     let rechercheMembreTimeout = null;
 
+    // Configuration des types de liens
+    const TYPES_LIENS = {
+      conjoint: {
+        label: 'Conjoint(e)',
+        options: [
+          { value: 'conjoint', label: 'Conjoint(e)' },
+          { value: 'marie', label: 'Mari' },
+          { value: 'mariee', label: 'Femme (epouse)' }
+        ],
+        isAdulte: true
+      },
+      parent: {
+        label: 'Parent/Responsable',
+        options: [
+          { value: 'pere', label: 'Pere' },
+          { value: 'mere', label: 'Mere' },
+          { value: 'beau_pere', label: 'Beau-pere' },
+          { value: 'belle_mere', label: 'Belle-mere' },
+          { value: 'grand_pere', label: 'Grand-pere' },
+          { value: 'grand_mere', label: 'Grand-mere' },
+          { value: 'tuteur', label: 'Tuteur' },
+          { value: 'tutrice', label: 'Tutrice' },
+          { value: 'oncle', label: 'Oncle' },
+          { value: 'tante', label: 'Tante' }
+        ],
+        isAdulte: true
+      },
+      enfant: {
+        label: 'Enfant',
+        options: [
+          { value: 'fils', label: 'Fils' },
+          { value: 'fille', label: 'Fille' },
+          { value: 'beau_fils', label: 'Beau-fils' },
+          { value: 'belle_fille', label: 'Belle-fille' },
+          { value: 'petit_fils', label: 'Petit-fils' },
+          { value: 'petite_fille', label: 'Petite-fille' },
+          { value: 'neveu', label: 'Neveu' },
+          { value: 'niece', label: 'Niece' },
+          { value: 'frere', label: 'Frere' },
+          { value: 'soeur', label: 'Soeur' },
+          { value: 'cousin', label: 'Cousin' },
+          { value: 'cousine', label: 'Cousine' }
+        ],
+        isAdulte: false
+      }
+    };
+
     function openLierMembreModal() {
-      // Reset
+      // Reset complet
       document.getElementById('searchMembreFamille').value = '';
       document.getElementById('resultatsRechercheFamille').innerHTML = '';
       document.getElementById('selectedMembreFamilleId').value = '';
-      document.getElementById('typeLienFamille').value = 'parent';
+      document.getElementById('selectedMembreInfo').classList.add('d-none');
+      document.getElementById('categorieLienFamille').value = '';
+      document.getElementById('typeLienFamille').value = '';
+      document.getElementById('typeLienFamille').disabled = true;
+      document.getElementById('optionsLienAdulte').classList.add('d-none');
+      document.getElementById('optionsLienEnfant').classList.add('d-none');
+      document.getElementById('configGardePartagee').classList.add('d-none');
+      document.getElementById('gardePartagee').checked = false;
       document.getElementById('btnConfirmerLienFamille').disabled = true;
 
       if (!lierMembreModalInstance) {
         lierMembreModalInstance = new bootstrap.Modal(document.getElementById('lierMembreModal'));
       }
       lierMembreModalInstance.show();
+    }
+
+    function updateTypesLien() {
+      const categorie = document.getElementById('categorieLienFamille').value;
+      const typeLienSelect = document.getElementById('typeLienFamille');
+      const optionsAdulte = document.getElementById('optionsLienAdulte');
+      const optionsEnfant = document.getElementById('optionsLienEnfant');
+
+      // Reset
+      typeLienSelect.innerHTML = '<option value="">-- Choisir --</option>';
+      optionsAdulte.classList.add('d-none');
+      optionsEnfant.classList.add('d-none');
+
+      if (!categorie || !TYPES_LIENS[categorie]) {
+        typeLienSelect.disabled = true;
+        return;
+      }
+
+      const config = TYPES_LIENS[categorie];
+      typeLienSelect.disabled = false;
+
+      // Remplir les options
+      config.options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        typeLienSelect.appendChild(option);
+      });
+
+      // Afficher les options selon le type
+      if (config.isAdulte) {
+        optionsAdulte.classList.remove('d-none');
+      } else {
+        optionsEnfant.classList.remove('d-none');
+      }
+    }
+
+    function toggleGardePartagee() {
+      const isChecked = document.getElementById('gardePartagee').checked;
+      document.getElementById('configGardePartagee').classList.toggle('d-none', !isChecked);
+    }
+
+    function clearSelectedMembre() {
+      document.getElementById('selectedMembreFamilleId').value = '';
+      document.getElementById('selectedMembreInfo').classList.add('d-none');
+      document.getElementById('btnConfirmerLienFamille').disabled = true;
+      document.querySelectorAll('#resultatsRechercheFamille .list-group-item').forEach(el => {
+        el.classList.remove('active');
+      });
     }
 
     async function rechercherMembresFamille() {
@@ -1224,10 +1442,11 @@
           }
 
           container.innerHTML = data.utilisateurs.map(u => `
-            <button type="button" class="list-group-item list-group-item-action" onclick="selectMembreFamille(${u.id}, '${u.nom} ${u.prenom}')">
+            <button type="button" class="list-group-item list-group-item-action" onclick="selectMembreFamille(${u.id}, '${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}', ${u.est_compte_enfant || false})">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <strong>${u.nom} ${u.prenom}</strong>
+                  <strong>${escapeHtml(u.nom)} ${escapeHtml(u.prenom)}</strong>
+                  ${u.est_compte_enfant ? '<span class="badge bg-info ms-2">Enfant</span>' : ''}
                   <small class="text-muted d-block">${u.email || ''}</small>
                 </div>
                 ${u.date_naissance ? `<small class="text-muted">${formatDate(u.date_naissance)}</small>` : ''}
@@ -1240,30 +1459,141 @@
       }, 300);
     }
 
-    function selectMembreFamille(id, nomComplet) {
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function selectMembreFamille(id, nomComplet, estEnfant) {
       document.getElementById('selectedMembreFamilleId').value = id;
-      document.getElementById('btnConfirmerLienFamille').disabled = false;
+      document.getElementById('selectedMembreNom').textContent = nomComplet;
+      document.getElementById('selectedMembreInfo').classList.remove('d-none');
+
+      // Activer le bouton si un type de lien est choisi
+      checkEnableLienButton();
 
       // Mettre en surbrillance la selection
       document.querySelectorAll('#resultatsRechercheFamille .list-group-item').forEach(el => {
         el.classList.remove('active');
       });
-      event.target.closest('.list-group-item').classList.add('active');
+      if (event && event.target) {
+        event.target.closest('.list-group-item')?.classList.add('active');
+      }
+
+      // Si c'est deja un enfant d'un autre foyer, suggerer garde partagee
+      if (estEnfant) {
+        document.getElementById('gardePartagee').checked = true;
+        toggleGardePartagee();
+      }
     }
 
+    function checkEnableLienButton() {
+      const membreId = document.getElementById('selectedMembreFamilleId').value;
+      const typeLien = document.getElementById('typeLienFamille').value;
+      document.getElementById('btnConfirmerLienFamille').disabled = !(membreId && typeLien);
+    }
+
+    // Ecouter les changements sur le type de lien
+    document.addEventListener('DOMContentLoaded', function() {
+      const typeLienSelect = document.getElementById('typeLienFamille');
+      if (typeLienSelect) {
+        typeLienSelect.addEventListener('change', checkEnableLienButton);
+      }
+    });
+
     async function confirmerLienFamille() {
-      const enfantId = document.getElementById('selectedMembreFamilleId').value;
+      const membreId = document.getElementById('selectedMembreFamilleId').value;
+      const categorie = document.getElementById('categorieLienFamille').value;
       const typeLien = document.getElementById('typeLienFamille').value;
 
-      if (!enfantId || !currentViewAdherentId) {
-        showToast('Veuillez selectionner un membre', 'error');
+      if (!membreId || !currentViewAdherentId || !typeLien) {
+        showToast('Veuillez selectionner un membre et un type de lien', 'error');
         return;
       }
 
       try {
-        await adherentsAPI.ajouterEnfant(currentViewAdherentId, parseInt(enfantId), typeLien);
+        const config = TYPES_LIENS[categorie];
+
+        // Construire les options selon le type de lien
+        const options = {
+          lien_parente: typeLien
+        };
+
+        if (!config.isAdulte) {
+          // Options enfant
+          options.herite_adresse = document.getElementById('copierToutEnfant').checked;
+          options.herite_qf = document.getElementById('copierToutEnfant').checked;
+
+          // Garde partagee
+          if (document.getElementById('gardePartagee').checked) {
+            options.pourcentage_garde = parseInt(document.getElementById('pourcentageGarde').value) || 50;
+            options.semaines_garde = document.getElementById('semainesGarde').value || null;
+            options.est_foyer_principal = document.getElementById('estFoyerPrincipal').checked;
+
+            // Collecter les jours de garde
+            const joursGarde = {};
+            ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].forEach(jour => {
+              const checkbox = document.getElementById('garde' + jour.charAt(0).toUpperCase() + jour.slice(1));
+              if (checkbox && checkbox.checked) {
+                joursGarde[jour] = true;
+              }
+            });
+            if (Object.keys(joursGarde).length > 0) {
+              options.jours_garde = joursGarde;
+            }
+          }
+        } else {
+          // Options adulte
+          options.herite_adresse = document.getElementById('copierAdresse').checked;
+          options.herite_qf = document.getElementById('copierQF').checked;
+        }
+
+        // Appeler l'API pour ajouter au foyer
+        // D'abord s'assurer que l'utilisateur courant a un foyer
+        const foyersResp = await fetch(`/api/adherents/${currentViewAdherentId}/foyers`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        let foyers = (await foyersResp.json()).foyers || [];
+
+        let foyerId;
+        if (foyers.length === 0) {
+          // Creer un foyer
+          const createResp = await fetch(`/api/adherents/${currentViewAdherentId}/foyers`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+          });
+          const newFoyer = await createResp.json();
+          foyerId = newFoyer.id;
+        } else {
+          foyerId = foyers[0].foyer.id;
+        }
+
+        // Ajouter le membre au foyer
+        const addResp = await fetch(`/api/adherents/foyers/${foyerId}/membres`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            utilisateur_id: parseInt(membreId),
+            ...options
+          })
+        });
+
+        if (!addResp.ok) {
+          const err = await addResp.json();
+          throw new Error(err.message || 'Erreur lors de l\'ajout');
+        }
+
         lierMembreModalInstance.hide();
-        showToast('Membre rattache avec succes', 'success');
+        showToast('Membre ajoute au foyer avec succes', 'success');
         // Recharger les infos famille
         loadFamilleInfo(currentViewAdherentId);
       } catch (error) {

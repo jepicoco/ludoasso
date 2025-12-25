@@ -111,4 +111,66 @@ router.delete('/:id/enfants/:enfantId', verifyToken, isGestionnaire(), utilisate
  */
 router.get('/:id/famille/cout', verifyToken, isBenevole(), utilisateurController.calculerCoutFamille);
 
+// ========== Routes Foyers (système étendu) ==========
+
+/**
+ * @route   GET /api/adherents/foyers/types-liens
+ * @desc    Get available relationship types
+ * @access  Private (Benevole+)
+ */
+router.get('/foyers/types-liens', verifyToken, isBenevole(), utilisateurController.getTypesLiensFamille);
+
+/**
+ * @route   GET /api/adherents/:id/foyers
+ * @desc    Get foyers (households) of a user
+ * @access  Private (Benevole+)
+ */
+router.get('/:id/foyers', verifyToken, isBenevole(), utilisateurController.getFoyersUtilisateur);
+
+/**
+ * @route   POST /api/adherents/:id/foyers
+ * @desc    Create a new foyer with this user as main responsible
+ * @access  Private (Gestionnaire+)
+ * @body    { nom?, adresse?, ville?, code_postal?, telephone?, quotient_familial? }
+ */
+router.post('/:id/foyers', verifyToken, isGestionnaire(), utilisateurController.creerFoyer);
+
+/**
+ * @route   GET /api/adherents/foyers/:foyerId/membres
+ * @desc    Get members of a foyer
+ * @access  Private (Benevole+)
+ */
+router.get('/foyers/:foyerId/membres', verifyToken, isBenevole(), utilisateurController.getMembresFoyer);
+
+/**
+ * @route   POST /api/adherents/foyers/:foyerId/membres
+ * @desc    Add a member to a foyer
+ * @access  Private (Gestionnaire+)
+ * @body    { utilisateur_id, lien_parente, pourcentage_garde?, jours_garde?, semaines_garde?, est_foyer_principal? }
+ */
+router.post('/foyers/:foyerId/membres', verifyToken, isGestionnaire(), utilisateurController.ajouterMembreFoyer);
+
+/**
+ * @route   DELETE /api/adherents/foyers/:foyerId/membres/:utilisateurId
+ * @desc    Remove a member from a foyer
+ * @access  Private (Gestionnaire+)
+ */
+router.delete('/foyers/:foyerId/membres/:utilisateurId', verifyToken, isGestionnaire(), utilisateurController.retirerMembreFoyer);
+
+/**
+ * @route   PUT /api/adherents/foyers/membres/:membreId/garde
+ * @desc    Update shared custody configuration for a family member
+ * @access  Private (Gestionnaire+)
+ * @body    { pourcentage_garde?, jours_garde?, semaines_garde?, est_foyer_principal?, notes? }
+ */
+router.put('/foyers/membres/:membreId/garde', verifyToken, isGestionnaire(), utilisateurController.updateConfigGarde);
+
+/**
+ * @route   POST /api/adherents/:id/copier-donnees
+ * @desc    Copy data from a responsible to a new member based on link type
+ * @access  Private (Gestionnaire+)
+ * @body    { sourceId, typeLien }
+ */
+router.post('/:id/copier-donnees', verifyToken, isGestionnaire(), utilisateurController.copierDonneesResponsable);
+
 module.exports = router;

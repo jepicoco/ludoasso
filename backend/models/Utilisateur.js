@@ -178,9 +178,9 @@ module.exports = (sequelize) => {
       comment: 'ID du parent/tuteur responsable'
     },
     type_lien_famille: {
-      type: DataTypes.ENUM('parent', 'tuteur', 'autre'),
+      type: DataTypes.STRING(50),
       allowNull: true,
-      comment: 'Type de lien avec le responsable'
+      comment: 'Type de lien avec le responsable (parent, tuteur, conjoint, fils, fille, etc.)'
     },
     date_lien_famille: {
       type: DataTypes.DATE,
@@ -192,6 +192,21 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: false,
       comment: 'Indique si c\'est un compte enfant rattache a un parent'
+    },
+    garde_partagee: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Cet utilisateur est en garde partagee (plusieurs foyers)'
+    },
+    foyer_principal_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'foyers',
+        key: 'id'
+      },
+      comment: 'Foyer principal (pour affichage par defaut)'
     },
     // === Champs validation charte usager ===
     charte_validee: {
