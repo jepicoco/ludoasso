@@ -237,6 +237,10 @@ const TypeSortieModel = require('./TypeSortie');
 const LotSortieModel = require('./LotSortie');
 const ArticleSortieModel = require('./ArticleSortie');
 
+// Import Import ISO (import livres BDP)
+const ImportSessionModel = require('./ImportSession');
+const LotBDPModel = require('./LotBDP');
+
 // ============================================================
 // Initialize models
 // ============================================================
@@ -474,6 +478,10 @@ const TypeSortie = TypeSortieModel(sequelize);
 const LotSortie = LotSortieModel(sequelize);
 const ArticleSortie = ArticleSortieModel(sequelize);
 
+// Initialize Import ISO (import livres BDP)
+const ImportSession = ImportSessionModel(sequelize);
+const LotBDP = LotBDPModel(sequelize);
+
 // ============================================================
 // Define associations via modular files
 // ============================================================
@@ -654,7 +662,11 @@ const models = {
   // Desherbage (lots de sortie)
   TypeSortie,
   LotSortie,
-  ArticleSortie
+  ArticleSortie,
+
+  // Import ISO (import livres BDP)
+  ImportSession,
+  LotBDP
 };
 
 // Setup all associations from modular files
@@ -865,5 +877,8 @@ module.exports = {
   // Desherbage (lots de sortie)
   TypeSortie,
   LotSortie,
-  ArticleSortie
+  ArticleSortie,
+  // Import ISO (import livres BDP)
+  ImportSession,
+  LotBDP
 };

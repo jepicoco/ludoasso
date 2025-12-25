@@ -9,7 +9,7 @@
  * - Comptabilite: Modes reglements, Tarifs, Codes reduction, Comptes bancaires, Provenances, Exports, Parametrage
  * - Communication: Templates, Declencheurs, Historique
  * - Services: Email, SMS, IA, APIs, Cles API
- * - Outils: Import jeux, Import listes, Archives, Thematiques, Migrations, Holodeck
+ * - Outils: Import jeux, Import listes, Import livres BDP, Archives, Thematiques, Migrations, Holodeck
  */
 
 const PARAMETRES_CATEGORIES = {
@@ -109,6 +109,7 @@ const PARAMETRES_CATEGORIES = {
     pages: [
       { id: 'import', label: 'Import jeux', href: 'import-jeux.html', icon: 'bi-upload' },
       { id: 'import-listes', label: 'Import par listes', href: 'import-listes.html', icon: 'bi-tags' },
+      { id: 'import-livres', label: 'Import livres BDP', href: 'import-livres.html', icon: 'bi-book' },
       { id: 'lots-codes-barres', label: 'Lots codes-barres', href: 'lots-codes-barres.html', icon: 'bi-printer' },
       { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' },
       { id: 'thematiques', label: 'Thematiques IA', href: 'parametres-thematiques.html', icon: 'bi-tags', module: 'recherche_ia' },

@@ -22,6 +22,7 @@ const setupTarificationAssociations = require('./tarification');
 const setupTagsUtilisateurAssociations = require('./tags-utilisateur');
 const setupProvenancesAssociations = require('./provenances');
 const setupDesherbageAssociations = require('./desherbage');
+const setupImportISOAssociations = require('./import-iso');
 
 /**
  * Configure toutes les associations entre modeles
@@ -78,6 +79,9 @@ function setupAllAssociations(models) {
 
   // Desherbage (lots de sortie)
   setupDesherbageAssociations(models);
+
+  // Import ISO (import livres BDP)
+  setupImportISOAssociations(models);
 }
 
 module.exports = setupAllAssociations;
