@@ -153,7 +153,7 @@ function parseModulesActifs(modules) {
 // L'ordre détermine l'affichage dans la sidebar
 // separator: true crée une ligne de séparation
 const MENU_ITEMS = [
-    // === Section 1: Scanner + Dashboard ===
+    // === Section 1: Scanner + Caisse + Dashboard ===
     {
         id: 'scanner',
         label: 'Scanner',
@@ -161,7 +161,18 @@ const MENU_ITEMS = [
         href: 'scanner.html',
         highlight: true,  // Met en evidence ce bouton
         floatingButton: true,  // Affiche comme bouton flottant sur mobile
-        module: 'scanner'
+        module: 'scanner',
+        openInNewTab: true  // Ouvre dans un nouvel onglet
+    },
+    {
+        id: 'caisse-rapide',
+        label: 'Caisse',
+        icon: 'cash-stack',
+        href: 'caisse-rapide.html',
+        highlight: true,  // Affiche comme le scanner
+        module: 'caisse',  // Visible seulement si module caisse actif
+        openInNewTab: true,  // Ouvre dans un nouvel onglet
+        minRole: 'benevole'
     },
     {
         id: 'dashboard',

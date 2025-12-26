@@ -698,18 +698,25 @@ function renderSidebar(activePage) {
     // Récupérer le rôle de l'utilisateur depuis le localStorage
     const userRole = localStorage.getItem('userRole') || 'usager';
 
-    // Séparer Scanner des autres items
-    const scannerItem = menuItems.find(item => item.highlight);
+    // Séparer les boutons highlight (Scanner, Caisse) des autres items
+    const highlightItems = menuItems.filter(item => item.highlight && isModuleActive(item.module));
     const otherItems = menuItems.filter(item => !item.highlight);
 
-    // Générer le bouton Scanner séparé (si module actif)
-    let scannerHTML = '';
-    if (scannerItem && isModuleActive(scannerItem.module)) {
-        scannerHTML = `
-            <a href="${scannerItem.href}" class="scanner-standalone-btn ${activePage === scannerItem.id ? 'active' : ''}">
-                <i class="bi bi-${scannerItem.icon}"></i> ${scannerItem.label}
-            </a>
-        `;
+    // Générer les boutons highlight (Scanner + Caisse) côte à côte
+    let highlightHTML = '';
+    if (highlightItems.length > 0) {
+        const buttonsHTML = highlightItems.map(item => {
+            const isActive = activePage === item.id ? 'active' : '';
+            const targetAttr = item.openInNewTab ? 'target="_blank"' : '';
+            const btnClass = item.id === 'caisse-rapide' ? 'caisse-standalone-btn' : 'scanner-standalone-btn';
+            return `
+                <a href="${item.href}" ${targetAttr} class="${btnClass} ${isActive}">
+                    <i class="bi bi-${item.icon}"></i> ${item.label}
+                </a>
+            `;
+        }).join('');
+
+        highlightHTML = `<div class="highlight-buttons-row">${buttonsHTML}</div>`;
     }
 
     // Générer le menu sans Scanner
@@ -802,6 +809,49 @@ function renderSidebar(activePage) {
                 color: white;
                 border-color: #155724;
             }
+            /* Row pour boutons highlight (Scanner + Caisse) */
+            .highlight-buttons-row {
+                display: flex;
+                gap: 8px;
+                margin: 10px;
+            }
+            .highlight-buttons-row .scanner-standalone-btn,
+            .highlight-buttons-row .caisse-standalone-btn {
+                flex: 1;
+                margin: 0;
+            }
+            /* Bouton Caisse - style doré/orange */
+            .caisse-standalone-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                background: linear-gradient(135deg, #fff3cd, #ffe69c);
+                border: 2px solid #856404;
+                border-radius: 8px;
+                margin: 10px;
+                padding: 14px 16px;
+                font-size: 1.1rem;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                color: #856404;
+                transition: all 0.2s ease;
+            }
+            .caisse-standalone-btn i {
+                font-size: 1.2rem;
+            }
+            .caisse-standalone-btn:hover {
+                background: linear-gradient(135deg, #ffe69c, #ffd43b);
+                transform: scale(1.02);
+                box-shadow: 0 2px 8px rgba(133, 100, 4, 0.3);
+                color: #856404;
+            }
+            .caisse-standalone-btn.active {
+                background: linear-gradient(135deg, #ffc107, #fd7e14);
+                color: white;
+                border-color: #856404;
+            }
             .sidebar-menu {
                 border-top: 1px solid #dee2e6;
                 margin-top: 5px;
@@ -813,7 +863,7 @@ function renderSidebar(activePage) {
                 margin: 8px 10px;
             }
         </style>
-        ${scannerHTML}
+        ${highlightHTML}
         <div class="list-group list-group-flush sidebar-menu">
             ${menuHTML}
         </div>

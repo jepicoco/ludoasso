@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="fr" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caisse Rapide - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --caisse-bg: #1a1a2e;
+      --caisse-card: #16213e;
+      --caisse-accent: #0f3460;
+      --caisse-success: #00d26a;
+      --caisse-error: #ff6b6b;
+      --caisse-warning: #ffc107;
+      --caisse-text: #e8e8e8;
+      --caisse-gold: #ffc107;
+      --caisse-muted: #6c757d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--caisse-bg);
+      color: var(--caisse-text);
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Container principal */
+    .caisse-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .caisse-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background-color: var(--caisse-card);
+      border-bottom: 1px solid var(--caisse-accent);
+      flex-shrink: 0;
+    }
+
+    .caisse-header h1 {
+      font-size: 1.4rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .caisse-header h1 i {
+      color: var(--caisse-gold);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .structure-select {
+      background-color: var(--caisse-accent);
+      border: 1px solid #444;
+      color: var(--caisse-text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-caisse {
+      background-color: var(--caisse-accent);
+      border: none;
+      color: var(--caisse-text);
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 1rem;
+    }
+
+    .btn-caisse:hover {
+      background-color: #1a4a7a;
+      color: white;
+    }
+
+    .btn-caisse.btn-fullscreen {
+      background-color: transparent;
+      border: 1px solid var(--caisse-accent);
+    }
+
+    /* Bannière session */
+    .session-banner {
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .session-banner.session-closed {
+      background-color: var(--caisse-error);
+      color: white;
+    }
+
+    .session-banner.session-open {
+      background-color: var(--caisse-success);
+      color: white;
+    }
+
+    .session-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .session-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-session {
+      padding: 6px 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-session.btn-open {
+      background-color: white;
+      color: var(--caisse-success);
+    }
+
+    .btn-session.btn-close {
+      background-color: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid white;
+    }
+
+    /* Layout principal 3 colonnes */
+    .caisse-main {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr 0.8fr;
+      gap: 15px;
+      padding: 15px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Zones */
+    .caisse-zone {
+      background-color: var(--caisse-card);
+      border-radius: 12px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .caisse-zone h3 {
+      margin: 0 0 12px 0;
+      font-size: 1rem;
+      color: var(--caisse-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .caisse-zone h3 i {
+      font-size: 1.1rem;
+    }
+
+    /* Colonne gauche */
+    .caisse-left {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow: hidden;
+    }
+
+    /* Zone usager */
+    .member-zone {
+      flex-shrink: 0;
+    }
+
+    .member-placeholder {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--caisse-muted);
+    }
+
+    .member-placeholder i {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .member-card {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px;
+      background-color: var(--caisse-accent);
+      border-radius: 8px;
+    }
+
+    .member-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--caisse-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--caisse-card);
+    }
+
+    .member-info h4 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .member-info p {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      color: var(--caisse-muted);
+    }
+
+    .member-status {
+      margin-left: auto;
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status-badge.valid {
+      background-color: var(--caisse-success);
+      color: white;
+    }
+
+    .status-badge.expired {
+      background-color: var(--caisse-error);
+      color: white;
+    }
+
+    .btn-clear-member {
+      background: none;
+      border: none;
+      color: var(--caisse-error);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 5px;
+    }
+
+    /* Zone produits */
+    .products-zone {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .product-tab {
+      flex: 1;
+      min-width: 80px;
+      padding: 10px 8px;
+      border: none;
+      background-color: var(--caisse-accent);
+      color: var(--caisse-text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .product-tab:hover {
+      background-color: #1a4a7a;
+    }
+
+    .product-tab.active {
+      background-color: var(--caisse-gold);
+      color: var(--caisse-card);
+    }
+
+    .products-list {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      align-content: start;
+    }
+
+    .product-btn {
+      padding: 15px 10px;
+      border: 2px solid var(--caisse-accent);
+      background-color: transparent;
+      color: var(--caisse-text);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .product-btn:hover {
+      border-color: var(--caisse-gold);
+      background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .product-btn .price {
+      display: block;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--caisse-gold);
+      margin-top: 5px;
+    }
+
+    .product-btn .name {
+      font-size: 0.9rem;
+    }
+
+    /* Colonne centre */
+    .caisse-center {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      overflow: hidden;
+    }
+
+    /* Panier */
+    .cart-zone {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-items {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background-color: var(--caisse-accent);
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 500;
+    }
+
+    .cart-item-detail {
+      font-size: 0.8rem;
+      color: var(--caisse-muted);
+    }
+
+    .cart-item-price {
+      font-weight: bold;
+      color: var(--caisse-gold);
+      margin: 0 15px;
+    }
+
+    .cart-item-remove {
+      background: none;
+      border: none;
+      color: var(--caisse-error);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 5px;
+    }
+
+    .cart-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--caisse-muted);
+    }
+
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background-color: var(--caisse-accent);
+      border-radius: 8px;
+      margin-top: 10px;
+      flex-shrink: 0;
+    }
+
+    .cart-total-label {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .cart-total-amount {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: var(--caisse-gold);
+    }
+
+    /* Zone paiement */
+    .payment-zone {
+      flex-shrink: 0;
+    }
+
+    .payment-modes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+    }
+
+    .payment-mode-btn {
+      padding: 12px 8px;
+      border: 2px solid var(--caisse-accent);
+      background-color: transparent;
+      color: var(--caisse-text);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .payment-mode-btn:hover {
+      border-color: var(--caisse-success);
+    }
+
+    .payment-mode-btn.selected {
+      border-color: var(--caisse-success);
+      background-color: rgba(0, 210, 106, 0.2);
+    }
+
+    .payment-mode-btn i {
+      display: block;
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    /* Zone comptage espèces */
+    .cash-zone {
+      flex-shrink: 0;
+      display: none;
+    }
+
+    .cash-zone.visible {
+      display: block;
+    }
+
+    .cash-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cash-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .cash-btn {
+      width: 55px;
+      height: 55px;
+      border: 2px solid var(--caisse-accent);
+      background-color: transparent;
+      color: var(--caisse-text);
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .cash-btn:hover {
+      border-color: var(--caisse-gold);
+      background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .cash-btn:active {
+      transform: scale(0.95);
+      background-color: var(--caisse-gold);
+      color: var(--caisse-card);
+    }
+
+    .cash-btn.bill {
+      border-radius: 8px;
+      width: auto;
+      min-width: 70px;
+      height: 45px;
+      background-color: rgba(255, 193, 7, 0.1);
+      border-color: var(--caisse-gold);
+    }
+
+    .cash-display {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding: 12px;
+      background-color: var(--caisse-accent);
+      border-radius: 8px;
+    }
+
+    .cash-display-item {
+      text-align: center;
+    }
+
+    .cash-display-label {
+      font-size: 0.8rem;
+      color: var(--caisse-muted);
+      margin-bottom: 4px;
+    }
+
+    .cash-display-value {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .cash-display-value.received {
+      color: var(--caisse-success);
+    }
+
+    .cash-display-value.change {
+      color: var(--caisse-gold);
+    }
+
+    .cash-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-cash-reset {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--caisse-error);
+      background: none;
+      color: var(--caisse-error);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-cash-exact {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid var(--caisse-success);
+      background: none;
+      color: var(--caisse-success);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Bouton valider */
+    .btn-validate {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      background: linear-gradient(135deg, var(--caisse-success), #00b359);
+      color: white;
+      border-radius: 12px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-shrink: 0;
+      margin-top: auto;
+    }
+
+    .btn-validate:hover:not(:disabled) {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(0, 210, 106, 0.4);
+    }
+
+    .btn-validate:disabled {
+      background: var(--caisse-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    /* Colonne droite - Historique */
+    .caisse-right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .history-zone {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .history-zone h3 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-history-clear {
+      background: none;
+      border: none;
+      color: var(--caisse-muted);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .history-item.success {
+      background-color: rgba(0, 210, 106, 0.15);
+      border-left: 3px solid var(--caisse-success);
+    }
+
+    .history-item.error {
+      background-color: rgba(255, 107, 107, 0.15);
+      border-left: 3px solid var(--caisse-error);
+    }
+
+    .history-item.info {
+      background-color: rgba(255, 193, 7, 0.15);
+      border-left: 3px solid var(--caisse-warning);
+    }
+
+    .history-time {
+      color: var(--caisse-muted);
+      font-size: 0.75rem;
+    }
+
+    .history-action {
+      font-weight: 500;
+      margin: 3px 0;
+    }
+
+    .history-detail {
+      color: var(--caisse-muted);
+      font-size: 0.8rem;
+    }
+
+    /* Stats session */
+    .session-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 15px;
+      border-top: 1px solid var(--caisse-accent);
+      flex-shrink: 0;
+    }
+
+    .stat-box {
+      padding: 10px;
+      background-color: var(--caisse-accent);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--caisse-muted);
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+
+    .stat-value.positive {
+      color: var(--caisse-success);
+    }
+
+    .stat-value.negative {
+      color: var(--caisse-error);
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: var(--caisse-card);
+      border-radius: 16px;
+      padding: 25px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-content h4 {
+      margin: 0 0 20px;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-modal-cancel {
+      background: transparent;
+      border: 1px solid var(--caisse-muted);
+      color: var(--caisse-text);
+    }
+
+    .btn-modal-confirm {
+      background: var(--caisse-success);
+      border: none;
+      color: white;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: var(--caisse-muted);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--caisse-accent);
+      background-color: var(--caisse-bg);
+      color: var(--caisse-text);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Loading */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--caisse-accent);
+      border-top-color: var(--caisse-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .caisse-main {
+        grid-template-columns: 1fr 1fr;
+      }
+      .caisse-right {
+        grid-column: span 2;
+      }
+      .history-zone {
+        max-height: 200px;
+      }
+      .history-list {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+      }
+      .history-item {
+        min-width: 200px;
+        flex-shrink: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .caisse-main {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .caisse-left, .caisse-center, .caisse-right {
+        max-height: none;
+        overflow: visible;
+      }
+      .products-list {
+        max-height: 200px;
+      }
+      .cart-items {
+        max-height: 150px;
+      }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--caisse-accent);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--caisse-muted);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--caisse-text);
+    }
+  </style>
+</head>
+<body>
+  <div class="caisse-container">
+    <!-- Header -->
+    <div class="caisse-header">
+      <div class="header-left">
+        <h1><i class="bi bi-cash-stack"></i> Caisse Rapide</h1>
+        <select id="structure-select" class="structure-select" style="display: none;">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+      <div class="header-buttons">
+        <button onclick="toggleFullscreen()" class="btn-caisse btn-fullscreen" title="Plein ecran">
+          <i class="bi bi-fullscreen"></i>
+        </button>
+        <a href="caisse.html" class="btn-caisse" title="Caisse complete">
+          <i class="bi bi-gear"></i>
+        </a>
+        <a href="dashboard.html" class="btn-caisse" title="Retour dashboard">
+          <i class="bi bi-house"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Bannière session -->
+    <div id="session-banner" class="session-banner session-closed">
+      <div class="session-info">
+        <span><i class="bi bi-exclamation-circle"></i> Aucune session ouverte</span>
+      </div>
+      <div class="session-actions">
+        <button class="btn-session btn-open" onclick="showOpenSessionModal()">
+          <i class="bi bi-unlock"></i> Ouvrir une session
+        </button>
+      </div>
+    </div>
+
+    <!-- Layout principal -->
+    <div class="caisse-main" id="main-content" style="display: none;">
+      <!-- Colonne gauche: Usager + Produits -->
+      <div class="caisse-left">
+        <!-- Zone usager -->
+        <div class="caisse-zone member-zone">
+          <h3><i class="bi bi-person"></i> Usager</h3>
+          <div id="member-content">
+            <div class="member-placeholder">
+              <i class="bi bi-upc-scan"></i>
+              <p>Scannez ou recherchez un usager</p>
+              <button class="btn-caisse" onclick="showMemberSearch()" style="margin-top: 10px;">
+                <i class="bi bi-search"></i> Rechercher
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zone produits -->
+        <div class="caisse-zone products-zone">
+          <h3><i class="bi bi-grid"></i> Produits</h3>
+          <div class="product-tabs">
+            <button class="product-tab active" data-category="cotisation" onclick="selectProductTab('cotisation')">Cotisations</button>
+            <button class="product-tab" data-category="adhesion" onclick="selectProductTab('adhesion')">Adhesions</button>
+            <button class="product-tab" data-category="vente" onclick="selectProductTab('vente')">Ventes</button>
+            <button class="product-tab" data-category="autre" onclick="selectProductTab('autre')">Autres</button>
+          </div>
+          <div id="products-list" class="products-list">
+            <!-- Products loaded dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne centre: Panier + Paiement -->
+      <div class="caisse-center">
+        <!-- Panier -->
+        <div class="caisse-zone cart-zone">
+          <h3><i class="bi bi-cart3"></i> Transaction</h3>
+          <div id="cart-items" class="cart-items">
+            <div class="cart-empty">
+              <i class="bi bi-cart" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+              <p>Selectionnez des produits</p>
+            </div>
+          </div>
+          <div class="cart-total">
+            <span class="cart-total-label">Total</span>
+            <span id="cart-total-amount" class="cart-total-amount">0,00 EUR</span>
+          </div>
+        </div>
+
+        <!-- Modes de paiement -->
+        <div class="caisse-zone payment-zone">
+          <h3><i class="bi bi-credit-card"></i> Paiement</h3>
+          <div id="payment-modes" class="payment-modes-grid">
+            <!-- Payment modes loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Comptage espèces -->
+        <div class="caisse-zone cash-zone" id="cash-zone">
+          <h3><i class="bi bi-cash"></i> Comptage Especes</h3>
+          <div class="cash-grid">
+            <div class="cash-row coins">
+              <button class="cash-btn" onclick="addCash(0.10)">0,10</button>
+              <button class="cash-btn" onclick="addCash(0.20)">0,20</button>
+              <button class="cash-btn" onclick="addCash(0.50)">0,50</button>
+              <button class="cash-btn" onclick="addCash(1)">1</button>
+              <button class="cash-btn" onclick="addCash(2)">2</button>
+            </div>
+            <div class="cash-row bills">
+              <button class="cash-btn bill" onclick="addCash(5)">5 EUR</button>
+              <button class="cash-btn bill" onclick="addCash(10)">10 EUR</button>
+              <button class="cash-btn bill" onclick="addCash(20)">20 EUR</button>
+              <button class="cash-btn bill" onclick="addCash(50)">50 EUR</button>
+              <button class="cash-btn bill" onclick="addCash(100)">100 EUR</button>
+            </div>
+          </div>
+          <div class="cash-display">
+            <div class="cash-display-item">
+              <div class="cash-display-label">Recu</div>
+              <div id="amount-received" class="cash-display-value received">0,00 EUR</div>
+            </div>
+            <div class="cash-display-item">
+              <div class="cash-display-label">A rendre</div>
+              <div id="change-amount" class="cash-display-value change">0,00 EUR</div>
+            </div>
+          </div>
+          <div class="cash-actions">
+            <button class="btn-cash-reset" onclick="resetCash()">
+              <i class="bi bi-arrow-counterclockwise"></i> Reset
+            </button>
+            <button class="btn-cash-exact" onclick="setExactAmount()">
+              <i class="bi bi-check"></i> Montant exact
+            </button>
+          </div>
+        </div>
+
+        <!-- Bouton valider -->
+        <button id="btn-validate" class="btn-validate" onclick="validateTransaction()" disabled>
+          <i class="bi bi-check-circle"></i> Valider
+        </button>
+      </div>
+
+      <!-- Colonne droite: Historique -->
+      <div class="caisse-right">
+        <div class="caisse-zone history-zone">
+          <h3>
+            <span><i class="bi bi-clock-history"></i> Historique</span>
+            <button class="btn-history-clear" onclick="clearHistory()" title="Effacer l'historique">
+              <i class="bi bi-trash"></i>
+            </button>
+          </h3>
+          <div id="history-list" class="history-list">
+            <!-- History loaded dynamically -->
+          </div>
+          <div class="session-stats">
+            <div class="stat-box">
+              <div class="stat-label">Entrees</div>
+              <div id="stat-entrees" class="stat-value positive">0,00 EUR</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Sorties</div>
+              <div id="stat-sorties" class="stat-value negative">0,00 EUR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal ouverture session -->
+  <div id="modal-session-open" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h4><i class="bi bi-unlock"></i> Ouvrir une session</h4>
+      <div class="form-group">
+        <label>Caisse</label>
+        <select id="modal-caisse-select">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Solde d'ouverture</label>
+        <input type="text" id="modal-opening-balance" readonly>
+      </div>
+      <div class="form-group">
+        <label>Commentaire (optionnel)</label>
+        <textarea id="modal-session-comment" placeholder="Ex: Ouverture du matin..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="hideModal('modal-session-open')">Annuler</button>
+        <button class="btn-modal-confirm" onclick="openSession()">
+          <i class="bi bi-unlock"></i> Ouvrir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal fermeture session -->
+  <div id="modal-session-close" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h4><i class="bi bi-lock"></i> Fermer la session</h4>
+      <div class="form-group">
+        <label>Solde theorique</label>
+        <input type="text" id="modal-theoretical-balance" readonly>
+      </div>
+      <div class="form-group">
+        <label>Solde reel (compte)</label>
+        <input type="number" id="modal-real-balance" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Ecart</label>
+        <input type="text" id="modal-balance-diff" readonly>
+      </div>
+      <div class="form-group">
+        <label>Commentaire de cloture</label>
+        <textarea id="modal-close-comment" placeholder="Ex: Tout est OK..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="hideModal('modal-session-close')">Annuler</button>
+        <button class="btn-modal-confirm" onclick="closeSession()">
+          <i class="bi bi-lock"></i> Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal recherche usager -->
+  <div id="modal-member-search" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h4><i class="bi bi-search"></i> Rechercher un usager</h4>
+      <div class="form-group">
+        <input type="text" id="member-search-input" placeholder="Nom, prenom, email ou code-barre..." oninput="searchMembers()">
+      </div>
+      <div id="member-search-results" style="max-height: 300px; overflow-y: auto;">
+        <!-- Results loaded dynamically -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="hideModal('modal-member-search')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal saisie manuelle -->
+  <div id="modal-manual-entry" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h4><i class="bi bi-pencil"></i> Saisie manuelle</h4>
+      <div class="form-group">
+        <label>Categorie</label>
+        <select id="manual-category">
+          <option value="vente">Vente</option>
+          <option value="don">Don</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Libelle</label>
+        <input type="text" id="manual-label" placeholder="Description...">
+      </div>
+      <div class="form-group">
+        <label>Montant</label>
+        <input type="number" id="manual-amount" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-cancel" onclick="hideModal('modal-manual-entry')">Annuler</button>
+        <button class="btn-modal-confirm" onclick="addManualEntry()">
+          <i class="bi bi-plus"></i> Ajouter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/caisse-rapide.js"></script>
+</body>
+</html>
