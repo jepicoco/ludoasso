@@ -4,412 +4,141 @@
   "icone": "bi-arrow-left-right",
   "features": [
     {
-      "id": "emprunts_rapide",
-      "titre": "Emprunt rapide par scan",
-      "description": "Créer un emprunt en scannant le code-barre de l'adhérent et de l'article",
+      "id": "emprunt_creation",
+      "titre": "Enregistrer un emprunt",
+      "description": "Prêter un article à un usager",
       "role_min": "benevole",
       "procedure": [
-        "Accéder à la page Emprunts",
-        "Scanner ou saisir le code-barre de l'usager dans le champ prévu",
-        "Vérifier que l'usager est actif",
-        "Scanner ou saisir le code-barre de l'article (jeu, livre, film ou disque)",
+        "Scanner ou rechercher l'usager (code-barre carte ou nom)",
+        "Vérifier que l'usager est actif et n'a pas de blocage",
+        "Scanner ou rechercher l'article",
         "Vérifier que l'article est disponible",
-        "Cliquer sur 'Créer l'emprunt'",
-        "L'emprunt est créé avec une durée par défaut de 14 jours"
+        "Cliquer 'Créer l'emprunt'",
+        "L'emprunt est enregistré avec la date de retour prévue"
       ],
       "faq": [
-        {
-          "question": "Que faire si le code-barre ne fonctionne pas ?",
-          "reponse": "Vous pouvez saisir le code manuellement dans le champ prévu, ou utiliser le bouton de recherche pour sélectionner l'usager/article dans une liste."
-        },
         {
           "question": "Quelle est la durée par défaut d'un emprunt ?",
-          "reponse": "La durée par défaut est de 14 jours à partir de la date d'emprunt."
-        }
-      ],
-      "mots_cles": ["emprunt", "scan", "rapide", "code-barre", "scanner"]
-    },
-    {
-      "id": "emprunts_creer_manuel",
-      "titre": "Créer un emprunt manuellement",
-      "description": "Enregistrer un nouvel emprunt en sélectionnant l'usager et l'article manuellement",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page Emprunts",
-        "Cliquer sur 'Nouvel emprunt'",
-        "Sélectionner l'usager dans la liste déroulante",
-        "Sélectionner l'article (jeu, livre, film ou disque) dans la liste",
-        "Optionnel : modifier la date de retour prévue (par défaut 14 jours)",
-        "Optionnel : ajouter un commentaire",
-        "Cliquer sur 'Enregistrer'",
-        "L'emprunt est créé et l'article passe au statut 'emprunté'"
-      ],
-      "faq": [
-        {
-          "question": "Puis-je modifier la durée de l'emprunt ?",
-          "reponse": "Oui, vous pouvez personnaliser la date de retour prévue lors de la création de l'emprunt."
+          "reponse": "14 jours par défaut, configurable dans Paramètres > Limites emprunts."
         },
         {
-          "question": "Que se passe-t-il si l'article n'est pas disponible ?",
-          "reponse": "Seuls les articles disponibles apparaissent dans la liste de sélection. Si l'article est déjà emprunté, il ne sera pas proposé."
+          "question": "Peut-on emprunter un article réservé par quelqu'un d'autre ?",
+          "reponse": "Oui, avec confirmation. Un avertissement affiche les réservataires en attente."
         }
       ],
-      "mots_cles": ["emprunt", "créer", "manuel", "usager", "article", "prêt"]
+      "mots_cles": ["emprunt", "pret", "emprunter", "preter", "circulation"]
     },
     {
-      "id": "emprunts_limites_validation",
-      "titre": "Validation des limites d'emprunt",
-      "description": "Le système vérifie automatiquement les limites d'emprunt lors de la création",
+      "id": "emprunt_retour",
+      "titre": "Enregistrer un retour",
+      "description": "Réceptionner un article rendu par un usager",
       "role_min": "benevole",
       "procedure": [
-        "Lors de la création d'un emprunt, le système vérifie :",
-        "- Limite générale par module (ex: max 5 jeux)",
-        "- Limite par genre (ex: max 3 BD, max 2 magazines)",
-        "- Limite de nouveautés (ex: max 1 nouveauté)",
-        "Si une limite bloquante est atteinte, l'emprunt est refusé",
-        "Si une limite non-bloquante est atteinte, un avertissement s'affiche",
-        "Les bénévoles peuvent outrepasser les limites non-bloquantes avec force_override"
-      ],
-      "faq": [
-        {
-          "question": "Que faire si l'usager a atteint sa limite d'emprunts ?",
-          "reponse": "Si la limite est bloquante, demandez à un gestionnaire de modifier les paramètres ou d'attendre qu'un emprunt soit retourné. Si elle est non-bloquante, vous pouvez confirmer l'emprunt malgré l'avertissement."
-        },
-        {
-          "question": "Comment connaître les limites actuelles d'un usager ?",
-          "reponse": "Utilisez l'endpoint GET /api/emprunts/limites/:utilisateurId/:module pour obtenir un résumé des limites (générale, nouveautés, genres)."
-        }
-      ],
-      "mots_cles": ["limites", "validation", "quota", "nouveauté", "genre", "règles"]
-    },
-    {
-      "id": "emprunts_retour",
-      "titre": "Retour d'un article emprunté",
-      "description": "Enregistrer le retour d'un article et le remettre en disponibilité",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page Emprunts",
-        "Filtrer par statut 'En cours' si nécessaire",
-        "Localiser l'emprunt à retourner dans la liste",
-        "Cliquer sur le bouton de retour (icône flèche gauche)",
+        "Scanner le code-barre de l'article",
+        "Le système identifie automatiquement l'emprunt en cours",
         "Confirmer le retour",
-        "L'emprunt passe au statut 'retourné' avec la date de retour effective",
-        "L'article repasse automatiquement au statut 'disponible'"
+        "Si l'article est réservé, un message propose de le mettre de côté"
       ],
       "faq": [
         {
-          "question": "Peut-on annuler un retour déjà enregistré ?",
-          "reponse": "Non, une fois qu'un retour est enregistré, il ne peut pas être annulé. Seul un gestionnaire peut supprimer l'emprunt et en créer un nouveau si nécessaire."
+          "question": "Que faire si l'article est endommagé ?",
+          "reponse": "Enregistrez le retour puis modifiez l'état physique de l'exemplaire (Moyen, Usé, Endommagé)."
         },
         {
-          "question": "Que se passe-t-il si un article est retourné en retard ?",
-          "reponse": "Le système calcule le nombre de jours de retard et l'affiche dans l'historique. Les rappels automatiques peuvent être configurés via les déclencheurs d'événements."
+          "question": "Comment gérer un article réservé au retour ?",
+          "reponse": "Choisissez 'Mettre de côté' pour réserver au prochain de la liste ou 'Remettre en rayon' pour annuler."
         }
       ],
-      "mots_cles": ["retour", "restitution", "disponible", "retourner", "rendu"]
+      "mots_cles": ["retour", "rendre", "restitution", "rendu"]
     },
     {
-      "id": "emprunts_prolongation_auto",
-      "titre": "Prolongation automatique d'emprunt",
-      "description": "Les usagers peuvent prolonger leurs emprunts automatiquement depuis leur espace",
-      "role_min": "usager",
+      "id": "emprunt_prolongation",
+      "titre": "Prolonger un emprunt",
+      "description": "Étendre la durée d'un emprunt en cours",
+      "role_min": "benevole",
       "procedure": [
-        "L'usager se connecte à son espace personnel",
-        "Il accède à 'Mes emprunts' > onglet 'En cours'",
-        "Pour chaque emprunt prolongeable, un bouton 'Prolonger' s'affiche",
-        "L'usager clique sur 'Prolonger'",
-        "Si des prolongations automatiques sont disponibles, la prolongation est accordée immédiatement",
-        "La nouvelle date de retour est mise à jour",
-        "Le compteur de prolongations (nb_prolongations) est incrémenté"
+        "L'usager peut demander une prolongation depuis son espace",
+        "La demande apparaît dans 'Demandes de prolongation'",
+        "Vérifier qu'il n'y a pas de réservation en attente",
+        "Approuver ou refuser la prolongation",
+        "Si approuvée, la nouvelle date de retour est calculée"
       ],
       "faq": [
         {
-          "question": "Combien de prolongations automatiques sont autorisées ?",
-          "reponse": "Le nombre de prolongations automatiques est configurable dans les paramètres du système. Par défaut, 2 prolongations automatiques sont autorisées."
+          "question": "Combien de prolongations sont possibles ?",
+          "reponse": "Configurable par module dans Paramètres > Paramètres Front (prolongation_auto_max_*)."
         },
         {
-          "question": "Quelle est la durée d'une prolongation ?",
-          "reponse": "La durée est configurable dans les paramètres. Par défaut, une prolongation ajoute 7 jours supplémentaires."
+          "question": "L'usager peut-il prolonger lui-même ?",
+          "reponse": "Oui, si les prolongations automatiques sont activées et que le nombre max n'est pas atteint."
         }
       ],
-      "mots_cles": ["prolongation", "automatique", "renouvellement", "extension", "usager"]
+      "mots_cles": ["prolongation", "prolonger", "extension", "renouveler"]
     },
     {
-      "id": "emprunts_prolongation_manuelle",
-      "titre": "Demande de prolongation manuelle",
-      "description": "Les usagers peuvent demander une prolongation manuelle soumise à validation",
-      "role_min": "usager",
-      "procedure": [
-        "L'usager se connecte à son espace personnel",
-        "Il accède à 'Mes emprunts' et clique sur 'Prolonger'",
-        "Si les prolongations automatiques sont épuisées, la demande devient manuelle",
-        "La demande est enregistrée avec le statut 'en_attente'",
-        "Un gestionnaire reçoit une notification (si configurée)",
-        "Le gestionnaire valide ou refuse la demande depuis l'interface admin",
-        "L'usager est notifié de la décision"
-      ],
-      "faq": [
-        {
-          "question": "Combien de temps faut-il pour qu'une prolongation manuelle soit traitée ?",
-          "reponse": "Cela dépend de la disponibilité des gestionnaires. Un système de rappels peut être configuré pour alerter les administrateurs des demandes en attente."
-        },
-        {
-          "question": "Peut-on refuser une prolongation ?",
-          "reponse": "Oui, un gestionnaire peut refuser une prolongation et doit obligatoirement fournir un commentaire expliquant le refus."
-        }
-      ],
-      "mots_cles": ["prolongation", "manuelle", "demande", "validation", "approbation"]
-    },
-    {
-      "id": "prolongations_valider",
-      "titre": "Valider une demande de prolongation",
-      "description": "Approuver une demande de prolongation manuelle soumise par un usager",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page de gestion des prolongations",
-        "Filtrer par statut 'En attente'",
-        "Consulter les détails de la demande",
-        "Vérifier qu'aucune réservation n'est en attente pour cet article",
-        "Cliquer sur 'Valider'",
-        "Optionnel : ajouter un commentaire",
-        "Confirmer la validation",
-        "La date de retour prévue de l'emprunt est mise à jour",
-        "Le compteur de prolongations est incrémenté",
-        "L'usager reçoit une notification (si configurée)"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si l'article est réservé par quelqu'un d'autre ?",
-          "reponse": "Le système affiche un avertissement indiquant qu'une réservation est en attente. Le gestionnaire peut choisir de refuser la prolongation pour honorer la réservation."
-        }
-      ],
-      "mots_cles": ["prolongation", "validation", "approuver", "accepter", "gestionnaire"]
-    },
-    {
-      "id": "prolongations_refuser",
-      "titre": "Refuser une demande de prolongation",
-      "description": "Rejeter une demande de prolongation manuelle avec justification",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page de gestion des prolongations",
-        "Consulter les détails de la demande",
-        "Cliquer sur 'Refuser'",
-        "Saisir un commentaire obligatoire expliquant le refus",
-        "Confirmer le refus",
-        "La demande passe au statut 'refusée'",
-        "L'usager reçoit une notification avec le motif (si configurée)"
-      ],
-      "faq": [
-        {
-          "question": "Le commentaire est-il obligatoire pour refuser ?",
-          "reponse": "Oui, un commentaire est obligatoire pour justifier le refus auprès de l'usager."
-        }
-      ],
-      "mots_cles": ["prolongation", "refus", "rejet", "refuser", "commentaire"]
-    },
-    {
-      "id": "emprunts_consulter",
-      "titre": "Consulter la liste des emprunts",
-      "description": "Afficher et filtrer tous les emprunts du système",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page Emprunts",
-        "La liste affiche tous les emprunts avec leur statut",
-        "Utiliser le filtre de statut pour afficher : tous, en cours, retournés ou en retard",
-        "Cliquer sur 'En retard' pour voir uniquement les emprunts dépassant la date prévue",
-        "Cliquer sur 'Actualiser' pour rafraîchir la liste",
-        "Les emprunts affichent : usager, article, dates, statut et actions possibles"
-      ],
-      "faq": [
-        {
-          "question": "Comment identifier rapidement les emprunts en retard ?",
-          "reponse": "Utilisez le bouton 'En retard' dans les filtres. Les emprunts en retard sont également marqués avec un badge rouge indiquant le nombre de jours de retard."
-        }
-      ],
-      "mots_cles": ["liste", "consultation", "filtres", "recherche", "emprunts", "affichage"]
-    },
-    {
-      "id": "emprunts_en_retard",
-      "titre": "Gérer les emprunts en retard",
-      "description": "Identifier et traiter les emprunts dépassant leur date de retour prévue",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page Emprunts",
-        "Cliquer sur le bouton 'En retard'",
-        "Le système met automatiquement à jour le statut des emprunts en retard",
-        "La liste affiche tous les emprunts dépassant leur date de retour",
-        "Pour chaque emprunt, le nombre de jours de retard est affiché",
-        "Optionnel : envoyer un rappel à l'usager",
-        "Enregistrer le retour lorsque l'article est restitué"
-      ],
-      "faq": [
-        {
-          "question": "Le système envoie-t-il automatiquement des rappels ?",
-          "reponse": "Oui, si les déclencheurs d'événements sont configurés. Les événements EMPRUNT_RAPPEL_AVANT, EMPRUNT_RAPPEL_ECHEANCE et EMPRUNT_RELANCE_RETARD peuvent être activés pour des rappels automatiques par email ou SMS."
-        },
-        {
-          "question": "Que faire si un usager a plusieurs emprunts en retard ?",
-          "reponse": "Contactez l'usager pour régulariser la situation. Un gestionnaire peut temporairement suspendre son compte (statut 'suspendu') jusqu'au retour des articles."
-        }
-      ],
-      "mots_cles": ["retard", "rappel", "relance", "dépassement", "échéance"]
-    },
-    {
-      "id": "emprunts_modifier",
-      "titre": "Modifier un emprunt existant",
-      "description": "Mettre à jour les informations d'un emprunt (date, commentaire, statut)",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la page Emprunts",
-        "Localiser l'emprunt à modifier",
-        "Les modifications possibles incluent :",
-        "- Date de retour prévue",
-        "- Commentaire",
-        "- Statut (à utiliser avec précaution)",
-        "Enregistrer les modifications"
-      ],
-      "faq": [
-        {
-          "question": "Peut-on modifier l'usager ou l'article d'un emprunt ?",
-          "reponse": "Non, ces informations ne peuvent pas être modifiées. Il faut supprimer l'emprunt et en créer un nouveau."
-        }
-      ],
-      "mots_cles": ["modifier", "éditer", "mise à jour", "changement", "emprunt"]
-    },
-    {
-      "id": "emprunts_supprimer",
-      "titre": "Supprimer un emprunt",
-      "description": "Effacer définitivement un emprunt du système (réservé aux gestionnaires)",
+      "id": "emprunt_retards",
+      "titre": "Gérer les retards",
+      "description": "Identifier et traiter les emprunts en retard",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à la page Emprunts",
-        "Localiser l'emprunt à supprimer",
-        "Cliquer sur le bouton de suppression (icône poubelle)",
-        "Confirmer la suppression",
-        "Si l'emprunt est encore actif, l'article repasse automatiquement en 'disponible'",
-        "L'emprunt est définitivement supprimé de la base de données"
+        "Aller dans la liste des emprunts",
+        "Filtrer par 'En retard'",
+        "Les emprunts avec jours de retard sont affichés en rouge",
+        "Cliquer sur un emprunt pour voir les détails",
+        "Envoyer une relance email/SMS depuis les actions"
       ],
       "faq": [
         {
-          "question": "Peut-on récupérer un emprunt supprimé ?",
-          "reponse": "Non, la suppression est définitive. Utilisez cette fonction avec précaution. Pour l'archivage, préférez marquer l'emprunt comme 'retourné'."
-        }
-      ],
-      "mots_cles": ["supprimer", "effacer", "suppression", "gestionnaire"]
-    },
-    {
-      "id": "emprunts_multi_collections",
-      "titre": "Emprunter des articles de différents types",
-      "description": "Le système supporte l'emprunt de jeux, livres, films et disques",
-      "role_min": "benevole",
-      "procedure": [
-        "Le système gère 4 types d'articles empruntables :",
-        "- Jeux (module ludothèque)",
-        "- Livres (module bibliothèque)",
-        "- Films (module filmothèque)",
-        "- Disques (module discothèque)",
-        "Lors de la création d'un emprunt, spécifiez le type via jeu_id, livre_id, film_id ou disque_id",
-        "Les limites d'emprunt sont appliquées par module",
-        "Chaque module peut avoir ses propres paramètres de durée et de limites"
-      ],
-      "faq": [
-        {
-          "question": "Les limites d'emprunt sont-elles partagées entre les modules ?",
-          "reponse": "Non, chaque module (ludothèque, bibliothèque, etc.) a ses propres limites configurables indépendamment."
-        }
-      ],
-      "mots_cles": ["multi-collection", "jeux", "livres", "films", "disques", "modules"]
-    },
-    {
-      "id": "emprunts_historique_usager",
-      "titre": "Consulter l'historique d'emprunts d'un usager",
-      "description": "Les usagers peuvent consulter leur historique complet depuis leur espace personnel",
-      "role_min": "usager",
-      "procedure": [
-        "L'usager se connecte à son espace personnel",
-        "Il accède à 'Mes emprunts'",
-        "Onglet 'En cours' : affiche les emprunts actifs avec possibilité de prolongation",
-        "Onglet 'Historique' : affiche tous les emprunts retournés",
-        "L'historique est paginé (10 emprunts par page)",
-        "Pour chaque emprunt, l'usager voit : article, dates, statut, prolongations"
-      ],
-      "faq": [
-        {
-          "question": "L'historique est-il conservé indéfiniment ?",
-          "reponse": "Oui, tous les emprunts sont conservés dans l'historique pour des besoins de traçabilité et de statistiques."
-        }
-      ],
-      "mots_cles": ["historique", "usager", "consultation", "espace personnel", "mes emprunts"]
-    },
-    {
-      "id": "emprunts_statistiques",
-      "titre": "Consulter les statistiques d'emprunt",
-      "description": "Accéder aux statistiques globales et par usager des emprunts",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Les statistiques disponibles incluent :",
-        "- Nombre d'emprunts en cours par usager",
-        "- Nombre d'emprunts en retard",
-        "- Nombre total d'emprunts sur une période",
-        "- Articles les plus empruntés",
-        "- Taux de retard par usager",
-        "Accéder aux stats via l'endpoint /api/adherents/:id/stats pour un usager spécifique"
-      ],
-      "faq": [
-        {
-          "question": "Peut-on exporter les statistiques ?",
-          "reponse": "Les statistiques sont accessibles via l'API. Vous pouvez développer des rapports personnalisés ou exporter les données au format JSON."
-        }
-      ],
-      "mots_cles": ["statistiques", "stats", "rapports", "analyse", "données"]
-    },
-    {
-      "id": "emprunts_notifications",
-      "titre": "Notifications automatiques d'emprunt",
-      "description": "Le système envoie des notifications automatiques selon les événements configurés",
-      "role_min": "administrateur",
-      "procedure": [
-        "Les événements d'emprunt configurables incluent :",
-        "- EMPRUNT_CONFIRMATION : confirmation lors de la création",
-        "- EMPRUNT_RAPPEL_AVANT : rappel X jours avant l'échéance",
-        "- EMPRUNT_RAPPEL_ECHEANCE : rappel le jour de l'échéance",
-        "- EMPRUNT_RELANCE_RETARD : relance pour emprunts en retard",
-        "Configurer les déclencheurs depuis Paramètres > Communications > Déclencheurs",
-        "Les notifications peuvent être envoyées par email et/ou SMS",
-        "Les templates de messages sont personnalisables"
-      ],
-      "faq": [
-        {
-          "question": "Comment activer les rappels automatiques ?",
-          "reponse": "Accédez à Paramètres > Communications > Déclencheurs d'événements. Activez les événements souhaités et associez-les à des templates email/SMS."
+          "question": "Les relances sont-elles automatiques ?",
+          "reponse": "Oui, si les déclencheurs d'événements sont configurés (EMPRUNT_RELANCE_RETARD)."
         },
         {
-          "question": "Les usagers reçoivent-ils une confirmation d'emprunt ?",
-          "reponse": "Oui, si l'événement EMPRUNT_CONFIRMATION est activé avec un template configuré."
+          "question": "Peut-on bloquer un usager en retard ?",
+          "reponse": "Oui, vous pouvez suspendre son compte temporairement depuis sa fiche."
         }
       ],
-      "mots_cles": ["notifications", "email", "sms", "rappels", "déclencheurs", "événements"]
+      "mots_cles": ["retard", "relance", "rappel", "depassement"]
     },
     {
-      "id": "prolongations_consulter",
-      "titre": "Consulter les demandes de prolongation",
-      "description": "Afficher et filtrer toutes les demandes de prolongation",
+      "id": "emprunt_historique",
+      "titre": "Consulter l'historique",
+      "description": "Voir l'historique des emprunts d'un usager ou d'un article",
       "role_min": "benevole",
       "procedure": [
-        "Accéder à la page de gestion des prolongations",
-        "Filtrer par statut : en attente, validées, refusées",
-        "Filtrer par type : automatique, manuelle",
-        "Filtrer par module : ludothèque, bibliothèque, filmothèque, discothèque",
-        "La liste affiche : usager, article, type, statut, dates, jours ajoutés",
-        "Consulter les statistiques : nombre de demandes en attente, validées, refusées"
+        "Pour un usager : ouvrir sa fiche > onglet Statistiques",
+        "Pour un article : ouvrir sa fiche > section Historique emprunts",
+        "Les emprunts passés sont listés avec dates et durées"
       ],
       "faq": [
         {
-          "question": "Quelle est la différence entre prolongation automatique et manuelle ?",
-          "reponse": "Les prolongations automatiques sont accordées immédiatement sans validation, dans la limite du quota configuré. Les prolongations manuelles nécessitent l'approbation d'un gestionnaire."
+          "question": "L'historique est-il conservé combien de temps ?",
+          "reponse": "Indéfiniment. Utile pour les statistiques et l'audit."
         }
       ],
-      "mots_cles": ["prolongations", "demandes", "liste", "filtres", "consultation"]
+      "mots_cles": ["historique", "passe", "ancien", "consultation"]
+    },
+    {
+      "id": "emprunt_limites",
+      "titre": "Comprendre les limites",
+      "description": "Règles limitant le nombre d'emprunts par usager",
+      "role_min": "benevole",
+      "procedure": [
+        "Les limites sont configurées par profil usager et par module",
+        "Lors d'un emprunt, le système vérifie automatiquement",
+        "Si la limite est atteinte, l'emprunt est refusé ou un avertissement s'affiche",
+        "Limites spéciales pour les nouveautés"
+      ],
+      "faq": [
+        {
+          "question": "Comment modifier les limites ?",
+          "reponse": "Paramètres > Configuration > Limites emprunts. Définissez par statut usager et module."
+        },
+        {
+          "question": "Les bénévoles ont-ils des limites spéciales ?",
+          "reponse": "Oui, généralement plus élevées (10 articles vs 5 pour usagers standard)."
+        }
+      ],
+      "mots_cles": ["limite", "maximum", "quota", "restriction"]
     }
   ]
 }

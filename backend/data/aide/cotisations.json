@@ -1,185 +1,146 @@
 {
   "module": "cotisations",
   "titre": "Cotisations",
-  "icone": "bi-receipt",
+  "icone": "bi-wallet2",
   "features": [
     {
-      "id": "cotisations_creer",
-      "titre": "Creer une cotisation",
-      "description": "Enregistrer une nouvelle cotisation pour un usager",
-      "role_min": "benevole",
-      "procedure": [
-        "Acceder a la page Cotisations",
-        "Cliquer sur 'Nouvelle cotisation'",
-        "Selectionner l'usager dans la liste deroulante",
-        "Choisir le tarif de cotisation applicable",
-        "Optionnel : appliquer un code de reduction",
-        "Selectionner le mode de paiement",
-        "Cliquer sur 'Enregistrer'",
-        "La cotisation est creee et l'usager devient actif"
-      ],
-      "faq": [
-        {
-          "question": "Quels sont les differents tarifs disponibles ?",
-          "reponse": "Les tarifs sont configurables dans Parametres > Tarifs. Ils peuvent inclure des tarifs individuels, familiaux, reduits, etc."
-        },
-        {
-          "question": "Comment appliquer une reduction ?",
-          "reponse": "Lors de la creation, selectionnez un code de reduction dans la liste. Le montant sera automatiquement recalcule."
-        }
-      ],
-      "mots_cles": ["cotisation", "creer", "adhesion", "tarif", "paiement"]
-    },
-    {
-      "id": "cotisations_tarifs",
-      "titre": "Gestion des tarifs",
-      "description": "Configurer les differents tarifs de cotisation disponibles",
+      "id": "cotisation_creation",
+      "titre": "Enregistrer une cotisation",
+      "description": "Inscrire un usager et enregistrer son paiement",
       "role_min": "gestionnaire",
       "procedure": [
-        "Acceder a Parametres > Tarifs de cotisation",
-        "Voir la liste des tarifs existants",
-        "Pour ajouter un tarif : cliquer sur 'Nouveau tarif'",
-        "Saisir le nom, le montant et la duree de validite",
-        "Optionnel : definir si c'est le tarif par defaut",
-        "Enregistrer le tarif",
-        "Reorganiser l'ordre des tarifs par glisser-deposer"
+        "Cliquer 'Nouvelle cotisation'",
+        "Rechercher et sélectionner l'usager",
+        "L'arbre tarifaire calcule automatiquement le tarif selon le profil",
+        "Vérifier le montant et les réductions applicables",
+        "Sélectionner le mode de paiement",
+        "Enregistrer la cotisation",
+        "Un email de confirmation est envoyé automatiquement"
       ],
       "faq": [
         {
-          "question": "Quelle est la duree standard d'une cotisation ?",
-          "reponse": "Par defaut, une cotisation est valable 12 mois. Cette duree est configurable par tarif."
+          "question": "Comment le montant est-il calculé ?",
+          "reponse": "L'arbre décisionnel applique des critères : âge, quotient familial, statut, tags, nombre d'inscrits."
         },
         {
-          "question": "Puis-je desactiver un tarif sans le supprimer ?",
-          "reponse": "Oui, utilisez le bouton d'activation/desactivation. Un tarif desactive n'apparaitra plus lors de la creation de cotisations."
+          "question": "Peut-on faire une cotisation gratuite ?",
+          "reponse": "Oui, si les réductions cumulées atteignent 100% ou si le tarif est configuré à 0."
         }
       ],
-      "mots_cles": ["tarifs", "prix", "montant", "configuration", "adhesion"]
+      "mots_cles": ["cotisation", "adhesion", "inscription", "paiement"]
     },
     {
-      "id": "cotisations_renouvellement",
-      "titre": "Renouvellement de cotisation",
-      "description": "Renouveler la cotisation d'un usager existant",
-      "role_min": "benevole",
+      "id": "cotisation_arbre",
+      "titre": "Configurer l'arbre tarifaire",
+      "description": "Définir les règles de calcul des tarifs",
+      "role_min": "administrateur",
       "procedure": [
-        "Acceder a la fiche de l'usager ou a la page Cotisations",
-        "Identifier la cotisation expiree ou proche de l'expiration",
-        "Cliquer sur 'Renouveler'",
-        "Verifier ou modifier le tarif si necessaire",
-        "Selectionner le mode de paiement",
-        "Valider le renouvellement",
-        "La nouvelle cotisation demarre a la date du jour"
+        "Aller dans Paramètres > Tarification > Arbre décisionnel",
+        "Créer ou modifier un arbre",
+        "Ajouter des noeuds (conditions) : AGE, QUOTIENT_FAMILIAL, TAG, COMMUNE...",
+        "Ajouter des branches pour chaque valeur de la condition",
+        "Définir les tarifs finaux (feuilles) ou les réductions",
+        "Tester l'arbre avec différents profils",
+        "Activer l'arbre"
       ],
       "faq": [
         {
-          "question": "Que se passe-t-il si l'usager renouvelle avant expiration ?",
-          "reponse": "La nouvelle cotisation demarre immediatement. Il est possible de planifier le renouvellement pour qu'il demarre a la fin de la cotisation en cours."
+          "question": "Quels types de conditions sont disponibles ?",
+          "reponse": "AGE, QUOTIENT_FAMILIAL, COMMUNE, TAG, MULTI_INSCRIPTIONS, FIDELITE, MEMBRE_ASSOCIATION."
         },
         {
-          "question": "Comment identifier les cotisations a renouveler ?",
-          "reponse": "Utilisez le filtre 'Expire bientot' pour voir les cotisations expirant dans les 30 prochains jours."
+          "question": "Les réductions se cumulent-elles ?",
+          "reponse": "Oui, chaque branche peut ajouter une réduction. Le total ne dépasse pas 100%."
         }
       ],
-      "mots_cles": ["renouvellement", "renouveler", "expiration", "prolonger"]
+      "mots_cles": ["arbre", "tarif", "tarification", "calcul", "reduction", "condition"]
     },
     {
-      "id": "cotisations_codes_reduction",
-      "titre": "Codes de reduction",
-      "description": "Creer et gerer les codes de reduction pour les cotisations",
+      "id": "cotisation_code_reduction",
+      "titre": "Utiliser un code de réduction",
+      "description": "Appliquer un code promotionnel à une cotisation",
       "role_min": "gestionnaire",
       "procedure": [
-        "Acceder a Parametres > Codes de reduction",
-        "Cliquer sur 'Nouveau code'",
-        "Saisir le code (ex: BIENVENUE2024)",
-        "Choisir le type de reduction : pourcentage ou montant fixe",
-        "Definir la valeur de la reduction",
-        "Optionnel : definir une date d'expiration",
-        "Optionnel : limiter le nombre d'utilisations",
-        "Enregistrer le code"
+        "Lors de la création de cotisation, saisir le code dans le champ prévu",
+        "Cliquer 'Appliquer'",
+        "Le nouveau montant s'affiche",
+        "Finaliser la cotisation"
       ],
       "faq": [
         {
-          "question": "Puis-je limiter un code a certains tarifs ?",
-          "reponse": "Oui, lors de la creation du code, vous pouvez specifier les tarifs eligibles."
+          "question": "Comment créer un code de réduction ?",
+          "reponse": "Paramètres > Codes réduction. Définissez code, type (% ou fixe), valeur, dates de validité."
         },
         {
-          "question": "Comment suivre l'utilisation d'un code ?",
-          "reponse": "Dans la liste des codes, vous voyez le nombre d'utilisations. Cliquez sur le code pour voir le detail."
+          "question": "Peut-on limiter l'utilisation d'un code ?",
+          "reponse": "Oui, par nombre d'utilisations maximum et par période de validité."
         }
       ],
       "mots_cles": ["code", "reduction", "promo", "remise", "coupon"]
     },
     {
-      "id": "cotisations_recus",
-      "titre": "Generation de recus",
-      "description": "Generer un recu PDF pour une cotisation",
-      "role_min": "benevole",
-      "procedure": [
-        "Acceder a la liste des cotisations",
-        "Localiser la cotisation concernee",
-        "Cliquer sur l'icone PDF ou 'Generer recu'",
-        "Le recu PDF est telecharge automatiquement",
-        "Il contient les informations de l'usager, le montant, la periode et le mode de paiement"
-      ],
-      "faq": [
-        {
-          "question": "Le recu est-il envoye automatiquement a l'usager ?",
-          "reponse": "Si les declencheurs d'evenements sont configures, un email avec le recu peut etre envoye automatiquement lors de la creation de la cotisation."
-        },
-        {
-          "question": "Puis-je regenerer un recu perdu ?",
-          "reponse": "Oui, vous pouvez regenerer le recu a tout moment depuis la liste des cotisations."
-        }
-      ],
-      "mots_cles": ["recu", "PDF", "justificatif", "attestation", "impression"]
-    },
-    {
-      "id": "cotisations_rappels",
-      "titre": "Rappels d'expiration",
-      "description": "Configurer les rappels automatiques avant expiration des cotisations",
+      "id": "cotisation_qf",
+      "titre": "Appliquer le quotient familial",
+      "description": "Utiliser le QF pour adapter le tarif",
       "role_min": "gestionnaire",
       "procedure": [
-        "Acceder a Parametres > Declencheurs d'evenements",
-        "Activer le declencheur 'COTISATION_RAPPEL'",
-        "Selectionner le template d'email/SMS a utiliser",
-        "Configurer le delai avant expiration (ex: 30 jours)",
-        "Le systeme enverra automatiquement les rappels"
+        "Saisir le quotient familial dans la fiche usager",
+        "Lors de la cotisation, le QF est automatiquement pris en compte",
+        "Le barème QF détermine la tranche applicable",
+        "Le tarif correspondant à la tranche est appliqué"
       ],
       "faq": [
         {
-          "question": "Puis-je personnaliser le message de rappel ?",
-          "reponse": "Oui, modifiez le template de message dans Parametres > Templates de messages."
+          "question": "Où configure-t-on les tranches QF ?",
+          "reponse": "Paramètres > Barèmes Quotient Familial. Définissez les plages et tarifs/réductions associés."
         },
         {
-          "question": "A quelle frequence les rappels sont-ils envoyes ?",
-          "reponse": "Le systeme envoie un rappel par cotisation, au moment configure (ex: 30 jours avant). Un job planifie verifie quotidiennement."
+          "question": "Le QF est-il hérité dans une famille ?",
+          "reponse": "Oui, vous pouvez cocher 'Copier le QF' lors du lien familial."
         }
       ],
-      "mots_cles": ["rappel", "notification", "expiration", "automatique", "email"]
+      "mots_cles": ["quotient", "familial", "qf", "bareme", "social"]
     },
     {
-      "id": "cotisations_statistiques",
-      "titre": "Statistiques des cotisations",
-      "description": "Consulter les statistiques et rapports sur les cotisations",
+      "id": "cotisation_paiement_partiel",
+      "titre": "Gérer un paiement partiel",
+      "description": "Enregistrer une cotisation payée en plusieurs fois",
       "role_min": "gestionnaire",
       "procedure": [
-        "Acceder a la page Statistiques",
-        "Selectionner l'onglet 'Cotisations'",
-        "Consulter les indicateurs : nombre d'actifs, renouvellements, nouveaux, expires",
-        "Filtrer par periode pour comparer",
-        "Exporter les donnees si necessaire"
+        "Créer la cotisation avec le montant total",
+        "Enregistrer le premier paiement (montant partiel)",
+        "La cotisation passe en statut 'Partiellement payée'",
+        "Lors du complément, enregistrer le second paiement",
+        "La cotisation passe en 'Payée' une fois le total atteint"
       ],
       "faq": [
         {
-          "question": "Comment voir le taux de renouvellement ?",
-          "reponse": "Le taux de renouvellement est affiche dans les statistiques. Il compare le nombre de renouvellements au nombre total d'expirations sur une periode."
-        },
-        {
-          "question": "Puis-je voir les revenus par tarif ?",
-          "reponse": "Oui, les statistiques detaillent les montants percus par type de tarif."
+          "question": "L'usager peut-il emprunter avec une cotisation partielle ?",
+          "reponse": "Cela dépend de la configuration. Par défaut, les emprunts sont autorisés."
         }
       ],
-      "mots_cles": ["statistiques", "rapport", "taux", "revenus", "analyse"]
+      "mots_cles": ["partiel", "echeance", "acompte", "solde"]
+    },
+    {
+      "id": "cotisation_renouvellement",
+      "titre": "Renouveler une cotisation",
+      "description": "Prolonger l'adhésion d'un usager",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Identifier les cotisations arrivant à expiration (filtrer)",
+        "Ouvrir la fiche usager concerné",
+        "Cliquer 'Renouveler cotisation'",
+        "Le tarif est recalculé selon le profil actuel",
+        "Enregistrer le paiement",
+        "Un rappel automatique peut être configuré avant expiration"
+      ],
+      "faq": [
+        {
+          "question": "Les rappels sont-ils automatiques ?",
+          "reponse": "Oui, si l'événement COTISATION_RAPPEL est configuré avec un template."
+        }
+      ],
+      "mots_cles": ["renouvellement", "prolonger", "expiration", "rappel"]
     }
   ]
 }

@@ -1,0 +1,153 @@
+{
+  "module": "caisse",
+  "titre": "Caisse",
+  "icone": "bi-cash-coin",
+  "features": [
+    {
+      "id": "session_ouverture",
+      "titre": "Ouvrir une session de caisse",
+      "description": "Démarrer une période de travail sur une caisse",
+      "role_min": "benevole",
+      "procedure": [
+        "Aller dans le module Caisse",
+        "Sélectionner la caisse à ouvrir",
+        "Cliquer 'Ouvrir session'",
+        "Vérifier le solde d'ouverture (= solde actuel de la caisse)",
+        "La session est active et prête à recevoir des mouvements"
+      ],
+      "faq": [
+        {
+          "question": "Peut-on avoir plusieurs sessions ouvertes ?",
+          "reponse": "Non, une seule session peut être ouverte par caisse à la fois."
+        },
+        {
+          "question": "Qui peut voir les sessions ?",
+          "reponse": "Tous les rôles avec accès caisse : bénévole, gestionnaire, comptable, admin."
+        }
+      ],
+      "mots_cles": ["session", "ouverture", "ouvrir", "caisse", "demarrer"]
+    },
+    {
+      "id": "mouvement_enregistrement",
+      "titre": "Enregistrer un mouvement",
+      "description": "Ajouter une entrée ou sortie de caisse",
+      "role_min": "benevole",
+      "procedure": [
+        "Dans une session ouverte, cliquer 'Nouveau mouvement'",
+        "Sélectionner le type : Entrée ou Sortie",
+        "Choisir la catégorie : Cotisation, Location, Don, Remboursement...",
+        "Saisir le montant",
+        "Sélectionner le mode de paiement",
+        "Optionnel : Lier à un usager ou une opération",
+        "Valider le mouvement"
+      ],
+      "faq": [
+        {
+          "question": "Les cotisations créent-elles automatiquement un mouvement ?",
+          "reponse": "Oui, si la caisse est configurée, l'enregistrement d'une cotisation crée un mouvement de caisse."
+        },
+        {
+          "question": "Peut-on annuler un mouvement ?",
+          "reponse": "Oui, via 'Annuler mouvement'. Il reste visible mais ne compte plus dans les totaux."
+        }
+      ],
+      "mots_cles": ["mouvement", "entree", "sortie", "encaissement", "decaissement"]
+    },
+    {
+      "id": "session_cloture",
+      "titre": "Clôturer une session",
+      "description": "Fermer la session en vérifiant le solde",
+      "role_min": "benevole",
+      "procedure": [
+        "Cliquer 'Clôturer session'",
+        "Compter physiquement les espèces et chèques",
+        "Saisir le solde réel constaté",
+        "Le système calcule l'écart avec le solde théorique",
+        "Ajouter un commentaire si écart",
+        "Confirmer la clôture",
+        "Optionnel : Télécharger le rapport PDF"
+      ],
+      "faq": [
+        {
+          "question": "Que faire en cas d'écart ?",
+          "reponse": "L'écart est enregistré et tracé. Investiguer la cause et documenter dans le commentaire."
+        },
+        {
+          "question": "Le rapport PDF inclut-il tous les mouvements ?",
+          "reponse": "Oui, avec récapitulatif par catégorie et mode de paiement."
+        }
+      ],
+      "mots_cles": ["cloture", "fermer", "comptage", "ecart", "solde"]
+    },
+    {
+      "id": "remise_creation",
+      "titre": "Créer une remise en banque",
+      "description": "Grouper des mouvements pour dépôt bancaire",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Aller dans l'onglet 'Remises en banque'",
+        "Cliquer 'Nouvelle remise'",
+        "Les mouvements disponibles (espèces et chèques non remis) s'affichent",
+        "Sélectionner les mouvements à inclure",
+        "Vérifier le total par mode de paiement",
+        "Créer la remise (statut : en préparation)"
+      ],
+      "faq": [
+        {
+          "question": "Quels mouvements sont éligibles ?",
+          "reponse": "Les entrées en espèces et chèques qui n'ont pas encore été remis en banque."
+        },
+        {
+          "question": "Peut-on modifier une remise créée ?",
+          "reponse": "Oui, tant qu'elle n'est pas marquée 'déposée'."
+        }
+      ],
+      "mots_cles": ["remise", "banque", "depot", "especes", "cheques"]
+    },
+    {
+      "id": "remise_depot",
+      "titre": "Déposer une remise",
+      "description": "Marquer une remise comme déposée à la banque",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Ouvrir la remise à déposer",
+        "Cliquer 'Marquer comme déposée'",
+        "Saisir la date de dépôt effectif",
+        "Optionnel : Sélectionner le compte bancaire",
+        "Confirmer"
+      ],
+      "faq": [
+        {
+          "question": "La remise est-elle finalisée après dépôt ?",
+          "reponse": "Non, elle attend encore la validation après confirmation bancaire."
+        }
+      ],
+      "mots_cles": ["deposer", "depot", "banque", "bordereau"]
+    },
+    {
+      "id": "remise_validation",
+      "titre": "Valider une remise",
+      "description": "Confirmer la remise après vérification bancaire",
+      "role_min": "comptable",
+      "procedure": [
+        "Attendre la confirmation de la banque (bordereau)",
+        "Ouvrir la remise déposée",
+        "Cliquer 'Valider'",
+        "Saisir la référence du bordereau bancaire",
+        "Confirmer la validation",
+        "La remise est définitivement clôturée"
+      ],
+      "faq": [
+        {
+          "question": "Peut-on annuler après validation ?",
+          "reponse": "Non, une remise validée ne peut plus être modifiée."
+        },
+        {
+          "question": "Qui peut valider ?",
+          "reponse": "Seuls les comptables et administrateurs peuvent valider les remises."
+        }
+      ],
+      "mots_cles": ["valider", "validation", "confirmation", "bordereau", "rapprochement"]
+    }
+  ]
+}

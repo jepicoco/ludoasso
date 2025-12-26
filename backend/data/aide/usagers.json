@@ -1,0 +1,138 @@
+{
+  "module": "usagers",
+  "titre": "Gestion des Usagers",
+  "icone": "bi-people",
+  "features": [
+    {
+      "id": "usager_creation",
+      "titre": "Créer un usager",
+      "description": "Inscription d'un nouvel usager avec ses informations personnelles",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Cliquer sur 'Nouvel usager'",
+        "Remplir les informations personnelles : nom, prénom, email (obligatoires)",
+        "Compléter l'adresse et le téléphone si nécessaire",
+        "Définir le statut (Actif par défaut) et le rôle (Usager par défaut)",
+        "Optionnel : Ajouter des tags, une photo, des notes internes",
+        "Générer ou saisir un mot de passe",
+        "Cliquer 'Enregistrer'"
+      ],
+      "faq": [
+        {
+          "question": "Le code-barre est-il modifiable ?",
+          "reponse": "Non, le code-barre est généré automatiquement et reste fixe pour assurer la traçabilité."
+        },
+        {
+          "question": "Peut-on créer un usager sans email ?",
+          "reponse": "L'email est obligatoire car il sert d'identifiant de connexion au portail usager."
+        }
+      ],
+      "mots_cles": ["inscription", "nouveau", "adherent", "membre", "creation"]
+    },
+    {
+      "id": "usager_modification",
+      "titre": "Modifier un usager",
+      "description": "Mise à jour des informations d'un usager existant",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Rechercher l'usager par nom, email ou code-barre",
+        "Cliquer sur la ligne pour ouvrir le détail",
+        "Cliquer sur 'Modifier'",
+        "Mettre à jour les champs souhaités",
+        "Cliquer 'Enregistrer'"
+      ],
+      "faq": [
+        {
+          "question": "Comment archiver un usager sans le supprimer ?",
+          "reponse": "Passez son statut à 'Inactif'. Les données sont conservées pour l'historique."
+        }
+      ],
+      "mots_cles": ["edition", "mise a jour", "modifier", "changer"]
+    },
+    {
+      "id": "usager_famille",
+      "titre": "Gérer les familles",
+      "description": "Lier des usagers entre eux pour bénéficier du tarif famille",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Ouvrir la fiche de l'usager principal (adulte référent)",
+        "Aller dans l'onglet 'Famille'",
+        "Cliquer 'Lier un membre'",
+        "Rechercher l'usager à lier",
+        "Sélectionner le type de lien (Conjoint, Enfant, Parent...)",
+        "Cocher les options souhaitées (copier adresse, quotient familial)",
+        "Pour un enfant en garde partagée, configurer le pourcentage et les jours",
+        "Valider le lien"
+      ],
+      "faq": [
+        {
+          "question": "Comment fonctionne le tarif famille ?",
+          "reponse": "Quand plusieurs membres sont liés, le système applique automatiquement le tarif famille lors de la cotisation. Les économies sont affichées."
+        },
+        {
+          "question": "Peut-on lier plus de 2 adultes ?",
+          "reponse": "Oui, il n'y a pas de limite au nombre de membres dans un foyer."
+        }
+      ],
+      "mots_cles": ["famille", "foyer", "enfant", "conjoint", "lien", "garde partagee"]
+    },
+    {
+      "id": "usager_recherche",
+      "titre": "Rechercher un usager",
+      "description": "Trouver rapidement un usager dans la base",
+      "role_min": "benevole",
+      "procedure": [
+        "Utiliser la barre de recherche en haut de page",
+        "Saisir le nom, prénom, email ou code-barre",
+        "Les résultats s'affichent après 3 caractères",
+        "Utiliser les filtres avancés si nécessaire (statut, rôle, tag)"
+      ],
+      "faq": [
+        {
+          "question": "Peut-on scanner directement la carte usager ?",
+          "reponse": "Oui, le scanner de code-barre remplit automatiquement le champ de recherche."
+        }
+      ],
+      "mots_cles": ["recherche", "trouver", "chercher", "scanner"]
+    },
+    {
+      "id": "usager_communication",
+      "titre": "Communiquer avec un usager",
+      "description": "Envoyer un email ou SMS à un usager",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Ouvrir la fiche de l'usager",
+        "Aller dans l'onglet 'Actions'",
+        "Cliquer 'Envoyer email' ou 'Envoyer SMS'",
+        "Choisir un template ou saisir un message libre",
+        "Vérifier l'aperçu avec les variables remplacées",
+        "Cliquer 'Envoyer'"
+      ],
+      "faq": [
+        {
+          "question": "Les variables dans les templates sont-elles automatiques ?",
+          "reponse": "Oui, {{prenom}}, {{nom}}, {{email}} sont remplacés automatiquement."
+        }
+      ],
+      "mots_cles": ["email", "sms", "message", "contact", "communication"]
+    },
+    {
+      "id": "usager_export",
+      "titre": "Exporter les usagers",
+      "description": "Télécharger la liste des usagers au format CSV",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Appliquer les filtres souhaités si nécessaire",
+        "Cliquer sur 'Exporter CSV'",
+        "Le fichier se télécharge avec les colonnes : Prénom, Nom, Email, Code-barre, Statut, Rôle"
+      ],
+      "faq": [
+        {
+          "question": "L'export respecte-t-il les filtres ?",
+          "reponse": "Oui, seuls les usagers affichés après filtrage sont exportés."
+        }
+      ],
+      "mots_cles": ["export", "csv", "excel", "telecharger", "liste"]
+    }
+  ]
+}

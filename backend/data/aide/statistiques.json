@@ -1,239 +1,126 @@
 {
   "module": "statistiques",
-  "titre": "Statistiques et Tableau de bord",
-  "icone": "bi-bar-chart",
-  "description": "Tableaux de bord et statistiques détaillées par module avec indicateurs clés, tendances et analyses",
+  "titre": "Statistiques",
+  "icone": "bi-graph-up",
   "features": [
     {
-      "id": "stats_dashboard",
-      "titre": "Tableau de bord principal",
-      "description": "Vue d'ensemble des statistiques globales multi-modules avec indicateurs clés : usagers actifs, collection totale, emprunts en cours et retards. Affiche les stats filtrées selon les modules accessibles (ludothèque, bibliothèque, filmothèque, discothèque). Inclut l'activité récente (7 derniers jours) et des sections spécifiques : calculateur de cotisation, statistiques de cotisations, emprunts en retard et jeux les plus empruntés.",
-      "role_min": "benevole",
+      "id": "stats_globales",
+      "titre": "Consulter les statistiques globales",
+      "description": "Vue d'ensemble de l'activité",
+      "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à Tableau de bord depuis le menu principal",
-        "Consulter les 4 cartes statistiques en haut : Usagers actifs, Jeux disponibles, Emprunts en cours, En retard",
-        "Utiliser le calculateur de cotisation : sélectionner un tarif, choisir une date de début optionnelle, cocher si membre de l'association, voir le calcul automatique (montant base, prorata, réduction, montant final)",
-        "Consulter les statistiques de cotisations : nombre actif/total, montants réglés et en attente avec barres de progression",
-        "Vérifier la liste des emprunts en retard avec nombre de jours de retard",
-        "Consulter le top 5 des jeux les plus empruntés avec nombre d'emprunts et statut"
+        "Aller dans Statistiques",
+        "Voir le tableau de bord avec les métriques principales",
+        "Nombre d'usagers actifs, articles, emprunts en cours",
+        "Cotisations encaissées sur la période"
       ],
       "faq": [
         {
-          "question": "Quelles sont les données affichées sur le tableau de bord ?",
-          "reponse": "Le tableau de bord affiche : stats globales (usagers actifs, collection totale, emprunts en cours/retard), calculateur de cotisation en temps réel, stats financières des cotisations (réglées/en attente), liste des emprunts en retard avec délai, et top 5 des jeux populaires."
-        },
-        {
-          "question": "Comment fonctionne le calculateur de cotisation ?",
-          "reponse": "Sélectionnez un tarif dans la liste déroulante, choisissez optionnellement une date de début, cochez si l'adhérent est membre de l'association. Le système calcule automatiquement : montant de base, prorata temporel si applicable, réduction éventuelle, et montant final à payer avec la période de validité."
-        },
-        {
-          "question": "Les statistiques sont-elles actualisées en temps réel ?",
-          "reponse": "Les statistiques sont chargées au chargement de la page. Pour obtenir les données les plus récentes, rafraîchissez la page ou utilisez le bouton Actualiser sur la page Statistiques complète."
+          "question": "Les statistiques sont-elles en temps réel ?",
+          "reponse": "Oui, calculées à la demande sur les données actuelles."
         }
       ],
-      "mots_cles": ["tableau de bord", "dashboard", "vue d'ensemble", "indicateurs", "kpi", "statistiques globales", "activité récente"]
+      "mots_cles": ["statistiques", "tableau", "bord", "metriques", "indicateurs"]
     },
     {
-      "id": "stats_multi_modules",
-      "titre": "Statistiques par module",
-      "description": "Page de statistiques détaillées avec onglets par module accessible (ludothèque, bibliothèque, filmothèque, discothèque). Pour chaque module : stats de collection (total, disponibles, empruntés, en retard), top 10 des articles les plus empruntés, top 10 des usagers les plus actifs, répartition par catégorie/genre avec pourcentages, et graphique mensuel des emprunts (12 derniers mois). Filtrage automatique selon les droits d'accès de l'utilisateur.",
-      "role_min": "benevole",
+      "id": "stats_emprunts",
+      "titre": "Analyser les emprunts",
+      "description": "Statistiques sur la circulation des articles",
+      "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à Statistiques depuis le menu",
-        "Consulter les 4 stats globales en haut : Total Usagers, Usagers Actifs, Total Collection, Emprunts en Cours",
-        "Cliquer sur un onglet de module (Ludothèque, Bibliothèque, Filmothèque, Discothèque) selon vos droits d'accès",
-        "Observer les 4 cartes du module : Total articles, Disponibles (avec barre de progression), Empruntés, En Retard",
-        "Consulter le Top 10 des articles les plus empruntés avec classement et nombre d'emprunts",
-        "Voir le Top 10 des usagers les plus actifs avec leurs coordonnées et nombre d'emprunts",
-        "Analyser la répartition par catégorie/genre avec barres de progression et pourcentages",
-        "Examiner le graphique des emprunts mensuels sur 12 mois avec histogramme",
-        "Cliquer sur Actualiser pour rafraîchir toutes les données"
+        "Filtrer par période (dates de début et fin)",
+        "Voir le nombre total d'emprunts",
+        "Répartition par module (jeux, livres, films, disques)",
+        "Articles les plus empruntés",
+        "Jours et horaires de pointe"
       ],
       "faq": [
         {
-          "question": "Quels modules puis-je consulter dans les statistiques ?",
-          "reponse": "Vous voyez uniquement les modules auxquels vous avez accès selon votre rôle et vos permissions : gestionnaire et administrateur voient tous les modules, bénévole/agent voient uniquement leurs modules autorisés (ludothèque, bibliothèque, filmothèque, discothèque)."
-        },
-        {
-          "question": "Comment interpréter la répartition par catégorie ?",
-          "reponse": "La section affiche les 12 principales catégories/genres du module sélectionné, avec pour chacune : le nombre d'articles, le pourcentage par rapport au total, et une barre de progression visuelle. Cela permet d'identifier les thématiques dominantes de votre collection."
-        },
-        {
-          "question": "Sur quelle période porte le graphique mensuel ?",
-          "reponse": "Le graphique des emprunts mensuels couvre les 12 derniers mois à partir de la date actuelle. Chaque barre indique le nombre d'emprunts du mois, permettant de visualiser les tendances et pics d'activité."
+          "question": "Peut-on exporter les statistiques ?",
+          "reponse": "Oui, en CSV ou PDF selon la page."
         }
       ],
-      "mots_cles": ["statistiques détaillées", "modules", "ludothèque", "bibliothèque", "filmothèque", "discothèque", "top 10", "tendances", "répartition"]
+      "mots_cles": ["emprunts", "circulation", "frequence", "populaire"]
     },
     {
-      "id": "stats_popular_items",
-      "titre": "Articles les plus empruntés",
-      "description": "API pour obtenir les articles les plus populaires par module avec le nombre total d'emprunts. Support multi-modules avec filtrage par module spécifique ou tous les modules accessibles. Retourne les détails de l'article (id, titre, statut, image) et le nombre d'emprunts total. Limite configurable (par défaut 10 articles).",
-      "role_min": "benevole",
+      "id": "stats_usagers",
+      "titre": "Analyser les usagers",
+      "description": "Statistiques sur les inscriptions et l'activité",
+      "role_min": "gestionnaire",
       "procedure": [
-        "API : GET /api/stats/popular-items?module=ludotheque&limit=10",
-        "Paramètres : module (optionnel, un seul module), limit (nombre max, défaut 10)",
-        "Si module non spécifié, retourne les top items de tous les modules accessibles",
-        "Résultat : pour chaque module, liste des articles avec détails et nombre d'emprunts, triés par popularité décroissante"
+        "Voir les nouvelles inscriptions sur la période",
+        "Répartition par tranche d'âge",
+        "Usagers les plus actifs",
+        "Taux de renouvellement des cotisations"
       ],
       "faq": [
         {
-          "question": "Comment sont comptabilisés les emprunts ?",
-          "reponse": "Le système compte tous les emprunts historiques de l'article (statuts : en_cours, termine, en_retard). Chaque emprunt, quelle que soit sa durée, compte pour 1. Les articles jamais empruntés n'apparaissent pas dans ce classement."
-        },
-        {
-          "question": "Puis-je filtrer par période ?",
-          "reponse": "Non, actuellement les statistiques d'articles populaires portent sur l'historique complet des emprunts sans filtrage temporel. Pour des stats mensuelles, consultez le graphique des emprunts mensuels."
+          "question": "Comment identifier les usagers inactifs ?",
+          "reponse": "Filtrez par 'Dernier emprunt' pour voir ceux n'ayant pas emprunté depuis X mois."
         }
       ],
-      "mots_cles": ["articles populaires", "top emprunts", "best of", "classement", "popularité", "tendances"]
+      "mots_cles": ["usagers", "inscriptions", "activite", "renouvellement"]
     },
     {
-      "id": "stats_active_members",
-      "titre": "Usagers les plus actifs",
-      "description": "Classement des usagers ayant le plus grand nombre d'emprunts. Filtrable par module pour identifier les membres actifs d'un module spécifique (ex: grands lecteurs de la bibliothèque). Retourne les informations de l'usager (nom, prénom, email, statut) et le nombre total d'emprunts. Limite configurable.",
-      "role_min": "benevole",
+      "id": "desherbage_analyse",
+      "titre": "Analyser pour le désherbage",
+      "description": "Identifier les articles à sortir du catalogue",
+      "role_min": "gestionnaire",
       "procedure": [
-        "API : GET /api/stats/active-members?limit=10&module=ludotheque",
-        "Paramètres : limit (nombre max, défaut 10), module (optionnel)",
-        "Si module non spécifié, compte tous les emprunts de tous modules accessibles",
-        "Résultat : liste des usagers avec leurs infos et nombre d'emprunts, triés par activité décroissante"
+        "Aller dans Désherbage",
+        "Voir les articles jamais empruntés",
+        "Filtrer par date d'acquisition ancienne",
+        "Identifier les articles en mauvais état",
+        "Analyser le ratio emprunts/durée en catalogue"
       ],
       "faq": [
         {
-          "question": "Les anciens usagers inactifs apparaissent-ils dans ce classement ?",
-          "reponse": "Oui, le classement inclut tous les usagers ayant au moins un emprunt, quel que soit leur statut actuel (actif, inactif, archivé). Seuls les usagers sans aucun emprunt sont exclus."
-        },
-        {
-          "question": "Comment identifier les grands emprunteurs d'un module spécifique ?",
-          "reponse": "Utilisez le paramètre module pour filtrer. Exemple : module=bibliotheque affichera uniquement les emprunts de livres, permettant d'identifier les lecteurs assidus."
+          "question": "Quels critères pour désherber ?",
+          "reponse": "Combinaison : jamais emprunté + ancien + mauvais état + faible valeur."
         }
       ],
-      "mots_cles": ["usagers actifs", "grands emprunteurs", "membres fidèles", "classement usagers", "activité"]
+      "mots_cles": ["desherbage", "sortie", "obsolete", "inutilise"]
     },
     {
-      "id": "stats_loan_duration",
-      "titre": "Durée moyenne d'emprunt",
-      "description": "Statistiques sur la durée effective des emprunts terminés : durée moyenne, minimale et maximale en jours. Calculé uniquement sur les emprunts retournés (date_retour_effective renseignée). Filtrable par module pour analyser les habitudes d'emprunt spécifiques (ex: les jeux sont-ils empruntés plus longtemps que les livres ?).",
-      "role_min": "benevole",
+      "id": "desherbage_lot",
+      "titre": "Créer un lot de désherbage",
+      "description": "Grouper les articles à sortir du catalogue",
+      "role_min": "gestionnaire",
       "procedure": [
-        "API : GET /api/stats/loan-duration?module=ludotheque",
-        "Paramètre module optionnel (sinon tous modules accessibles)",
-        "Le système calcule pour chaque emprunt terminé : date_retour_effective - date_emprunt",
-        "Résultat : totalEmprunts (nombre), averageDuration (moyenne jours), minDuration, maxDuration, unit (jours), modules (liste modules analysés)"
+        "Aller dans Désherbage > Lots",
+        "Cliquer 'Nouveau lot'",
+        "Donner un nom au lot (ex: 'Désherbage Q4 2024')",
+        "Sélectionner le type de sortie : Rebut, Don, Vente, Perte",
+        "Ajouter les articles au lot",
+        "Valider et exporter pour traçabilité"
       ],
       "faq": [
         {
-          "question": "Pourquoi les emprunts en cours ne sont-ils pas comptés ?",
-          "reponse": "Les statistiques de durée portent uniquement sur les emprunts terminés (avec date de retour effective), car c'est la seule façon de mesurer la durée réelle. Les emprunts en cours sont exclus car leur durée finale n'est pas encore connue."
-        },
-        {
-          "question": "À quoi sert cette statistique ?",
-          "reponse": "Elle permet d'ajuster les durées d'emprunt autorisées par type d'article. Si la durée moyenne est bien inférieure à la durée maximale autorisée, vous pouvez réduire cette dernière pour augmenter la rotation de la collection."
+          "question": "Les articles désherbés sont-ils supprimés ?",
+          "reponse": "Non, ils passent en statut 'Déclaré perdu' ou 'Indisponible'. L'historique est conservé."
         }
       ],
-      "mots_cles": ["durée emprunt", "durée moyenne", "rotation", "analyse temporelle", "habitudes"]
+      "mots_cles": ["lot", "desherbage", "sortie", "rebut", "don", "vente"]
     },
     {
-      "id": "stats_monthly",
-      "titre": "Statistiques mensuelles",
-      "description": "Évolution du nombre d'emprunts par mois sur une période configurable (par défaut 12 mois). Données groupées par année-mois pour visualiser les tendances, saisons, pics d'activité. Filtrable par module. Utile pour identifier les périodes creuses et ajuster les horaires d'ouverture ou les animations.",
-      "role_min": "benevole",
+      "id": "rapport_generation",
+      "titre": "Générer un rapport",
+      "description": "Créer un rapport d'activité personnalisé",
+      "role_min": "gestionnaire",
       "procedure": [
-        "API : GET /api/stats/monthly?months=12&module=ludotheque",
-        "Paramètres : months (nombre de mois, défaut 12), module (optionnel)",
-        "Le système groupe les emprunts par mois (FORMAT : YYYY-MM)",
-        "Résultat : period (description), modules (liste), data (array avec month et emprunts pour chaque mois)",
-        "Données triées par ordre chronologique croissant"
+        "Définir la période du rapport",
+        "Sélectionner les sections à inclure",
+        "Choisir le format (PDF ou Excel)",
+        "Générer le rapport",
+        "Télécharger ou envoyer par email"
       ],
       "faq": [
         {
-          "question": "Comment utiliser ces données pour planifier des animations ?",
-          "reponse": "Identifiez les mois creux (faible nombre d'emprunts) pour organiser des événements attractifs (soirées jeux, clubs de lecture, projections). À l'inverse, les pics d'activité indiquent les périodes où renforcer le personnel ou les horaires."
-        },
-        {
-          "question": "Puis-je obtenir des stats sur plusieurs années ?",
-          "reponse": "Oui, ajustez le paramètre months. Exemple : months=24 pour 2 ans, months=36 pour 3 ans. Les données sont groupées par mois et triées chronologiquement."
+          "question": "Peut-on planifier des rapports automatiques ?",
+          "reponse": "Oui via les tâches planifiées (configuration avancée)."
         }
       ],
-      "mots_cles": ["mensuel", "évolution", "tendances", "saisonnalité", "graphique", "courbe", "chronologique"]
-    },
-    {
-      "id": "stats_categories",
-      "titre": "Répartition par catégorie/genre",
-      "description": "Distribution des articles par catégorie (jeux), genre (livres, films, disques) pour un module spécifique. Compte le nombre d'articles dans chaque catégorie/genre, trié par ordre décroissant. Permet d'identifier les thématiques sur-représentées ou sous-représentées dans la collection et d'orienter les achats futurs.",
-      "role_min": "benevole",
-      "procedure": [
-        "API : GET /api/stats/categories?module=ludotheque",
-        "Paramètre module obligatoire (ludotheque par défaut si omis)",
-        "Le système compte les articles par champ : categorie (jeux), genre (livres/films/disques)",
-        "Résultat : module, field (nom du champ), categories (array avec categorie et count), trié par count décroissant"
-      ],
-      "faq": [
-        {
-          "question": "Comment équilibrer ma collection avec ces données ?",
-          "reponse": "Comparez la répartition actuelle à vos objectifs. Si une catégorie représente 50% de la collection mais seulement 20% des emprunts (voir stats populaires), envisagez de diversifier vers des catégories plus demandées."
-        },
-        {
-          "question": "Les articles sans catégorie sont-ils comptés ?",
-          "reponse": "Non, seuls les articles avec une catégorie/genre renseigné(e) apparaissent. Les articles à catégorie NULL sont exclus de ces statistiques. Pensez à renseigner ce champ pour tous vos articles."
-        }
-      ],
-      "mots_cles": ["catégories", "genres", "répartition", "distribution", "thématiques", "classification"]
-    },
-    {
-      "id": "stats_cotisations",
-      "titre": "Statistiques financières et cotisations",
-      "description": "Statistiques comptables réservées aux comptables et administrateurs. Affiche le chiffre d'affaires annuel des cotisations, la répartition par statut (en_cours, expiree, annulee), le nombre de cotisations actives, et l'évolution mensuelle (nombre et montant) sur l'année sélectionnée. Permet de suivre la santé financière et les tendances d'adhésion.",
-      "role_min": "comptable",
-      "procedure": [
-        "Accéder à Statistiques (menu principal)",
-        "Descendre jusqu'à la section Statistiques Comptables (visible uniquement si comptable ou admin)",
-        "Consulter les 3 cartes principales : CA annuel, Cotisations actives, Cotisations ce mois",
-        "Analyser le graphique mensuel des cotisations avec montants et nombres",
-        "API : GET /api/stats/cotisations?year=2025",
-        "Paramètre year optionnel (année en cours par défaut)",
-        "Résultat : year, summary (totalCA, byStatus), monthly (month, count, total)"
-      ],
-      "faq": [
-        {
-          "question": "Pourquoi ne vois-je pas cette section ?",
-          "reponse": "Les statistiques financières sont réservées aux rôles comptable et administrateur. Les bénévoles, agents et gestionnaires n'y ont pas accès pour des raisons de confidentialité financière."
-        },
-        {
-          "question": "Comment est calculé le chiffre d'affaires ?",
-          "reponse": "Le CA additionne les montants de toutes les cotisations avec statut en_cours ou expiree, payées durant l'année sélectionnée. Les cotisations annulées sont exclues. Seules les cotisations avec date_paiement renseignée sont comptabilisées."
-        },
-        {
-          "question": "Que représente 'Cotisations ce mois' ?",
-          "reponse": "C'est le nombre de cotisations dont la date de paiement se situe dans le mois en cours (année-mois actuel). Permet de suivre l'activité d'adhésion récente."
-        }
-      ],
-      "mots_cles": ["comptabilité", "finances", "cotisations", "chiffre d'affaires", "CA", "trésorerie", "revenus", "adhésions"]
-    },
-    {
-      "id": "stats_access_control",
-      "titre": "Contrôle d'accès aux statistiques",
-      "description": "Système de filtrage automatique des statistiques selon les droits d'accès de l'utilisateur. Les gestionnaires et administrateurs voient tous les modules. Les bénévoles et agents voient uniquement les modules auxquels ils ont accès (définis dans leur profil). Les comptables ont accès supplémentaire aux statistiques financières. Garantit la confidentialité des données et la séparation des responsabilités.",
-      "role_min": "benevole",
-      "procedure": [
-        "Le système détecte automatiquement votre rôle et vos modules autorisés au chargement de la page",
-        "Les onglets de modules non accessibles sont masqués",
-        "Les API /stats/* filtrent automatiquement les données selon vos droits",
-        "Tentative d'accès à un module non autorisé : erreur 403 'Accès refusé'",
-        "Les statistiques financières n'apparaissent que si rôle comptable ou administrateur"
-      ],
-      "faq": [
-        {
-          "question": "Comment savoir quels modules je peux consulter ?",
-          "reponse": "Seuls les onglets de modules auxquels vous avez accès sont affichés sur la page Statistiques. Si vous ne voyez qu'un seul onglet (ex: Ludothèque), c'est que vous avez accès uniquement à ce module. Contactez un administrateur pour modifier vos permissions."
-        },
-        {
-          "question": "Puis-je voir les stats d'un module même si je ne gère pas les emprunts ?",
-          "reponse": "Non, l'accès aux statistiques est lié à l'accès au module lui-même. Si vous n'avez pas le droit de gérer la bibliothèque, vous ne verrez pas ses statistiques. Cela garantit la cohérence des permissions."
-        }
-      ],
-      "mots_cles": ["sécurité", "permissions", "droits d'accès", "rôles", "filtrage", "confidentialité", "403"]
+      "mots_cles": ["rapport", "export", "pdf", "excel", "bilan"]
     }
   ]
 }

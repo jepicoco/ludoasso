@@ -1,230 +1,115 @@
 {
   "module": "frequentation",
-  "titre": "Frequentation (Comptage visiteurs)",
-  "icone": "bi-people-fill",
+  "titre": "Fréquentation",
+  "icone": "bi-person-walking",
   "features": [
     {
-      "id": "frequentation_questionnaires",
-      "titre": "Gestion des questionnaires",
-      "description": "Creer et configurer des questionnaires de comptage de visiteurs",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Acceder a Frequentation > Questionnaires",
-        "Cliquer sur 'Nouveau questionnaire'",
-        "Saisir le nom et la description",
-        "Optionnel : definir une periode de validite (dates debut/fin)",
-        "Choisir si le questionnaire est multi-site ou dedie a un site",
-        "Selectionner le theme d'affichage (clair ou sombre)",
-        "Definir le code PIN pour le mode admin (4 chiffres)",
-        "Optionnel : saisir un message d'accueil (affiche quand actif)",
-        "Optionnel : saisir un message d'indisponibilite (affiche quand inactif)",
-        "Activer ou desactiver le questionnaire",
-        "Enregistrer"
-      ],
-      "faq": [
-        {
-          "question": "Quelle difference entre questionnaire actif et periode de validite ?",
-          "reponse": "Un questionnaire peut etre desactive manuellement (actif=non) ou automatiquement s'il est hors de sa periode de validite. Dans les deux cas, le message d'indisponibilite s'affiche."
-        },
-        {
-          "question": "Puis-je avoir plusieurs questionnaires actifs ?",
-          "reponse": "Oui, chaque tablette est liee a un questionnaire specifique via sa cle API."
-        }
-      ],
-      "mots_cles": ["questionnaire", "comptage", "visiteurs", "frequentation", "config"]
-    },
-    {
-      "id": "frequentation_communes",
-      "titre": "Communes favorites",
-      "description": "Configurer les communes affichees sur les tablettes",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Depuis la liste des questionnaires, cliquer sur l'icone Communes",
-        "Rechercher une commune par nom ou code postal",
-        "Cliquer sur une commune pour l'epingler",
-        "Les communes epinglees apparaissent en priorite sur la tablette",
-        "Les communes frequemment utilisees apparaissent automatiquement",
-        "Reorganiser l'ordre des communes epinglees si necessaire",
-        "Les usagers peuvent toujours rechercher d'autres communes"
-      ],
-      "faq": [
-        {
-          "question": "D'ou viennent les donnees des communes ?",
-          "reponse": "Les communes francaises sont importees depuis data.gouv.fr (referentiel officiel)."
-        },
-        {
-          "question": "Combien de communes favorites s'affichent ?",
-          "reponse": "Par defaut, 8 communes maximum sont affichees (epinglees + frequentes). L'usager peut rechercher parmi toutes les communes."
-        }
-      ],
-      "mots_cles": ["communes", "favoris", "epingle", "ville", "code postal"]
-    },
-    {
-      "id": "frequentation_tablettes",
-      "titre": "Configuration des tablettes",
-      "description": "Lier des tablettes a un questionnaire",
+      "id": "questionnaire_creation",
+      "titre": "Créer un questionnaire",
+      "description": "Définir les questions posées aux visiteurs",
       "role_min": "administrateur",
       "procedure": [
-        "Depuis la liste des questionnaires, cliquer sur l'icone Tablettes",
-        "Pour ajouter une tablette :",
-        "- Selectionner une cle API avec droits frequentation",
-        "- Selectionner le site ou la tablette sera deployee",
-        "- Cliquer sur Lier",
-        "Pour configurer la tablette :",
-        "- Utiliser le QR Code pour configuration automatique",
-        "- Ou utiliser la configuration manuelle (URL serveur + ID questionnaire)",
-        "La cle API doit avoir ete stockee lors de sa creation"
+        "Aller dans Fréquentation > Questionnaires",
+        "Cliquer 'Nouveau questionnaire'",
+        "Donner un nom et une description",
+        "Définir les questions à poser (genre, tranche d'âge, provenance...)",
+        "Configurer les options de réponse",
+        "Activer le questionnaire"
       ],
       "faq": [
         {
-          "question": "Comment creer une cle API pour une tablette ?",
-          "reponse": "Allez dans Parametres > Cles API, creez une cle avec les permissions frequentation:read et frequentation:create. IMPORTANT: copiez la cle affichee, elle ne sera plus visible ensuite."
-        },
-        {
-          "question": "Comment scanner le QR Code ?",
-          "reponse": "Sur la tablette, ouvrez /tablet/setup.html et cliquez sur Scanner QR Code. Autorisez l'acces camera et scannez le code."
+          "question": "Les questions sont-elles personnalisables ?",
+          "reponse": "Oui, vous pouvez définir les catégories d'âge, les communes, etc."
         }
       ],
-      "mots_cles": ["tablette", "configuration", "QR code", "cle API", "deploiement"]
+      "mots_cles": ["questionnaire", "frequentation", "visiteurs", "comptage"]
     },
     {
-      "id": "frequentation_tablette_usage",
-      "titre": "Utilisation de la tablette",
-      "description": "Guide d'utilisation de l'interface tablette pour les usagers",
+      "id": "tablette_configuration",
+      "titre": "Configurer une tablette",
+      "description": "Installer l'application de comptage sur une tablette",
+      "role_min": "administrateur",
+      "procedure": [
+        "Générer une clé API dans Paramètres > API Keys",
+        "Sur la tablette, ouvrir l'URL de configuration",
+        "Scanner le QR code ou saisir la clé manuellement",
+        "Sélectionner le questionnaire à utiliser",
+        "Configurer le thème (clair/sombre)",
+        "La tablette est prête à compter"
+      ],
+      "faq": [
+        {
+          "question": "L'application fonctionne-t-elle hors ligne ?",
+          "reponse": "Oui, les enregistrements sont stockés localement et synchronisés au retour du réseau."
+        },
+        {
+          "question": "Quelle tablette utiliser ?",
+          "reponse": "Toute tablette avec un navigateur moderne (Android, iPad, Windows)."
+        }
+      ],
+      "mots_cles": ["tablette", "pwa", "installation", "qr code", "api"]
+    },
+    {
+      "id": "comptage_enregistrement",
+      "titre": "Enregistrer des entrées",
+      "description": "Compter les visiteurs à l'accueil",
       "role_min": "benevole",
       "procedure": [
-        "L'interface affiche le nom du site en haut",
-        "Compteurs : utiliser les boutons +/- pour adultes et enfants",
-        "Le total est calcule automatiquement",
-        "Selectionner la commune d'origine :",
-        "- Cliquer sur une commune favorite",
-        "- Ou cliquer sur 'Autre commune' pour rechercher",
-        "Quand compteur > 0 et commune selectionnee, cliquer sur VALIDER",
-        "Les compteurs se remettent a zero pour l'enregistrement suivant",
-        "En mode hors ligne, les enregistrements sont stockes localement"
+        "Sur la tablette configurée, la page de comptage s'affiche",
+        "Pour chaque visiteur, répondre aux questions rapides",
+        "Valider l'enregistrement",
+        "L'entrée est comptabilisée immédiatement"
       ],
       "faq": [
         {
-          "question": "Que faire si la tablette est hors ligne ?",
-          "reponse": "Les enregistrements sont stockes localement et synchronises automatiquement au retour de la connexion. Un badge orange indique le nombre en attente."
+          "question": "Les questions sont-elles obligatoires ?",
+          "reponse": "Dépend de la configuration du questionnaire."
         },
         {
-          "question": "Comment savoir si un enregistrement est valide ?",
-          "reponse": "Un message de confirmation vert s'affiche brievement apres validation."
+          "question": "Peut-on compter plusieurs personnes à la fois ?",
+          "reponse": "Oui, en indiquant le nombre d'entrées si configuré."
         }
       ],
-      "mots_cles": ["tablette", "compteur", "validation", "usage", "interface"]
+      "mots_cles": ["comptage", "entree", "visiteur", "accueil"]
     },
     {
-      "id": "frequentation_mode_admin",
-      "titre": "Mode administrateur sur tablette",
-      "description": "Acceder aux fonctions avancees de la tablette",
+      "id": "stats_frequentation",
+      "titre": "Consulter les statistiques",
+      "description": "Analyser la fréquentation",
       "role_min": "gestionnaire",
       "procedure": [
-        "Sur la tablette, appuyer longuement (3 sec) sur le nom du site",
-        "Saisir le code PIN a 4 chiffres configure pour ce questionnaire",
-        "Le mode admin affiche :",
-        "- Statut de connexion (en ligne/hors ligne)",
-        "- Bouton parametres (pour reconfigurer)",
-        "- Historique des derniers enregistrements",
-        "- Badge indiquant les enregistrements en attente de sync",
-        "Le mode admin expire automatiquement apres 60 secondes",
-        "Cliquer sur le timer pour quitter manuellement"
+        "Aller dans Fréquentation > Statistiques",
+        "Filtrer par période et questionnaire",
+        "Voir le nombre total de visiteurs",
+        "Répartition par genre, âge, provenance",
+        "Évolution dans le temps (graphiques)"
       ],
       "faq": [
         {
-          "question": "J'ai oublie le code PIN, comment faire ?",
-          "reponse": "Modifiez le code PIN depuis l'admin dans Frequentation > Questionnaires > Modifier le questionnaire."
-        },
-        {
-          "question": "Comment forcer la synchronisation ?",
-          "reponse": "En mode admin, cliquez sur le badge 'X en attente' pour declencher une synchronisation manuelle."
+          "question": "Les données sont-elles exportables ?",
+          "reponse": "Oui, en CSV pour analyse dans Excel ou autre outil."
         }
       ],
-      "mots_cles": ["admin", "PIN", "mode", "parametres", "synchronisation"]
+      "mots_cles": ["statistiques", "frequentation", "analyse", "graphique"]
     },
     {
-      "id": "frequentation_statistiques",
-      "titre": "Statistiques de frequentation",
-      "description": "Consulter et exporter les statistiques de frequentation",
-      "role_min": "gestionnaire",
+      "id": "communes_favorites",
+      "titre": "Gérer les communes favorites",
+      "description": "Définir les communes les plus fréquentes",
+      "role_min": "administrateur",
       "procedure": [
-        "Acceder a Frequentation > Statistiques",
-        "Selectionner le questionnaire a analyser",
-        "Definir la periode (jour, semaine, mois, annee, personnalisee)",
-        "Optionnel : filtrer par site pour les questionnaires multi-sites",
-        "Consulter les graphiques :",
-        "- Evolution du nombre de visiteurs",
-        "- Repartition adultes/enfants",
-        "- Top communes d'origine",
-        "- Frequentation par jour de la semaine",
-        "Exporter les donnees en CSV, Excel ou PDF"
+        "Aller dans Fréquentation > Configuration",
+        "Ajouter les communes les plus courantes",
+        "Définir l'ordre d'affichage",
+        "Ces communes apparaîtront en premier dans la liste"
       ],
       "faq": [
         {
-          "question": "Les donnees sont-elles en temps reel ?",
-          "reponse": "Oui, des qu'un enregistrement est synchronise, il apparait dans les statistiques."
-        },
-        {
-          "question": "Puis-je comparer plusieurs periodes ?",
-          "reponse": "Oui, utilisez le selecteur de periode pour afficher des comparaisons (ex: ce mois vs mois precedent)."
+          "question": "Pourquoi des communes favorites ?",
+          "reponse": "Pour accélérer le comptage en présentant les réponses les plus probables en premier."
         }
       ],
-      "mots_cles": ["statistiques", "graphique", "export", "analyse", "rapport"]
-    },
-    {
-      "id": "frequentation_messages",
-      "titre": "Messages personnalises",
-      "description": "Configurer les messages affiches sur les tablettes",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Modifier le questionnaire depuis Frequentation > Questionnaires",
-        "Message d'accueil (formulaire actif) :",
-        "- S'affiche en haut de l'ecran sous le header",
-        "- Utile pour informations, consignes, bienvenue",
-        "- Laisser vide pour ne rien afficher",
-        "Message d'indisponibilite (formulaire inactif) :",
-        "- Remplace tout le formulaire quand inactif",
-        "- Affiche une icone et le message personnalise",
-        "- Message par defaut si non renseigne",
-        "Enregistrer les modifications"
-      ],
-      "faq": [
-        {
-          "question": "Quand le message d'indisponibilite s'affiche-t-il ?",
-          "reponse": "Quand le questionnaire est desactive (actif=non) ou quand la date du jour est hors de la periode de validite."
-        },
-        {
-          "question": "Puis-je utiliser du HTML dans les messages ?",
-          "reponse": "Non, seul le texte brut est affiche pour des raisons de securite."
-        }
-      ],
-      "mots_cles": ["message", "accueil", "indisponible", "personnalisation", "texte"]
-    },
-    {
-      "id": "frequentation_themes",
-      "titre": "Themes d'affichage",
-      "description": "Choisir l'apparence de l'interface tablette",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Modifier le questionnaire depuis Frequentation > Questionnaires",
-        "Dans le champ 'Theme tablette', selectionner :",
-        "- Clair (defaut) : fond clair, couleurs vives",
-        "- Sombre : fond sombre, ideal pour ambiances tamisees",
-        "Le theme s'applique immediatement sur la tablette",
-        "Chaque questionnaire peut avoir son propre theme"
-      ],
-      "faq": [
-        {
-          "question": "Le theme affecte-t-il les performances ?",
-          "reponse": "Non, les deux themes sont optimises pour les tablettes."
-        },
-        {
-          "question": "Puis-je creer un theme personnalise ?",
-          "reponse": "Les fichiers CSS sont dans /tablet/css/. Un developpeur peut creer un theme supplementaire."
-        }
-      ],
-      "mots_cles": ["theme", "clair", "sombre", "apparence", "style"]
+      "mots_cles": ["commune", "provenance", "favorite", "rapide"]
     }
   ]
 }

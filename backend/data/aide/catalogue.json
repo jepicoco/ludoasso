@@ -1,318 +1,145 @@
 {
   "module": "catalogue",
-  "titre": "Gestion du Catalogue",
+  "titre": "Catalogue",
   "icone": "bi-collection",
-  "description": "Module multi-collection pour gérer les jeux de société, livres, films et disques avec recherche EAN/ISBN, import externe (BGG, BNF, TMDB, etc.), et gestion complète des référentiels normalisés",
   "features": [
     {
-      "id": "catalogue_jeux_lister",
-      "titre": "Consulter la liste des jeux",
-      "description": "Affiche tous les jeux de la ludothèque avec filtres (catégorie, statut, âge, nombre de joueurs) et recherche textuelle. Vue tableau ou cartes.",
-      "role_min": "usager",
-      "procedure": [
-        "Accéder à /api/jeux ou interface publique /catalogue.html?type=jeux",
-        "Utiliser les filtres : statut, catégorie, thème, mécanisme, âge minimum, nombre de joueurs",
-        "Saisir une recherche par titre, éditeur, auteur, code-barres ou EAN",
-        "Naviguer avec pagination (50 résultats par défaut)",
-        "Basculer entre vue tableau et vue cartes"
-      ],
-      "faq": [
-        {
-          "question": "Comment filtrer les jeux pour 4 joueurs minimum ?",
-          "reponse": "Utiliser le paramètre ?nb_joueurs=4 dans l'API ou le filtre 'Nombre de joueurs' dans l'interface. Le système affiche les jeux où nb_joueurs_min <= 4 et nb_joueurs_max >= 4."
-        }
-      ],
-      "mots_cles": ["jeux", "ludothèque", "liste", "catalogue", "filtres", "recherche", "BoardGameGeek"]
-    },
-    {
-      "id": "catalogue_jeux_creer",
-      "titre": "Ajouter un jeu",
-      "description": "Créer une nouvelle fiche jeu avec informations complètes : titre, éditeur, auteur, année, joueurs, durée, catégories, thèmes, mécanismes, emplacements, prix, état. Génération automatique de code-barres.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Nouveau jeu' dans l'interface admin (/admin/jeux.html)",
-        "Remplir les champs obligatoires : titre",
-        "Compléter les informations ludiques : âge min, nb joueurs (min/max), durée partie",
-        "Sélectionner catégories, thèmes, mécanismes via multi-select (tables normalisées)",
-        "Ajouter éditeur(s), auteur(s), illustrateur(s) (relations many-to-many)",
-        "Définir emplacement, gamme, état, prix d'achat et indicatif",
-        "Saisir EAN si disponible, sinon le système génère un code-barres unique",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Le code-barres est-il obligatoire ?",
-          "reponse": "Non, si non fourni, un code-barres unique est généré automatiquement par le système (format EAN-13 avec préfixe configurable)."
-        }
-      ],
-      "mots_cles": ["jeu", "créer", "ajouter", "nouveau", "fiche", "code-barres", "EAN"]
-    },
-    {
-      "id": "catalogue_jeux_scan_ean",
-      "titre": "Scanner un code EAN pour créer un jeu",
-      "description": "Rechercher automatiquement les informations d'un jeu via son code-barres EAN/UPC en interrogeant UPCitemdb, BoardGameGeek, Wikiludo et autres APIs externes configurées. Pré-remplissage automatique du formulaire.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Scanner EAN' dans /admin/jeux.html",
-        "Saisir ou scanner le code EAN/UPC du jeu",
-        "Le système interroge les APIs configurées (UPCitemdb, BGG, Wikiludo) selon ordre de priorité",
-        "Si trouvé : affichage des résultats enrichis (titre, éditeur, auteur, année, joueurs, âge, durée, catégories, mécanismes, description, image BGG, note BGG)",
-        "Sélectionner le résultat souhaité si plusieurs suggestions",
-        "Le formulaire de création est pré-rempli avec les données récupérées",
-        "Compléter/corriger les informations manquantes (emplacement, prix d'achat, état)",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si l'EAN n'est pas trouvé ?",
-          "reponse": "Le système retourne un message 'Aucun jeu trouvé'. Vous pouvez alors créer la fiche manuellement ou rechercher par titre."
-        },
-        {
-          "question": "Quelles APIs sont utilisées pour les jeux ?",
-          "reponse": "UPCitemdb (base EAN générique), BoardGameGeek (BGG) pour enrichissement automatique, et Wikiludo (API française). Les APIs sont configurables dans /api/parametres/configurations-api."
-        }
-      ],
-      "mots_cles": ["EAN", "scanner", "UPC", "BoardGameGeek", "BGG", "lookup", "API", "import"]
-    },
-    {
-      "id": "catalogue_livres_lister",
-      "titre": "Consulter la liste des livres",
-      "description": "Affiche tous les livres avec filtres par genre littéraire, format, collection, statut et recherche par titre, sous-titre, ISBN, code-barres. Vue tableau ou cartes.",
-      "role_min": "usager",
-      "procedure": [
-        "Accéder à /api/livres ou interface bibliothèque",
-        "Utiliser les filtres : statut, genre, format, collection",
-        "Rechercher par titre, sous-titre, ISBN, code-barres",
-        "Naviguer avec pagination (50 par défaut)",
-        "Basculer entre vue tableau et cartes"
-      ],
-      "faq": [
-        {
-          "question": "Comment rechercher tous les livres d'une collection ?",
-          "reponse": "Utiliser le filtre ?collection_id=X ou sélectionner la collection dans le menu déroulant. Les collections sont liées aux éditeurs (table collections_livres)."
-        }
-      ],
-      "mots_cles": ["livres", "bibliothèque", "liste", "ISBN", "catalogue"]
-    },
-    {
-      "id": "catalogue_livres_creer",
-      "titre": "Ajouter un livre",
-      "description": "Créer une fiche livre complète avec titre, sous-titre, ISBN, tome, auteurs (avec rôles : auteur, scénariste, dessinateur, coloriste, illustrateur, traducteur, adaptateur, préfacier), éditeurs, genres, thèmes, langues, format, collection, emplacement.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Nouveau livre' dans /admin/livres.html",
-        "Remplir le titre (obligatoire)",
-        "Saisir ISBN, sous-titre, tome, année, nombre de pages, résumé",
-        "Ajouter contributeurs avec rôles via format [{auteur_id: X, role: 'auteur'}] ou [{nouveau: 'Nom', role: 'scénariste'}]",
-        "Sélectionner genres littéraires, thèmes, langues (multi-select normalisé)",
-        "Choisir format (poche, broché, relié, BD, manga), collection, emplacement",
-        "Définir prix indicatif, prix d'achat, état",
-        "Si code_ean non fourni, génération automatique de code-barres",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Comment ajouter un nouveau contributeur (auteur, dessinateur, etc.) ?",
-          "reponse": "Utiliser le format {nouveau: 'Nom du contributeur', role: 'scenariste'}. Le système crée automatiquement l'auteur s'il n'existe pas (findOrCreate) puis l'associe au livre avec le rôle spécifié."
-        },
-        {
-          "question": "Quels sont les rôles disponibles pour les contributeurs ?",
-          "reponse": "auteur, scenariste, dessinateur, coloriste, illustrateur, traducteur, adaptateur, prefacier. Récupérables via /api/livres/roles-contributeurs (table roles_contributeurs_livres)."
-        }
-      ],
-      "mots_cles": ["livre", "créer", "ajouter", "ISBN", "auteur", "contributeur", "BD", "manga"]
-    },
-    {
-      "id": "catalogue_livres_scan_isbn",
-      "titre": "Scanner un ISBN pour créer un livre",
-      "description": "Recherche automatique via ISBN dans OpenLibrary (gratuit), Google Books, BNF (Bibliothèque Nationale de France) avec pré-remplissage du formulaire.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Scanner ISBN' dans /admin/livres.html",
-        "Saisir ou scanner l'ISBN (10 ou 13 chiffres)",
-        "Le système interroge BNF, Google Books, OpenLibrary selon priorité configurée",
-        "Si trouvé : affichage titre, auteurs, éditeur, année, nombre de pages, genres/sujets, description, image de couverture",
-        "Sélectionner le résultat si plusieurs propositions",
-        "Le formulaire est pré-rempli automatiquement",
-        "Compléter emplacement, format, prix, état",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Quelles APIs sont utilisées pour les livres ?",
-          "reponse": "BNF (gratuit, API SRU data.bnf.fr), Google Books (optionnel avec clé API), OpenLibrary (gratuit). BNF est privilégié pour les livres français."
-        }
-      ],
-      "mots_cles": ["ISBN", "scanner", "BNF", "Google Books", "OpenLibrary", "lookup"]
-    },
-    {
-      "id": "catalogue_films_lister",
-      "titre": "Consulter la liste des films",
-      "description": "Affiche tous les films avec filtres par genre, support vidéo (DVD, Blu-ray, VHS), réalisateur, acteur, studio, classification (-10, -12, -16, -18, TP), année. Recherche par titre, titre original, code-barres, EAN.",
-      "role_min": "usager",
-      "procedure": [
-        "Accéder à /api/films (nécessite authentification)",
-        "Utiliser filtres : genre, support, réalisateur, acteur, studio, classification, statut, année (min/max)",
-        "Rechercher par titre, titre_original, code_barre, EAN",
-        "Naviguer avec pagination (50 par défaut)",
-        "Trier par titre, année (ordre ASC/DESC)"
-      ],
-      "faq": [
-        {
-          "question": "Comment filtrer par classification d'âge ?",
-          "reponse": "Utiliser ?classification=-12 ou sélectionner dans le menu déroulant. Valeurs : TP (Tout Public), -10, -12, -16, -18."
-        }
-      ],
-      "mots_cles": ["films", "filmothèque", "liste", "DVD", "Blu-ray", "catalogue"]
-    },
-    {
-      "id": "catalogue_films_creer",
-      "titre": "Ajouter un film",
-      "description": "Créer une fiche film complète avec titre, titre original, réalisateurs, acteurs (avec rôle), genres, studios, année, durée, classification, support vidéo, langues, sous-titres, thèmes, synopsis, emplacement.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Nouveau film' dans /admin/films.html",
-        "Remplir titre, titre_original, année_sortie, duree (minutes)",
-        "Sélectionner réalisateur(s) (many-to-many)",
-        "Ajouter acteurs avec rôles via [{id: X, role: 'Personnage'}]",
-        "Choisir genres, studios (many-to-many)",
-        "Sélectionner support vidéo (DVD, Blu-ray, VHS, 4K UHD)",
-        "Définir classification (-10, -12, -16, -18, TP)",
-        "Ajouter langues et sous-titres (tables normalisées)",
-        "Saisir synopsis, image_url, emplacement, prix, état",
-        "Valider la création avec transaction Sequelize"
-      ],
-      "faq": [
-        {
-          "question": "Comment associer un acteur avec son rôle dans le film ?",
-          "reponse": "Passer acteurs: [{id: acteurId, role: 'Nom du personnage'}]. Le système crée une entrée dans film_acteurs avec le champ role."
-        }
-      ],
-      "mots_cles": ["film", "créer", "ajouter", "réalisateur", "acteur", "DVD", "Blu-ray"]
-    },
-    {
-      "id": "catalogue_films_scan_ean",
-      "titre": "Scanner un EAN pour créer un film",
-      "description": "Recherche automatique via EAN puis enrichissement TMDB (The Movie Database) avec pré-remplissage titre, réalisateurs, acteurs, genres, synopsis, année, durée, image.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Scanner EAN' dans /admin/films.html",
-        "Saisir ou scanner l'EAN du DVD/Blu-ray",
-        "Le système interroge UPCitemdb puis TMDB (nécessite clé API)",
-        "TMDB retourne : titre français/original, synopsis, réalisateurs, acteurs (top 10), genres, année, durée, pays, note, poster",
-        "Sélectionner le résultat",
-        "Le formulaire est pré-rempli",
-        "Compléter support vidéo, emplacement, classification, prix, état",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "TMDB est-il obligatoire ?",
-          "reponse": "Oui pour les films. TMDB nécessite une clé API gratuite (configurable dans /api/parametres/configurations-api). Sans clé, seul UPCitemdb fonctionne (infos basiques)."
-        }
-      ],
-      "mots_cles": ["EAN", "scanner", "TMDB", "film", "lookup", "API"]
-    },
-    {
-      "id": "catalogue_disques_lister",
-      "titre": "Consulter la liste des disques",
-      "description": "Affiche tous les disques (vinyles, CD, cassettes) avec filtres par genre musical, format, artiste, statut, année. Recherche par titre, titre original, code-barres, EAN.",
-      "role_min": "usager",
-      "procedure": [
-        "Accéder à /api/disques (nécessite authentification)",
-        "Utiliser filtres : genre, format, artiste, statut, année",
-        "Rechercher par titre, titre_original, code_barre, EAN",
-        "Naviguer avec pagination (20 par défaut)",
-        "Trier par titre ASC"
-      ],
-      "faq": [],
-      "mots_cles": ["disques", "discothèque", "vinyles", "CD", "musique", "catalogue"]
-    },
-    {
-      "id": "catalogue_disques_creer",
-      "titre": "Ajouter un disque",
-      "description": "Créer une fiche disque avec titre, titre original, artistes (avec rôle : principal, featuring, producteur), genres musicaux, label, format (vinyle 33T/45T, CD, cassette, numérique), année, nombre de pistes, durée totale, emplacement.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Nouveau disque' dans /admin/disques.html",
-        "Remplir titre, titre_original, annee_sortie, nb_pistes, duree_totale",
-        "Ajouter artistes avec rôles via [{id: X, role: 'principal'}]",
-        "Sélectionner genres musicaux (many-to-many)",
-        "Choisir format, label, emplacement",
-        "Saisir EAN, catalogue_number, description, image_url",
-        "Définir prix, état",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Comment associer un artiste avec son rôle ?",
-          "reponse": "Passer artistes: [{id: artisteId, role: 'principal'}]. Le système crée une entrée dans disque_artistes avec le champ role. Rôles typiques : principal, featuring, producteur, compositeur."
-        }
-      ],
-      "mots_cles": ["disque", "créer", "ajouter", "artiste", "vinyle", "CD", "album"]
-    },
-    {
-      "id": "catalogue_disques_scan_ean",
-      "titre": "Scanner un EAN pour créer un disque",
-      "description": "Recherche automatique via EAN dans MusicBrainz (gratuit, limite 1 req/sec) ou Discogs (nécessite token) avec pré-remplissage titre, artistes, label, année, format, pistes.",
-      "role_min": "benevole",
-      "procedure": [
-        "Cliquer sur 'Scanner EAN' dans /admin/disques.html",
-        "Saisir ou scanner l'EAN/code-barres du disque",
-        "Le système interroge MusicBrainz puis Discogs selon configuration",
-        "Si trouvé : titre, artistes, label, année, pays, format, nombre de pistes, liste des pistes (position, titre, durée)",
-        "Sélectionner le résultat",
-        "Le formulaire est pré-rempli",
-        "Compléter emplacement, prix, état",
-        "Valider la création"
-      ],
-      "faq": [
-        {
-          "question": "Quelle est la différence entre MusicBrainz et Discogs ?",
-          "reponse": "MusicBrainz est gratuit mais limité à 1 requête/seconde (rate limit géré par rateLimitPause()). Discogs nécessite un token API mais offre plus de détails (images, marketplace). Les deux sont configurables."
-        }
-      ],
-      "mots_cles": ["EAN", "scanner", "MusicBrainz", "Discogs", "disque", "lookup"]
-    },
-    {
-      "id": "catalogue_ean_configuration",
-      "titre": "Configurer les APIs EAN/ISBN",
-      "description": "Configuration centralisée des providers externes (UPCitemdb, BGG, Wikiludo, BNF, Google Books, OpenLibrary, TMDB, MusicBrainz, Discogs) avec clés API chiffrées AES-256, priorité, rate limiting, collections supportées.",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à /api/parametres/configurations-api",
-        "Créer une configuration : provider (upcitemdb/bgg/bnf/tmdb/etc.), libelle, api_key (chiffré automatiquement), collections_supportees (['jeu', 'livre', 'film', 'disque']), priorite (ordre d'interrogation), limite_requetes_jour, limite_requetes_heure",
-        "Activer/désactiver via actif: true/false",
-        "Le système utilise getByType('ean_lookup', true) pour récupérer les configs actives triées par priorité",
-        "Rate limiting automatique : peutFaireRequete() vérifie les compteurs, incrementerCompteur() enregistre chaque appel",
-        "Monitoring : compteur_requetes_jour, compteur_requetes_heure, derniere_requete, dernier_succes, statut"
-      ],
-      "faq": [
-        {
-          "question": "Comment fonctionne le chiffrement des clés API ?",
-          "reponse": "AES-256-CBC avec EMAIL_ENCRYPTION_KEY (32+ chars). Les clés sont chiffrées avant stockage (setApiKey()), déchiffrées à l'usage (getDecryptedApiKey()). Jamais stockées en clair en DB."
-        }
-      ],
-      "mots_cles": ["EAN", "ISBN", "API", "configuration", "UPCitemdb", "BGG", "TMDB", "BNF", "rate limiting"]
-    },
-    {
-      "id": "catalogue_emplacements",
-      "titre": "Gérer les emplacements physiques",
-      "description": "Tables emplacements_jeux, emplacements_livres, emplacements_films, emplacements_disques avec libelle, code, description, icône, couleur. Facilite le rangement et la localisation.",
+      "id": "article_creation",
+      "titre": "Ajouter un article",
+      "description": "Créer un nouveau jeu, livre, film ou disque dans le catalogue",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder aux référentiels emplacements pour chaque collection",
-        "Créer emplacement : libelle ('Étagère A1'), code ('A1'), description, icone (ex: 'fa-shelf'), couleur (hex)",
-        "Associer articles à l'emplacement via emplacement_id",
-        "Utiliser pour impression étiquettes, plan interactif (si module activé)"
+        "Aller dans le module correspondant (Jeux, Livres, Films ou Disques)",
+        "Cliquer sur 'Ajouter' ou 'Nouveau'",
+        "Renseigner le titre (obligatoire)",
+        "Optionnel : Scanner ou saisir le code-barre EAN-13",
+        "Compléter les métadonnées : auteur/éditeur, année, catégories",
+        "Définir l'emplacement dans la structure",
+        "Ajouter une image de couverture (URL ou upload)",
+        "Cliquer 'Enregistrer'"
       ],
       "faq": [
         {
-          "question": "Les emplacements sont-ils partagés entre collections ?",
-          "reponse": "Non, chaque collection a sa propre table d'emplacements. Cela permet une gestion indépendante (jeux vs livres ont des systèmes de rangement différents)."
+          "question": "Le code-barre peut-il être généré automatiquement ?",
+          "reponse": "Oui, si vous ne saisissez pas de code-barre, le système peut en générer un selon la configuration."
+        },
+        {
+          "question": "Comment ajouter plusieurs exemplaires ?",
+          "reponse": "Après création de l'article, utilisez 'Ajouter exemplaire' dans le détail pour créer des copies avec leurs propres codes-barres."
         }
       ],
-      "mots_cles": ["emplacements", "rangement", "localisation", "étagères"]
+      "mots_cles": ["creation", "nouveau", "ajouter", "article", "jeu", "livre", "film", "disque"]
+    },
+    {
+      "id": "article_enrichissement",
+      "titre": "Enrichir les métadonnées",
+      "description": "Compléter automatiquement les informations via des APIs externes",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Ouvrir la fiche de l'article",
+        "Cliquer sur 'Enrichir' ou 'Rechercher métadonnées'",
+        "Le système interroge les APIs configurées (BGG, OpenLibrary, TMDB...)",
+        "Vérifier et valider les informations récupérées",
+        "Les champs sont mis à jour automatiquement"
+      ],
+      "faq": [
+        {
+          "question": "Quelles APIs sont utilisées ?",
+          "reponse": "Selon le type : BoardGameGeek pour les jeux, OpenLibrary/BNF pour les livres, TMDB pour les films, MusicBrainz pour les disques."
+        },
+        {
+          "question": "Les données sont-elles fiables ?",
+          "reponse": "Elles proviennent de sources communautaires reconnues. Vérifiez toujours avant validation."
+        }
+      ],
+      "mots_cles": ["enrichissement", "metadonnees", "api", "automatique", "bgg", "tmdb"]
+    },
+    {
+      "id": "article_exemplaires",
+      "titre": "Gérer les exemplaires",
+      "description": "Ajouter ou modifier des copies physiques d'un même article",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Ouvrir la fiche de l'article",
+        "Aller dans la section 'Exemplaires'",
+        "Cliquer 'Ajouter exemplaire'",
+        "Définir un code-barre unique pour cet exemplaire",
+        "Indiquer l'état physique (Neuf, Bon, Usé...)",
+        "Préciser l'emplacement si différent",
+        "Enregistrer"
+      ],
+      "faq": [
+        {
+          "question": "Pourquoi plusieurs exemplaires ?",
+          "reponse": "Permet d'avoir plusieurs copies d'un même titre, chacune avec son propre statut d'emprunt."
+        }
+      ],
+      "mots_cles": ["exemplaire", "copie", "duplicata", "multiple"]
+    },
+    {
+      "id": "article_recherche",
+      "titre": "Rechercher un article",
+      "description": "Trouver un article dans le catalogue",
+      "role_min": "benevole",
+      "procedure": [
+        "Utiliser la barre de recherche",
+        "Saisir le titre, l'auteur ou le code-barre",
+        "Appliquer les filtres : catégorie, statut, emplacement, état",
+        "Cliquer sur un résultat pour voir le détail"
+      ],
+      "faq": [
+        {
+          "question": "La recherche intelligente est-elle disponible ?",
+          "reponse": "Oui, si le module IA est activé, vous pouvez faire des recherches en langage naturel."
+        }
+      ],
+      "mots_cles": ["recherche", "trouver", "chercher", "filtre"]
+    },
+    {
+      "id": "article_statuts",
+      "titre": "Comprendre les statuts",
+      "description": "Signification des différents états d'un article",
+      "role_min": "benevole",
+      "procedure": [
+        "Disponible : L'article peut être emprunté",
+        "Emprunté : L'article est actuellement prêté",
+        "Réservé : L'article a des réservations en attente",
+        "Indisponible : L'article est temporairement hors circulation (réparation...)",
+        "Déclaré perdu : L'article n'est plus disponible"
+      ],
+      "faq": [
+        {
+          "question": "Comment rendre un article à nouveau disponible ?",
+          "reponse": "Modifiez son statut de 'Indisponible' à 'Disponible' dans la fiche article."
+        }
+      ],
+      "mots_cles": ["statut", "disponible", "emprunte", "reserve", "indisponible", "perdu"]
+    },
+    {
+      "id": "import_articles",
+      "titre": "Importer des articles",
+      "description": "Ajouter des articles en masse via fichier",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Aller dans 'Import' du module concerné",
+        "Sélectionner le format : ISO 2709 (MARC/UNIMARC) pour livres, CSV pour autres",
+        "Charger le fichier",
+        "Résoudre les conflits (auteurs/catégories inconnus)",
+        "Vérifier l'aperçu",
+        "Lancer l'import",
+        "Suivre la progression en temps réel"
+      ],
+      "faq": [
+        {
+          "question": "D'où viennent les fichiers ISO 2709 ?",
+          "reponse": "Exports de la BNF, Sudoc, ou d'autres logiciels de bibliothèque."
+        },
+        {
+          "question": "Peut-on annuler un import ?",
+          "reponse": "Un rollback est possible immédiatement après l'import si des erreurs sont détectées."
+        }
+      ],
+      "mots_cles": ["import", "iso2709", "marc", "unimarc", "csv", "masse", "batch"]
     }
   ]
 }

@@ -2,294 +2,156 @@
   "module": "communications",
   "titre": "Communications",
   "icone": "bi-envelope",
-  "description": "Module de gestion des communications automatisées par email et SMS avec templates personnalisables, déclencheurs d'événements et journalisation complète des envois",
   "features": [
     {
-      "id": "comm_email_config",
-      "titre": "Configuration Email SMTP",
-      "description": "Configuration de serveurs SMTP pour l'envoi d'emails automatiques. Supporte plusieurs configurations avec mot de passe chiffré AES-256-CBC, test de connexion et email de test.",
+      "id": "config_email",
+      "titre": "Configurer le serveur email",
+      "description": "Paramétrer le serveur SMTP pour l'envoi d'emails",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Services externes > Email",
-        "Cliquer sur 'Ajouter une configuration'",
-        "Renseigner le libellé (ex: 'SMTP Principal')",
-        "Configurer le serveur SMTP: hôte, port (587/465/25), utilisateur, mot de passe",
-        "Configurer l'expéditeur: email et nom",
-        "Cocher 'Connexion sécurisée (TLS/SSL)' si nécessaire",
-        "Tester la connexion avant de sauvegarder",
-        "Définir comme configuration par défaut si souhaité",
-        "Enregistrer - le mot de passe est automatiquement chiffré (AES-256-CBC)"
+        "Aller dans Paramètres > Communications > Configuration Email",
+        "Cliquer 'Nouvelle configuration'",
+        "Renseigner le nom et l'adresse expéditeur",
+        "Configurer le serveur SMTP : host, port, utilisateur, mot de passe",
+        "Tester la connexion",
+        "Envoyer un email de test",
+        "Définir comme configuration par défaut si souhaité"
       ],
       "faq": [
         {
-          "question": "Quels ports SMTP utiliser ?",
-          "reponse": "Port 587 pour TLS (recommandé), port 465 pour SSL, port 25 non sécurisé (déconseillé). Le port 587 active automatiquement STARTTLS."
+          "question": "Quels serveurs SMTP sont supportés ?",
+          "reponse": "Tous : Gmail, Office 365, OVH, Brevo, Amazon SES, serveurs personnels..."
         },
         {
-          "question": "Le mot de passe est-il sécurisé ?",
-          "reponse": "Oui, les mots de passe SMTP sont chiffrés avec AES-256-CBC avant stockage en base de données. La clé de chiffrement est définie dans EMAIL_ENCRYPTION_KEY (variable d'environnement)."
-        },
-        {
-          "question": "Comment tester la configuration ?",
-          "reponse": "Utilisez 'Tester la connexion' dans le modal ou envoyez un email de test à une adresse spécifique via le bouton 'Test' sur la carte de configuration."
-        },
-        {
-          "question": "Peut-on avoir plusieurs configurations ?",
-          "reponse": "Oui, vous pouvez créer plusieurs configurations SMTP. Une seule peut être définie comme 'par défaut' et sera utilisée pour tous les envois automatiques."
+          "question": "Les mots de passe sont-ils sécurisés ?",
+          "reponse": "Oui, chiffrés en AES-256-CBC. Jamais affichés en clair après enregistrement."
         }
       ],
-      "mots_cles": ["email", "SMTP", "configuration", "chiffrement", "nodemailer", "TLS", "SSL", "serveur mail"]
+      "mots_cles": ["email", "smtp", "configuration", "serveur", "connexion"]
     },
     {
-      "id": "comm_sms_config",
-      "titre": "Configuration SMS",
-      "description": "Configuration de fournisseurs SMS pour l'envoi de notifications par SMS. Supporte SMSFactor, OVH SMS, Twilio avec token API chiffré, gestion des crédits et envoi de SMS de test.",
+      "id": "config_sms",
+      "titre": "Configurer les SMS",
+      "description": "Paramétrer un fournisseur SMS",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Services externes > SMS",
-        "Cliquer sur 'Ajouter une configuration'",
-        "Renseigner le libellé (ex: 'SMS Principal')",
-        "Choisir le fournisseur: SMSFactor, OVH SMS ou Twilio",
-        "Renseigner le token API (chiffré automatiquement)",
-        "Définir le nom d'expéditeur (11 caractères max, sans espaces)",
-        "Enregistrer et tester la connexion",
-        "Vérifier les crédits restants via le bouton de rafraîchissement"
+        "Aller dans Paramètres > Communications > Configuration SMS",
+        "Cliquer 'Nouvelle configuration'",
+        "Sélectionner le fournisseur : SMSFactor, Brevo, Twilio, OVH...",
+        "Renseigner les identifiants API",
+        "Définir le nom d'expéditeur (11 caractères max)",
+        "Tester la connexion",
+        "Vérifier les crédits disponibles"
       ],
       "faq": [
         {
-          "question": "Quels fournisseurs SMS sont supportés ?",
-          "reponse": "SMSFactor (par défaut), OVH SMS et Twilio. Chaque fournisseur nécessite des identifiants API spécifiques (token, clés, SID selon le provider)."
+          "question": "Les SMS sont-ils payants ?",
+          "reponse": "Oui, les SMS consomment des crédits achetés auprès du fournisseur."
         },
         {
-          "question": "Comment voir mes crédits SMS restants ?",
-          "reponse": "Cliquez sur le bouton de rafraîchissement (icône flèche circulaire) sur la carte de configuration. Les crédits sont affichés avec un code couleur (rouge<10, jaune<50, vert>=50)."
-        },
-        {
-          "question": "Quelle est la limite du nom d'expéditeur ?",
-          "reponse": "Le nom d'expéditeur est limité à 11 caractères maximum, sans espaces ni caractères spéciaux. Exemple: LUDOTHEQUE, MALUDOBIB."
+          "question": "Comment suivre la consommation ?",
+          "reponse": "Le compteur de crédits est visible dans la configuration et les statistiques."
         }
       ],
-      "mots_cles": ["sms", "SMSFactor", "Twilio", "OVH", "notification", "mobile", "crédits", "token API"]
+      "mots_cles": ["sms", "configuration", "fournisseur", "credits", "api"]
     },
     {
-      "id": "comm_templates",
-      "titre": "Templates de messages",
-      "description": "Création et gestion de templates personnalisables pour les emails et SMS avec système de variables, éditeur WYSIWYG pour emails, prévisualisation et catégorisation.",
-      "role_min": "gestionnaire",
+      "id": "template_creation",
+      "titre": "Créer un template de message",
+      "description": "Définir un modèle de message réutilisable",
+      "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Communication > Templates",
-        "Cliquer sur 'Nouveau template'",
-        "Définir un code technique unique en MAJUSCULES (ex: WELCOME_EMAIL)",
-        "Choisir le type: Email, SMS ou Both",
-        "Sélectionner la catégorie: Adhésion, Emprunt, Relance, Notification",
-        "Pour Email: renseigner l'objet et le corps (éditeur HTML Quill)",
-        "Pour SMS: renseigner le corps (max 480 caractères = 3 SMS)",
-        "Utiliser les variables disponibles en cliquant dessus ({{prenom}}, {{nom}}, etc.)",
-        "Prévisualiser le template avec des données de test",
-        "Activer le template et enregistrer"
+        "Aller dans Paramètres > Communications > Templates",
+        "Cliquer 'Nouveau template'",
+        "Définir le code unique et le libellé",
+        "Choisir le type : EMAIL, SMS, ou EMAIL_ET_SMS",
+        "Rédiger le sujet (email) et le corps du message",
+        "Utiliser les variables : {{prenom}}, {{nom}}, {{date_retour}}...",
+        "Tester avec un aperçu",
+        "Activer le template"
       ],
       "faq": [
         {
           "question": "Quelles variables sont disponibles ?",
-          "reponse": "Variables disponibles: {{prenom}}, {{nom}}, {{email}}, {{telephone}}, {{code_barre}}, {{date_adhesion}}, {{jeu_titre}}, {{date_retour_prevue}}, {{montant}}, {{structure_nom}}, {{structure_email}}, {{date_jour}}, etc."
+          "reponse": "{{prenom}}, {{nom}}, {{email}}, {{telephone}}, {{code_barre}}, {{titre_article}}, {{date_retour}}, {{montant}}, etc."
         },
         {
-          "question": "Comment utiliser les variables ?",
-          "reponse": "Cliquez sur la variable souhaitée dans la liste pour l'insérer automatiquement dans le template. La syntaxe est {{nom_variable}}. Les variables sont remplacées lors de l'envoi."
-        },
-        {
-          "question": "Quelle est la limite pour les SMS ?",
-          "reponse": "Un SMS fait 160 caractères. Le template SMS peut contenir jusqu'à 480 caractères (3 SMS). Un compteur en temps réel affiche le nombre de caractères utilisés."
-        },
-        {
-          "question": "Peut-on dupliquer un template ?",
-          "reponse": "Oui, utilisez le bouton 'Dupliquer' sur un template existant. Vous devez fournir un nouveau code unique. Le template dupliqué est inactif par défaut."
+          "question": "Le HTML est-il supporté dans les emails ?",
+          "reponse": "Oui, vous pouvez utiliser du HTML pour la mise en forme."
         }
       ],
-      "mots_cles": ["template", "modèle", "email", "sms", "variables", "personnalisation", "WYSIWYG", "Quill"]
+      "mots_cles": ["template", "modele", "message", "variable", "personnalisation"]
     },
     {
-      "id": "comm_triggers",
-      "titre": "Déclencheurs d'événements",
-      "description": "Configuration des déclencheurs automatiques pour l'envoi d'emails et SMS lors d'événements spécifiques (création adhérent, emprunt, retour, cotisation, etc.) avec conditions d'envoi personnalisables.",
+      "id": "declencheur_configuration",
+      "titre": "Configurer les déclencheurs",
+      "description": "Automatiser l'envoi de messages sur événements",
       "role_min": "administrateur",
       "procedure": [
-        "Les déclencheurs sont préconfigurés avec des codes système",
-        "Accéder aux déclencheurs d'événements dans l'interface",
-        "Sélectionner un déclencheur (ex: ADHERENT_CREATED, EMPRUNT_CREATED)",
-        "Activer/désactiver l'envoi par Email avec le toggle Email",
-        "Activer/désactiver l'envoi par SMS avec le toggle SMS",
-        "Associer un template email via template_email_code",
-        "Associer un template SMS via template_sms_code",
-        "Définir un délai d'envoi en minutes (0 = immédiat)",
-        "Configurer une condition d'envoi JSON optionnelle"
+        "Aller dans Paramètres > Communications > Événements",
+        "Sélectionner l'événement à configurer",
+        "Activer l'événement",
+        "Associer un template email et/ou SMS",
+        "Définir le délai si applicable (J-7, J-1, J+3...)",
+        "Configurer les conditions si disponibles",
+        "Tester l'envoi"
       ],
       "faq": [
         {
-          "question": "Quels sont les événements déclenchables ?",
-          "reponse": "Événements disponibles: ADHERENT_CREATED, ADHERENT_UPDATED, ADHERENT_SUSPENDED, EMPRUNT_CREATED, EMPRUNT_RETURNED, EMPRUNT_RAPPEL_AVANT (J-3), EMPRUNT_RAPPEL_ECHEANCE (J), EMPRUNT_RELANCE_RETARD, COTISATION_CREATED, COTISATION_RAPPEL."
+          "question": "Quels événements sont disponibles ?",
+          "reponse": "Création usager, cotisation, emprunt, rappels avant/après échéance, réservation prête, etc."
         },
         {
-          "question": "Comment fonctionne le délai d'envoi ?",
-          "reponse": "Le délai est en minutes. 0 = envoi immédiat, 60 = envoi après 1h, 1440 = envoi après 24h. Utile pour les rappels programmés."
-        },
-        {
-          "question": "Qu'est-ce qu'une condition d'envoi ?",
-          "reponse": "C'est un objet JSON qui permet de conditionner l'envoi. Format: {\"field\": \"value\"} ou {\"field\": {\"value\": X, \"operator\": \"eq|ne|gt|lt\"}}. Exemple: {\"adherent.actif\": true} pour envoyer seulement si l'adhérent est actif."
-        },
-        {
-          "question": "Peut-on envoyer email ET SMS simultanément ?",
-          "reponse": "Oui, activez les deux toggles (Email et SMS) sur le même déclencheur. Les deux communications seront envoyées lors de l'événement si les templates sont configurés."
+          "question": "Les emails sont-ils envoyés immédiatement ?",
+          "reponse": "Pour les événements immédiats oui. Les rappels sont traités par une tâche planifiée."
         }
       ],
-      "mots_cles": ["déclencheur", "événement", "automatisation", "trigger", "workflow", "condition", "rappel"]
+      "mots_cles": ["declencheur", "evenement", "automatique", "notification"]
     },
     {
-      "id": "comm_logs_email",
-      "titre": "Journalisation des emails",
-      "description": "Suivi complet de tous les emails envoyés avec statut (envoyé/erreur/en_attente), message_id SMTP, erreurs détaillées, métadonnées et liaisons avec les entités (utilisateur, emprunt, cotisation).",
+      "id": "envoi_manuel",
+      "titre": "Envoyer un message manuellement",
+      "description": "Contacter un usager directement",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à l'historique des emails",
-        "Consulter la liste des emails envoyés avec filtres",
-        "Vérifier le statut: vert (envoyé), rouge (erreur), jaune (en attente)",
-        "Cliquer sur un email pour voir les détails complets",
-        "Consulter le template utilisé, le destinataire, le message_id",
-        "En cas d'erreur, consulter le message d'erreur détaillé"
+        "Ouvrir la fiche de l'usager",
+        "Aller dans les actions ou l'onglet Communications",
+        "Cliquer 'Envoyer email' ou 'Envoyer SMS'",
+        "Choisir un template ou rédiger un message libre",
+        "Vérifier l'aperçu avec les variables remplacées",
+        "Cliquer 'Envoyer'"
       ],
       "faq": [
         {
-          "question": "Que signifie le statut 'en_attente' ?",
-          "reponse": "L'email a été créé dans la file d'envoi mais n'a pas encore été transmis au serveur SMTP. Cela peut indiquer un problème de connexion ou de configuration."
-        },
-        {
-          "question": "Qu'est-ce que le message_id ?",
-          "reponse": "C'est l'identifiant unique retourné par le serveur SMTP après envoi réussi. Il permet de tracer l'email dans les logs du serveur."
-        },
-        {
-          "question": "Combien de temps sont conservés les logs ?",
-          "reponse": "Les logs sont conservés indéfiniment sauf configuration de purge personnalisée. Ils peuvent être filtrés par date, statut, template ou destinataire."
+          "question": "Peut-on envoyer à plusieurs usagers ?",
+          "reponse": "Oui, via la sélection multiple dans la liste des usagers."
         }
       ],
-      "mots_cles": ["log", "historique", "email", "traçabilité", "audit", "message_id", "erreur"]
+      "mots_cles": ["envoi", "manuel", "email", "sms", "contact"]
     },
     {
-      "id": "comm_logs_sms",
-      "titre": "Journalisation des SMS",
-      "description": "Suivi détaillé de tous les SMS envoyés avec statut de livraison, nombre de segments, coût estimé, provider utilisé, erreurs et métadonnées complètes.",
+      "id": "historique_consultation",
+      "titre": "Consulter l'historique",
+      "description": "Voir les messages envoyés et leur statut",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à l'historique des SMS",
-        "Consulter la liste des SMS envoyés avec filtres",
-        "Vérifier le statut: envoyé, delivré, erreur, echec_livraison",
-        "Consulter le nombre de segments (1 SMS = 160 chars)",
-        "Vérifier le coût estimé par SMS",
-        "En cas d'erreur, consulter le code et message d'erreur"
+        "Aller dans Communications > Historique",
+        "Filtrer par type (Email/SMS), période, destinataire",
+        "Voir le statut de chaque envoi (Envoyé, Échec)",
+        "Cliquer sur un message pour voir les détails",
+        "En cas d'échec, voir la raison de l'erreur"
       ],
       "faq": [
         {
-          "question": "Quelle est la différence entre 'envoyé' et 'delivré' ?",
-          "reponse": "'Envoyé' signifie que le SMS a été transmis au provider. 'Delivré' signifie que le SMS a été reçu par le téléphone du destinataire (confirmation de livraison)."
+          "question": "Peut-on renvoyer un message échoué ?",
+          "reponse": "Oui, cliquez sur 'Renvoyer' dans le détail du message."
         },
         {
-          "question": "Comment est calculé le nombre de segments ?",
-          "reponse": "1 segment = 160 caractères. Un SMS de 161-320 caractères = 2 segments, 321-480 = 3 segments. Le coût est proportionnel au nombre de segments."
-        },
-        {
-          "question": "Le coût affiché est-il exact ?",
-          "reponse": "C'est une estimation basée sur le nombre de segments et le tarif du provider. Le coût réel peut varier selon le pays de destination et le type de numéro."
+          "question": "L'historique est-il conservé combien de temps ?",
+          "reponse": "Configurable. Par défaut, les données sensibles sont réduites après 30 jours."
         }
       ],
-      "mots_cles": ["log", "historique", "sms", "livraison", "segments", "coût", "provider", "erreur"]
-    },
-    {
-      "id": "comm_variables",
-      "titre": "Variables de templates",
-      "description": "Système complet de variables dynamiques pour personnaliser les messages avec informations utilisateur, emprunt, cotisation, structure et système. Support des listes d'emprunts formatées en HTML et SMS.",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Utiliser la syntaxe {{nom_variable}} dans les templates",
-        "Les variables sont automatiquement remplacées lors de l'envoi",
-        "Les variables manquantes sont remplacées par une chaîne vide"
-      ],
-      "faq": [
-        {
-          "question": "Quelles sont les variables utilisateur disponibles ?",
-          "reponse": "{{prenom}}, {{nom}}, {{email}}, {{telephone}}, {{code_barre}}, {{date_adhesion}}, {{adresse}}, {{ville}}, {{code_postal}}"
-        },
-        {
-          "question": "Quelles sont les variables d'emprunt ?",
-          "reponse": "{{jeu_titre}}, {{editeur}}, {{date_emprunt}}, {{date_retour_prevue}}, {{jours_retard}}, {{jeux_en_cours}} (tableau HTML/liste SMS), {{jeux_non_rendus}} (jeux en retard), {{nb_jeux_en_cours}}, {{nb_jeux_non_rendus}}"
-        },
-        {
-          "question": "Quelles sont les variables de cotisation ?",
-          "reponse": "{{montant}}, {{date_debut}}, {{date_fin}}, {{mode_paiement}}, {{tarif_libelle}}"
-        },
-        {
-          "question": "Quelles sont les variables de structure ?",
-          "reponse": "{{structure_nom}}, {{structure_adresse}}, {{structure_email}}, {{structure_telephone}} (depuis les variables d'environnement ou paramètres)"
-        },
-        {
-          "question": "Comment fonctionnent les listes d'emprunts ?",
-          "reponse": "{{jeux_en_cours}} génère un tableau HTML pour email ou une liste texte pour SMS avec titre du jeu et date de retour prévue. {{jeux_non_rendus}} affiche uniquement les jeux en retard avec jours de retard."
-        }
-      ],
-      "mots_cles": ["variables", "personnalisation", "template", "dynamique", "substitution", "données"]
-    },
-    {
-      "id": "comm_module_actif",
-      "titre": "Activation du module Communications",
-      "description": "Le module Communications peut être activé/désactivé globalement via la table ModuleActif. Lorsque désactivé, tous les envois d'emails et SMS sont bloqués pour des raisons de maintenance ou de mise en pause temporaire.",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Modules actifs",
-        "Localiser le module 'communications'",
-        "Utiliser le toggle pour activer/désactiver",
-        "Lorsque désactivé: tous les envois sont bloqués avec message d'erreur explicite"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si le module est désactivé ?",
-          "reponse": "Tous les appels à emailService.sendEmail() et smsService.sendSMS() lèvent une erreur 'Module Communications désactivé'. Les déclencheurs automatiques ne s'exécutent pas."
-        },
-        {
-          "question": "Pourquoi désactiver le module ?",
-          "reponse": "Utile pour la maintenance, les tests, ou suspendre temporairement toutes les communications sans modifier les configurations individuelles."
-        },
-        {
-          "question": "Les configurations sont-elles conservées ?",
-          "reponse": "Oui, toutes les configurations (email, SMS, templates, déclencheurs) restent intactes. Seul l'envoi effectif est bloqué."
-        }
-      ],
-      "mots_cles": ["module", "activation", "maintenance", "suspension", "désactivation"]
-    },
-    {
-      "id": "comm_encryption",
-      "titre": "Chiffrement des secrets",
-      "description": "Les mots de passe SMTP et tokens API SMS sont chiffrés avec AES-256-CBC avant stockage en base de données. La clé de chiffrement est définie dans EMAIL_ENCRYPTION_KEY (32 bytes = 64 caractères hexadécimaux).",
-      "role_min": "administrateur",
-      "procedure": [
-        "Générer une clé de 32 bytes: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
-        "Définir EMAIL_ENCRYPTION_KEY dans le fichier .env",
-        "Le serveur valide la longueur au démarrage (32 bytes requis)",
-        "Les mots de passe/tokens sont automatiquement chiffrés à la création/modification",
-        "Format stocké: iv:encryptedData (hexadécimal)"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si la clé est invalide ?",
-          "reponse": "Au démarrage, si EMAIL_ENCRYPTION_KEY n'est pas 32 bytes, un avertissement est affiché. Le chiffrement/déchiffrement échouera."
-        },
-        {
-          "question": "Peut-on changer la clé de chiffrement ?",
-          "reponse": "Non sans re-chiffrer toutes les données existantes. Il faut re-saisir tous les mots de passe/tokens après changement de clé."
-        },
-        {
-          "question": "Les secrets sont-ils exposés dans les API ?",
-          "reponse": "Non, les routes GET excluent automatiquement smtp_password et api_token via {attributes: {exclude: [...]}}. Jamais retournés au frontend."
-        }
-      ],
-      "mots_cles": ["chiffrement", "AES-256", "sécurité", "encryption", "secrets", "mot de passe", "token"]
+      "mots_cles": ["historique", "journal", "log", "statut", "erreur"]
     }
   ]
 }

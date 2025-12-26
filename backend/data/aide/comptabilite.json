@@ -2,403 +2,162 @@
   "module": "comptabilite",
   "titre": "Comptabilité",
   "icone": "bi-calculator",
-  "description": "Module de gestion comptable complet avec génération automatique d'écritures, export multi-formats (FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr), sections analytiques et plan comptable personnalisable",
   "features": [
     {
-      "id": "compta_generation_ecritures",
-      "titre": "Génération automatique d'écritures comptables",
-      "description": "Création automatique d'écritures comptables équilibrées (débit/crédit) lors des opérations de cotisation, location, paiement. Génération de numéros de pièce uniques par exercice avec préfixe configurable (COT, FAC, AVO, REC).",
-      "role_min": "gestionnaire",
+      "id": "ecritures_generation",
+      "titre": "Génération des écritures",
+      "description": "Création automatique des écritures comptables",
+      "role_min": "comptable",
       "procedure": [
-        "Configurer le paramétrage comptable pour chaque type d'opération (Paramètres > Comptabilité > Operations)",
-        "Définir le journal, compte de produit, préfixe de pièce et section analytique",
-        "Les écritures sont générées automatiquement lors des paiements de cotisations",
-        "Vérifier les écritures dans l'interface comptable",
-        "Les numéros de pièce sont auto-incrémentés par exercice (ex: COT2025-00001)"
+        "Les écritures sont générées automatiquement lors des opérations",
+        "Cotisation payée : débit compte encaissement, crédit compte produit",
+        "Le numéro de pièce est généré selon le compteur configuré",
+        "Les écritures sont équilibrées (débit = crédit)"
       ],
       "faq": [
         {
-          "question": "Comment sont numérotées les pièces comptables ?",
-          "reponse": "Chaque type de pièce (COT, FAC, AVO, REC) a un compteur par exercice. Format: TYPE+ANNEE-NUMERO (ex: COT2025-00001). La numérotation redémarre à 1 chaque année."
+          "question": "Les écritures peuvent-elles être modifiées ?",
+          "reponse": "Non, pour garantir l'intégrité. Supprimez et régénérez si erreur."
         },
         {
-          "question": "Peut-on modifier une écriture après création ?",
-          "reponse": "Les écritures lettrées (rapprochées) ne peuvent pas être supprimées. Pour les autres, il faut délettrer puis supprimer via le service comptabilité."
-        },
-        {
-          "question": "Comment gérer les comptes auxiliaires ?",
-          "reponse": "Les comptes auxiliaires clients sont automatiquement créés au format CLI+ID (ex: CLI000123) pour chaque utilisateur lors de la génération d'écritures."
+          "question": "Quels comptes sont utilisés ?",
+          "reponse": "Configurables dans Paramètres > Comptabilité > Parametrage."
         }
       ],
-      "mots_cles": ["écritures", "comptabilité", "pièces", "débit", "crédit", "numérotation", "automatique", "cotisation"]
+      "mots_cles": ["ecriture", "comptable", "generation", "automatique"]
     },
     {
-      "id": "compta_export_fec",
-      "titre": "Export FEC (Fichier des Écritures Comptables)",
-      "description": "Export au format FEC obligatoire pour le contrôle fiscal français. Fichier texte pipe-délimité (|) avec 18 colonnes normalisées, encodage UTF-8, format SIREN+FEC+timestamp.txt.",
+      "id": "export_fec",
+      "titre": "Exporter le FEC",
+      "description": "Générer le Fichier des Écritures Comptables pour la DGFiP",
       "role_min": "comptable",
       "procedure": [
         "Aller dans Comptabilité > Exports",
-        "Sélectionner l'exercice comptable à exporter",
-        "Vérifier les statistiques (nombre d'écritures, équilibre débit/crédit)",
-        "Cliquer sur 'Exporter FEC'",
-        "Le fichier est généré au format SIRENANNEEAAAAMMJJHHMMSS.txt",
-        "Transmettre le fichier à l'administration fiscale ou au comptable"
+        "Sélectionner le format FEC",
+        "Définir l'exercice et/ou les dates",
+        "Optionnel : Filtrer par journal ou structure",
+        "Cliquer 'Exporter'",
+        "Télécharger le fichier généré"
       ],
       "faq": [
         {
-          "question": "Quelles sont les 18 colonnes du FEC ?",
-          "reponse": "JournalCode, JournalLib, EcritureNum, EcritureDate, CompteNum, CompteLib, CompAuxNum, CompAuxLib, PieceRef, PieceDate, EcritureLib, Debit, Credit, EcritureLet, DateLet, ValidDate, Montantdevise, Idevise"
+          "question": "Le format FEC est-il obligatoire ?",
+          "reponse": "Oui pour les contrôles fiscaux en France. Format normé à 18 colonnes."
         },
         {
-          "question": "Le FEC est-il obligatoire ?",
-          "reponse": "Oui, depuis 2014, toute entreprise tenant sa comptabilité sur informatique doit pouvoir produire un FEC lors d'un contrôle fiscal."
-        },
-        {
-          "question": "Quel format de date est utilisé ?",
-          "reponse": "Format YYYYMMDD (ex: 20250115). Les montants utilisent la virgule comme séparateur décimal."
+          "question": "Quels autres formats sont disponibles ?",
+          "reponse": "Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON."
         }
       ],
-      "mots_cles": ["FEC", "export", "fiscal", "administration", "contrôle", "pipe", "SIREN", "18 colonnes"]
+      "mots_cles": ["fec", "export", "fiscal", "dgfip", "ecritures"]
     },
     {
-      "id": "compta_export_multiformat",
-      "titre": "Exports multi-formats (Sage, Ciel, EBP, Quadra, etc.)",
-      "description": "Export des écritures vers 9 formats de logiciels comptables : FEC, Sage, Ciel, EBP, Quadra, OpenConcerto, Dolibarr, CSV, JSON. Configuration personnalisable des séparateurs, encodages, formats de date, mapping comptes/journaux.",
+      "id": "facture_creation",
+      "titre": "Créer une facture",
+      "description": "Émettre une facture pour un usager ou un tiers",
       "role_min": "comptable",
       "procedure": [
-        "Aller dans Paramètres > Exports Comptables",
-        "Sélectionner le format souhaité (Sage, Ciel, EBP, etc.)",
-        "Configurer les paramètres : séparateur (;,|,TAB), format date (DD/MM/YYYY, YYYYMMDD), encodage (UTF-8, ISO-8859-1, CP1252)",
-        "Définir le mapping des comptes internes vers les codes du logiciel cible",
-        "Définir le mapping des journaux (VT, BQ, CA, OD)",
-        "Sauvegarder la configuration",
-        "Exporter en sélectionnant l'exercice, période optionnelle, journal optionnel",
-        "Télécharger le fichier au format configuré"
+        "Aller dans Comptabilité > Factures",
+        "Cliquer 'Nouvelle facture'",
+        "Renseigner le client (usager ou informations manuelles)",
+        "Ajouter les lignes : description, quantité, prix HT, TVA",
+        "Vérifier les totaux",
+        "Enregistrer en brouillon ou émettre directement"
       ],
       "faq": [
         {
-          "question": "Qu'est-ce que le mapping de comptes ?",
-          "reponse": "Le mapping permet de transformer les codes comptables internes (ex: 5121) en codes spécifiques à votre logiciel comptable si différents. Exemple: mapper 5121 vers 512100 pour Sage."
+          "question": "La numérotation est-elle automatique ?",
+          "reponse": "Oui, format FAC-YYYY-NNNNNN. Chronologique et sans rupture."
         },
         {
-          "question": "Quels sont les formats disponibles ?",
-          "reponse": "9 formats : FEC (obligatoire France), Sage, Ciel, EBP, Quadra (montants en centimes), OpenConcerto, Dolibarr, CSV (personnalisable), JSON (structure complète)."
-        },
-        {
-          "question": "Peut-on exporter une période précise ?",
-          "reponse": "Oui, vous pouvez filtrer par exercice complet, ou spécifier une plage de dates (date début/fin) et/ou un journal spécifique."
+          "question": "Peut-on modifier une facture émise ?",
+          "reponse": "Non. Créez un avoir pour corriger."
         }
       ],
-      "mots_cles": ["export", "Sage", "Ciel", "EBP", "Quadra", "OpenConcerto", "Dolibarr", "CSV", "JSON", "mapping", "format"]
+      "mots_cles": ["facture", "facturation", "creation", "emission"]
     },
     {
-      "id": "compta_plan_comptable",
-      "titre": "Plan comptable personnalisable",
-      "description": "Gestion du plan comptable avec comptes généraux, auxiliaires et analytiques. Organisation par classes (4-Tiers, 5-Financiers, 6-Charges, 7-Produits). Comptes hiérarchiques avec comptes parents. Validation de saisie configurable.",
+      "id": "facture_cotisation",
+      "titre": "Facturer une cotisation",
+      "description": "Générer une facture depuis une cotisation",
       "role_min": "comptable",
       "procedure": [
-        "Aller dans Paramètres > Comptabilité > Plan Comptable",
-        "Filtrer par classe si besoin (4, 5, 6, 7)",
-        "Cliquer sur 'Nouveau compte' pour ajouter un compte",
-        "Renseigner : Numéro (ex: 7061), Libellé, Classe, Type (général/auxiliaire/analytique)",
-        "Définir la nature (actif/passif/charge/produit) pour bilan/compte de résultat",
-        "Cocher 'Accepte la saisie' si le compte peut être utilisé dans les écritures (décocher pour comptes de regroupement)",
-        "Définir un compte parent pour hiérarchie si nécessaire",
-        "Les comptes inactifs ne sont pas proposés dans les sélecteurs"
+        "Ouvrir la cotisation concernée",
+        "Cliquer 'Générer facture'",
+        "Les informations client et le montant sont préremplis",
+        "Vérifier et compléter si nécessaire",
+        "Émettre la facture",
+        "La facture est liée à la cotisation"
       ],
       "faq": [
         {
-          "question": "Quelles sont les classes comptables disponibles ?",
-          "reponse": "Classe 4 (Tiers: clients 411, fournisseurs), Classe 5 (Financiers: banque 512, caisse 530), Classe 6 (Charges: achats 606, services 625), Classe 7 (Produits: cotisations 7061, locations 7062), Classe 8 (Spéciaux)"
-        },
-        {
-          "question": "Quelle est la différence entre compte général et auxiliaire ?",
-          "reponse": "Compte général : compte du plan comptable standard. Compte auxiliaire : sous-compte pour détailler (ex: CLI000123 pour un client spécifique rattaché au compte 411)."
-        },
-        {
-          "question": "Peut-on importer un plan comptable existant ?",
-          "reponse": "Actuellement, les comptes doivent être créés manuellement. Un plan de base pour associations est pré-configuré (5121 Banque, 5300 Caisse, 7061 Cotisations, etc.)."
+          "question": "La TVA s'applique-t-elle aux cotisations ?",
+          "reponse": "Généralement non pour les associations. Configurable par module."
         }
       ],
-      "mots_cles": ["plan comptable", "comptes", "classes", "général", "auxiliaire", "analytique", "hiérarchie", "bilan"]
+      "mots_cles": ["facture", "cotisation", "association"]
     },
     {
-      "id": "compta_journaux",
-      "titre": "Gestion des journaux comptables",
-      "description": "Configuration des journaux comptables (VT-Ventes, AC-Achats, BQ-Banque, CA-Caisse, OD-Opérations diverses, AN-A-nouveaux). Définition du type, compte de contrepartie, ordre d'affichage.",
+      "id": "reglement_enregistrement",
+      "titre": "Enregistrer un règlement",
+      "description": "Saisir le paiement d'une facture",
       "role_min": "comptable",
       "procedure": [
-        "Aller dans Paramètres > Comptabilité > Journaux",
-        "Cliquer sur 'Nouveau journal'",
-        "Définir le code (ex: VT, BQ, CA, OD) en majuscules, max 10 caractères",
-        "Saisir le libellé (ex: Journal des ventes)",
-        "Sélectionner le type : ventes, achats, banque, caisse, operations_diverses, a_nouveaux",
-        "Optionnel : définir un compte de contrepartie par défaut (ex: 5121 pour banque)",
-        "Définir l'ordre d'affichage",
-        "Les journaux inactifs ne sont pas proposés lors de la saisie"
+        "Ouvrir la facture émise",
+        "Cliquer 'Nouveau règlement'",
+        "Saisir le montant et le mode de paiement",
+        "Indiquer la date et la référence (numéro chèque...)",
+        "Optionnel : Créer un mouvement de caisse",
+        "Valider"
       ],
       "faq": [
         {
-          "question": "Quels sont les journaux obligatoires ?",
-          "reponse": "Minimum : VT (Ventes), BQ (Banque), CA (Caisse), OD (Opérations diverses). Recommandé : AC (Achats), AN (A-nouveaux)."
-        },
-        {
-          "question": "Peut-on avoir plusieurs journaux de banque ?",
-          "reponse": "Oui, vous pouvez créer BQ1, BQ2, etc. pour différents comptes bancaires, chacun avec son compte de contrepartie (5121, 5122, etc.)."
-        },
-        {
-          "question": "À quoi sert le compte de contrepartie ?",
-          "reponse": "Le compte de contrepartie est utilisé par défaut pour équilibrer les écritures dans ce journal (ex: 5121 pour journal BQ signifie que les encaissements débitent 5121)."
+          "question": "Les paiements partiels sont-ils gérés ?",
+          "reponse": "Oui, la facture passe en 'Partiellement réglée' jusqu'au paiement complet."
         }
       ],
-      "mots_cles": ["journaux", "VT", "BQ", "CA", "OD", "AC", "AN", "ventes", "banque", "caisse", "contrepartie"]
+      "mots_cles": ["reglement", "paiement", "encaissement"]
     },
     {
-      "id": "compta_sections_analytiques",
-      "titre": "Comptabilité analytique - Sections",
-      "description": "Ventilation des écritures par sections analytiques (activité, site, projet, financeur). Permet d'analyser la rentabilité par activité (ludothèque, bibliothèque, ateliers), par site géographique ou par projet. Sections avec code couleur pour visualisation.",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Aller dans Paramètres > Comptabilité > Sections Analytiques",
-        "Cliquer sur 'Nouvelle section'",
-        "Définir le code (ex: LUDO, BIBLIO, ATELIER)",
-        "Saisir le libellé (ex: Ludothèque)",
-        "Sélectionner l'axe : activité, site, projet, financeur, autre",
-        "Optionnel : code comptable analytique pour export",
-        "Choisir une couleur pour l'affichage",
-        "Affecter cette section dans le paramétrage des opérations (Paramètres > Comptabilité > Opérations)",
-        "Les écritures seront automatiquement ventilées sur cette section"
-      ],
-      "faq": [
-        {
-          "question": "Quelle est la différence entre les axes analytiques ?",
-          "reponse": "Activité: type d'activité (ludo, biblio). Site: localisation géographique (site1, site2). Projet: projet temporaire (expo2025). Financeur: suivi par source de financement (CAF, mairie)."
-        },
-        {
-          "question": "Peut-on affecter plusieurs sections à une opération ?",
-          "reponse": "Oui, via les regroupements analytiques qui permettent de ventiler une opération sur plusieurs sections avec des pourcentages (ex: 60% LUDO + 40% BIBLIO)."
-        },
-        {
-          "question": "À quoi sert le compte analytique ?",
-          "reponse": "Le compte analytique permet d'exporter les données analytiques vers certains logiciels comptables qui utilisent des codes analytiques spécifiques."
-        }
-      ],
-      "mots_cles": ["analytique", "sections", "ventilation", "activité", "site", "projet", "rentabilité", "analyse", "axe"]
-    },
-    {
-      "id": "compta_regroupements_analytiques",
-      "titre": "Regroupements analytiques multi-sections",
-      "description": "Ventilation automatique d'une opération sur plusieurs sections analytiques avec des pourcentages. Exemple: répartir les frais généraux 60% sur ludothèque + 40% sur bibliothèque. Le total des pourcentages doit être exactement 100%.",
+      "id": "avoir_creation",
+      "titre": "Créer un avoir",
+      "description": "Émettre un avoir pour annuler ou corriger",
       "role_min": "comptable",
       "procedure": [
-        "Aller dans Paramètres > Comptabilité > Regroupements",
-        "Cliquer sur 'Nouveau regroupement'",
-        "Définir le code (ex: RGRP_MULTI)",
-        "Saisir le libellé (ex: Ventilation Ludo/Biblio 60/40)",
-        "Ajouter les lignes de ventilation : sélectionner une section et saisir le pourcentage",
-        "Ajouter autant de lignes que nécessaire",
-        "Vérifier que le total = 100% (indicateur visuel vert)",
-        "Affecter ce regroupement dans le paramétrage d'une opération",
-        "Lors de la génération d'écritures, le montant sera automatiquement réparti selon les pourcentages"
+        "Ouvrir la facture à corriger",
+        "Cliquer 'Créer avoir'",
+        "Sélectionner les lignes à créditer (tout ou partie)",
+        "Les montants sont automatiquement en négatif",
+        "Émettre l'avoir",
+        "L'avoir est lié à la facture d'origine"
       ],
       "faq": [
         {
-          "question": "Peut-on utiliser des décimales dans les pourcentages ?",
-          "reponse": "Oui, jusqu'à 2 décimales (ex: 33.33%). Le total doit être exactement 100.00% (tolérance 0.01%)."
-        },
-        {
-          "question": "Que se passe-t-il si le total n'est pas 100% ?",
-          "reponse": "La sauvegarde est bloquée avec un message d'erreur indiquant le montant manquant ou en trop. Ajustez les pourcentages jusqu'à atteindre 100%."
-        },
-        {
-          "question": "Peut-on modifier un regroupement déjà utilisé ?",
-          "reponse": "Oui, mais cela n'affectera que les nouvelles écritures. Les écritures passées conservent leur ventilation d'origine."
+          "question": "L'avoir annule-t-il automatiquement la facture ?",
+          "reponse": "Un avoir total ramène le solde à zéro. La facture reste visible avec le lien."
         }
       ],
-      "mots_cles": ["regroupement", "ventilation", "pourcentage", "multi-sections", "répartition", "100%", "analytique"]
+      "mots_cles": ["avoir", "credit", "annulation", "correction"]
     },
     {
-      "id": "compta_parametrage_operations",
-      "titre": "Paramétrage comptable par type d'opération",
-      "description": "Configuration des règles comptables pour chaque type d'opération (cotisation, location, retard, amende, vente, don, subvention, animation, caution). Définition du journal, compte de produit, préfixe de pièce, section ou regroupement analytique, génération automatique.",
+      "id": "analytique_configuration",
+      "titre": "Configurer l'analytique",
+      "description": "Définir les axes d'analyse comptable",
       "role_min": "administrateur",
       "procedure": [
-        "Aller dans Paramètres > Comptabilité > Opérations",
-        "Cliquer sur 'Modifier' pour un type d'opération",
-        "Journal : sélectionner le journal comptable (VT pour cotisations/ventes, CA pour caisse, BQ pour banque)",
-        "Compte produit : définir le compte de classe 7 (ex: 7061 pour cotisations, 7062 pour locations)",
-        "Préfixe pièce : code pour numérotation (COT, LOC, RET, etc.)",
-        "Type analytique : choisir 'Section unique', 'Regroupement multi-sections' ou 'Aucune'",
-        "Si section unique : sélectionner la section",
-        "Si regroupement : sélectionner le regroupement pré-configuré",
-        "Cocher 'Générer automatiquement' pour créer les écritures lors des paiements",
-        "Sauvegarder"
+        "Aller dans Paramètres > Comptabilité > Sections analytiques",
+        "Créer les axes : Activité, Site, Projet, Financeur",
+        "Créer les sections sous chaque axe",
+        "Définir les répartitions par tarif si nécessaire",
+        "Les écritures sont ventilées selon la configuration"
       ],
       "faq": [
         {
-          "question": "Quels types d'opérations sont disponibles ?",
-          "reponse": "Cotisation, location, retard (pénalités), amende, vente, don, subvention, animation/atelier, caution, remboursement_caution."
-        },
-        {
-          "question": "Peut-on désactiver la génération automatique ?",
-          "reponse": "Oui, décochez 'Générer automatiquement'. Les écritures devront alors être créées manuellement via un module de saisie comptable (à développer)."
-        },
-        {
-          "question": "Quelle est la différence entre section et regroupement ?",
-          "reponse": "Section unique : l'opération est affectée à 100% sur une seule section. Regroupement : l'opération est ventilée sur plusieurs sections avec des pourcentages (ex: 60% LUDO + 40% BIBLIO)."
+          "question": "À quoi sert l'analytique ?",
+          "reponse": "Permet de suivre les recettes/dépenses par activité, lieu, projet..."
         }
       ],
-      "mots_cles": ["paramétrage", "opérations", "cotisation", "location", "retard", "vente", "don", "subvention", "animation", "caution", "journal", "compte"]
-    },
-    {
-      "id": "compta_modes_paiement_comptes",
-      "titre": "Comptes d'encaissement par mode de paiement",
-      "description": "Association d'un compte comptable à chaque mode de paiement (espèces→5300 Caisse, chèque/CB/virement→5121 Banque). Permet de débiter automatiquement le bon compte selon le mode de paiement utilisé. Journal spécifique optionnel par mode.",
-      "role_min": "comptable",
-      "procedure": [
-        "Aller dans Paramètres > Comptabilité > Encaissements",
-        "Pour chaque mode de paiement (espèces, chèque, carte bancaire, virement, prélèvement)",
-        "Cliquer sur 'Modifier'",
-        "Définir le numéro de compte (ex: 5300 pour espèces, 5121 pour chèque)",
-        "Saisir le libellé du compte (ex: Caisse principale, Banque - Compte courant)",
-        "Optionnel : définir un journal spécifique (ex: CA pour espèces, BQ pour chèque)",
-        "Si aucun journal spécifique, le journal de l'opération sera utilisé",
-        "Sauvegarder"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si aucun compte n'est configuré ?",
-          "reponse": "Le système utilise un mapping par défaut : espèces→5300, chèque/CB/virement→5121. Il est recommandé de configurer explicitement pour plus de contrôle."
-        },
-        {
-          "question": "Peut-on avoir plusieurs comptes bancaires ?",
-          "reponse": "Oui, créez plusieurs comptes (5121, 5122, 5123) et associez-les à différents modes de paiement ou utilisez des codes personnalisés (carte_bancaire_compte1, carte_bancaire_compte2)."
-        },
-        {
-          "question": "À quoi sert le journal spécifique ?",
-          "reponse": "Il permet de forcer un journal différent pour un mode de paiement (ex: CA pour espèces) même si l'opération utilise normalement le journal VT."
-        }
-      ],
-      "mots_cles": ["modes paiement", "encaissement", "espèces", "chèque", "carte bancaire", "virement", "caisse", "banque", "5300", "5121"]
-    },
-    {
-      "id": "compta_taux_tva",
-      "titre": "Gestion des taux de TVA",
-      "description": "Configuration des taux de TVA applicables (20%, 10%, 5.5%, 2.1%, exonération). Association des comptes TVA collectée/déductible. Mention obligatoire sur facture pour exonération (associations loi 1901). Calculs automatiques HT/TTC.",
-      "role_min": "comptable",
-      "procedure": [
-        "Aller dans Paramètres > Comptabilité > TVA (si module activé)",
-        "Les taux standards sont pré-configurés : TVA20, TVA10, TVA55, TVA21, EXO",
-        "Pour chaque taux : code, libellé, taux en %, comptes 44571 (collectée) et 44566 (déductible)",
-        "Pour les associations exonérées : taux 0%, cocher 'Exonéré', mention 'TVA non applicable art. 293B CGI'",
-        "Affecter un taux TVA par défaut dans le paramétrage des opérations",
-        "Les méthodes calculerMontantTTC(), calculerMontantHT(), calculerMontantTVA() sont disponibles"
-      ],
-      "faq": [
-        {
-          "question": "Les associations sont-elles toujours exonérées de TVA ?",
-          "reponse": "Non, seulement si elles ne sont pas assujetties (activités non lucratives). Si l'association a des activités commerciales dépassant certains seuils, elle peut être soumise à TVA."
-        },
-        {
-          "question": "Quels sont les taux de TVA en France ?",
-          "reponse": "Taux normal 20%, taux réduit 10% (restauration, transport), taux réduit 5.5% (alimentation, livres), taux particulier 2.1% (médicaments remboursés, presse)."
-        },
-        {
-          "question": "Comment indiquer l'exonération sur les factures ?",
-          "reponse": "Utilisez la mention configurée dans le taux EXO, par exemple 'TVA non applicable, art. 293 B du CGI' (associations loi 1901)."
-        }
-      ],
-      "mots_cles": ["TVA", "taux", "20%", "10%", "5.5%", "exonération", "HT", "TTC", "44571", "44566", "CGI", "293B"]
-    },
-    {
-      "id": "compta_statistiques_exercice",
-      "titre": "Statistiques et équilibre comptable",
-      "description": "Tableau de bord comptable par exercice : nombre d'écritures, total débit/crédit, vérification de l'équilibre, statistiques par journal. Alertes visuelles si déséquilibre (différence > 0.01€). Export vers tous les formats disponibles.",
-      "role_min": "comptable",
-      "procedure": [
-        "Aller dans Comptabilité > Exports ou Statistiques",
-        "Sélectionner un exercice comptable",
-        "Consulter le tableau de bord : nombre d'écritures, totaux débit/crédit, statut d'équilibre",
-        "Consulter les statistiques par journal (VT, BQ, CA, OD)",
-        "Si déséquilibre (icône ⚠️) : vérifier les écritures pour trouver l'erreur",
-        "Si équilibre (icône ✓) : les données sont prêtes pour export",
-        "Consulter la liste des formats d'export disponibles avec leurs extensions"
-      ],
-      "faq": [
-        {
-          "question": "Qu'est-ce que l'équilibre comptable ?",
-          "reponse": "L'équilibre signifie que la somme des débits = somme des crédits pour un exercice. Tolérance de 0.01€ pour les erreurs d'arrondi."
-        },
-        {
-          "question": "Que faire en cas de déséquilibre ?",
-          "reponse": "Vérifiez les écritures : une écriture déséquilibrée (débit ≠ crédit pour une même pièce) ou une écriture manquante. Utilisez l'API GET /api/export-comptable/statistiques/:exercice pour identifier le journal concerné."
-        },
-        {
-          "question": "Les statistiques incluent-elles les écritures non validées ?",
-          "reponse": "Oui, toutes les écritures de l'exercice sont comptabilisées, validées ou non. Seules les écritures avec date_validation sont considérées comme définitives."
-        }
-      ],
-      "mots_cles": ["statistiques", "équilibre", "débit", "crédit", "exercice", "journal", "tableau de bord", "alertes"]
-    },
-    {
-      "id": "compta_compteurs_pieces",
-      "titre": "Compteurs de pièces comptables",
-      "description": "Gestion automatique des numéros de pièces par type (COT, FAC, AVO, REC) et par exercice. Numérotation séquentielle avec verrouillage transactionnel pour éviter les doublons. Format TYPE+ANNÉE-NUMÉRO sur 5 chiffres.",
-      "role_min": "administrateur",
-      "procedure": [
-        "Les compteurs sont gérés automatiquement lors de la génération d'écritures",
-        "Format : PREFIXE+EXERCICE-NUMERO (ex: COT2025-00001)",
-        "Chaque type de pièce (COT, FAC, AVO, REC) a son propre compteur",
-        "La numérotation redémarre à 1 au début de chaque exercice",
-        "Le verrouillage en transaction garantit l'unicité (pas de numéro en double)",
-        "Méthodes disponibles : genererNumero(), reinitialiser(), obtenirDernierNumero()",
-        "Réinitialisation manuelle possible via npm run migrate-comptabilite"
-      ],
-      "faq": [
-        {
-          "question": "Peut-on personnaliser le format des numéros ?",
-          "reponse": "Le format est fixe : PREFIXE+ANNEE-NUMERO (5 chiffres). Le préfixe est configurable dans le paramétrage des opérations (COT, FAC, LOC, etc.)."
-        },
-        {
-          "question": "Que se passe-t-il si deux écritures sont créées simultanément ?",
-          "reponse": "Le verrouillage transactionnel (transaction.LOCK.UPDATE) garantit qu'un seul numéro est attribué à la fois, même en cas d'accès simultané."
-        },
-        {
-          "question": "Peut-on réinitialiser les compteurs en cours d'année ?",
-          "reponse": "Techniquement oui via CompteurPiece.reinitialiser(), mais c'est déconseillé car cela créerait des doublons. Utilisez uniquement en cas d'erreur critique."
-        }
-      ],
-      "mots_cles": ["compteurs", "numéros", "pièces", "COT", "FAC", "AVO", "REC", "séquentiel", "transaction", "verrouillage"]
-    },
-    {
-      "id": "compta_lettrage_rapprochement",
-      "titre": "Lettrage et rapprochement bancaire",
-      "description": "Système de lettrage des écritures pour rapprochement bancaire et lettrage client/fournisseur. Code de lettrage alphanumérique pour marquer les écritures rapprochées. Les écritures lettrées ne peuvent pas être supprimées (délettrage requis).",
-      "role_min": "comptable",
-      "procedure": [
-        "Fonctionnalité en développement (Phase 2)",
-        "Le champ 'lettrage' est présent dans la table ecritures_comptables",
-        "Pour lettrer manuellement : attribuer le même code de lettrage à plusieurs écritures (ex: 'A', 'B', 'AA', etc.)",
-        "Le lettrage sert principalement au rapprochement bancaire (écritures banque vs relevé)",
-        "Une écriture lettrée ne peut pas être supprimée sans délettrage préalable",
-        "Méthode supprimerEcrituresCotisation() vérifie le lettrage avant suppression"
-      ],
-      "faq": [
-        {
-          "question": "Qu'est-ce que le lettrage ?",
-          "reponse": "Le lettrage consiste à attribuer un code identique à des écritures qui se compensent (ex: facture client + paiement client). Cela permet de suivre les paiements et le rapprochement bancaire."
-        },
-        {
-          "question": "Le lettrage est-il obligatoire ?",
-          "reponse": "Non, c'est optionnel. Il est recommandé pour les comptes tiers (411 clients, 401 fournisseurs) et pour le rapprochement bancaire."
-        },
-        {
-          "question": "Comment délettrer une écriture ?",
-          "reponse": "Mettre le champ lettrage à NULL. Attention : vérifiez que les autres écritures avec le même code de lettrage doivent aussi être délettrées."
-        }
-      ],
-      "mots_cles": ["lettrage", "rapprochement", "bancaire", "délettrage", "code", "paiement", "client", "fournisseur"]
+      "mots_cles": ["analytique", "section", "axe", "ventilation", "repartition"]
     }
   ]
 }

@@ -1,84 +1,91 @@
 {
   "titre": "Aide Liberteko",
-  "description": "Centre d'aide pour l'administration de votre mediatheque associative",
+  "description": "Documentation complète du système de gestion multi-collections Liberteko",
+  "version": "0.9.0",
   "modules": [
+    {
+      "code": "usagers",
+      "titre": "Gestion des Usagers",
+      "icone": "bi-people",
+      "fichier": "usagers.json",
+      "description": "Création, modification et suivi des usagers et familles"
+    },
+    {
+      "code": "catalogue",
+      "titre": "Catalogue",
+      "icone": "bi-collection",
+      "fichier": "catalogue.json",
+      "description": "Gestion des jeux, livres, films et disques"
+    },
     {
       "code": "emprunts",
       "titre": "Emprunts et Retours",
       "icone": "bi-arrow-left-right",
-      "fichier": "emprunts.json"
-    },
-    {
-      "code": "reservations",
-      "titre": "Reservations",
-      "icone": "bi-bookmark-check",
-      "fichier": "reservations.json"
-    },
-    {
-      "code": "adherents",
-      "titre": "Usagers et Familles",
-      "icone": "bi-people",
-      "fichier": "adherents.json"
-    },
-    {
-      "code": "catalogue",
-      "titre": "Catalogue (Collections)",
-      "icone": "bi-collection",
-      "fichier": "catalogue.json"
+      "fichier": "emprunts.json",
+      "description": "Circulation des articles, prolongations et retards"
     },
     {
       "code": "cotisations",
       "titre": "Cotisations",
-      "icone": "bi-receipt",
-      "fichier": "cotisations.json"
+      "icone": "bi-wallet2",
+      "fichier": "cotisations.json",
+      "description": "Adhésions, tarification et paiements"
     },
     {
-      "code": "frequentation",
-      "titre": "Frequentation (Comptage visiteurs)",
-      "icone": "bi-people-fill",
-      "fichier": "frequentation.json"
+      "code": "caisse",
+      "titre": "Caisse",
+      "icone": "bi-cash-coin",
+      "fichier": "caisse.json",
+      "description": "Sessions de caisse, mouvements et remises en banque"
     },
     {
-      "code": "comptabilite",
-      "titre": "Comptabilite",
-      "icone": "bi-calculator",
-      "fichier": "comptabilite.json"
-    },
-    {
-      "code": "parametres",
-      "titre": "Parametres",
-      "icone": "bi-gear-fill",
-      "fichier": "parametres.json"
+      "code": "reservations",
+      "titre": "Réservations",
+      "icone": "bi-bookmark-check",
+      "fichier": "reservations.json",
+      "description": "File d'attente et notifications"
     },
     {
       "code": "communications",
-      "titre": "Communications (Email/SMS)",
-      "icone": "bi-send",
-      "fichier": "communications.json"
+      "titre": "Communications",
+      "icone": "bi-envelope",
+      "fichier": "communications.json",
+      "description": "Emails, SMS, templates et déclencheurs"
+    },
+    {
+      "code": "comptabilite",
+      "titre": "Comptabilité",
+      "icone": "bi-calculator",
+      "fichier": "comptabilite.json",
+      "description": "Écritures comptables, exports FEC et factures"
     },
     {
       "code": "statistiques",
-      "titre": "Statistiques et Tableaux de bord",
+      "titre": "Statistiques",
       "icone": "bi-graph-up",
-      "fichier": "statistiques.json"
+      "fichier": "statistiques.json",
+      "description": "Métriques, rapports et désherbage"
     },
     {
-      "code": "utilisateurs_admin",
-      "titre": "Utilisateurs Admin et Roles",
-      "icone": "bi-shield-lock",
-      "fichier": "utilisateurs_admin.json"
+      "code": "frequentation",
+      "titre": "Fréquentation",
+      "icone": "bi-person-walking",
+      "fichier": "frequentation.json",
+      "description": "Compteur de visiteurs et tablettes PWA"
     },
     {
       "code": "codes_barres",
       "titre": "Codes-barres",
-      "icone": "bi-upc",
-      "fichier": "codes_barres.json"
+      "icone": "bi-upc-scan",
+      "fichier": "codes_barres.json",
+      "description": "Configuration, lots et impression"
     },
     {
-      "code": "fonctionnalites_avancees",
-      "titre": "Fonctionnalites Avancees",
-      "icone": "bi-cpu",
-      "fichier": "fonctionnalites_avancees.json"
+      "code": "parametres",
+      "titre": "Paramètres",
+      "icone": "bi-gear",
+      "fichier": "parametres.json",
+      "description": "Configuration système et multi-structures"
     }
   ]
 }

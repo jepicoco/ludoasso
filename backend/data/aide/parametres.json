@@ -2,469 +2,179 @@
   "module": "parametres",
   "titre": "Paramètres",
   "icone": "bi-gear",
-  "description": "Configuration globale du système incluant le site web, les listes de référence, la comptabilité, les communications et les outils d'administration",
   "features": [
     {
-      "id": "param_site_web",
-      "titre": "Paramètres du site web",
-      "description": "Configuration du site public : nom, logo, SEO, modules actifs, pages légales (CGV, CGU, politique de confidentialité, mentions légales), informations de contact et mode maintenance",
+      "id": "organisation_creation",
+      "titre": "Créer une organisation",
+      "description": "Définir l'entité juridique parente",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Général > Site web",
-        "Onglet Identité : saisir le nom du site, URLs du logo et favicon",
-        "Onglet SEO : configurer meta description, keywords, Google Analytics, Search Console",
-        "Onglet Modules : choisir mode catalogue ou complet, activer/désactiver les collections et fonctionnalités",
-        "Onglet Pages légales : rédiger CGV, CGU, politique de confidentialité, mentions légales avec l'éditeur WYSIWYG",
-        "Onglet Contact : saisir email, téléphone, adresse, liens réseaux sociaux",
-        "Onglet Maintenance : activer/désactiver le mode maintenance avec message personnalisé",
-        "Les modifications sont sauvegardées automatiquement"
+        "Aller dans Paramètres > Organisations",
+        "Cliquer 'Nouvelle organisation'",
+        "Renseigner le nom, SIRET, RNA si applicable",
+        "Définir les coordonnées de contact",
+        "Enregistrer"
       ],
       "faq": [
         {
-          "question": "Quelle est la différence entre mode catalogue et mode complet ?",
-          "reponse": "Le mode catalogue affiche uniquement les articles en lecture seule sans emprunt ni inscription. Le mode complet active la gestion complète avec emprunts, adhésions et espace membre."
+          "question": "À quoi sert l'organisation ?",
+          "reponse": "C'est l'entité juridique (association, mairie) qui peut contenir plusieurs structures."
+        }
+      ],
+      "mots_cles": ["organisation", "entite", "juridique", "siret"]
+    },
+    {
+      "id": "structure_creation",
+      "titre": "Créer une structure",
+      "description": "Ajouter une unité opérationnelle (ludothèque, bibliothèque)",
+      "role_min": "administrateur",
+      "procedure": [
+        "Aller dans Paramètres > Structures",
+        "Cliquer 'Nouvelle structure'",
+        "Associer à une organisation",
+        "Renseigner le nom, l'adresse, les contacts",
+        "Configurer les paramètres spécifiques",
+        "Activer la structure"
+      ],
+      "faq": [
+        {
+          "question": "Les collections sont-elles partagées entre structures ?",
+          "reponse": "Non, chaque structure a ses propres articles, emprunts et cotisations."
         },
         {
-          "question": "Comment désactiver un module de collection ?",
-          "reponse": "Dans l'onglet Modules, décochez la case du module concerné (Ludothèque, Bibliothèque, Filmothèque, Discothèque). Le module ne sera plus visible sur le site public."
+          "question": "Un usager peut-il accéder à plusieurs structures ?",
+          "reponse": "Oui, les accès sont gérés individuellement par structure."
         }
       ],
-      "mots_cles": ["site web", "configuration", "seo", "modules", "cgv", "cgu", "logo", "favicon", "maintenance"]
+      "mots_cles": ["structure", "ludotheque", "bibliotheque", "site"]
     },
     {
-      "id": "param_themes",
-      "titre": "Thèmes du site",
-      "description": "Personnalisation visuelle du site public avec gestion des thèmes : couleurs, styles, mode clair/sombre. Les thèmes sont stockés dans frontend/themes/ avec manifest.json",
+      "id": "utilisateur_acces",
+      "titre": "Gérer les accès utilisateurs",
+      "description": "Configurer les droits du personnel",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Général > Thèmes du site",
-        "Visualiser les thèmes disponibles avec aperçu des couleurs",
-        "Créer un nouveau thème : code, nom, description, mode (clair/sombre), couleur primaire",
-        "Modifier un thème : onglet Général (nom, auteur, version), Couleurs (primaire, secondaire, accent, etc.), Style (border radius, ombres, navbar)",
-        "Activer un thème pour l'appliquer au site public",
-        "Dupliquer un thème existant pour créer une variante",
-        "Exporter le manifest.json d'un thème",
-        "Supprimer un thème (sauf default et le thème actif)"
+        "Aller dans Paramètres > Utilisateurs",
+        "Sélectionner l'utilisateur à configurer",
+        "Modifier le rôle global si nécessaire",
+        "Ajouter des accès par structure avec rôles spécifiques",
+        "Configurer les modules autorisés si rôle partiel",
+        "Enregistrer"
       ],
       "faq": [
         {
-          "question": "Comment créer un thème personnalisé ?",
-          "reponse": "Cliquez sur 'Nouveau thème', renseignez code (lettres minuscules, chiffres, tirets), nom, description et couleur primaire. Le système crée automatiquement un dossier dans frontend/themes/ avec la structure de base."
+          "question": "Quels sont les rôles disponibles ?",
+          "reponse": "Usager, Bénévole, Gestionnaire, Comptable, Administrateur."
         },
         {
-          "question": "Puis-je modifier le thème default ?",
-          "reponse": "Oui, vous pouvez modifier ses couleurs et paramètres, mais vous ne pouvez pas le supprimer car c'est le thème de base du système."
+          "question": "Le rôle peut-il être différent par structure ?",
+          "reponse": "Oui, un utilisateur peut être gestionnaire d'une structure et bénévole d'une autre."
         }
       ],
-      "mots_cles": ["thème", "apparence", "couleurs", "personnalisation", "design", "mode sombre", "style"]
+      "mots_cles": ["utilisateur", "acces", "role", "permission", "droit"]
     },
     {
-      "id": "param_listes",
-      "titre": "Listes et catégories",
-      "description": "Gestion des référentiels : modes de paiement, catégories de jeux, thèmes, mécanismes, éditeurs, auteurs, illustrateurs, langues, gammes, emplacements",
+      "id": "modules_activation",
+      "titre": "Activer/désactiver les modules",
+      "description": "Choisir les fonctionnalités disponibles",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Général > Listes & Catégories",
-        "Onglet Paiements : créer, modifier, réorganiser (glisser-déposer) les modes de paiement",
-        "Onglet Référentiels Jeux : sélectionner le type (catégories, thèmes, mécanismes, éditeurs, auteurs, illustrateurs, langues, gammes, emplacements)",
-        "Utiliser les filtres (recherche, afficher inactifs) pour trouver un élément",
-        "Ajouter un référentiel : remplir les champs selon le type (nom, code, couleur, icône, description, etc.)",
-        "Activer/désactiver un élément pour contrôler sa visibilité",
-        "Supprimer un référentiel non utilisé"
+        "Aller dans Paramètres > Modules actifs",
+        "Voir la liste des modules disponibles",
+        "Cliquer sur le toggle pour activer/désactiver",
+        "Les modules désactivés sont masqués dans l'interface"
       ],
       "faq": [
         {
-          "question": "Que se passe-t-il si je supprime une catégorie utilisée par des jeux ?",
-          "reponse": "Le système empêche la suppression d'un référentiel utilisé. Vous devez d'abord réaffecter les éléments concernés à une autre catégorie."
+          "question": "Les données sont-elles supprimées si un module est désactivé ?",
+          "reponse": "Non, les données sont conservées. Le module peut être réactivé à tout moment."
+        }
+      ],
+      "mots_cles": ["module", "activer", "desactiver", "fonctionnalite"]
+    },
+    {
+      "id": "theme_configuration",
+      "titre": "Configurer le thème du site",
+      "description": "Personnaliser l'apparence du portail public",
+      "role_min": "administrateur",
+      "procedure": [
+        "Aller dans Paramètres > Thèmes",
+        "Voir les thèmes disponibles (default, ocean-blue, forest-green...)",
+        "Cliquer sur un thème pour voir l'aperçu",
+        "Cliquer 'Activer' pour le sélectionner",
+        "Optionnel : Personnaliser les couleurs et le CSS"
+      ],
+      "faq": [
+        {
+          "question": "Peut-on créer un thème personnalisé ?",
+          "reponse": "Oui, dupliquez un thème existant et modifiez les fichiers HTML/CSS."
+        }
+      ],
+      "mots_cles": ["theme", "apparence", "design", "couleur", "personnalisation"]
+    },
+    {
+      "id": "maintenance_mode",
+      "titre": "Activer le mode maintenance",
+      "description": "Bloquer l'accès pendant les travaux",
+      "role_min": "administrateur",
+      "procedure": [
+        "Aller dans Paramètres > Paramètres Front",
+        "Activer 'Mode maintenance'",
+        "Saisir le message à afficher aux visiteurs",
+        "Optionnel : Autoriser les IPs locales ou spécifiques",
+        "Enregistrer"
+      ],
+      "faq": [
+        {
+          "question": "Les administrateurs sont-ils bloqués ?",
+          "reponse": "Non, les IPs autorisées et les utilisateurs connectés gardent l'accès."
+        }
+      ],
+      "mots_cles": ["maintenance", "fermeture", "indisponible", "travaux"]
+    },
+    {
+      "id": "migrations_gestion",
+      "titre": "Gérer les migrations",
+      "description": "Mettre à jour la structure de la base de données",
+      "role_min": "administrateur",
+      "procedure": [
+        "Aller dans Paramètres > Migrations",
+        "Voir les migrations en attente (badge)",
+        "Cliquer 'Exécuter les migrations'",
+        "Suivre la progression",
+        "Vérifier le résultat"
+      ],
+      "faq": [
+        {
+          "question": "Les migrations sont-elles réversibles ?",
+          "reponse": "Certaines oui (down), d'autres non. Faites une sauvegarde avant."
         },
         {
-          "question": "Comment réorganiser l'ordre d'affichage des modes de paiement ?",
-          "reponse": "Utilisez le glisser-déposer (icône grip) pour réorganiser les lignes. L'ordre est sauvegardé automatiquement."
+          "question": "Quand exécuter les migrations ?",
+          "reponse": "Après chaque mise à jour du système si des migrations sont en attente."
         }
       ],
-      "mots_cles": ["listes", "référentiels", "catégories", "modes de paiement", "éditeurs", "auteurs", "mécanismes", "thèmes"]
+      "mots_cles": ["migration", "base", "donnees", "mise a jour", "schema"]
     },
     {
-      "id": "param_sites",
-      "titre": "Sites et horaires",
-      "description": "Gestion multi-sites avec horaires d'ouverture hebdomadaires et fermetures exceptionnelles",
+      "id": "tarifs_configuration",
+      "titre": "Configurer les tarifs",
+      "description": "Définir les prix des cotisations",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Général > Sites",
-        "Créer un site : nom, adresse, téléphone, email",
-        "Définir les horaires d'ouverture pour chaque jour de la semaine",
-        "Ajouter des fermetures exceptionnelles (date, raison)",
-        "Désactiver un site sans le supprimer",
-        "Supprimer un site non utilisé"
+        "Aller dans Paramètres > Tarification",
+        "Créer ou modifier les types de tarifs",
+        "Définir les montants par catégorie",
+        "Configurer l'arbre décisionnel pour l'attribution automatique",
+        "Tester avec différents profils"
       ],
       "faq": [
         {
-          "question": "À quoi servent les sites multiples ?",
-          "reponse": "Si votre association a plusieurs lieux (annexes), vous pouvez gérer leurs horaires distincts et associer les emplacements physiques à chaque site."
+          "question": "Peut-on avoir des tarifs différents par structure ?",
+          "reponse": "Oui, chaque structure peut avoir sa propre configuration tarifaire."
         }
       ],
-      "mots_cles": ["sites", "horaires", "ouverture", "fermeture", "multi-sites", "adresse"]
-    },
-    {
-      "id": "param_utilisateurs",
-      "titre": "Gestion des utilisateurs",
-      "description": "Attribution des rôles et droits d'accès : administrateur, comptable, gestionnaire, bénévole, usager. Modification des rôles, réinitialisation des mots de passe, promotion d'usagers",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Général > Utilisateurs",
-        "Consulter les statistiques par rôle",
-        "Filtrer par rôle ou rechercher un utilisateur",
-        "Modifier le rôle : cliquer sur l'icône crayon, sélectionner le nouveau rôle",
-        "Réinitialiser le mot de passe : cliquer sur l'icône clé, confirmer l'envoi de l'email",
-        "Promouvoir un usager : rechercher l'usager (sans rôle admin), sélectionner, attribuer le rôle",
-        "Créer un nouveau compte avec rôle administratif"
-      ],
-      "faq": [
-        {
-          "question": "Quelle est la hiérarchie des rôles ?",
-          "reponse": "Usager (espace membre) < Bénévole (emprunts/retours) < Gestionnaire (gestion quotidienne) < Comptable (finances) < Administrateur (accès complet). Chaque rôle peut gérer les rôles inférieurs."
-        },
-        {
-          "question": "Puis-je supprimer le dernier administrateur ?",
-          "reponse": "Non, le système empêche la suppression ou la rétrogradation du dernier administrateur pour éviter de bloquer l'accès à l'administration."
-        }
-      ],
-      "mots_cles": ["utilisateurs", "rôles", "droits", "permissions", "administrateur", "gestionnaire", "comptable", "bénévole", "promotion"]
-    },
-    {
-      "id": "param_emprunts",
-      "titre": "Paramètres d'emprunts",
-      "description": "Configuration des durées d'emprunt et prolongations par module (jeux, livres, films, disques), prolongations automatiques ou manuelles",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Général > Emprunts & Prolongations",
-        "Pour chaque module (Ludothèque, Bibliothèque, Filmothèque, Discothèque) :",
-        "Définir la durée d'emprunt en jours",
-        "Activer/désactiver les prolongations",
-        "Si prolongations actives : nombre de prolongations, durée de chaque prolongation, mode (manuel ou automatique)",
-        "Enregistrer les paramètres"
-      ],
-      "faq": [
-        {
-          "question": "Quelle est la différence entre prolongation manuelle et automatique ?",
-          "reponse": "En mode manuel, l'usager doit demander la prolongation (depuis son espace ou en contactant la structure). En mode automatique, la prolongation se fait automatiquement si les conditions sont remplies."
-        }
-      ],
-      "mots_cles": ["emprunts", "prolongations", "durée", "délai", "retour", "prêt"]
-    },
-    {
-      "id": "param_codes_barres",
-      "titre": "Codes-barres",
-      "description": "Configuration de l'impression de codes-barres en lot avec format personnalisé (étiquettes Avery, Brother, personnalisées)",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Général > Codes-Barres",
-        "Sélectionner le format d'étiquette prédéfini ou personnalisé",
-        "Configurer les dimensions (largeur, hauteur, marges, espacement)",
-        "Définir le nombre de colonnes et rangées par page",
-        "Choisir le type de code-barres (EAN-13, Code128, QR)",
-        "Tester l'aperçu",
-        "Enregistrer les paramètres"
-      ],
-      "faq": [
-        {
-          "question": "Puis-je utiliser mes propres étiquettes ?",
-          "reponse": "Oui, sélectionnez 'Format personnalisé' et saisissez les dimensions exactes de vos étiquettes (largeur, hauteur, marges). Faites un test d'impression pour vérifier l'alignement."
-        }
-      ],
-      "mots_cles": ["codes-barres", "étiquettes", "impression", "lot", "EAN", "QR code"]
-    },
-    {
-      "id": "param_holodeck",
-      "titre": "Holodeck (Modules actifs)",
-      "description": "Activation/désactivation des modules de l'application : ludothèque, bibliothèque, filmothèque, discothèque, comptabilité, communications, plan interactif, recherche IA, outils, etc.",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Général > Holodeck",
-        "Visualiser tous les modules disponibles avec leur statut",
-        "Activer/désactiver un module en cliquant sur le switch",
-        "Les modules désactivés sont cachés de l'interface et leurs routes API retournent des erreurs",
-        "Enregistrer les modifications"
-      ],
-      "faq": [
-        {
-          "question": "Que se passe-t-il si je désactive un module utilisé ?",
-          "reponse": "Les données restent en base mais l'interface et l'API ne sont plus accessibles. La réactivation restaure l'accès immédiatement sans perte de données."
-        }
-      ],
-      "mots_cles": ["modules", "activation", "holodeck", "fonctionnalités", "collections"]
-    },
-    {
-      "id": "param_tarifs",
-      "titre": "Tarifs de cotisation",
-      "description": "Gestion des tarifs d'adhésion avec prorata temporel, réductions membres et tarifs par défaut",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Comptabilité > Tarifs cotisation",
-        "Créer un tarif : libellé, montant, période de validité",
-        "Activer le prorata pour calculer au prorata temporis",
-        "Définir des réductions par type de membre",
-        "Réorganiser les tarifs par glisser-déposer",
-        "Définir un tarif par défaut",
-        "Dupliquer un tarif existant pour créer une variante"
-      ],
-      "faq": [
-        {
-          "question": "Comment fonctionne le prorata ?",
-          "reponse": "Si activé, le montant est calculé au prorata du temps restant dans la période (année, semestre, etc.). Par exemple, une adhésion annuelle de 30 euros commençant en juillet sera facturée environ 15 euros."
-        }
-      ],
-      "mots_cles": ["tarifs", "cotisation", "adhésion", "montant", "prorata", "réduction"]
-    },
-    {
-      "id": "param_codes_reduction",
-      "titre": "Codes de réduction",
-      "description": "Création et gestion de codes promo, coupons et réductions spéciales avec limitations d'usage et période de validité",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Comptabilité > Codes de réduction",
-        "Créer un code : saisir le code (ex: PROMO2024) ou générer aléatoirement",
-        "Choisir le type : pourcentage ou montant fixe",
-        "Définir la valeur de la réduction",
-        "Optionnel : dates de début/fin, nombre d'utilisations max, montant minimum",
-        "Filtrer par statut (actif, inactif, expiré) ou type",
-        "Activer/désactiver ou supprimer un code"
-      ],
-      "faq": [
-        {
-          "question": "Puis-je limiter l'usage d'un code promo ?",
-          "reponse": "Oui, vous pouvez définir : un nombre maximum d'utilisations globales, des dates de validité, et un montant minimum de commande. Le code sera automatiquement désactivé une fois la limite atteinte ou la date dépassée."
-        }
-      ],
-      "mots_cles": ["codes réduction", "promo", "coupon", "réduction", "pourcentage", "montant fixe"]
-    },
-    {
-      "id": "param_comptes_bancaires",
-      "titre": "Comptes bancaires",
-      "description": "Gestion des RIB, IBAN/BIC pour les encaissements et exports comptables",
-      "role_min": "comptable",
-      "procedure": [
-        "Accéder à Paramètres > Comptabilité > Comptes bancaires",
-        "Créer un compte : libellé, banque, IBAN, BIC",
-        "Définir le compte par défaut pour les encaissements",
-        "Activer/désactiver un compte",
-        "Supprimer un compte non utilisé"
-      ],
-      "faq": [
-        {
-          "question": "Pourquoi saisir les coordonnées bancaires ?",
-          "reponse": "Les IBAN/BIC sont utilisés pour les exports comptables (FEC) et peuvent être affichés sur les reçus de cotisation pour faciliter les paiements par virement."
-        }
-      ],
-      "mots_cles": ["comptes bancaires", "RIB", "IBAN", "BIC", "virement", "comptabilité"]
-    },
-    {
-      "id": "param_email",
-      "titre": "Configuration Email",
-      "description": "Paramétrage des serveurs SMTP pour l'envoi d'emails automatiques : confirmations, rappels, relances. Support multi-configurations avec test de connexion",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Services externes > Configuration Email",
-        "Créer une configuration : libellé, serveur SMTP, port (587 TLS / 465 SSL)",
-        "Saisir utilisateur et mot de passe SMTP",
-        "Définir l'email et nom expéditeur",
-        "Activer la connexion sécurisée (TLS/SSL)",
-        "Tester la connexion avant sauvegarde",
-        "Définir comme configuration par défaut",
-        "Envoyer un email de test pour valider"
-      ],
-      "faq": [
-        {
-          "question": "Quels fournisseurs SMTP sont compatibles ?",
-          "reponse": "Tous les serveurs SMTP standards : Gmail (smtp.gmail.com:587), Office365 (smtp.office365.com:587), OVH, Gandi, serveurs dédiés, etc. Utilisez des App Passwords pour Gmail."
-        },
-        {
-          "question": "Le mot de passe est-il stocké en clair ?",
-          "reponse": "Non, les mots de passe SMTP sont chiffrés en AES-256-CBC dans la base de données avec une clé définie dans EMAIL_ENCRYPTION_KEY."
-        }
-      ],
-      "mots_cles": ["email", "SMTP", "configuration", "serveur", "TLS", "SSL", "expéditeur"]
-    },
-    {
-      "id": "param_sms",
-      "titre": "Configuration SMS",
-      "description": "Paramétrage du fournisseur SMS (SMSFactor, OVH, Twilio) pour les notifications par message texte avec suivi des crédits",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Services externes > Configuration SMS",
-        "Créer une configuration : libellé, fournisseur (SMSFactor, OVH, Twilio)",
-        "Saisir les identifiants API selon le fournisseur",
-        "Définir le nom expéditeur (11 caractères max, alphanumériques)",
-        "Tester la connexion",
-        "Définir comme configuration par défaut",
-        "Consulter les crédits restants",
-        "Envoyer un SMS de test"
-      ],
-      "faq": [
-        {
-          "question": "Quel fournisseur SMS choisir ?",
-          "reponse": "SMSFactor est simple (1 token), OVH nécessite 4 identifiants (AK, AS, CK, Service), Twilio nécessite SID et Auth Token. Choisissez selon votre compte existant et vos tarifs."
-        }
-      ],
-      "mots_cles": ["SMS", "configuration", "fournisseur", "SMSFactor", "OVH", "Twilio", "crédits"]
-    },
-    {
-      "id": "param_templates",
-      "titre": "Templates de messages",
-      "description": "Création et personnalisation de modèles d'emails et SMS avec variables dynamiques, éditeur WYSIWYG pour emails, prévisualisation",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Communication > Templates de messages",
-        "Filtrer par type (email/SMS) et catégorie (adhésion, emprunt, relance, notification)",
-        "Créer un template : code unique, type, catégorie, nom",
-        "Pour email : rédiger le sujet et le contenu avec l'éditeur riche",
-        "Pour SMS : rédiger le message (160 caractères max)",
-        "Insérer des variables : {{prenom}}, {{nom}}, {{email}}, {{titre_jeu}}, {{date_retour}}, etc.",
-        "Prévisualiser avec des données d'exemple",
-        "Activer/désactiver le template"
-      ],
-      "faq": [
-        {
-          "question": "Quelles variables puis-je utiliser ?",
-          "reponse": "Variables disponibles : {{prenom}}, {{nom}}, {{email}}, {{telephone}}, {{code_adherent}}, {{date_fin_adhesion}}, {{titre_jeu}}, {{date_retour}}, {{nom_site}}. Elles sont remplacées automatiquement lors de l'envoi."
-        }
-      ],
-      "mots_cles": ["templates", "messages", "email", "SMS", "modèles", "variables", "personnalisation"]
-    },
-    {
-      "id": "param_declencheurs",
-      "titre": "Déclencheurs automatiques",
-      "description": "Configuration des envois automatiques d'emails/SMS basés sur des événements : création usager, emprunt, rappels avant échéance, relances retard, cotisations",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Communication > Déclencheurs",
-        "Sélectionner un événement (UTILISATEUR_CREATION, EMPRUNT_CONFIRMATION, EMPRUNT_RAPPEL_AVANT, EMPRUNT_RELANCE_RETARD, COTISATION_CONFIRMATION, etc.)",
-        "Activer le déclencheur",
-        "Sélectionner le template de message à utiliser",
-        "Pour les rappels temporels : définir le délai (ex: 3 jours avant échéance)",
-        "Tester le déclencheur avec des données réelles",
-        "Activer/désactiver globalement"
-      ],
-      "faq": [
-        {
-          "question": "Les rappels se font automatiquement ?",
-          "reponse": "Oui, si les déclencheurs sont actifs. Un job planifié (cron) vérifie quotidiennement les conditions et envoie les messages. Consultez la documentation technique pour configurer le cron."
-        }
-      ],
-      "mots_cles": ["déclencheurs", "automatique", "événements", "rappels", "relances", "notifications"]
-    },
-    {
-      "id": "param_llm",
-      "titre": "Intelligence Artificielle (LLM)",
-      "description": "Configuration des providers LLM (Claude, GPT, Mistral, etc.) pour la recherche intelligente et l'enrichissement automatique du catalogue",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Services externes > Intelligence Artificielle",
-        "Vérifier que le module recherche_ia est actif dans Holodeck",
-        "Créer une configuration LLM : provider (OpenAI, Anthropic, Mistral), modèle, clé API",
-        "Définir les limites (tokens max, timeout)",
-        "Tester la connexion",
-        "Définir comme provider par défaut",
-        "Consulter l'utilisation et les statistiques"
-      ],
-      "faq": [
-        {
-          "question": "À quoi sert le LLM dans l'application ?",
-          "reponse": "Le LLM permet la recherche en langage naturel dans le catalogue, la génération automatique de descriptions, la classification thématique et l'enrichissement des fiches avec des informations contextuelles."
-        }
-      ],
-      "mots_cles": ["IA", "LLM", "intelligence artificielle", "Claude", "GPT", "recherche", "enrichissement"]
-    },
-    {
-      "id": "param_apis_externes",
-      "titre": "APIs Externes (EAN Lookup)",
-      "description": "Configuration des fournisseurs de données externes (BGG, OpenLibrary, TMDB, MusicBrainz, etc.) pour l'enrichissement automatique via codes-barres EAN/ISBN",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Services externes > APIs Externes",
-        "Consulter les providers disponibles (UPCitemdb, BNF, OpenLibrary, TMDB, MusicBrainz, BoardGameGeek)",
-        "Créer une configuration : provider, clé API si requise, paramètres",
-        "Tester la connexion avec un EAN de test",
-        "Définir la priorité (ordre d'interrogation)",
-        "Activer/désactiver un provider",
-        "Consulter les statistiques d'utilisation"
-      ],
-      "faq": [
-        {
-          "question": "Puis-je utiliser plusieurs providers ?",
-          "reponse": "Oui, le système interroge les providers dans l'ordre de priorité jusqu'à obtenir une réponse complète. Cela améliore le taux de succès de l'enrichissement."
-        }
-      ],
-      "mots_cles": ["APIs externes", "EAN", "ISBN", "enrichissement", "BoardGameGeek", "OpenLibrary", "TMDB"]
-    },
-    {
-      "id": "param_import",
-      "titre": "Import de jeux",
-      "description": "Importation en masse de jeux depuis CSV (MyLudo ou format personnalisé) avec mapping des colonnes et prévisualisation",
-      "role_min": "gestionnaire",
-      "procedure": [
-        "Accéder à Paramètres > Outils > Import de jeux",
-        "Télécharger le modèle CSV ou utiliser un export MyLudo",
-        "Uploader le fichier CSV",
-        "Mapper les colonnes (titre, éditeur, auteurs, année, etc.)",
-        "Prévisualiser les données importées",
-        "Choisir le mode (créer uniquement / créer et mettre à jour)",
-        "Lancer l'import",
-        "Consulter le rapport (succès, erreurs, doublons)"
-      ],
-      "faq": [
-        {
-          "question": "Le système détecte-t-il les doublons ?",
-          "reponse": "Oui, la détection se fait par titre exact ou code-barres. Vous pouvez choisir de sauter les doublons ou de mettre à jour les fiches existantes."
-        }
-      ],
-      "mots_cles": ["import", "CSV", "MyLudo", "jeux", "masse", "migration"]
-    },
-    {
-      "id": "param_archives",
-      "titre": "Archives RGPD",
-      "description": "Gestion des usagers archivés avec anonymisation conforme RGPD et purge des données personnelles",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Outils > Archives RGPD",
-        "Consulter la liste des usagers archivés",
-        "Filtrer par période d'archivage",
-        "Archiver un usager : sélectionner l'usager, confirmer l'anonymisation",
-        "Les données personnelles (nom, email, adresse) sont anonymisées",
-        "L'historique d'emprunts et cotisations est conservé de manière anonyme",
-        "Purger définitivement un utilisateur archivé",
-        "Exporter la liste des archives"
-      ],
-      "faq": [
-        {
-          "question": "Que devient l'historique après archivage ?",
-          "reponse": "Les statistiques et historiques d'emprunts sont conservés mais associés à un identifiant anonyme. Les données personnelles (nom, email, adresse, téléphone) sont effacées ou anonymisées."
-        }
-      ],
-      "mots_cles": ["archives", "RGPD", "anonymisation", "purge", "données personnelles"]
-    },
-    {
-      "id": "param_reset_bdd",
-      "titre": "Reset Base de données",
-      "description": "Réinitialisation sélective des données avec confirmation en deux étapes : jeux, livres, films, musique, emprunts, cotisations, utilisateurs, tarifs, paramètres",
-      "role_min": "administrateur",
-      "procedure": [
-        "Accéder à Paramètres > Outils > Reset Base de données",
-        "ATTENTION : opération IRRÉVERSIBLE",
-        "Sélectionner les éléments à réinitialiser (jeux, livres, films, musique, emprunts, cotisations, utilisateurs, tarifs, paramètres)",
-        "Consulter les statistiques (nombre d'éléments à supprimer)",
-        "Continuer vers la confirmation",
-        "Taper CONFIRMER-RESET (respecter la casse)",
-        "Valider la suppression définitive",
-        "Recharger l'interface après succès"
-      ],
-      "faq": [
-        {
-          "question": "Puis-je récupérer les données après un reset ?",
-          "reponse": "NON, l'opération est irréversible. Assurez-vous d'avoir une sauvegarde de la base de données avant toute réinitialisation. Seul l'utilisateur admin connecté est préservé lors du reset des utilisateurs."
-        }
-      ],
-      "mots_cles": ["reset", "réinitialisation", "suppression", "base de données", "purge"]
+      "mots_cles": ["tarif", "prix", "cotisation", "tarification"]
     }
   ]
 }

@@ -1,368 +1,136 @@
 {
   "module": "codes_barres",
-  "titre": "Gestion des Codes-barres",
+  "titre": "Codes-barres",
   "icone": "bi-upc-scan",
-  "description": "Système complet de génération, réservation et impression de codes-barres pour tous les modules (usagers, jeux, livres, films, disques) avec formats personnalisables EAN-13 et gestion de lots",
   "features": [
     {
-      "id": "cb_config_format",
-      "titre": "Configuration des formats de codes-barres",
-      "description": "Définir le format des codes-barres par module avec préfixes personnalisés, tokens de date et séquences automatiques. Le format devient verrouillé après la première utilisation pour garantir la cohérence.",
+      "id": "format_configuration",
+      "titre": "Configurer le format",
+      "description": "Définir le pattern des codes-barres par module",
       "role_min": "administrateur",
       "procedure": [
-        "Accéder à Paramètres > Codes-Barres Réservés",
-        "Sélectionner un module (Usagers, Jeux, Livres, Films, Disques)",
-        "Définir le préfixe (ex: USA, JEU, LIV, FLM, DSQ)",
-        "Composer le format en glissant-déposant les tokens disponibles: {PREFIX}, {ANNEE_LONGUE}, {ANNEE_COURTE}, {MOIS_LONG}, {JOUR_LONG}, {NUMERO_SEQUENCE_4/6/8/10}",
-        "Choisir la politique de reset de séquence: jamais, annuelle, mensuelle, quotidienne",
-        "Définir si les codes annulés doivent être grillés définitivement ou réutilisables",
-        "Enregistrer - le format sera verrouillé après création du premier lot"
+        "Aller dans Paramètres > Codes-barres",
+        "Sélectionner le module (Usagers, Jeux, Livres...)",
+        "Définir le préfixe (ex: USA, JEU, LIV)",
+        "Choisir le pattern avec les tokens disponibles",
+        "Configurer le reset de la séquence (jamais, annuel, mensuel)",
+        "Enregistrer"
       ],
       "faq": [
         {
-          "question": "Pourquoi le format est-il verrouillé après la première utilisation?",
-          "reponse": "Pour garantir la cohérence des codes-barres déjà imprimés et éviter les doublons. Seule l'option 'griller les annulés' reste modifiable."
+          "question": "Quels tokens sont disponibles ?",
+          "reponse": "{PREFIX}, {ANNEE_LONGUE}, {ANNEE_COURTE}, {MOIS_LONG}, {NUMERO_SEQUENCE_6}, etc."
         },
         {
-          "question": "Que signifie la séquence reset 'annuelle'?",
-          "reponse": "La numérotation repart à 0 chaque année. Utile avec un format incluant l'année: {PREFIX}{ANNEE_COURTE}{NUMERO_SEQUENCE_6}"
-        },
-        {
-          "question": "Quels sont les tokens disponibles?",
-          "reponse": "PREFIX (préfixe module), ANNEE_LONGUE (2025), ANNEE_COURTE (25), MOIS_LONG (01-12), MOIS_COURT (1-12), JOUR_LONG (01-31), JOUR_COURT (1-31), NUMERO_SEQUENCE_4/6/8/10 (avec padding de zéros)"
+          "question": "Exemple de pattern ?",
+          "reponse": "USA{NUMERO_SEQUENCE_8} donne USA00000042."
         }
       ],
-      "mots_cles": ["code-barre", "EAN-13", "format", "configuration", "préfixe", "séquence", "tokens"]
+      "mots_cles": ["format", "pattern", "prefixe", "sequence", "configuration"]
     },
     {
-      "id": "cb_generation_lots",
-      "titre": "Génération de lots de codes-barres",
-      "description": "Réserver en masse des codes-barres (1 à 1000 par lot) pour impression future. Chaque lot génère une plage continue de codes selon le format défini.",
+      "id": "lot_creation",
+      "titre": "Créer un lot de codes-barres",
+      "description": "Réserver et générer une série de codes",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à Paramètres > Codes-Barres > Gérer les lots",
-        "Cliquer sur 'Nouveau lot'",
-        "Sélectionner le module concerné",
-        "Définir la quantité de codes (1-1000)",
-        "Valider - les codes sont immédiatement réservés dans la base",
-        "Le lot apparaît avec statut 'Actif' et affiche la plage de codes (code_debut - code_fin)"
+        "Aller dans Paramètres > Lots codes-barres",
+        "Cliquer 'Nouveau lot'",
+        "Sélectionner le module (Usagers, Jeux...)",
+        "Définir le nombre de codes à générer",
+        "Optionnel : Associer à une structure",
+        "Créer le lot",
+        "Les numéros sont réservés dans la séquence"
       ],
       "faq": [
         {
-          "question": "Puis-je créer plusieurs lots en même temps?",
-          "reponse": "Oui, vous pouvez créer autant de lots que nécessaire. Chaque lot gère sa propre plage de codes sans collision."
-        },
-        {
-          "question": "Que se passe-t-il si j'annule un lot?",
-          "reponse": "Tous les codes non utilisés du lot passent en statut 'annulé' (ou 'grillé' selon paramétrage). Le lot passe en statut 'annulé' et ne peut plus être imprimé."
-        },
-        {
-          "question": "Quelle est la limite de codes par lot?",
-          "reponse": "Maximum 1000 codes par lot pour des raisons de performance. Pour de grandes quantités, créez plusieurs lots."
+          "question": "Les codes sont-ils utilisables immédiatement ?",
+          "reponse": "Oui, après génération ils sont prêts à être imprimés et attribués."
         }
       ],
-      "mots_cles": ["lot", "réservation", "génération", "plage", "codes-barres", "masse"]
+      "mots_cles": ["lot", "reservation", "serie", "generation"]
     },
     {
-      "id": "cb_impression_planches",
-      "titre": "Impression de planches d'étiquettes",
-      "description": "Générer des PDF de planches d'étiquettes prêtes à imprimer à partir d'un lot réservé. Supporte les réimpressions avec tracking.",
+      "id": "impression_codes",
+      "titre": "Imprimer des codes-barres",
+      "description": "Générer des planches d'étiquettes",
       "role_min": "gestionnaire",
       "procedure": [
-        "Dans la liste des lots, cliquer sur l'icône 'Imprimer' du lot souhaité",
-        "Si déjà imprimé, confirmer la réimpression (compteur incrémenté)",
-        "Le PDF est généré avec les codes-barres EAN-13 au format étiquettes",
-        "Télécharger le fichier 'etiquettes-lot-{id}.pdf'",
-        "Imprimer sur des planches d'étiquettes autocollantes",
-        "Le lot est marqué avec date_impression et nb_reimpressions"
+        "Ouvrir le lot de codes-barres",
+        "Cliquer 'Imprimer'",
+        "Choisir le format d'étiquettes",
+        "Sélectionner le nombre de codes par page",
+        "Générer le PDF",
+        "Imprimer sur papier autocollant"
       ],
       "faq": [
         {
-          "question": "Quel format d'étiquettes est utilisé?",
-          "reponse": "Format standard 100mm x 60mm compatible avec la plupart des planches d'étiquettes commerciales. Le PDF utilise pdfService avec codes-barres EAN-13."
+          "question": "Quels formats d'étiquettes sont supportés ?",
+          "reponse": "Standard Avery et formats personnalisables."
         },
         {
-          "question": "Puis-je réimprimer un lot?",
-          "reponse": "Oui, le système demande confirmation et incrémente le compteur de réimpressions pour la traçabilité."
-        },
-        {
-          "question": "Les lots annulés peuvent-ils être imprimés?",
-          "reponse": "Non, les lots avec statut 'annulé' ne peuvent pas être imprimés."
+          "question": "Peut-on imprimer des codes existants ?",
+          "reponse": "Oui, depuis la fiche article ou usager."
         }
       ],
-      "mots_cles": ["impression", "PDF", "étiquettes", "planches", "EAN-13", "autocollant"]
+      "mots_cles": ["impression", "etiquette", "pdf", "planche"]
     },
     {
-      "id": "cb_scan_validation",
-      "titre": "Scan et validation de codes-barres",
-      "description": "Scanner un code-barre pour identifier l'entité (usager, jeu, livre, film, disque) et vérifier son statut. Intégré au processus d'enregistrement et d'emprunt.",
-      "role_min": "benevole",
-      "procedure": [
-        "Utiliser un lecteur code-barres ou saisir manuellement le code",
-        "Le système détecte automatiquement le type via le préfixe (USA/JEU/LIV/FLM/DSQ)",
-        "Validation du code: vérifie s'il est réservé, utilisé, annulé ou grillé",
-        "Si code réservé et disponible: OK pour attribution",
-        "Si code non pré-imprimé: avertissement avec possibilité de l'utiliser quand même",
-        "Si code déjà utilisé: affiche l'entité associée",
-        "Si code grillé: refus d'utilisation"
-      ],
-      "faq": [
-        {
-          "question": "Que faire si le code n'a pas été pré-imprimé?",
-          "reponse": "Le système affiche un avertissement mais permet l'utilisation. Le code est alors créé à la volée avec statut 'utilisé' pour traçabilité."
-        },
-        {
-          "question": "Comment distinguer les types de codes?",
-          "reponse": "Chaque module a un préfixe unique: USA (usagers), JEU (jeux), LIV (livres), FLM (films), DSQ (disques). Le système détecte automatiquement."
-        },
-        {
-          "question": "Un code annulé peut-il être réutilisé?",
-          "reponse": "Oui, si le paramètre 'griller_annules' est à false. Le code passe de 'annulé' à 'utilisé'. Les codes 'grillés' ne peuvent jamais être réutilisés."
-        }
-      ],
-      "mots_cles": ["scan", "validation", "lecteur", "barcode", "douchette", "reconnaissance"]
-    },
-    {
-      "id": "cb_attribution_entite",
-      "titre": "Attribution d'un code à une entité",
-      "description": "Associer un code-barre réservé à un usager, jeu, livre, film ou disque lors de l'enregistrement. Le code passe de statut 'réservé' à 'utilisé'.",
-      "role_min": "benevole",
-      "procedure": [
-        "Lors de la création/modification d'une fiche (usager, jeu, etc.)",
-        "Scanner ou saisir le code-barre dans le champ prévu",
-        "Validation automatique du code (POST /api/codes-barres-reserves/validate)",
-        "Si code OK, attribution via POST /api/codes-barres-reserves/assign/{module}",
-        "Le code passe en statut 'utilisé' avec date_utilisation",
-        "Le compteur nb_utilises du lot est incrémenté",
-        "Si le lot devient complet (tous codes utilisés), son statut passe à 'complet'"
-      ],
-      "faq": [
-        {
-          "question": "Peut-on changer le code d'une entité existante?",
-          "reponse": "Oui, mais l'ancien code reste en statut 'utilisé'. Il est recommandé d'annuler l'ancien code manuellement si nécessaire."
-        },
-        {
-          "question": "Que se passe-t-il si on scanne un code déjà utilisé?",
-          "reponse": "Le système refuse l'attribution et affiche l'entité actuellement associée."
-        },
-        {
-          "question": "Comment forcer un code spécifique?",
-          "reponse": "Saisissez le code manuellement. S'il n'est pas pré-imprimé, le système demande confirmation avant de le créer."
-        }
-      ],
-      "mots_cles": ["attribution", "association", "assignation", "entité", "utilisation"]
-    },
-    {
-      "id": "cb_gestion_individuelle",
-      "titre": "Gestion des codes individuels",
-      "description": "Annuler, restaurer ou consulter les codes-barres un par un. Permet la correction d'erreurs et le suivi détaillé.",
+      "id": "export_codes",
+      "titre": "Exporter les codes",
+      "description": "Télécharger la liste des codes d'un lot",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder au détail d'un lot (clic sur 'Voir détail')",
-        "Visualiser tous les codes du lot avec leur statut",
-        "Pour annuler un code 'réservé': clic sur icône X (passe en 'annulé' ou 'grillé')",
-        "Pour restaurer un code 'annulé': clic sur icône restaurer (repasse en 'réservé')",
-        "Les codes 'grillés' ne peuvent pas être restaurés",
-        "Le compteur du lot est automatiquement mis à jour"
+        "Ouvrir le lot de codes-barres",
+        "Cliquer 'Exporter'",
+        "Choisir le format (CSV)",
+        "Télécharger le fichier"
       ],
       "faq": [
         {
-          "question": "Peut-on annuler un code déjà utilisé?",
-          "reponse": "Non, impossible d'annuler un code en statut 'utilisé'. Il faut d'abord libérer l'entité associée."
-        },
-        {
-          "question": "Quelle différence entre 'annulé' et 'grillé'?",
-          "reponse": "'Annulé' peut être restauré en 'réservé'. 'Grillé' est définitif et empêche toute réutilisation (dépend du paramètre 'griller_annules')."
-        },
-        {
-          "question": "Comment voir les codes disponibles d'un module?",
-          "reponse": "GET /api/codes-barres-reserves/disponibles/{module} retourne tous les codes en statut 'réservé' avec pagination."
+          "question": "À quoi sert l'export ?",
+          "reponse": "Pour traçabilité ou intégration avec d'autres outils d'impression."
         }
       ],
-      "mots_cles": ["annulation", "restauration", "gestion", "code individuel", "statut"]
+      "mots_cles": ["export", "csv", "liste", "telechargement"]
     },
     {
-      "id": "cb_statistiques",
-      "titre": "Statistiques et suivi des codes-barres",
-      "description": "Tableau de bord avec vue d'ensemble des lots créés, codes réservés, utilisés et disponibles par module.",
+      "id": "attribution_code",
+      "titre": "Attribuer un code-barre",
+      "description": "Associer un code du lot à un article ou usager",
       "role_min": "gestionnaire",
       "procedure": [
-        "Accéder à Paramètres > Codes-Barres > Onglet Statistiques",
-        "Voir les cartes récapitulatives: total lots, codes réservés, utilisés, disponibles",
-        "Tableau détaillé par module avec: préfixe, format verrouillé, séquence courante, nombre de lots, codes totaux, utilisés, disponibles",
-        "Identification rapide des modules nécessitant de nouveaux lots"
+        "Lors de la création d'un usager ou article",
+        "Scanner ou saisir un code du lot",
+        "Le code est automatiquement lié",
+        "Il ne pourra plus être réutilisé"
       ],
       "faq": [
         {
-          "question": "Comment savoir si je dois créer de nouveaux lots?",
-          "reponse": "Surveillez la colonne 'Disponibles' dans le tableau statistiques. Si proche de zéro, créez un nouveau lot."
-        },
-        {
-          "question": "Les codes annulés sont-ils comptés?",
-          "reponse": "Oui, séparément. La colonne 'Disponibles' exclut les codes annulés et utilisés."
-        },
-        {
-          "question": "Peut-on exporter ces statistiques?",
-          "reponse": "Pas directement depuis l'interface, mais l'API GET /api/codes-barres-reserves/stats retourne les données en JSON."
+          "question": "Peut-on réattribuer un code annulé ?",
+          "reponse": "Dépend de la configuration 'griller_annules'. Si activé, les codes annulés sont perdus."
         }
       ],
-      "mots_cles": ["statistiques", "dashboard", "récapitulatif", "suivi", "reporting"]
+      "mots_cles": ["attribution", "assignation", "lier", "associer"]
     },
     {
-      "id": "cb_impression_cartes",
-      "titre": "Impression de cartes usagers avec code-barre",
-      "description": "Générer des cartes de membre personnalisées avec code-barre, photo, validité de cotisation et logo de la structure. Format carte de crédit (85.6mm x 53.98mm).",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la fiche d'un usager",
-        "Cliquer sur 'Imprimer carte' ou GET /api/barcodes/adherent/{id}/card",
-        "La carte affiche: nom structure + logo, prénom/nom usager, validité cotisation (avec couleur selon statut), code-barre EAN-13",
-        "Option d'impression batch: POST /api/barcodes/adherents/batch avec tableau d'IDs",
-        "Format HTML prêt à imprimer avec CSS optimisée pour l'impression",
-        "Conseils d'impression: désactiver en-têtes/pieds de page navigateur"
-      ],
-      "faq": [
-        {
-          "question": "Comment personnaliser le design des cartes?",
-          "reponse": "Le design est défini dans barcodeController.getAdherentCard(). Modifiez le HTML/CSS inline pour adapter couleurs, logo, layout."
-        },
-        {
-          "question": "Peut-on imprimer plusieurs cartes d'un coup?",
-          "reponse": "Oui, utilisez POST /api/barcodes/adherents/batch avec un tableau d'IDs usagers. Génère un PDF multi-pages avec saut de page."
-        },
-        {
-          "question": "Le code-barre inclut-il la photo?",
-          "reponse": "Non, le code-barre est textuel (EAN-13). La photo peut être affichée séparément via utilisateur.photo_url si disponible."
-        }
-      ],
-      "mots_cles": ["carte", "usager", "membre", "adhérent", "impression", "badge", "cotisation"]
-    },
-    {
-      "id": "cb_etiquettes_collections",
-      "titre": "Impression d'étiquettes pour les collections",
-      "description": "Générer des étiquettes code-barres pour jeux, livres, films et disques avec informations contextuelles (éditeur, année, durée, etc.). Format 100mm x 60mm.",
-      "role_min": "benevole",
-      "procedure": [
-        "Accéder à la fiche d'un article (jeu/livre/film/disque)",
-        "Cliquer sur 'Imprimer étiquette'",
-        "Routes API: GET /api/barcodes/jeu/{id}/label, /livre/{id}/label, /film/{id}/label, /disque/{id}/label",
-        "L'étiquette affiche: titre, informations spécifiques au type, code-barre EAN-13",
-        "Jeu: éditeur, catégorie, âge min, nb joueurs",
-        "Livre: ISBN, année publication, nb pages, tome",
-        "Film: année sortie, durée, classification",
-        "Disque: année sortie, durée totale, nb pistes",
-        "Auto-impression au chargement (window.print())"
-      ],
-      "faq": [
-        {
-          "question": "Quelle taille d'étiquettes utiliser?",
-          "reponse": "Format 100mm x 60mm (défini dans le CSS @page). Compatible avec la plupart des planches d'étiquettes A4 standard."
-        },
-        {
-          "question": "Peut-on personnaliser le contenu des étiquettes?",
-          "reponse": "Oui, modifiez les contrôleurs correspondants (getJeuLabel, getLivreLabel, etc.) pour adapter le HTML et les champs affichés."
-        },
-        {
-          "question": "Comment imprimer plusieurs étiquettes d'un coup?",
-          "reponse": "Actuellement pas de route batch pour les collections. Imprimez individuellement ou développez une route batch similaire à celle des cartes usagers."
-        }
-      ],
-      "mots_cles": ["étiquette", "label", "jeu", "livre", "film", "disque", "collection", "rayonnage"]
-    },
-    {
-      "id": "cb_integration_emprunts",
-      "titre": "Intégration scan codes-barres dans les emprunts",
-      "description": "Utiliser le scan de codes-barres pour accélérer l'enregistrement des emprunts: identification rapide de l'usager et des articles.",
-      "role_min": "benevole",
-      "procedure": [
-        "Lors de la création d'un emprunt, scanner le code usager",
-        "Route POST /api/barcodes/scan avec {code: 'USA00000001'}",
-        "Le système retourne type: 'adherent' + fiche complète de l'usager",
-        "Scanner ensuite les codes des articles à emprunter",
-        "Chaque scan retourne type: 'jeu'/'livre'/'film'/'disque' + fiche article",
-        "Valider l'emprunt avec les entités scannées",
-        "Workflow sans saisie manuelle, réduction des erreurs"
-      ],
-      "faq": [
-        {
-          "question": "Que faire si l'usager n'a pas de code-barre?",
-          "reponse": "Recherchez l'usager manuellement ou scannez un code pré-imprimé puis associez-le à la fiche usager."
-        },
-        {
-          "question": "Le scan fonctionne-t-il avec les codes EAN d'origine (livres, jeux)?",
-          "reponse": "Non, decodeBarcode() ne gère que les codes internes avec préfixes USA/JEU/LIV/FLM/DSQ. Pour les EAN externes, utilisez le module lookup (/api/lookup)."
-        },
-        {
-          "question": "Comment gérer les scans erronés?",
-          "reponse": "Le système retourne une erreur 404 si l'entité n'existe pas ou 400 si le format est invalide. Affichez un message clair à l'utilisateur."
-        }
-      ],
-      "mots_cles": ["emprunt", "scan", "workflow", "prêt", "lecteur", "douchette", "rapidité"]
-    },
-    {
-      "id": "cb_config_scanner",
-      "titre": "Configuration des scanners de codes-barres",
-      "description": "Configurer les douchettes et scanners pour les adapter au clavier français AZERTY. Inclut les procédures pour les marques courantes (Unitech, Zebra, Honeywell).",
+      "id": "groupe_barcode",
+      "titre": "Gérer les groupes de codes-barres",
+      "description": "Organiser les codes par groupes (SISAM, interne...)",
       "role_min": "administrateur",
       "procedure": [
-        "Identifier le problème: si un scan de '0123456789' affiche 'à&é\"'(-è_çà' → le scanner est en QWERTY",
-        "Noter le modèle exact du scanner (étiquette sous l'appareil)",
-        "Accéder à Aide > Scanners dans l'administration",
-        "Télécharger ou afficher la page de configuration pour votre modèle",
-        "Scanner les codes de configuration dans l'ordre indiqué: 1. Enter Setup, 2. French Keyboard, 3. Exit Setup",
-        "Vérifier la configuration en scannant un code-barres de test"
+        "Aller dans Paramètres > Organisations > Groupes codes-barres",
+        "Créer un groupe avec un nom et un préfixe",
+        "Associer le groupe aux modules souhaités",
+        "Les nouveaux codes utiliseront ce groupe"
       ],
       "faq": [
         {
-          "question": "Pourquoi mes codes s'affichent avec des caractères bizarres?",
-          "reponse": "Le scanner émule un clavier QWERTY américain mais Windows attend un clavier AZERTY français. Les touches sont au même endroit physique mais produisent des caractères différents. Exemple: la touche '0' sur un clavier US est à l'emplacement de 'à' sur un clavier FR."
-        },
-        {
-          "question": "Où trouver les codes de configuration de mon scanner?",
-          "reponse": "Dans le manuel utilisateur du scanner (section 'Keyboard Language' ou 'Country Code'). Vous pouvez aussi générer des codes-barres Code 128 sur barcode.tec-it.com avec les codes de configuration."
-        },
-        {
-          "question": "Quels scanners sont documentés?",
-          "reponse": "Unitech MS836 (page dédiée disponible). Pour d'autres modèles, consultez le manuel ou contactez le support."
-        },
-        {
-          "question": "Le scanner ne lit pas les codes de configuration",
-          "reponse": "Assurez-vous que les codes sont en format Code 128 (pas EAN-13). Agrandissez l'écran ou imprimez la page. Certains scanners nécessitent d'être à 10-15cm de l'écran."
-        },
-        {
-          "question": "Comment tester si la configuration est correcte?",
-          "reponse": "Ouvrez un éditeur de texte (Bloc-notes), scannez un code-barres connu et vérifiez que les chiffres s'affichent correctement."
+          "question": "À quoi servent les groupes ?",
+          "reponse": "Pour séparer les plages de codes (ex: prêts inter-bibliothèques SISAM vs interne)."
         }
       ],
-      "mots_cles": ["scanner", "douchette", "configuration", "AZERTY", "QWERTY", "clavier", "français", "Unitech", "MS836", "Zebra", "Honeywell", "caractères", "setup"]
-    },
-    {
-      "id": "cb_config_unitech_ms836",
-      "titre": "Configuration Unitech MS836 (clavier français)",
-      "description": "Procédure détaillée pour configurer le scanner Unitech MS836 en mode clavier français AZERTY.",
-      "role_min": "administrateur",
-      "procedure": [
-        "Ouvrir la page de configuration: /admin/aide-scanners/scanner-config-unitech-ms836.html",
-        "Scanner le code W010F01 (Enter Setup Mode) - un bip confirme l'entrée en mode programmation",
-        "Scanner le code WFF1907 (French Keyboard) - configure le clavier AZERTY",
-        "Scanner le code W010F00 (Exit Setup Mode) - un bip confirme la sortie du mode programmation",
-        "Tester en scannant un code-barres: les chiffres doivent s'afficher correctement"
-      ],
-      "faq": [
-        {
-          "question": "Où trouver la page de configuration avec les codes-barres?",
-          "reponse": "Menu Aide > Centre d'aide > Codes-barres > Configuration Unitech MS836. Ou accès direct: /admin/aide-scanners/scanner-config-unitech-ms836.html"
-        },
-        {
-          "question": "Le scanner ne réagit pas aux codes de configuration",
-          "reponse": "Essayez d'imprimer la page ou d'agrandir les codes-barres. L'écran doit être propre et lumineux. Maintenez le scanner à 10-15cm perpendiculairement à l'écran."
-        },
-        {
-          "question": "Comment revenir en clavier US si nécessaire?",
-          "reponse": "Scannez: W010F01 (enter setup), puis WFF0000 (US keyboard), puis W010F00 (exit setup)."
-        }
-      ],
-      "mots_cles": ["Unitech", "MS836", "configuration", "AZERTY", "français", "W010F01", "WFF1907", "W010F00"]
+      "mots_cles": ["groupe", "sisam", "plage", "separation"]
     }
   ]
 }
